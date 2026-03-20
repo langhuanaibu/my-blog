@@ -187,28 +187,16 @@
 
         <section id="contact" class="contact-section">
             <div class="container">
-                <h2 class="section-title">联系我</h2>
+                <h2 class="section-title">留言板</h2>
                 <div class="contact-content">
                     <div class="contact-info">
+                        <p>欢迎在这里留下你的足迹、建议或任何想对我说的话！</p>
                         <p><strong>邮箱：</strong>your-email@example.com</p>
                         <p><strong>微信：</strong>your-wechat</p>
-                        <p><strong>GitHub：</strong><a href="#">github.com/yourusername</a></p>
+                        <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu">github.com/langhuanaibu</a></p>
                     </div>
-                    <form class="contact-form">
-                        <div class="form-group">
-                            <label for="name">姓名</label>
-                            <input type="text" id="name" name="name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">邮箱</label>
-                            <input type="email" id="email" name="email" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="message">留言</label>
-                            <textarea id="message" name="message" rows="5" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">发送留言</button>
-                    </form>
+                    <!-- 引入 Twikoo 评论系统 -->
+                    <div id="twikoo-comments" style="background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px var(--card-shadow);"></div>
                 </div>
             </div>
         </section>
@@ -217,9 +205,9 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
+                <p>&copy; 2026 我的个人博客. 保留所有权利.</p>
                 <div class="social-links">
-                    <a href="#" class="social-link">GitHub</a>
+                    <a href="https://github.com/langhuanaibu" class="social-link">GitHub</a>
                     <a href="#" class="social-link">微信</a>
                     <a href="#" class="social-link">微博</a>
                 </div>
@@ -237,6 +225,17 @@
         </div>
     </div>
 
+    <!-- 引入 Twikoo 核心脚本 -->
+    <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
+    <script>
+        // 初始化主页留言板
+        twikoo.init({
+            envId: 'https://twikoo.aoiblog.top', 
+            el: '#twikoo-comments', 
+            path: '/', // 使用根路径标识主页留言
+            lang: 'zh-CN',
+        });
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
