@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的个人博客</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">我的博客</h1>
+                <nav class="nav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="#home" class="nav-link">首页</a></li>
+                        <li class="nav-item"><a href="#blog" class="nav-link">博客</a></li>
+                        <li class="nav-item"><a href="articles.html" class="nav-link">我的文章</a></li>
+                        <li class="nav-item"><a href="#about" class="nav-link">关于我</a></li>
+                        <li class="nav-item"><a href="#contact" class="nav-link">联系</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section id="home" class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2 class="hero-title">欢迎来到我的个人博客</h2>
+                    <p class="hero-subtitle">记录生活，分享知识，交流思想</p>
+                    <a href="#blog" class="btn btn-primary">查看博客</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="blog" class="blog-section">
+            <div class="container">
+                <h2 class="section-title">最新文章</h2>
+                <div class="blog-grid" id="latest-articles">
+                    <!-- 动态生成的最新文章将显示在这里 -->
+                </div>
+                <script>
+                    // Base64 解码函数（支持中文）
+                    function b64_to_utf8(str) {
+                        return decodeURIComponent(escape(window.atob(str)));
+                    }
+
+                    // 初始化最新文章
+                    async function initLatestArticles() {
+                        let blogArticles = [];
+                        try {
+                            // 从 GitHub API 实时拉取最新数据
+                            const owner = 'langhuanaibu';
+                            const repo = 'my-blog';
+                            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json?t=` + new Date().getTime();
+                            
+                            const response = await fetch(url, {
+                                headers: {
+                                    'Accept': 'application/vnd.github.v3+json'
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                const content = b64_to_utf8(data.content);
+                                blogArticles = JSON.parse(content);
+                            }
+                        } catch (error) {
+                            console.error('获取文章失败:', error);
+                        }
+                        
+                        // 按照创建日期排序（最新的在前）
+                        blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        // 只显示最新的三篇文章
+                        const latestThree = blogArticles.slice(0, 3);
+                        
+                        // 动态生成文章列表
+                        const latestArticlesContainer = document.getElementById('latest-articles');
+                        latestArticlesContainer.innerHTML = '';
+                        
+                        latestThree.forEach(article => {
+                            // 提取文章摘要（前100个字符）
+                            const contentText = article.content.replace(/<[^>]*>/g, '');
+                            const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
+                            
+                            const articleHTML = `
+                                <article class="blog-card">
+                                    <div class="blog-card-content">
+                                        <div class="blog-meta">
+                                            <span class="blog-date">${article.date}</span>
+                                            <span class="blog-category">${article.category}</span>
+                                        </div>
+                                        <h3 class="blog-title"><a href="articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
+                                        <p class="blog-excerpt">${excerpt}</p>
+                                        <a href="articles.html#${article.id}" class="btn btn-secondary">阅读更多</a>
+                                    </div>
+                                </article>
+                            `;
+                            
+                            latestArticlesContainer.innerHTML += articleHTML;
+                        });
+                    }
+                    
+                    // 页面加载完成后初始化最新文章
+                    document.addEventListener('DOMContentLoaded', initLatestArticles);
+                </script>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <div class="container">
+                <div class="about-content">
+                    <div class="about-text">
+                        <h2 class="section-title">关于我</h2>
+                        <p>大家好，我是一名热爱技术和写作的开发者。我喜欢探索新的技术，分享我的学习经验和生活感悟。</p>
+                        <p>在这个博客中，我会分享前端开发、编程学习、生活随笔等内容。希望我的分享能够对大家有所帮助和启发。</p>
+                        <p>如果你有任何问题或建议，欢迎随时联系我！</p>
+                    </div>
+                    <div class="about-info">
+                        <h3>我的技能</h3>
+                        <ul class="skills-list">
+                            <li>HTML5 & CSS3</li>
+                            <li>JavaScript</li>
+                            <li>React</li>
+                            <li>Node.js</li>
+                            <li>Git & GitHub</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <h2 class="section-title">联系我</h2>
+                <div class="contact-content">
+                    <div class="contact-info">
+                        <p><strong>邮箱：</strong>your-email@example.com</p>
+                        <p><strong>微信：</strong>your-wechat</p>
+                        <p><strong>GitHub：</strong><a href="#">github.com/yourusername</a></p>
+                    </div>
+                    <form class="contact-form">
+                        <div class="form-group">
+                            <label for="name">姓名</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">邮箱</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">留言</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">发送留言</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link">GitHub</a>
+                    <a href="#" class="social-link">微信</a>
+                    <a href="#" class="social-link">微博</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

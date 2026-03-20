@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Grid布局入门 - 我的个人博客</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">我的博客</h1>
+                <nav class="nav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="index.html#home" class="nav-link">首页</a></li>
+                        <li class="nav-item"><a href="index.html#blog" class="nav-link">博客</a></li>
+                        <li class="nav-item"><a href="articles.html" class="nav-link">我的文章</a></li>
+                        <li class="nav-item"><a href="index.html#about" class="nav-link">关于我</a></li>
+                        <li class="nav-item"><a href="index.html#contact" class="nav-link">联系</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <article class="article-detail">
+            <div class="container">
+                <div class="article-header">
+                    <h1 class="article-title">CSS Grid布局入门</h1>
+                    <div class="article-meta">
+                        <span class="article-date">发布日期：2024-01-05</span>
+                        <span class="article-category">分类：技术分享</span>
+                    </div>
+                </div>
+                
+                <div class="article-content">
+                    <p>CSS Grid是一种强大的二维布局系统，可以让我们轻松创建复杂的页面布局。本文将介绍CSS Grid的基本概念和用法，帮助你快速入门。</p>
+                    
+                    <h2>一、什么是CSS Grid</h2>
+                    <p>CSS Grid是CSS3的一个新特性，它是一种二维布局系统，可以同时处理行和列。与Flexbox（一维布局系统）不同，Grid可以让我们在两个维度上精确定位和调整元素的大小。</p>
+                    
+                    <h2>二、基本概念</h2>
+                    
+                    <h3>1. 网格容器和网格项</h3>
+                    <p>要使用CSS Grid，首先需要创建一个网格容器。通过将元素的`display`属性设置为`grid`或`inline-grid`，可以将该元素转换为网格容器。网格容器的直接子元素将自动成为网格项。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+}</code></pre>
+                    
+                    <h3>2. 网格线</h3>
+                    <p>网格线是网格的水平和垂直线，用于定位网格项。水平网格线定义行，垂直网格线定义列。网格线从1开始编号。</p>
+                    
+                    <h3>3. 网格轨道</h3>
+                    <p>网格轨道是两条相邻网格线之间的空间，包括行轨道和列轨道。可以使用`grid-template-rows`和`grid-template-columns`属性来定义网格轨道的大小。</p>
+                    
+                    <h3>4. 网格单元格</h3>
+                    <p>网格单元格是行轨道和列轨道的交叉区域，是网格布局的最小单位。</p>
+                    
+                    <h3>5. 网格区域</h3>
+                    <p>网格区域是由一个或多个网格单元格组成的矩形区域。可以使用`grid-area`属性来定义网格项占据的网格区域。</p>
+                    
+                    <h2>三、基本用法</h2>
+                    
+                    <h3>1. 定义网格布局</h3>
+                    <p>使用`grid-template-rows`和`grid-template-columns`属性来定义网格的行和列。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+    grid-template-columns: 100px 200px 100px;
+    grid-template-rows: 50px 100px;
+}</code></pre>
+                    
+                    <p>上面的代码创建了一个3列2行的网格，列宽分别为100px、200px和100px，行高分别为50px和100px。</p>
+                    
+                    <h3>2. 使用fr单位</h3>
+                    <p>`fr`单位表示可用空间的比例。使用`fr`单位可以创建灵活的网格布局。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: 100px 200px;
+}</code></pre>
+                    
+                    <p>上面的代码创建了一个3列2行的网格，列宽比例为1:2:1，行高分别为100px和200px。</p>
+                    
+                    <h3>3. 网格间距</h3>
+                    <p>使用`grid-gap`属性（或`grid-row-gap`和`grid-column-gap`）来设置网格项之间的间距。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: 100px 200px;
+    grid-gap: 10px;
+}</code></pre>
+                    
+                    <h3>4. 定位网格项</h3>
+                    <p>使用`grid-row`和`grid-column`属性来定位网格项。</p>
+                    
+                    <pre><code class="css">.grid-item-1 {
+    grid-row: 1 / 3;
+    grid-column: 1 / 2;
+}
+
+.grid-item-2 {
+    grid-row: 1 / 2;
+    grid-column: 2 / 4;
+}</code></pre>
+                    
+                    <h3>5. 使用grid-template-areas</h3>
+                    <p>`grid-template-areas`属性允许你使用命名的网格区域来定义网格布局，使代码更加直观和易于维护。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 
+        "header header"
+        "sidebar main"
+        "footer footer";
+}
+
+.header {
+    grid-area: header;
+}
+
+.sidebar {
+    grid-area: sidebar;
+}
+
+.main {
+    grid-area: main;
+}
+
+.footer {
+    grid-area: footer;
+}</code></pre>
+                    
+                    <h2>四、响应式网格</h2>
+                    <p>CSS Grid非常适合创建响应式布局。可以使用媒体查询和`repeat()`、`minmax()`等函数来创建灵活的响应式网格。</p>
+                    
+                    <pre><code class="css">.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-gap: 10px;
+}</code></pre>
+                    
+                    <p>上面的代码创建了一个响应式网格，网格项的最小宽度为200px，最大宽度为1fr，自动填充可用空间。</p>
+                    
+                    <h2>五、浏览器支持</h2>
+                    <p>目前，大多数现代浏览器都支持CSS Grid，包括Chrome、Firefox、Safari和Edge。对于不支持CSS Grid的浏览器，可以使用Flexbox或其他布局技术作为回退方案。</p>
+                    
+                    <h2>六、总结</h2>
+                    <p>CSS Grid是一种强大的二维布局系统，可以让我们轻松创建复杂的页面布局。本文介绍了CSS Grid的基本概念和用法，包括网格容器和网格项、网格线、网格轨道、网格单元格和网格区域等基本概念，以及定义网格布局、使用fr单位、设置网格间距、定位网格项和使用grid-template-areas等基本用法。</p>
+                    
+                    <p>要深入学习CSS Grid，建议参考MDN Web Docs等官方文档，并通过实践项目来巩固所学知识。相信通过不断的学习和实践，你一定能够熟练掌握CSS Grid布局。</p>
+                </div>
+                
+                <div class="article-nav">
+                    <a href="article2.html" class="article-nav-link prev">上一篇：我的阅读习惯</a>
+                    <a href="article4.html" class="article-nav-link next">下一篇：我的年度总结</a>
+                </div>
+            </div>
+        </article>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link">GitHub</a>
+                    <a href="#" class="social-link">微信</a>
+                    <a href="#" class="social-link">微博</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

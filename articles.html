@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的文章 - 我的个人博客</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="logo">我的博客</h1>
+                <nav class="nav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="index.html#home" class="nav-link">首页</a></li>
+                        <li class="nav-item"><a href="index.html#blog" class="nav-link">博客</a></li>
+                        <li class="nav-item"><a href="articles.html" class="nav-link">我的文章</a></li>
+                        <li class="nav-item"><a href="index.html#about" class="nav-link">关于我</a></li>
+                        <li class="nav-item"><a href="index.html#contact" class="nav-link">联系</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="articles-section">
+            <div class="container">
+                <h2 class="section-title">我的文章</h2>
+                
+                <div class="articles-layout">
+                    <!-- 左侧文章列表 -->
+                    <aside class="articles-sidebar">
+                        <div class="articles-list">
+                            <h3>文章列表</h3>
+                            <div id="articles-nav">加载中...</div>
+                        </div>
+                    </aside>
+                    
+                    <!-- 右侧文章内容 -->
+                    <article class="articles-content">
+                        <div id="article-detail">
+                            <h3>请选择一篇文章开始阅读</h3>
+                            <p>从左侧列表中选择一篇文章，即可在右侧查看完整内容。</p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link">GitHub</a>
+                    <a href="#" class="social-link">微信</a>
+                    <a href="#" class="social-link">微博</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let blogArticles = [];
+
+        // Base64 解码函数（支持中文）
+        function b64_to_utf8(str) {
+            return decodeURIComponent(escape(window.atob(str)));
+        }
+
+        // 获取文章数据
+        async function loadArticles() {
+            try {
+                // 从 GitHub API 实时拉取最新数据
+                const owner = 'langhuanaibu';
+                const repo = 'my-blog';
+                const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json?t=` + new Date().getTime();
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = b64_to_utf8(data.content);
+                    blogArticles = JSON.parse(content);
+                    blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    renderArticlesList();
+                    
+                    // 如果URL中有文章ID，显示对应的文章
+                    const hash = window.location.hash;
+                    if (hash) {
+                        const articleId = hash.substring(1);
+                        showArticle(articleId);
+                    }
+                } else {
+                    document.getElementById('articles-nav').innerHTML = '加载失败';
+                }
+            } catch (error) {
+                console.error('加载文章失败:', error);
+                document.getElementById('articles-nav').innerHTML = '加载失败';
+            }
+        }
+
+        // 渲染文章列表
+        function renderArticlesList() {
+            const articlesNav = document.getElementById('articles-nav');
+            articlesNav.innerHTML = '';
+            
+            if (blogArticles.length === 0) {
+                articlesNav.innerHTML = '<p>暂无文章</p>';
+                return;
+            }
+
+            blogArticles.forEach(article => {
+                const articleItem = document.createElement('div');
+                articleItem.className = 'article-item';
+                articleItem.innerHTML = `
+                    <a href="#${article.id}" class="article-link" data-id="${article.id}">
+                        <span class="article-item-title">${article.title}</span>
+                        <span class="article-item-date">${article.date}</span>
+                    </a>
+                `;
+                articlesNav.appendChild(articleItem);
+            });
+
+            // 添加点击事件监听
+            const articleLinks = document.querySelectorAll('.article-link');
+            articleLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const articleId = this.getAttribute('data-id');
+                    showArticle(articleId);
+                    // 更新 URL hash，不刷新页面
+                    history.pushState(null, null, '#' + articleId);
+                });
+            });
+        }
+
+        // 显示文章内容
+        function showArticle(articleId) {
+            const articleDetail = document.getElementById('article-detail');
+            const article = blogArticles.find(a => a.id === articleId);
+            
+            if (article) {
+                articleDetail.innerHTML = `
+                    <div class="article-header">
+                        <h2 class="article-title">${article.title}</h2>
+                        <div class="article-meta">
+                            <span class="article-date">发布日期：${article.date}</span>
+                            <span class="article-category">分类：${article.category}</span>
+                        </div>
+                    </div>
+                    <div id="article-content" class="article-content">
+                        ${article.content}
+                    </div>
+                    <div class="article-modify">
+                        <p>最后修改日期：<span>${article.modifyDate}</span></p>
+                    </div>
+                `;
+            } else {
+                articleDetail.innerHTML = `<h3>文章未找到</h3>`;
+            }
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', loadArticles);
+    </script>
+</body>
+</html>

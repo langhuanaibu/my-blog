@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>博客后台管理 (静态版)</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-container { max-width: 1000px; margin: 50px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .config-container { max-width: 500px; margin: 100px auto; padding: 30px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        .article-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .article-table th, .article-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .article-table th { background-color: #f8f9fa; }
+        .action-btn { padding: 6px 12px; margin-right: 8px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .edit-btn { background-color: #4CAF50; }
+        .delete-btn { background-color: #f44336; }
+        .editor-container { display: none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+        #config-section { display: none; }
+        #admin-section { display: none; }
+        .help-text { font-size: 13px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body style="background-color: #f4f6f9;">
+    
+    <!-- 配置页面 -->
+    <div id="config-section" class="config-container">
+        <h2>GitHub 仓库配置</h2>
+        <p style="margin-bottom: 20px; color: #666;">为了实现纯静态部署且能管理文章，后台将通过 GitHub API 直接将文章保存到你的代码仓库中。</p>
+        <form id="config-form">
+            <div class="form-group">
+                <label>GitHub 用户名 (Owner)</label>
+                <input type="text" id="github-owner" required placeholder="例如: zhangsan">
+            </div>
+            <div class="form-group">
+                <label>仓库名 (Repo)</label>
+                <input type="text" id="github-repo" required placeholder="例如: my-blog">
+            </div>
+            <div class="form-group">
+                <label>私人令牌 (Personal Access Token)</label>
+                <input type="password" id="github-token" required placeholder="请在 GitHub Developer settings 中生成">
+                <div class="help-text">需勾选 "repo" 权限。令牌仅保存在你本地浏览器中。</div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">保存配置并进入后台</button>
+        </form>
+    </div>
+
+    <!-- 管理页面 -->
+    <div id="admin-section" class="admin-container">
+        <div class="admin-header">
+            <h2>博客文章管理</h2>
+            <div>
+                <a href="index.html" class="btn btn-secondary" style="margin-right: 10px;">返回前台</a>
+                <button onclick="showEditor()" class="btn btn-primary" style="margin-right: 10px;">发布新文章</button>
+                <button onclick="clearConfig()" class="btn btn-secondary">重新配置 GitHub</button>
+            </div>
+        </div>
+
+        <div id="loading-msg" style="text-align: center; padding: 20px; display: none;">正在从 GitHub 拉取数据，请稍候...</div>
+
+        <table class="article-table" id="articles-table">
+            <thead>
+                <tr>
+                    <th>标题</th>
+                    <th>分类</th>
+                    <th>发布日期</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="articles-tbody">
+                <!-- 动态填充 -->
+            </tbody>
+        </table>
+
+        <div id="editor-section" class="editor-container">
+            <h3 id="editor-title">发布新文章</h3>
+            <form id="editor-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="edit-title" required>
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <input type="text" id="edit-category" required>
+                </div>
+                <div class="form-group">
+                    <label>内容 (支持HTML)</label>
+                    <textarea id="edit-content" rows="15" required></textarea>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary" id="save-btn">保存文章到 GitHub</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideEditor()">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let articles = [];
+        let fileSha = null; // 用于更新文件时所需的 sha 值
+
+        // 初始化
+        window.onload = function() {
+            const token = localStorage.getItem('github_token');
+            const owner = localStorage.getItem('github_owner');
+            const repo = localStorage.getItem('github_repo');
+
+            if (token && owner && repo) {
+                document.getElementById('config-section').style.display = 'none';
+                document.getElementById('admin-section').style.display = 'block';
+                document.getElementById('github-owner').value = owner;
+                document.getElementById('github-repo').value = repo;
+                document.getElementById('github-token').value = token;
+                fetchArticlesFromGitHub();
+            } else {
+                document.getElementById('config-section').style.display = 'block';
+                document.getElementById('admin-section').style.display = 'none';
+            }
+        };
+
+        // 保存配置
+        document.getElementById('config-form').onsubmit = function(e) {
+            e.preventDefault();
+            localStorage.setItem('github_owner', document.getElementById('github-owner').value.trim());
+            localStorage.setItem('github_repo', document.getElementById('github-repo').value.trim());
+            localStorage.setItem('github_token', document.getElementById('github-token').value.trim());
+            
+            document.getElementById('config-section').style.display = 'none';
+            document.getElementById('admin-section').style.display = 'block';
+            fetchArticlesFromGitHub();
+        };
+
+        function clearConfig() {
+            localStorage.removeItem('github_token');
+            window.location.reload();
+        }
+
+        // Base64 编码和解码（支持中文）
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function b64_to_utf8(str) {
+            return decodeURIComponent(escape(window.atob(str)));
+        }
+
+        // 从 GitHub 获取文章
+        async function fetchArticlesFromGitHub() {
+            const owner = localStorage.getItem('github_owner');
+            const repo = localStorage.getItem('github_repo');
+            const token = localStorage.getItem('github_token');
+            
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json`;
+            
+            document.getElementById('loading-msg').style.display = 'block';
+            document.getElementById('articles-table').style.display = 'none';
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    fileSha = data.sha; // 保存文件的 SHA，更新时需要
+                    const content = b64_to_utf8(data.content);
+                    articles = JSON.parse(content);
+                } else if (response.status === 404) {
+                    // 文件不存在，说明是首次使用
+                    articles = [];
+                    fileSha = null;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || '获取失败');
+                }
+                renderTable();
+            } catch (error) {
+                alert('获取文章数据失败，请检查配置信息是否正确。\n错误信息: ' + error.message);
+                clearConfig();
+            } finally {
+                document.getElementById('loading-msg').style.display = 'none';
+                document.getElementById('articles-table').style.display = 'table';
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('articles-tbody');
+            tbody.innerHTML = '';
+            
+            const sortedArticles = [...articles].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedArticles.forEach(article => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${article.title}</td>
+                    <td>${article.category}</td>
+                    <td>${article.date}</td>
+                    <td>
+                        <button class="action-btn edit-btn" onclick="editArticle('${article.id}')">编辑</button>
+                        <button class="action-btn delete-btn" onclick="deleteArticle('${article.id}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showEditor() {
+            document.getElementById('editor-section').style.display = 'block';
+            document.getElementById('editor-title').innerText = '发布新文章';
+            document.getElementById('editor-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('articles-table').style.display = 'none';
+        }
+
+        function hideEditor() {
+            document.getElementById('editor-section').style.display = 'none';
+            document.getElementById('articles-table').style.display = 'table';
+        }
+
+        function editArticle(id) {
+            const article = articles.find(a => a.id === id);
+            if (!article) return;
+            
+            showEditor();
+            document.getElementById('editor-title').innerText = '编辑文章';
+            document.getElementById('edit-id').value = article.id;
+            document.getElementById('edit-title').value = article.title;
+            document.getElementById('edit-category').value = article.category;
+            
+            let content = article.content;
+            const titleMatch = content.match(/^<h2>.*?<\/h2>\n?/);
+            if (titleMatch) {
+                content = content.replace(titleMatch[0], '');
+            }
+            document.getElementById('edit-content').value = content;
+        }
+
+        // 保存/更新到 GitHub
+        async function syncToGitHub(commitMessage) {
+            const owner = localStorage.getItem('github_owner');
+            const repo = localStorage.getItem('github_repo');
+            const token = localStorage.getItem('github_token');
+            
+            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json`;
+            
+            const contentBase64 = utf8_to_b64(JSON.stringify(articles, null, 2));
+            
+            const payload = {
+                content: contentBase64,
+                message: commitMessage
+            };
+
+            // 如果文件已存在，更新需要传递 sha
+            if (fileSha) {
+                payload.sha = fileSha;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT', // GitHub API 创建和更新文件都使用 PUT
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json;charset=UTF-8',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    fileSha = data.content.sha; // 更新本地 sha
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || '同步失败');
+                }
+            } catch (error) {
+                alert('同步到 GitHub 失败: ' + error.message);
+                return false;
+            }
+        }
+
+        async function deleteArticle(id) {
+            if (confirm('确定要删除这篇文章吗？此操作将直接更新你的 GitHub 仓库。')) {
+                const index = articles.findIndex(a => a.id === id);
+                if (index !== -1) {
+                    const deletedTitle = articles[index].title;
+                    articles.splice(index, 1);
+                    
+                    document.body.style.cursor = 'wait';
+                    const success = await syncToGitHub('删除文章: ' + deletedTitle);
+                    document.body.style.cursor = 'default';
+                    
+                    if (success) {
+                        alert('删除成功！');
+                        renderTable();
+                    } else {
+                        // 恢复数据
+                        fetchArticlesFromGitHub();
+                    }
+                }
+            }
+        }
+
+        document.getElementById('editor-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const title = document.getElementById('edit-title').value;
+            const category = document.getElementById('edit-category').value;
+            const contentBody = document.getElementById('edit-content').value;
+            
+            const fullContent = `<h2>${title}</h2>\n${contentBody}`;
+            const today = new Date().toISOString().split('T')[0];
+            
+            let isNew = false;
+            
+            if (id) {
+                const index = articles.findIndex(a => a.id === id);
+                if (index !== -1) {
+                    articles[index].title = title;
+                    articles[index].category = category;
+                    articles[index].content = fullContent;
+                    articles[index].modifyDate = today;
+                }
+            } else {
+                isNew = true;
+                const newId = 'article_' + Date.now();
+                articles.unshift({
+                    id: newId,
+                    title: title,
+                    date: today,
+                    modifyDate: today,
+                    category: category,
+                    content: fullContent
+                });
+            }
+
+            const btn = document.getElementById('save-btn');
+            btn.disabled = true;
+            btn.innerText = '正在同步到 GitHub...';
+
+            const commitMsg = isNew ? '发布新文章: ' + title : '更新文章: ' + title;
+            const success = await syncToGitHub(commitMsg);
+
+            btn.disabled = false;
+            btn.innerText = '保存文章到 GitHub';
+
+            if (success) {
+                alert('保存成功！代码已提交到 GitHub。');
+                hideEditor();
+                renderTable();
+            } else {
+                // 如果失败重新拉取最新数据防止不同步
+                fetchArticlesFromGitHub();
+            }
+        };
+    </script>
+</body>
+</html>
