@@ -176,6 +176,8 @@
 
         function clearConfig() {
             localStorage.removeItem('github_token');
+            localStorage.removeItem('github_owner');
+            localStorage.removeItem('github_repo');
             window.location.reload();
         }
 
