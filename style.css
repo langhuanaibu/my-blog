@@ -71,7 +71,7 @@ body {
 /* 英雄区域 */
 .hero {
     /* 直接设置背景图片，不带任何颜色遮罩 */
-    background: url('1.PNG') center/cover no-repeat;
+    background: url('hero-bg.png') center/cover no-repeat;
     color: #fff;
     padding: 120px 0;
     text-align: center;
