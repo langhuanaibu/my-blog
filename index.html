@@ -17,7 +17,7 @@
                         <li class="nav-item"><a href="#home" class="nav-link">首页</a></li>
                         <li class="nav-item"><a href="#blog" class="nav-link">博客</a></li>
                         <li class="nav-item"><a href="articles.html" class="nav-link">我的文章</a></li>
-                        <li class="nav-item"><a href="#about" class="nav-link">关于�?/a></li>
+                        <li class="nav-item"><a href="#about" class="nav-link">关于我</a></li>
                         <li class="nav-item"><a href="#contact" class="nav-link">联系</a></li>
                     </ul>
                 </nav>
@@ -38,9 +38,9 @@
 
         <section id="blog" class="blog-section">
             <div class="container">
-                <h2 class="section-title">最新文�?/h2>
+                <h2 class="section-title">最新文章</h2>
                 <div class="blog-grid" id="latest-articles">
-                    <!-- 动态生成的最新文章将显示在这�?-->
+                    <!-- 动态生成的最新文章将显示在这里 -->
                 </div>
                 <script>
                     // Base64 解码函数（支持中文）
@@ -48,11 +48,11 @@
                         return decodeURIComponent(escape(window.atob(str)));
                     }
 
-                    // 初始化最新文�?
+                    // 初始化最新文章
                     async function initLatestArticles() {
                         let blogArticles = [];
                         try {
-                            // �?GitHub API 实时拉取最新数�?
+                            // 从 GitHub API 实时拉取最新数据
                             const owner = 'langhuanaibu';
                             const repo = 'my-blog';
                             const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json?t=` + new Date().getTime();
@@ -72,13 +72,13 @@
                             console.error('获取文章失败:', error);
                         }
                         
-                        // 按照创建日期排序（最新的在前�?
+                        // 按照创建日期排序（最新的在前）
                         blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
                         
                         // 只显示最新的三篇文章
                         const latestThree = blogArticles.slice(0, 3);
                         
-                        // 动态生成文章列�?
+                        // 动态生成文章列表
                         const latestArticlesContainer = document.getElementById('latest-articles');
                         latestArticlesContainer.innerHTML = '';
                         
@@ -105,7 +105,7 @@
                         });
                     }
                     
-                    // 页面加载完成后初始化最新文�?
+                    // 页面加载完成后初始化最新文章
                     document.addEventListener('DOMContentLoaded', initLatestArticles);
                 </script>
             </div>
@@ -115,13 +115,13 @@
             <div class="container">
                 <div class="about-content">
                     <div class="about-text">
-                        <h2 class="section-title">关于�?/h2>
-                        <p>大家好，我是一名热爱技术和写作的开发者。我喜欢探索新的技术，分享我的学习经验和生活感悟�?/p>
-                        <p>在这个博客中，我会分享前端开发、编程学习、生活随笔等内容。希望我的分享能够对大家有所帮助和启发�?/p>
+                        <h2 class="section-title">关于我</h2>
+                        <p>大家好，我是一名热爱技术和写作的开发者。我喜欢探索新的技术，分享我的学习经验和生活感悟。</p>
+                        <p>在这个博客中，我会分享前端开发、编程学习、生活随笔等内容。希望我的分享能够对大家有所帮助和启发。</p>
                         <p>如果你有任何问题或建议，欢迎随时联系我！</p>
                     </div>
                     <div class="about-info">
-                        <h3>我的技�?/h3>
+                        <h3>我的技能</h3>
                         <ul class="skills-list">
                             <li>HTML5 & CSS3</li>
                             <li>JavaScript</li>
@@ -136,12 +136,12 @@
 
         <section id="contact" class="contact-section">
             <div class="container">
-                <h2 class="section-title">联系�?/h2>
+                <h2 class="section-title">联系我</h2>
                 <div class="contact-content">
                     <div class="contact-info">
-                        <p><strong>邮箱�?/strong>your-email@example.com</p>
-                        <p><strong>微信�?/strong>your-wechat</p>
-                        <p><strong>GitHub�?/strong><a href="#">github.com/yourusername</a></p>
+                        <p><strong>邮箱：</strong>your-email@example.com</p>
+                        <p><strong>微信：</strong>your-wechat</p>
+                        <p><strong>GitHub：</strong><a href="#">github.com/yourusername</a></p>
                     </div>
                     <form class="contact-form">
                         <div class="form-group">
@@ -166,7 +166,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
-                <p>&copy; 2024 我的个人博客. 保留所有权�?</p>
+                <p>&copy; 2024 我的个人博客. 保留所有权利.</p>
                 <div class="social-links">
                     <a href="#" class="social-link">GitHub</a>
                     <a href="#" class="social-link">微信</a>
