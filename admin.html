@@ -390,7 +390,7 @@
             }
         }
 
-        // 评论管理功能
+        // 评论/留言管理功能
         async function fetchComments() {
             document.getElementById('comments-loading-msg').style.display = 'block';
             document.getElementById('comments-table').style.display = 'none';
@@ -423,9 +423,23 @@
                 const tr = document.createElement('tr');
                 const dateStr = new Date(comment.created).toLocaleString();
                 
-                // 查找对应文章标题
-                const article = articles.find(a => a.id === comment.url);
-                const articleTitle = article ? article.title : '未知文章';
+                // 判断是文章评论还是主页留言
+                let articleTitle = '';
+                let targetUrl = '';
+                let typeBadge = '';
+                
+                // 如果 url 为空、'/'、'/index.html' 或者包含 '#留言'，通常被视为主页留言
+                if (!comment.url || comment.url === '/' || comment.url.includes('index.html')) {
+                    articleTitle = '博客主页';
+                    targetUrl = 'index.html#twikoo-comments';
+                    typeBadge = '<span style="background: #e1f5fe; color: #1976d2; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">留言板</span>';
+                } else {
+                    // 查找对应文章标题
+                    const article = articles.find(a => a.id === comment.url);
+                    articleTitle = article ? article.title : '未知文章';
+                    targetUrl = `articles.html?id=${comment.url}#twikoo-comments`;
+                    typeBadge = '<span style="background: #e8f5e9; color: #388e3c; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">文章评论</span>';
+                }
                 
                 // 去除评论中的 HTML 标签
                 const plainComment = comment.commentText || comment.comment.replace(/<[^>]+>/g, '');
@@ -438,10 +452,10 @@
                         </div>
                     </td>
                     <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${plainComment}">${plainComment}</td>
-                    <td><a href="articles.html?id=${comment.url}" target="_blank" style="color: #0366d6; text-decoration: none;">${articleTitle}</a></td>
+                    <td>${typeBadge}<a href="${targetUrl}" target="_blank" style="color: #0366d6; text-decoration: none;">${articleTitle}</a></td>
                     <td>${dateStr}</td>
                     <td>
-                        <a href="articles.html?id=${comment.url}#twikoo-comments" target="_blank" class="action-btn edit-btn" style="text-decoration: none; display: inline-block;">前往回复/管理</a>
+                        <a href="${targetUrl}" target="_blank" class="action-btn edit-btn" style="text-decoration: none; display: inline-block;">前往回复/管理</a>
                     </td>
                 `;
                 tbody.appendChild(tr);
