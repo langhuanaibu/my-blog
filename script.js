@@ -1,5 +1,26 @@
 // 平滑滚动导航
 document.addEventListener('DOMContentLoaded', function() {
+    // 主题切换逻辑
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        // 更新按钮图标
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        themeToggle.textContent = currentTheme === 'dark' ? '🌙' : '🌞';
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+                themeToggle.textContent = '🌞';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+                themeToggle.textContent = '🌙';
+            }
+        });
+    }
+
     // 获取所有导航链接
     const navLinks = document.querySelectorAll('.nav-link');
     

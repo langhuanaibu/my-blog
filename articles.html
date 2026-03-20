@@ -8,6 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- 引入 Twikoo 评论系统核心脚本 -->
     <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
+    <script>
+        // 初始化主题
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    </script>
 </head>
 <body>
     <header class="header">
@@ -21,6 +28,11 @@
                         <li class="nav-item"><a href="articles.html" class="nav-link">我的文章</a></li>
                         <li class="nav-item"><a href="index.html#about" class="nav-link">关于我</a></li>
                         <li class="nav-item"><a href="index.html#contact" class="nav-link">联系</a></li>
+                        <li class="nav-item">
+                            <button id="theme-toggle" class="theme-toggle" aria-label="切换主题">
+                                🌞
+                            </button>
+                        </li>
                     </ul>
                 </nav>
             </div>
@@ -37,17 +49,30 @@
                     <aside class="articles-sidebar">
                         <div class="articles-list">
                             <h3>文章列表</h3>
+                            <div class="search-box">
+                                <input type="text" id="search-input" placeholder="搜索文章标题或内容...">
+                            </div>
                             <div id="articles-nav">加载中...</div>
                         </div>
                     </aside>
                     
-                    <!-- 右侧文章内容 -->
+                    <!-- 中间文章内容 -->
                     <article class="articles-content">
                         <div id="article-detail">
                             <h3>请选择一篇文章开始阅读</h3>
                             <p>从左侧列表中选择一篇文章，即可在右侧查看完整内容。</p>
                         </div>
                     </article>
+                    
+                    <!-- 右侧 TOC 大纲 -->
+                    <aside class="articles-toc">
+                        <div class="toc-container">
+                            <h3>文章大纲</h3>
+                            <ul id="toc-list">
+                                <li class="toc-item"><span style="color: var(--meta-color); font-size: 14px;">暂无目录</span></li>
+                            </ul>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </section>
@@ -122,16 +147,18 @@
         }
 
         // 渲染文章列表
-        function renderArticlesList() {
+        function renderArticlesList(articlesToRender) {
             const articlesNav = document.getElementById('articles-nav');
             articlesNav.innerHTML = '';
             
-            if (blogArticles.length === 0) {
-                articlesNav.innerHTML = '<p>暂无文章</p>';
+            const listToRender = articlesToRender || blogArticles;
+            
+            if (listToRender.length === 0) {
+                articlesNav.innerHTML = '<p style="color: var(--meta-color); text-align: center; padding: 20px 0;">暂无文章</p>';
                 return;
             }
 
-            blogArticles.forEach(article => {
+            listToRender.forEach(article => {
                 const articleItem = document.createElement('div');
                 articleItem.className = 'article-item';
                 articleItem.innerHTML = `
@@ -148,6 +175,11 @@
             articleLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
+                    
+                    // 移除所有 active 状态
+                    document.querySelectorAll('.article-link').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                    
                     const articleId = this.getAttribute('data-id');
                     showArticle(articleId);
                     // 更新 URL hash，不刷新页面
@@ -186,13 +218,127 @@
                 
                 // 动态加载 Twikoo 评论系统
                 loadTwikoo(articleId);
+                
+                // 渲染文章大纲 (TOC)
+                generateTOC();
             } else {
                 articleDetail.innerHTML = `<h3>文章未找到</h3>`;
             }
         }
 
+        // 生成文章大纲 (TOC)
+        function generateTOC() {
+            const content = document.getElementById('article-content');
+            const tocList = document.getElementById('toc-list');
+            if (!content || !tocList) return;
+
+            const headings = content.querySelectorAll('h2, h3');
+            tocList.innerHTML = '';
+
+            if (headings.length === 0) {
+                tocList.innerHTML = '<li class="toc-item"><span style="color: var(--meta-color); font-size: 14px;">暂无目录</span></li>';
+                return;
+            }
+
+            headings.forEach((heading, index) => {
+                // 给标题添加 id 以便跳转
+                const id = `heading-${index}`;
+                heading.id = id;
+
+                const li = document.createElement('li');
+                li.className = `toc-item toc-${heading.tagName.toLowerCase()}`;
+
+                const a = document.createElement('a');
+                a.href = `#${id}`;
+                a.textContent = heading.innerText;
+
+                // 平滑滚动
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    // 考虑 fixed header 的高度
+                    const headerHeight = document.querySelector('.header').offsetHeight || 80;
+                    const targetPosition = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 手动更新高亮
+                    document.querySelectorAll('.toc-item a').forEach(link => link.classList.remove('active'));
+                    a.classList.add('active');
+                });
+
+                li.appendChild(a);
+                tocList.appendChild(li);
+            });
+            
+            // 默认高亮第一个
+            if (tocList.querySelector('a')) {
+                tocList.querySelector('a').classList.add('active');
+            }
+        }
+
+        // 滚动监听 (ScrollSpy)
+        window.addEventListener('scroll', () => {
+            const content = document.getElementById('article-content');
+            if (!content) return;
+            
+            const headings = content.querySelectorAll('h2, h3');
+            if (headings.length === 0) return;
+
+            const headerHeight = document.querySelector('.header').offsetHeight || 80;
+            let currentId = '';
+
+            headings.forEach(heading => {
+                const rect = heading.getBoundingClientRect();
+                // 100 加上 header 高度的容差
+                if (rect.top <= headerHeight + 50) {
+                    currentId = heading.id;
+                }
+            });
+
+            // 如果都没有到达顶部，可能在最上面，默认第一个
+            if (!currentId && headings.length > 0) {
+                currentId = headings[0].id;
+            }
+
+            if (currentId) {
+                document.querySelectorAll('.toc-item a').forEach(a => {
+                    a.classList.remove('active');
+                    if (a.getAttribute('href') === `#${currentId}`) {
+                        a.classList.add('active');
+                    }
+                });
+            }
+        });
+
         // 页面加载完成后执行
-        document.addEventListener('DOMContentLoaded', loadArticles);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadArticles();
+            
+            // 搜索功能实现
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const keyword = e.target.value.toLowerCase().trim();
+                    if (!keyword) {
+                        renderArticlesList(blogArticles);
+                        return;
+                    }
+                    
+                    const filtered = blogArticles.filter(article => {
+                        const titleMatch = article.title.toLowerCase().includes(keyword);
+                        // 去除 HTML 标签后匹配纯文本内容
+                        const contentText = article.content.replace(/<[^>]+>/g, '').toLowerCase();
+                        const contentMatch = contentText.includes(keyword);
+                        return titleMatch || contentMatch;
+                    });
+                    
+                    renderArticlesList(filtered);
+                });
+            }
+        });
 
     </script>
     
@@ -218,5 +364,6 @@
             });
         }
     </script>
+    <script src="script.js"></script>
 </body>
 </html>
