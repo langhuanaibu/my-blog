@@ -86,7 +86,12 @@
                     <input type="text" id="edit-category" required>
                 </div>
                 <div class="form-group">
-                    <label>内容 (支持HTML)</label>
+                    <label>
+                        内容 (支持HTML)
+                        <button type="button" id="insert-img-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 10px;">插入图片</button>
+                        <span id="img-upload-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
+                    </label>
+                    <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
                     <textarea id="edit-content" rows="15" required></textarea>
                 </div>
                 <div>
@@ -349,6 +354,92 @@
                 }
             }
         }
+
+        // 图片上传与插入功能
+        document.getElementById('insert-img-btn').addEventListener('click', function() {
+            document.getElementById('image-upload-input').click();
+        });
+
+        document.getElementById('image-upload-input').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const btn = document.getElementById('insert-img-btn');
+            const statusText = document.getElementById('img-upload-status');
+            
+            btn.disabled = true;
+            statusText.style.display = 'inline';
+            statusText.innerText = '正在读取图片...';
+            statusText.style.color = '#666';
+
+            try {
+                const reader = new FileReader();
+                reader.onload = async function(event) {
+                    try {
+                        const base64Content = event.target.result.split(',')[1];
+                        
+                        const ext = file.name.split('.').pop();
+                        const filename = 'img_' + Date.now() + '.' + ext;
+                        const path = 'images/' + filename;
+                        
+                        const owner = localStorage.getItem('github_owner');
+                        const repo = localStorage.getItem('github_repo');
+                        const token = localStorage.getItem('github_token');
+                        
+                        const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                        
+                        statusText.innerText = '正在上传到 GitHub...';
+                        
+                        const response = await fetch(url, {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `token ${token}`,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/vnd.github.v3+json'
+                            },
+                            body: JSON.stringify({
+                                message: 'Upload image: ' + filename,
+                                content: base64Content
+                            })
+                        });
+
+                        if (response.ok) {
+                            // 使用相对路径，为了兼容未来可能的域名变更
+                            const imageUrl = `images/${filename}`;
+                            const imgTag = `\n<img src="${imageUrl}" alt="图片" style="max-width: 100%;">\n`;
+                            
+                            const textarea = document.getElementById('edit-content');
+                            const startPos = textarea.selectionStart;
+                            const endPos = textarea.selectionEnd;
+                            const text = textarea.value;
+                            
+                            textarea.value = text.substring(0, startPos) + imgTag + text.substring(endPos);
+                            textarea.selectionStart = textarea.selectionEnd = startPos + imgTag.length;
+                            textarea.focus();
+                            
+                            statusText.innerText = '上传成功！(图片可能需1分钟生效)';
+                            statusText.style.color = 'green';
+                            setTimeout(() => { statusText.style.display = 'none'; }, 3000);
+                        } else {
+                            const err = await response.json();
+                            throw new Error(err.message || '上传失败');
+                        }
+                    } catch (err) {
+                        statusText.innerText = '上传失败: ' + err.message;
+                        statusText.style.color = 'red';
+                    } finally {
+                        btn.disabled = false;
+                        e.target.value = '';
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                statusText.innerText = '发生错误: ' + error.message;
+                statusText.style.color = 'red';
+                btn.disabled = false;
+                e.target.value = '';
+            }
+        });
 
         document.getElementById('editor-form').onsubmit = async function(e) {
             e.preventDefault();
