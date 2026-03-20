@@ -1069,13 +1069,33 @@ body {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+    /* 解决移动端导航栏遮挡问题：取消固定定位，改为随页面滚动 */
+    .header {
+        position: static;
+    }
+
+    .main {
+        margin-top: 0;
+    }
+
     .header-content {
         flex-direction: column;
-        gap: 20px;
+        gap: 15px;
+        padding: 15px 0;
+    }
+
+    .nav-list {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
     }
 
     .nav-item {
-        margin: 0 15px;
+        margin: 0 8px;
+    }
+
+    .nav-link {
+        font-size: 14px;
     }
 
     .hero-title {
