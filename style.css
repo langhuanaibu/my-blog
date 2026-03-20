@@ -499,9 +499,16 @@ body {
     background-color: var(--bg-color);
 }
 
+.articles-container {
+    width: 100%;
+    padding: 0 40px; /* 左右留一点边距 */
+    margin: 0 auto;
+}
+
 /* 左右分栏布局 -> 三栏布局 */
 .articles-layout {
     display: grid;
+    /* 左侧列表300px，中间内容自适应，右侧大纲250px */
     grid-template-columns: 300px 1fr 250px;
     gap: 40px;
     margin-top: 40px;
