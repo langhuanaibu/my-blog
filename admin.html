@@ -192,7 +192,16 @@
         }
 
         function b64_to_utf8(str) {
-            return decodeURIComponent(escape(window.atob(str)));
+            try {
+                return decodeURIComponent(escape(window.atob(str)));
+            } catch (e) {
+                const binString = window.atob(str);
+                const bytes = new Uint8Array(binString.length);
+                for (let i = 0; i < binString.length; i++) {
+                    bytes[i] = binString.charCodeAt(i);
+                }
+                return new TextDecoder('utf-8').decode(bytes);
+            }
         }
 
         // 从 GitHub 获取文章

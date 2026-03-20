@@ -71,7 +71,18 @@
 
         // Base64 解码函数（支持中文）
         function b64_to_utf8(str) {
-            return decodeURIComponent(escape(window.atob(str)));
+            // 修复 atob 解码包含中文等特殊字符时的问题
+            try {
+                return decodeURIComponent(escape(window.atob(str)));
+            } catch (e) {
+                // 如果 escape 失败，尝试更现代的解码方式
+                const binString = window.atob(str);
+                const bytes = new Uint8Array(binString.length);
+                for (let i = 0; i < binString.length; i++) {
+                    bytes[i] = binString.charCodeAt(i);
+                }
+                return new TextDecoder('utf-8').decode(bytes);
+            }
         }
 
         // 获取文章数据
