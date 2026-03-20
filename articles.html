@@ -163,7 +163,16 @@
                     <div class="article-modify">
                         <p>最后修改日期：<span>${article.modifyDate}</span></p>
                     </div>
+                    
+                    <!-- 评论区容器 -->
+                    <div id="comments-container" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #eee;">
+                        <h3>评论区</h3>
+                        <div class="giscus"></div>
+                    </div>
                 `;
+                
+                // 动态加载 Giscus 脚本，实现按文章 ID 隔离评论
+                loadGiscus(articleId);
             } else {
                 articleDetail.innerHTML = `<h3>文章未找到</h3>`;
             }
@@ -171,6 +180,46 @@
 
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', loadArticles);
+
+        // 动态加载 Giscus 评论系统
+        function loadGiscus(articleId) {
+            // 清空旧的评论内容
+            const container = document.getElementById('comments-container');
+            if (!container) return;
+            
+            // 移除旧的脚本
+            const oldScript = document.getElementById('giscus-script');
+            if (oldScript) {
+                oldScript.remove();
+            }
+
+            // Giscus 必须挂载在一个带有 .giscus 类的空 div 上
+            container.innerHTML = '<h3>评论区</h3><div class="giscus"></div>';
+
+            // 创建新的脚本标签
+            const script = document.createElement('script');
+            script.id = 'giscus-script';
+            script.src = "https://giscus.app/client.js";
+            
+            // 下面的配置需要你在 GitHub 开启 Discussions 后获取
+            // 目前使用通用的配置模板，term 使用当前文章的 ID 来区分不同文章的评论
+            script.setAttribute("data-repo", "langhuanaibu/my-blog");
+            script.setAttribute("data-repo-id", "R_kgDORr4VCQ"); // 已替换为用户的真实 Repo ID
+            script.setAttribute("data-category", "Announcements");
+            script.setAttribute("data-category-id", "DIC_kwDORr4VCc4C41hO"); // 已替换为用户的真实 Category ID
+            script.setAttribute("data-mapping", "specific");
+            script.setAttribute("data-term", articleId); // 关键：用文章 ID 作为评论关联的标识
+            script.setAttribute("data-strict", "0");
+            script.setAttribute("data-reactions-enabled", "1");
+            script.setAttribute("data-emit-metadata", "0");
+            script.setAttribute("data-input-position", "bottom");
+            script.setAttribute("data-theme", "light");
+            script.setAttribute("data-lang", "zh-CN");
+            script.crossOrigin = "anonymous";
+            script.async = true;
+
+            container.appendChild(script);
+        }
     </script>
 </body>
 </html>

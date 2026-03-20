@@ -120,16 +120,58 @@
             }
         };
 
-        // 保存配置
-        document.getElementById('config-form').onsubmit = function(e) {
+        // 保存配置并验证
+        document.getElementById('config-form').onsubmit = async function(e) {
             e.preventDefault();
-            localStorage.setItem('github_owner', document.getElementById('github-owner').value.trim());
-            localStorage.setItem('github_repo', document.getElementById('github-repo').value.trim());
-            localStorage.setItem('github_token', document.getElementById('github-token').value.trim());
+            const ownerInput = document.getElementById('github-owner').value.trim();
+            const repoInput = document.getElementById('github-repo').value.trim();
+            const tokenInput = document.getElementById('github-token').value.trim();
             
-            document.getElementById('config-section').style.display = 'none';
-            document.getElementById('admin-section').style.display = 'block';
-            fetchArticlesFromGitHub();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = '正在验证配置信息...';
+
+            try {
+                // 调用 GitHub API 验证 Token 和仓库权限
+                const verifyUrl = `https://api.github.com/repos/${ownerInput}/${repoInput}`;
+                const response = await fetch(verifyUrl, {
+                    headers: {
+                        'Authorization': `token ${tokenInput}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // 检查是否具有 push 权限 (判断 token 是否有效且具有 repo 权限)
+                    if (data.permissions && data.permissions.push) {
+                        // 验证通过，保存到本地
+                        localStorage.setItem('github_owner', ownerInput);
+                        localStorage.setItem('github_repo', repoInput);
+                        localStorage.setItem('github_token', tokenInput);
+                        
+                        document.getElementById('config-section').style.display = 'none';
+                        document.getElementById('admin-section').style.display = 'block';
+                        fetchArticlesFromGitHub();
+                    } else {
+                        alert('验证失败：该 Token 没有对该仓库的写入(push)权限，请确保勾选了 "repo" 权限。');
+                    }
+                } else {
+                    if (response.status === 401) {
+                        alert('验证失败：私人令牌 (Token) 不正确或已过期。');
+                    } else if (response.status === 404) {
+                        alert('验证失败：找不到该仓库，请检查用户名和仓库名是否拼写正确。');
+                    } else {
+                        alert(`验证失败：GitHub API 返回错误 (${response.status})`);
+                    }
+                }
+            } catch (error) {
+                alert('网络错误，无法连接到 GitHub 验证信息。');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
+            }
         };
 
         function clearConfig() {
