@@ -1,5 +1,30 @@
 // 平滑滚动导航
 document.addEventListener('DOMContentLoaded', function() {
+    // 打字机特效逻辑
+    const typewriterElement = document.getElementById('typewriter-text');
+    if (typewriterElement) {
+        const text = "记录代码，分享知识，沉淀思想，做时间的朋友。";
+        let index = 0;
+        
+        // 创建光标元素
+        const cursor = document.createElement('span');
+        cursor.className = 'typewriter-cursor';
+        cursor.innerHTML = '&nbsp;';
+        
+        function typeWriter() {
+            if (index < text.length) {
+                // 每次清空并重新组合文本和光标
+                typewriterElement.textContent = text.substring(0, index + 1);
+                typewriterElement.appendChild(cursor);
+                index++;
+                setTimeout(typeWriter, 100); // 打字速度
+            }
+        }
+        
+        // 延迟一点开始打字动画
+        setTimeout(typeWriter, 500);
+    }
+
     // 主题切换逻辑
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
@@ -134,4 +159,88 @@ document.addEventListener('DOMContentLoaded', function() {
         section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(section);
     });
+
+    // 悬浮菜单逻辑
+    const floatingMenu = document.querySelector('.floating-menu');
+    const mainBtn = document.getElementById('floating-main-btn');
+    const topBtn = document.getElementById('float-top-btn');
+    const randomBtn = document.getElementById('float-random-btn');
+    const themeBtn = document.getElementById('float-theme-btn');
+
+    if (floatingMenu && mainBtn) {
+        // 切换菜单展开/收起
+        mainBtn.addEventListener('click', () => {
+            floatingMenu.classList.toggle('active');
+        });
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', (e) => {
+            if (!floatingMenu.contains(e.target)) {
+                floatingMenu.classList.remove('active');
+            }
+        });
+
+        // 返回顶部
+        if (topBtn) {
+            topBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                floatingMenu.classList.remove('active');
+            });
+            
+            // 监听滚动显示/隐藏返回顶部按钮
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    topBtn.style.display = 'flex';
+                } else {
+                    topBtn.style.display = 'none';
+                }
+            });
+            // 初始化检查一次
+            if (window.scrollY <= 300) topBtn.style.display = 'none';
+        }
+
+        // 随机阅读
+        if (randomBtn) {
+            randomBtn.addEventListener('click', () => {
+                // 如果在文章页并且有 blogArticles 数据
+                if (typeof blogArticles !== 'undefined' && blogArticles.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * blogArticles.length);
+                    const randomId = blogArticles[randomIndex].id;
+                    
+                    // 如果在 articles.html，直接切换内容
+                    if (window.location.pathname.includes('articles.html')) {
+                        showArticle(randomId);
+                        history.pushState(null, null, '#' + randomId);
+                    } else {
+                        // 否则跳转到 articles.html 并带上 hash
+                        window.location.href = 'articles.html#' + randomId;
+                    }
+                } else {
+                    // 如果在首页，跳转到 articles.html
+                    window.location.href = 'articles.html';
+                }
+                floatingMenu.classList.remove('active');
+            });
+        }
+
+        // 切换主题
+        if (themeBtn && themeToggle) {
+            // 同步悬浮按钮的图标
+            const updateThemeBtnIcon = () => {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                themeBtn.textContent = isDark ? '🌙' : '🌞';
+            };
+            updateThemeBtnIcon();
+
+            themeBtn.addEventListener('click', () => {
+                // 复用原有的主题切换按钮的点击逻辑
+                themeToggle.click();
+                updateThemeBtnIcon();
+                floatingMenu.classList.remove('active');
+            });
+            
+            // 监听原按钮的点击以保持同步
+            themeToggle.addEventListener('click', updateThemeBtnIcon);
+        }
+    }
 });

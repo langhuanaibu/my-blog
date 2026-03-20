@@ -315,7 +315,25 @@
 
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', () => {
-            loadArticles();
+            loadArticles().then(() => {
+                // 处理 URL 参数，支持分类过滤
+                const urlParams = new URLSearchParams(window.location.search);
+                const categoryFilter = urlParams.get('category');
+                
+                if (categoryFilter) {
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.value = categoryFilter;
+                        // 手动触发一次搜索过滤
+                        const filtered = blogArticles.filter(article => 
+                            article.category === categoryFilter || 
+                            article.title.toLowerCase().includes(categoryFilter.toLowerCase()) ||
+                            article.content.replace(/<[^>]+>/g, '').toLowerCase().includes(categoryFilter.toLowerCase())
+                        );
+                        renderArticlesList(filtered);
+                    }
+                }
+            });
             
             // 搜索功能实现
             const searchInput = document.getElementById('search-input');
@@ -342,6 +360,16 @@
 
     </script>
     
+    <!-- 悬浮快捷菜单 -->
+    <div class="floating-menu">
+        <button class="floating-btn main-btn" id="floating-main-btn" aria-label="快捷菜单">🤖</button>
+        <div class="floating-actions">
+            <button class="floating-btn action-btn" id="float-top-btn" aria-label="返回顶部" title="返回顶部">⬆️</button>
+            <button class="floating-btn action-btn" id="float-random-btn" aria-label="随机阅读" title="随机阅读">🎲</button>
+            <button class="floating-btn action-btn" id="float-theme-btn" aria-label="切换主题" title="切换主题">🌙</button>
+        </div>
+    </div>
+
     <!-- Twikoo 初始化脚本 -->
     <script>
         function loadTwikoo(articleId) {

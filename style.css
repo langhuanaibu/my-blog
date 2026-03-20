@@ -142,6 +142,28 @@ body {
     margin-bottom: 40px;
     opacity: 0.9;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    min-height: 30px; /* 防止打字机动画时高度塌陷 */
+}
+
+/* 打字机光标动画 */
+.typewriter-cursor {
+    display: inline-block;
+    width: 3px;
+    background-color: #fff;
+    margin-left: 2px;
+    animation: blink 0.7s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.hero-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
 }
 
 /* 按钮样式 */
@@ -254,6 +276,53 @@ body {
     color: var(--content-text);
     margin-bottom: 20px;
     line-height: 1.8;
+}
+
+/* 知识专栏区域 */
+.categories-section {
+    padding: 80px 0;
+    background-color: var(--bg-color);
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.category-card {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    padding: 30px 20px;
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-color);
+    box-shadow: 0 5px 15px var(--card-shadow);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.category-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--nav-hover);
+    box-shadow: 0 15px 30px rgba(52, 152, 219, 0.2);
+}
+
+.category-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.category-name {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: var(--title-color);
+}
+
+.category-desc {
+    font-size: 14px;
+    color: var(--meta-color);
 }
 
 /* 关于我区域 */
@@ -902,6 +971,70 @@ body {
     padding: 12px 30px;
     font-size: 16px;
     cursor: pointer;
+}
+
+/* 悬浮快捷菜单 */
+.floating-menu {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 15px;
+}
+
+.floating-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    box-shadow: 0 4px 15px var(--card-shadow);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.floating-btn.main-btn {
+    width: 60px;
+    height: 60px;
+    background-color: var(--nav-hover);
+    color: white;
+    font-size: 30px;
+    z-index: 2;
+}
+
+.floating-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+
+.floating-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: absolute;
+    bottom: 70px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.floating-menu.active .floating-actions {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.floating-menu.active .main-btn {
+    transform: rotate(45deg);
 }
 
 /* 响应式设计 */
