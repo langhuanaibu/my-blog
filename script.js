@@ -69,15 +69,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // 滚动时导航栏样式变化
     window.addEventListener('scroll', function() {
         const header = document.querySelector('.header');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
         
         if (window.scrollY > 100) {
-            header.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            header.style.backgroundColor = isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
             header.style.backdropFilter = 'blur(10px)';
         } else {
-            header.style.backgroundColor = '#fff';
+            // 恢复使用 CSS 变量，而不是写死颜色
+            header.style.backgroundColor = 'var(--header-bg)';
             header.style.backdropFilter = 'none';
         }
     });
+
+    // 监听主题切换，实时更新已经处于滚动状态的导航栏背景色
+    if (themeToggle) {
+        themeToggle.addEventListener('click', () => {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                header.style.backgroundColor = isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+            }
+        });
+    }
     
     // 文章卡片悬停效果增强
     const blogCards = document.querySelectorAll('.blog-card');
