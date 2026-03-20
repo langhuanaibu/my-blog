@@ -49,29 +49,55 @@
     <!-- 管理页面 -->
     <div id="admin-section" class="admin-container">
         <div class="admin-header">
-            <h2>博客文章管理</h2>
+            <h2>博客后台管理</h2>
             <div>
+                <button onclick="showArticles()" class="btn btn-primary" id="nav-articles-btn" style="margin-right: 10px;">文章管理</button>
+                <button onclick="showComments()" class="btn btn-secondary" id="nav-comments-btn" style="margin-right: 10px;">最新评论</button>
                 <a href="index.html" class="btn btn-secondary" style="margin-right: 10px;">返回前台</a>
-                <button onclick="showEditor()" class="btn btn-primary" style="margin-right: 10px;">发布新文章</button>
-                <button onclick="clearConfig()" class="btn btn-secondary">重新配置 GitHub</button>
+                <button onclick="clearConfig()" class="btn btn-secondary">重新配置</button>
             </div>
         </div>
 
         <div id="loading-msg" style="text-align: center; padding: 20px; display: none;">正在从 GitHub 拉取数据，请稍候...</div>
 
-        <table class="article-table" id="articles-table">
-            <thead>
-                <tr>
-                    <th>标题</th>
-                    <th>分类</th>
-                    <th>发布日期</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody id="articles-tbody">
-                <!-- 动态填充 -->
-            </tbody>
-        </table>
+        <!-- 文章管理模块 -->
+        <div id="articles-container">
+            <div style="margin-bottom: 15px;">
+                <button onclick="showEditor()" class="btn btn-primary">发布新文章</button>
+            </div>
+            <table class="article-table" id="articles-table">
+                <thead>
+                    <tr>
+                        <th>标题</th>
+                        <th>分类</th>
+                        <th>发布日期</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="articles-tbody">
+                    <!-- 动态填充 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 评论管理模块 -->
+        <div id="comments-container" style="display: none;">
+            <div id="comments-loading-msg" style="text-align: center; padding: 20px; display: none;">正在拉取评论数据，请稍候...</div>
+            <table class="article-table" id="comments-table">
+                <thead>
+                    <tr>
+                        <th>头像/昵称</th>
+                        <th>评论内容</th>
+                        <th>所属文章</th>
+                        <th>评论时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="comments-tbody">
+                    <!-- 动态填充 -->
+                </tbody>
+            </table>
+        </div>
 
         <div id="editor-section" class="editor-container">
             <h3 id="editor-title">发布新文章</h3>
@@ -271,12 +297,12 @@
             document.getElementById('editor-title').innerText = '发布新文章';
             document.getElementById('editor-form').reset();
             document.getElementById('edit-id').value = '';
-            document.getElementById('articles-table').style.display = 'none';
+            document.getElementById('articles-container').style.display = 'none';
         }
 
         function hideEditor() {
             document.getElementById('editor-section').style.display = 'none';
-            document.getElementById('articles-table').style.display = 'table';
+            document.getElementById('articles-container').style.display = 'block';
         }
 
         function editArticle(id) {
@@ -362,6 +388,84 @@
                     }
                 }
             }
+        }
+
+        // 评论管理功能
+        async function fetchComments() {
+            document.getElementById('comments-loading-msg').style.display = 'block';
+            document.getElementById('comments-table').style.display = 'none';
+            try {
+                const response = await fetch('https://twikoo.aoiblog.top', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event: 'GET_RECENT_COMMENTS', accessToken: '' })
+                });
+                const res = await response.json();
+                if (res.data) {
+                    renderCommentsTable(res.data);
+                }
+            } catch (error) {
+                alert('拉取评论失败: ' + error.message);
+            } finally {
+                document.getElementById('comments-loading-msg').style.display = 'none';
+                document.getElementById('comments-table').style.display = 'table';
+            }
+        }
+
+        function renderCommentsTable(comments) {
+            const tbody = document.getElementById('comments-tbody');
+            tbody.innerHTML = '';
+            
+            // 按时间倒序
+            comments.sort((a, b) => b.created - a.created);
+
+            comments.forEach(comment => {
+                const tr = document.createElement('tr');
+                const dateStr = new Date(comment.created).toLocaleString();
+                
+                // 查找对应文章标题
+                const article = articles.find(a => a.id === comment.url);
+                const articleTitle = article ? article.title : '未知文章';
+                
+                // 去除评论中的 HTML 标签
+                const plainComment = comment.commentText || comment.comment.replace(/<[^>]+>/g, '');
+
+                tr.innerHTML = `
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${comment.avatar}" alt="avatar" style="width: 30px; height: 30px; border-radius: 50%;">
+                            <span>${comment.nick}</span>
+                        </div>
+                    </td>
+                    <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${plainComment}">${plainComment}</td>
+                    <td><a href="articles.html?id=${comment.url}" target="_blank" style="color: #0366d6; text-decoration: none;">${articleTitle}</a></td>
+                    <td>${dateStr}</td>
+                    <td>
+                        <a href="articles.html?id=${comment.url}#twikoo-comments" target="_blank" class="action-btn edit-btn" style="text-decoration: none; display: inline-block;">前往回复/管理</a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showArticles() {
+            document.getElementById('articles-container').style.display = 'block';
+            document.getElementById('comments-container').style.display = 'none';
+            document.getElementById('editor-section').style.display = 'none';
+            
+            document.getElementById('nav-articles-btn').className = 'btn btn-primary';
+            document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
+        }
+
+        function showComments() {
+            document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('comments-container').style.display = 'block';
+            document.getElementById('editor-section').style.display = 'none';
+            
+            document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-comments-btn').className = 'btn btn-primary';
+            
+            fetchComments();
         }
 
         // 图片上传与插入功能
