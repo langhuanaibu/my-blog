@@ -86,8 +86,14 @@ document.addEventListener('DOMContentLoaded', function() {
         themeToggle.addEventListener('click', () => {
             const header = document.querySelector('.header');
             if (window.scrollY > 100) {
+                // 因为点击按钮后 data-theme 的状态已经被上面的逻辑改变过了，所以这里判断逻辑要取反
+                // 如果当前没有 data-theme 属性（意味着刚切回 light），应该显示白色半透明
+                // 如果当前有 data-theme='dark'（意味着刚切到 dark），应该显示深色半透明
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
                 header.style.backgroundColor = isDark ? 'rgba(30, 30, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+            } else {
+                // 如果在顶部切换主题，确保背景色跟随 CSS 变量
+                header.style.backgroundColor = 'var(--header-bg)';
             }
         });
     }
