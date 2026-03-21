@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 打字机特效逻辑
     const typewriterElement = document.getElementById('typewriter-text');
     if (typewriterElement) {
-        const text = "记录代码，分享知识，沉淀思想，做时间的朋友。";
+        const text = "乌幕屏，海相续，举眼茫茫，静听细浪语";
         let index = 0;
         
         // 创建光标元素
