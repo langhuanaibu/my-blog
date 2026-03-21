@@ -216,7 +216,7 @@
                     </div>
                     
                     <!-- 评论区容器 -->
-                    <div id="comments-container" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #eee;">
+                    <div style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #eee;">
                         <h3>评论区</h3>
                         <div id="twikoo-comments"></div>
                     </div>
@@ -423,23 +423,25 @@
     <!-- Twikoo 初始化脚本 -->
     <script>
         function loadTwikoo(articleId) {
-            // 确保容器存在
-            const container = document.getElementById('twikoo-comments');
-            if (!container) return;
+            // 给容器一点时间渲染到 DOM 中
+            setTimeout(() => {
+                const container = document.getElementById('twikoo-comments');
+                if (!container) {
+                    console.error('Twikoo 容器未找到');
+                    return;
+                }
 
-            // 每次切换文章时，先清空之前的评论内容，让 Twikoo 重新渲染
-            container.innerHTML = '';
+                // 每次切换文章时，先清空之前的评论内容，让 Twikoo 重新渲染
+                container.innerHTML = '';
 
-            // 初始化 Twikoo 实例
-            twikoo.init({
-                // 👇【重要】你需要在这里填入你在腾讯云部署成功后的环境 ID (envId)
-                // 例如: 'https://twikoo-env-xxxxx.ap-shanghai.app.tcloudbase.com/'
-                envId: 'https://twikoo.aoiblog.top', 
-                
-                el: '#twikoo-comments', // 评论容器
-                path: articleId,        // 关键：用文章 ID 区分不同文章的评论
-                lang: 'zh-CN',          // 设置语言
-            });
+                // 初始化 Twikoo 实例
+                twikoo.init({
+                    envId: 'https://twikoo.aoiblog.top', 
+                    el: '#twikoo-comments', // 评论容器
+                    path: articleId,        // 关键：用文章 ID 区分不同文章的评论
+                    lang: 'zh-CN',          // 设置语言
+                });
+            }, 100);
         }
     </script>
     <script src="script.js"></script>
