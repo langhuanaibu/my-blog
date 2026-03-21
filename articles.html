@@ -167,9 +167,15 @@
             listToRender.forEach(article => {
                 const articleItem = document.createElement('div');
                 articleItem.className = 'article-item';
+                
+                // 检查阅读历史
+                const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
+                const isRead = readHistory[article.id] ? true : false;
+                const readIcon = isRead ? '<span style="color: #4caf50; font-size: 12px; margin-left: 5px;" title="已读">✔️已读</span>' : '';
+
                 articleItem.innerHTML = `
                     <a href="#${article.id}" class="article-link" data-id="${article.id}">
-                        <span class="article-item-title">${article.title}</span>
+                        <span class="article-item-title">${article.title} ${readIcon}</span>
                         <span class="article-item-date">${article.date}</span>
                     </a>
                 `;
@@ -200,6 +206,37 @@
             const article = blogArticles.find(a => a.id === articleId);
             
             if (article) {
+                // 记录阅读历史到 localStorage
+                const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
+                if (!readHistory[articleId]) {
+                    readHistory[articleId] = new Date().getTime();
+                    localStorage.setItem('readHistory', JSON.stringify(readHistory));
+                    // 重新渲染左侧列表以显示“已读”图标，但保持当前搜索/过滤状态
+                    const searchInput = document.getElementById('search-input');
+                    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                    const activeFilter = document.querySelector('.filter-btn.active');
+                    const category = activeFilter ? activeFilter.getAttribute('data-category') : 'all';
+                    
+                    let filtered = blogArticles;
+                    if (category !== 'all') filtered = filtered.filter(a => a.category === category);
+                    if (keyword) {
+                        filtered = filtered.filter(a => 
+                            a.title.toLowerCase().includes(keyword) || 
+                            a.content.replace(/<[^>]+>/g, '').toLowerCase().includes(keyword)
+                        );
+                    }
+                    renderArticlesList(filtered);
+                    
+                    // 重新绑定当前文章的 active 状态
+                    setTimeout(() => {
+                        document.querySelectorAll('.article-link').forEach(a => {
+                            if(a.getAttribute('data-id') === articleId) {
+                                a.classList.add('active');
+                            }
+                        });
+                    }, 50);
+                }
+
                 articleDetail.innerHTML = `
                     <div class="article-header">
                         <h2 class="article-title">${article.title}</h2>

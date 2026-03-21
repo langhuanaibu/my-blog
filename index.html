@@ -197,10 +197,36 @@
                     <div class="contact-info">
                         <p>欢迎在这里留下你的足迹、建议或任何想对我说的话！</p>
                         <p><strong>邮箱：</strong>antemeridiem@foxmail.com</p>
-                        <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu">github.com/langhuanaibu</a></p>
+                        <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu" target="_blank">github.com/langhuanaibu</a></p>
                     </div>
                     <!-- 引入 Twikoo 评论系统 -->
                     <div id="twikoo-comments" style="background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px var(--card-shadow);"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 新增：友情链接模块 -->
+        <section id="friends" class="friends-section" style="padding: 40px 0;">
+            <div class="container">
+                <h2 class="section-title">友情链接</h2>
+                <div class="friends-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+                    <!-- 朋友的博客卡片 -->
+                    <a href="https://example.com" target="_blank" class="friend-card" style="display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-radius: 8px; text-decoration: none; color: var(--text-color); box-shadow: 0 2px 10px var(--card-shadow); transition: transform 0.3s ease;">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=friend1" alt="Friend Avatar" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
+                        <div>
+                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">朋友的博客名称</h3>
+                            <p style="margin: 0; font-size: 12px; color: var(--meta-color);">这里写一句朋友博客的个性签名或描述...</p>
+                        </div>
+                    </a>
+                    
+                    <!-- 你的博客卡片（通常也会放自己的让别人复制） -->
+                    <a href="https://langhuanaibu.github.io/my-blog/" target="_blank" class="friend-card" style="display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-radius: 8px; text-decoration: none; color: var(--text-color); box-shadow: 0 2px 10px var(--card-shadow); transition: transform 0.3s ease;">
+                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aoitsuki" alt="My Avatar" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
+                        <div>
+                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">Aoitsuki's Blog</h3>
+                            <p style="margin: 0; font-size: 12px; color: var(--meta-color);">乌幕屏，海相续...</p>
+                        </div>
+                    </a>
                 </div>
             </div>
         </section>

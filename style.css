@@ -1037,6 +1037,22 @@ body {
     transform: rotate(45deg);
 }
 
+/* 标签样式 */
+.blog-tags span {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--nav-hover);
+    color: #fff;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* 友情链接悬浮效果 */
+.friend-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 5px 15px var(--card-shadow) !important;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     .modal-content {
