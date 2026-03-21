@@ -225,16 +225,14 @@
                             a.content.replace(/<[^>]+>/g, '').toLowerCase().includes(keyword)
                         );
                     }
-                    renderArticlesList(filtered);
-                    
-                    // 重新绑定当前文章的 active 状态
-                    setTimeout(() => {
-                        document.querySelectorAll('.article-link').forEach(a => {
-                            if(a.getAttribute('data-id') === articleId) {
-                                a.classList.add('active');
-                            }
-                        });
-                    }, 50);
+                    // 这里不要直接重新渲染整个列表，只更新当前的 DOM 节点，防止死循环或重置状态
+                    const currentLink = document.querySelector(`.article-link[data-id="${articleId}"]`);
+                    if (currentLink) {
+                        const titleSpan = currentLink.querySelector('.article-item-title');
+                        if (titleSpan && !titleSpan.innerHTML.includes('✔️已读')) {
+                            titleSpan.innerHTML += ' <span style="color: #4caf50; font-size: 12px; margin-left: 5px;" title="已读">✔️已读</span>';
+                        }
+                    }
                 }
 
                 articleDetail.innerHTML = `
