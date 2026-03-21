@@ -132,8 +132,16 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    if (!data || !data.content) {
+                        throw new Error('API返回数据格式错误，未包含content字段');
+                    }
                     const content = b64_to_utf8(data.content);
                     blogArticles = JSON.parse(content);
+                    
+                    if (!Array.isArray(blogArticles)) {
+                         blogArticles = [];
+                    }
+                    
                     blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
                     renderArticlesList();
                     
@@ -144,11 +152,12 @@
                         showArticle(articleId);
                     }
                 } else {
-                    document.getElementById('articles-nav').innerHTML = '加载失败';
+                    document.getElementById('articles-nav').innerHTML = '加载失败: ' + response.status;
                 }
             } catch (error) {
                 console.error('加载文章失败:', error);
-                document.getElementById('articles-nav').innerHTML = '加载失败';
+                const nav = document.getElementById('articles-nav');
+                if (nav) nav.innerHTML = '加载失败，请检查网络或刷新重试';
             }
         }
 
@@ -194,8 +203,13 @@
                     
                     const articleId = this.getAttribute('data-id');
                     showArticle(articleId);
-                    // 更新 URL hash，不刷新页面
-                    history.pushState(null, null, '#' + articleId);
+                    
+                    // 只有在浏览器支持 history API 时才更新 URL
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState(null, null, '#' + articleId);
+                    } else {
+                        window.location.hash = articleId;
+                    }
                 });
             });
         }
@@ -218,7 +232,9 @@
                     const category = activeFilter ? activeFilter.getAttribute('data-category') : 'all';
                     
                     let filtered = blogArticles;
-                    if (category !== 'all') filtered = filtered.filter(a => a.category === category);
+                    if (category !== 'all') {
+                        filtered = filtered.filter(a => a.category === category);
+                    }
                     if (keyword) {
                         filtered = filtered.filter(a => 
                             a.title.toLowerCase().includes(keyword) || 
@@ -369,6 +385,8 @@
                         }
                     });
                 }
+            }).catch(error => {
+                console.error("加载文章列表失败:", error);
             });
             
             // 分类筛选功能实现
