@@ -143,12 +143,12 @@
   1. **方案一（推荐，无需改代码）**：将代理软件从“全局模式”切换为“规则模式（Rule）”或“绕过大陆/直连模式”，让访问博客时不经过代理，确保国内访客的极致体验不受影响。
   2. **方案二（折中）**：如果必须要求在全局代理下也能访问，可将代码中的 CDN 链接替换为全球通用的 CDN（如 `unpkg` 或 `cloudflare`），代价是国内部分地区的加载速度可能会有所下降。本项目目前选择保持现状，优先保障国内访问体验。
 
-### 坑 7：Vercel Serverless API 国内连通性问题 (DNS 污染)
+### 坑 6：Vercel Serverless API 国内连通性问题 (DNS 污染)
 - **现象**：使用 `xxx.vercel.app` 域名进行 API 请求时，在终端或国内网络环境下高概率出现 `ConnectTimeoutError` 或被重定向到 Facebook 的 IP (`31.13.70.9`)。
 - **原因**：Vercel 免费分配的 `.vercel.app` 二级域名在国内长期遭受 DNS 污染，导致解析到错误的黑洞 IP。
 - **解决**：在 Vercel 后台中为项目绑定**自定义子域名**（如 `api.aoiblog.top`），并在国内的 DNS 服务商（如腾讯云 DNSPod）中将该子域名 `CNAME` 解析到 `cname.vercel-dns.com`。由于你自己的主域名没有被污染，通过这种方式可以完美实现国内免翻墙高速直连 API。
 
-### 坑 8：Vercel Serverless 路由 404 问题
+### 坑 7：Vercel Serverless 路由 404 问题
 - **现象**：访问 `/api/saveArticle` 时，Vercel 返回 `The page could not be found` 的 HTML 页面，而不是执行对应的 Node.js 函数。
 - **原因**：`vercel.json` 路由配置不当。旧版配置 `"dest": "/api/$1"` 可能会被 Vercel 当作静态目录查找，而不是匹配到 `saveArticle.js` 这个可执行文件。
 - **解决**：在 `vercel.json` 的 routes 中显式加上 `.js` 后缀，如：`"src": "/api/(.*)", "dest": "/api/$1.js"`，确保请求精确路由到函数文件。
