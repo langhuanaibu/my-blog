@@ -20,7 +20,7 @@ async function migrate() {
 
         for (const article of articles) {
             console.log(`正在上传文章: ${article.title}...`);
-            const response = await fetch('https://my-blog-sable-omega.vercel.app/api/saveArticle', {
+            const response = await fetch('https://api.aoiblog.top/api/saveArticle', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

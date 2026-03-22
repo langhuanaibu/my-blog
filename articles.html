@@ -120,7 +120,7 @@
         async function loadArticles() {
             try {
                 // 从 Vercel API 实时拉取最新数据
-                const url = `https://my-blog-sable-omega.vercel.app/api/getArticles?t=` + new Date().getTime();
+                const url = `https://api.aoiblog.top/api/getArticles?t=` + new Date().getTime();
                 
                 const response = await fetch(url);
 
