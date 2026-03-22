@@ -72,6 +72,29 @@
    - **优化逻辑**：引入了滚动事件监听，不再是点击即“已读”。只有当访客真正滚动阅读至文章内容的 **90% 以上** 时，系统才会判定为“已读”，并在左侧列表打上绿色的 `✔️已读` 标签。
    - **视觉反馈**：在文章标题下方新增了**动态阅读进度条**和**百分比提示**，实时反馈当前阅读位置，极大提升了长文的阅读体验。
 
+### 阶段三：后端架构演进与全栈重构 (Vercel Serverless + MongoDB)
+在阶段一和阶段二中，博客完全依赖前端直接调用 GitHub API 读取 `articles.json` 作为数据源。然而，随着开发调试的频繁进行，暴露出一个致命缺陷：**GitHub API 对未授权的 IP 有极其严格的每小时 60 次的 Rate Limit 限流**。为了彻底摆脱这个限制，并为未来引入真实的“全局完整阅读量”等需要后端计算的功能做准备，项目进行了后端分离重构。
+
+**重构步骤与架构演进：**
+1. **API 开发与部署 (Serverless)**：
+   - 放弃了纯静态 JSON 方案，在项目内新增 `api/` 目录。
+   - 使用 Node.js 编写了 `getArticles.js`, `saveArticle.js`, `deleteArticle.js` 等符合 Vercel Serverless 规范的接口。
+   - 配置 `vercel.json` 路由，将后端接口成功部署至 Vercel 平台。
+2. **数据库接入 (MongoDB Atlas)**：
+   - 使用免费的 MongoDB Atlas 云数据库建立真实的云端集合 `my_blog_db.articles`。
+   - 在 Serverless 函数中通过 `mongodb` 驱动建立连接池，实现真实的数据读写。
+3. **域名与 DNS 优化 (绕过国内污染)**：
+   - **痛点**：Vercel 默认提供的 `.vercel.app` 域名在国内长期遭受 DNS 污染，导致 API 请求超时 (`ConnectTimeoutError`)，甚至解析到 Facebook 的黑洞 IP。
+   - **解决**：利用腾讯云申请的未备案主域名 (`aoiblog.top`)，在 Vercel 中为其分配了自定义子域名 `api.aoiblog.top`。
+   - 在腾讯云 DNSPod 中配置 `CNAME` 指向 `cname.vercel-dns.com`，从而完美实现了**国内免翻墙秒开接口**。
+4. **前端改造与平滑数据迁移**：
+   - 将 `index.html`、`articles.html` 以及 `admin.html` 中所有的 `api.github.com` 数据请求路径全部替换为自己的 `https://api.aoiblog.top/api/...`。
+   - 编写了 Node.js 脚本 `migrate.js`，通过运行 `node migrate.js <ADMIN_TOKEN>`，将旧版 `articles.json` 中的历史文章一键批量导入 MongoDB。
+5. **重构成果**：
+   - 目前文章的获取、发布、删除均已完全脱离对 GitHub `contents` API 的依赖。
+   - 后台管理页面仅保留了 GitHub 用于免费图片上传的图床功能。
+   - 真正实现了前后端分离的现代 Web 架构，国内访问流畅且永不限流。
+
 ---
 
 ## 💡 未来优化方向预留
@@ -120,10 +143,12 @@
   1. **方案一（推荐，无需改代码）**：将代理软件从“全局模式”切换为“规则模式（Rule）”或“绕过大陆/直连模式”，让访问博客时不经过代理，确保国内访客的极致体验不受影响。
   2. **方案二（折中）**：如果必须要求在全局代理下也能访问，可将代码中的 CDN 链接替换为全球通用的 CDN（如 `unpkg` 或 `cloudflare`），代价是国内部分地区的加载速度可能会有所下降。本项目目前选择保持现状，优先保障国内访问体验。
 
-### 坑 6：本地高频刷新导致 GitHub API 403 限流
-- **现象**：在本地调试或频繁刷新 `articles.html` 页面时，文章列表一直显示“加载失败: 403”，控制台报错 `Failed to load resource: the server responded with a status of 403`。
-- **原因**：项目采用纯前端架构，前台通过未授权的方式直接调用 `api.github.com` 读取 `articles.json`。GitHub 对同一 IP 的未授权 API 请求有着**每小时 60 次**的严格速率限制（Rate Limit）。本地频繁修改代码和刷新页面极易耗尽此额度。
-- **解决**：
-  1. **自然恢复**：停止刷新，等待大约 1 小时后限流会自动重置。
-  2. **更换 IP（推荐）**：由于限流是基于 IP 的，可以通过切换网络（如断开 WiFi 连接手机热点），或开启/切换代理节点来改变公网 IP，从而立即获得新的 60 次额度。
-  3. **注意**：该问题仅在开发者本地高频调试时出现，正常访客由于各自 IP 不同，阅读文章绝不会触发此限制，因此不需要（也极度不建议）在前端代码中硬编码 Token 来提权。
+### 坑 7：Vercel Serverless API 国内连通性问题 (DNS 污染)
+- **现象**：使用 `xxx.vercel.app` 域名进行 API 请求时，在终端或国内网络环境下高概率出现 `ConnectTimeoutError` 或被重定向到 Facebook 的 IP (`31.13.70.9`)。
+- **原因**：Vercel 免费分配的 `.vercel.app` 二级域名在国内长期遭受 DNS 污染，导致解析到错误的黑洞 IP。
+- **解决**：在 Vercel 后台中为项目绑定**自定义子域名**（如 `api.aoiblog.top`），并在国内的 DNS 服务商（如腾讯云 DNSPod）中将该子域名 `CNAME` 解析到 `cname.vercel-dns.com`。由于你自己的主域名没有被污染，通过这种方式可以完美实现国内免翻墙高速直连 API。
+
+### 坑 8：Vercel Serverless 路由 404 问题
+- **现象**：访问 `/api/saveArticle` 时，Vercel 返回 `The page could not be found` 的 HTML 页面，而不是执行对应的 Node.js 函数。
+- **原因**：`vercel.json` 路由配置不当。旧版配置 `"dest": "/api/$1"` 可能会被 Vercel 当作静态目录查找，而不是匹配到 `saveArticle.js` 这个可执行文件。
+- **解决**：在 `vercel.json` 的 routes 中显式加上 `.js` 后缀，如：`"src": "/api/(.*)", "dest": "/api/$1.js"`，确保请求精确路由到函数文件。
