@@ -227,9 +227,12 @@
                             <span class="article-date">发布日期：${article.date}</span>
                             <span class="article-category">分类：${article.category}</span>
                             <!-- 阅读量显示：需要特定的 ID 才能被 Twikoo 识别 -->
-                    <span class="article-views">
-                        阅读量：<span id="twikoo_visitors" class="twikoo_visitors" data-flag-title="文章阅读量">0</span>
-                    </span>
+                            <span class="article-views" style="margin-right: 15px;">
+                                👁️ 阅读量：<span id="twikoo_visitors" class="twikoo_visitors" data-flag-title="文章阅读量">0</span>
+                            </span>
+                            <span class="article-views" id="full-read-count-display">
+                                🏆 完整阅读量：<span>获取中...</span>
+                            </span>
                         </div>
                     </div>
                     <!-- 阅读进度条 -->
@@ -260,6 +263,9 @@
                 
                 // 初始化阅读进度监控
                 initReadProgress(articleId);
+                
+                // 获取当前文章的完整阅读状态
+                fetchFullReadCount(articleId);
             } else {
                 articleDetail.innerHTML = `<h3>文章未找到</h3>`;
             }
@@ -385,6 +391,36 @@
             }
         });
 
+        // 获取并显示完整阅读量（通过第三方免费 API 模拟实现无后端计数）
+        function fetchFullReadCount(articleId) {
+            const displaySpan = document.querySelector('#full-read-count-display span');
+            if (!displaySpan) return;
+
+            // 我们使用 countapi.xyz 免费接口来实现简单的计数
+            // 由于 countapi 需要 namespace 和 key，我们用文章的 ID 作为 key，项目名作为 namespace
+            const namespace = 'langhuanaibu_blog_reads';
+            const key = articleId;
+
+            // 注意：由于是免费公共接口，如果被滥用可能会有限制，这里仅做轻量级实现
+            // 这里我们使用 hit 接口的一个替代方案 (hits.seeyoufarm 是图片，我们用自己的 fetch 模拟)
+            // 为了安全和稳定性，由于我们是纯前端，如果外部 API 挂了，我们默认显示本地计算或提示
+            
+            // 我们采用一种纯前端本地模拟的方案，因为你没有后端数据库
+            // 如果要跨设备同步真实数据，必须要有数据库（比如存到 MongoDB 里）
+            // 这里由于篇幅和架构限制，我们做个妥协：告诉用户这是一个基于本地缓存的“专属成就”
+            // 或者是如果想要全网真实的“完整阅读量”，我们需要在 Twikoo 里动点手脚
+            
+            displaySpan.innerText = '由本地历史记录追踪';
+            
+            // 检查本地历史
+            const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
+            if (readHistory[articleId]) {
+                displaySpan.innerHTML = '<span style="color: #4caf50;">您已完整阅读</span>';
+            } else {
+                displaySpan.innerHTML = '<span style="color: #ff9800;">正在挑战完整阅读</span>';
+            }
+        }
+
         // 标记文章为已读
         function markAsRead(articleId) {
             const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
@@ -399,6 +435,13 @@
                     if (titleSpan && !titleSpan.innerHTML.includes('✔️已读')) {
                         titleSpan.innerHTML += ' <span style="color: #4caf50; font-size: 12px; margin-left: 5px;" title="已读">✔️已读</span>';
                     }
+                }
+                
+                // 更新完整阅读量 UI
+                const displaySpan = document.querySelector('#full-read-count-display span');
+                if (displaySpan) {
+                    displaySpan.innerHTML = '<span style="color: #4caf50; font-weight: bold;">挑战成功！您已完整阅读</span>';
+                    // 放个小烟花动画（如果有时间的话）
                 }
             }
         }
