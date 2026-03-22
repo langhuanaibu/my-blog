@@ -6,21 +6,23 @@
 
 ## 🏗️ 核心技术栈与架构概览
 
-本博客采用**无后端（Serverless）静态架构**，将静态资源托管、云端数据存储与第三方服务无缝结合，实现了极低成本（甚至零成本）且易于维护的部署方案。
+本博客从初期的**纯无后端（Serverless）静态架构**演进为了现在的**全栈 Serverless 架构**，彻底解决了数据拉取限流问题，并为未来扩展打下了坚实的基础。
 
 ### 1. 技术选型
 - **前端核心**：纯原生 HTML5, CSS3 (CSS Variables), Vanilla JavaScript (原生 JS)
 - **数据交互**：Fetch API
-- **部署与托管**：GitHub Pages (静态站点托管)
-- **内容存储**：GitHub 仓库 (`articles.json` 充当云数据库)
-- **评论系统**：Twikoo (基于 Vercel 部署服务，数据存储于 MongoDB Atlas)
+- **部署与托管**：GitHub Pages (前端静态站点), Vercel (后端 API 接口)
+- **内容存储**：MongoDB Atlas (文章与评论数据库), GitHub 仓库 (仅用作图片床)
+- **评论系统**：Twikoo (基于 Vercel 部署服务，数据同存 MongoDB Atlas)
+- **域名解析**：腾讯云自定义域名绑定 (前端绑定 GitHub Pages，后端 API 绑定 Vercel 子域名解决 DNS 污染)
 
 ### 2. 系统架构设计
 - **前端页面展示**：用户访问 GitHub Pages 托管的静态页面。
-- **文章数据流转**：
-  - **前台读取**：通过 JS 动态调用 GitHub API 读取根目录的 `articles.json` 渲染文章列表和内容。
-  - **后台管理**：通过 `admin.html` 页面输入 GitHub Personal Access Token 进行鉴权，利用 GitHub API 直接对 `articles.json` 进行增删改查（CRUD）操作，并支持直接上传图片到仓库。
-- **评论数据流转**：前台页面嵌入 Twikoo 脚本，将评论数据直接读写至部署在 Vercel 上的 Serverless 接口，最终落盘到 MongoDB Atlas 云数据库。
+- **文章数据流转 (Vercel API)**：
+  - **前台读取**：通过 JS 动态调用部署在 Vercel 的自定义 API (`api.aoiblog.top`) 从 MongoDB 实时读取文章数据渲染。
+  - **后台管理**：通过 `admin.html` 页面输入 Vercel Admin Token 进行鉴权，通过 Vercel API 对 MongoDB 进行文章的增删改查。
+  - **静态资源**：图片上传依然通过 GitHub API 直接推送到仓库的 `images/` 目录，兼顾免费图床。
+- **评论数据流转**：前台页面嵌入 Twikoo 脚本，将评论数据读写至部署在 Vercel 上的 Twikoo 接口，最终落盘到 MongoDB Atlas 云数据库。
 
 ---
 
