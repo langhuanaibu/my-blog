@@ -29,7 +29,17 @@ async function migrate() {
                 body: JSON.stringify({ article })
             });
 
-            const result = await response.json();
+            // 如果返回的不是 json 格式，这里会抛错，我们可以把原始返回打印出来看看
+            const textResult = await response.text();
+            let result;
+            try {
+                result = JSON.parse(textResult);
+            } catch (e) {
+                console.error(`❌ 解析返回数据失败，原始返回内容: ${textResult.substring(0, 200)}...`);
+                failCount++;
+                continue;
+            }
+
             if (result.success) {
                 console.log(`✅ 上传成功: ${article.title}`);
                 successCount++;
