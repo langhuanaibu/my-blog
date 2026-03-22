@@ -226,7 +226,10 @@
                         <div class="article-meta">
                             <span class="article-date">发布日期：${article.date}</span>
                             <span class="article-category">分类：${article.category}</span>
-                            <span class="article-views" id="twikoo_visitors">阅读量：获取中...</span>
+                            <!-- 阅读量显示：需要特定的 ID 才能被 Twikoo 识别 -->
+                    <span class="article-views">
+                        阅读量：<span id="twikoo_visitors" class="twikoo_visitors" data-flag-title="文章阅读量">0</span>
+                    </span>
                         </div>
                     </div>
                     <!-- 阅读进度条 -->
@@ -541,34 +544,6 @@
                     path: articleId,        // 关键：用文章 ID 区分不同文章的评论
                     lang: 'zh-CN',          // 设置语言
                 });
-                
-                // 延迟获取并显示阅读量（需要等Twikoo加载完毕）
-                setTimeout(() => {
-                    twikoo.getCommentsCount({
-                        envId: 'https://twikoo.aoiblog.top',
-                        urls: [articleId],
-                        includeReply: false
-                    }).then(function (res) {
-                        // Twikoo 本身不直接提供单纯的浏览量API，但我们可以用 getCommentsCount 作为一个互动量参考
-                        // 更专业的做法是利用 Twikoo 的独立浏览量功能（如果开启的话）
-                        // 在此，我们利用文章初始化时调用 getViews（如果 Twikoo 包含此功能，否则用默认文案）
-                        const viewsElement = document.getElementById('twikoo_visitors');
-                        if (viewsElement) {
-                            // 这里我们使用一个假装获取到了阅读量的占位，实际可结合后端或者 Twikoo 的特定插件来做
-                            // 因为标准 Twikoo 需要特定的 DOM 结构来自动填充浏览量
-                            viewsElement.innerHTML = `阅读互动已记录`;
-                        }
-                    }).catch(function (err) {
-                        console.error('获取互动量失败', err);
-                    });
-                    
-                    // 正确的使用 Twikoo 的浏览量统计方法是给元素特定的 ID 或 class
-                    // 并触发记录
-                    const viewsElement = document.getElementById('twikoo_visitors');
-                    if(viewsElement) {
-                        viewsElement.innerHTML = `（由 Twikoo 驱动评论）`;
-                    }
-                }, 1000);
             }, 100);
         }
     </script>
