@@ -408,9 +408,9 @@
             // 检查本地历史
             const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
             if (readHistory[articleId]) {
-                displaySpan.innerHTML = '<span style="color: #4caf50;">您已完整阅读</span>';
+                displaySpan.innerHTML = '<span style="color: #4caf50;">已完整阅读</span>';
             } else {
-                displaySpan.innerHTML = '<span style="color: #ff9800;">正在挑战完整阅读</span>';
+                displaySpan.innerHTML = '<span style="color: #ff9800;">正在阅读中</span>';
             }
         }
 
@@ -433,8 +433,7 @@
                 // 更新完整阅读量 UI
                 const displaySpan = document.querySelector('#full-read-count-display span');
                 if (displaySpan) {
-                    displaySpan.innerHTML = '<span style="color: #4caf50; font-weight: bold;">挑战成功！您已完整阅读</span>';
-                    // 放个小烟花动画（如果有时间的话）
+                    displaySpan.innerHTML = '<span style="color: #4caf50; font-weight: bold;">已完整阅读</span>';
                 }
             }
         }
