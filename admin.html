@@ -26,21 +26,24 @@
     
     <!-- 配置页面 -->
     <div id="config-section" class="config-container">
-        <h2>GitHub 仓库配置</h2>
-        <p style="margin-bottom: 20px; color: #666;">为了实现纯静态部署且能管理文章，后台将通过 GitHub API 直接将文章保存到你的代码仓库中。</p>
+        <h2>后台配置 (Vercel + GitHub)</h2>
+        <p style="margin-bottom: 20px; color: #666;">文章将保存到云端数据库，图片将上传到 GitHub 仓库。</p>
         <form id="config-form">
             <div class="form-group">
-                <label>GitHub 用户名 (Owner)</label>
+                <label>管理员密码 (Vercel ADMIN_TOKEN)</label>
+                <input type="password" id="vercel-token" required placeholder="你在 Vercel 设置的 ADMIN_TOKEN">
+            </div>
+            <div class="form-group">
+                <label>GitHub 用户名 (用于传图片)</label>
                 <input type="text" id="github-owner" required placeholder="例如: zhangsan">
             </div>
             <div class="form-group">
-                <label>仓库名 (Repo)</label>
+                <label>仓库名 (用于传图片)</label>
                 <input type="text" id="github-repo" required placeholder="例如: my-blog">
             </div>
             <div class="form-group">
-                <label>私人令牌 (Personal Access Token)</label>
+                <label>GitHub Token (用于传图片)</label>
                 <input type="password" id="github-token" required placeholder="请在 GitHub Developer settings 中生成">
-                <div class="help-text">需勾选 "repo" 权限。令牌仅保存在你本地浏览器中。</div>
             </div>
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">保存配置并进入后台</button>
         </form>
@@ -125,7 +128,7 @@
                     <textarea id="edit-content" rows="15" required></textarea>
                 </div>
                 <div>
-                    <button type="submit" class="btn btn-primary" id="save-btn">保存文章到 GitHub</button>
+                    <button type="submit" class="btn btn-primary" id="save-btn">保存文章到云端数据库</button>
                     <button type="button" class="btn btn-secondary" onclick="hideEditor()">取消</button>
                 </div>
             </form>
@@ -138,17 +141,19 @@
 
         // 初始化
         window.onload = function() {
+            const vercelToken = localStorage.getItem('vercel_token');
             const token = localStorage.getItem('github_token');
             const owner = localStorage.getItem('github_owner');
             const repo = localStorage.getItem('github_repo');
 
-            if (token && owner && repo) {
+            if (vercelToken && token && owner && repo) {
                 document.getElementById('config-section').style.display = 'none';
                 document.getElementById('admin-section').style.display = 'block';
+                document.getElementById('vercel-token').value = vercelToken;
                 document.getElementById('github-owner').value = owner;
                 document.getElementById('github-repo').value = repo;
                 document.getElementById('github-token').value = token;
-                fetchArticlesFromGitHub();
+                fetchArticlesFromVercel();
             } else {
                 document.getElementById('config-section').style.display = 'block';
                 document.getElementById('admin-section').style.display = 'none';
@@ -158,6 +163,7 @@
         // 保存配置并验证
         document.getElementById('config-form').onsubmit = async function(e) {
             e.preventDefault();
+            const vercelInput = document.getElementById('vercel-token').value.trim();
             const ownerInput = document.getElementById('github-owner').value.trim();
             const repoInput = document.getElementById('github-repo').value.trim();
             const tokenInput = document.getElementById('github-token').value.trim();
@@ -179,27 +185,21 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    // 检查是否具有 push 权限 (判断 token 是否有效且具有 repo 权限)
                     if (data.permissions && data.permissions.push) {
                         // 验证通过，保存到本地
+                        localStorage.setItem('vercel_token', vercelInput);
                         localStorage.setItem('github_owner', ownerInput);
                         localStorage.setItem('github_repo', repoInput);
                         localStorage.setItem('github_token', tokenInput);
                         
                         document.getElementById('config-section').style.display = 'none';
                         document.getElementById('admin-section').style.display = 'block';
-                        fetchArticlesFromGitHub();
+                        fetchArticlesFromVercel();
                     } else {
-                        alert('验证失败：该 Token 没有对该仓库的写入(push)权限，请确保勾选了 "repo" 权限。');
+                        alert('验证失败：该 Token 没有对该仓库的写入(push)权限。');
                     }
                 } else {
-                    if (response.status === 401) {
-                        alert('验证失败：私人令牌 (Token) 不正确或已过期。');
-                    } else if (response.status === 404) {
-                        alert('验证失败：找不到该仓库，请检查用户名和仓库名是否拼写正确。');
-                    } else {
-                        alert(`验证失败：GitHub API 返回错误 (${response.status})`);
-                    }
+                    alert('验证失败：GitHub 配置不正确。');
                 }
             } catch (error) {
                 alert('网络错误，无法连接到 GitHub 验证信息。');
@@ -210,6 +210,7 @@
         };
 
         function clearConfig() {
+            localStorage.removeItem('vercel_token');
             localStorage.removeItem('github_token');
             localStorage.removeItem('github_owner');
             localStorage.removeItem('github_repo');
@@ -234,40 +235,28 @@
             }
         }
 
-        // 从 GitHub 获取文章
-        async function fetchArticlesFromGitHub() {
-            const owner = localStorage.getItem('github_owner');
-            const repo = localStorage.getItem('github_repo');
-            const token = localStorage.getItem('github_token');
-            
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json`;
+        // 从 Vercel 获取文章
+        async function fetchArticlesFromVercel() {
+            const url = `https://my-blog-sable-omega.vercel.app/api/getArticles?t=` + new Date().getTime();
             
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('articles-table').style.display = 'none';
 
             try {
-                const response = await fetch(url, {
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
+                const response = await fetch(url);
                 if (response.ok) {
                     const data = await response.json();
-                    fileSha = data.sha; // 保存文件的 SHA，更新时需要
-                    const content = b64_to_utf8(data.content);
-                    articles = JSON.parse(content);
-                } else if (response.status === 404) {
-                    // 文件不存在，说明是首次使用
-                    articles = [];
-                    fileSha = null;
+                    if (data.success) {
+                        articles = data.data;
+                    } else {
+                        throw new Error(data.error || '获取失败');
+                    }
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || '获取失败');
+                    throw new Error(`请求失败: ${response.status}`);
                 }
                 renderTable();
             } catch (error) {
-                alert('获取文章数据失败，请检查配置信息是否正确。\n错误信息: ' + error.message);
+                alert('获取文章数据失败: ' + error.message);
                 clearConfig();
             } finally {
                 document.getElementById('loading-msg').style.display = 'none';
@@ -327,69 +316,63 @@
             document.getElementById('edit-content').value = content;
         }
 
-        // 保存/更新到 GitHub
-        async function syncToGitHub(commitMessage) {
-            const owner = localStorage.getItem('github_owner');
-            const repo = localStorage.getItem('github_repo');
-            const token = localStorage.getItem('github_token');
+        // 保存/更新到 Vercel (MongoDB)
+        async function syncToVercel(articleData) {
+            const vercelToken = localStorage.getItem('vercel_token');
+            const url = `https://my-blog-sable-omega.vercel.app/api/saveArticle`;
             
-            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json`;
-            
-            const contentBase64 = utf8_to_b64(JSON.stringify(articles, null, 2));
-            
-            const payload = {
-                content: contentBase64,
-                message: commitMessage
-            };
-
-            // 如果文件已存在，更新需要传递 sha
-            if (fileSha) {
-                payload.sha = fileSha;
-            }
-
             try {
                 const response = await fetch(url, {
-                    method: 'PUT', // GitHub API 创建和更新文件都使用 PUT
+                    method: 'POST',
                     headers: {
-                        'Authorization': `token ${token}`,
-                        'Content-Type': 'application/json;charset=UTF-8',
-                        'Accept': 'application/vnd.github.v3+json'
+                        'Authorization': `Bearer ${vercelToken}`,
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ article: articleData })
                 });
 
                 if (response.ok) {
                     const data = await response.json();
-                    fileSha = data.content.sha; // 更新本地 sha
-                    return true;
+                    if (data.success) {
+                        return true;
+                    } else {
+                        throw new Error(data.error || '保存失败');
+                    }
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || '同步失败');
+                    throw new Error(`请求失败: ${response.status}`);
                 }
             } catch (error) {
-                alert('同步到 GitHub 失败: ' + error.message);
+                alert('同步到云端失败: ' + error.message);
                 return false;
             }
         }
 
         async function deleteArticle(id) {
-            if (confirm('确定要删除这篇文章吗？此操作将直接更新你的 GitHub 仓库。')) {
-                const index = articles.findIndex(a => a.id === id);
-                if (index !== -1) {
-                    const deletedTitle = articles[index].title;
-                    articles.splice(index, 1);
+            if (confirm('确定要删除这篇文章吗？此操作将直接更新云端数据库。')) {
+                const vercelToken = localStorage.getItem('vercel_token');
+                document.body.style.cursor = 'wait';
+                
+                try {
+                    const response = await fetch('https://my-blog-sable-omega.vercel.app/api/deleteArticle', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${vercelToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ id: id })
+                    });
                     
-                    document.body.style.cursor = 'wait';
-                    const success = await syncToGitHub('删除文章: ' + deletedTitle);
-                    document.body.style.cursor = 'default';
-                    
-                    if (success) {
+                    const data = await response.json();
+                    if (data.success) {
                         alert('删除成功！');
-                        renderTable();
+                        fetchArticlesFromVercel();
                     } else {
-                        // 恢复数据
-                        fetchArticlesFromGitHub();
+                        alert('删除失败: ' + data.error);
                     }
+                } catch (error) {
+                    alert('网络错误，删除失败');
+                } finally {
+                    document.body.style.cursor = 'default';
                 }
             }
         }
@@ -582,46 +565,38 @@
             const fullContent = `<h2>${title}</h2>\n${contentBody}`;
             const today = new Date().toISOString().split('T')[0];
             
-            let isNew = false;
-            
+            let articleData = {
+                id: id || 'article_' + Date.now(),
+                title: title,
+                date: today, // 如果是编辑，后续可以在后端保留原日期，这里简便处理
+                modifyDate: today,
+                category: category,
+                content: fullContent
+            };
+
+            // 如果是编辑，保留原来的发布日期
             if (id) {
-                const index = articles.findIndex(a => a.id === id);
-                if (index !== -1) {
-                    articles[index].title = title;
-                    articles[index].category = category;
-                    articles[index].content = fullContent;
-                    articles[index].modifyDate = today;
+                const existing = articles.find(a => a.id === id);
+                if (existing) {
+                    articleData.date = existing.date;
                 }
-            } else {
-                isNew = true;
-                const newId = 'article_' + Date.now();
-                articles.unshift({
-                    id: newId,
-                    title: title,
-                    date: today,
-                    modifyDate: today,
-                    category: category,
-                    content: fullContent
-                });
             }
 
             const btn = document.getElementById('save-btn');
             btn.disabled = true;
-            btn.innerText = '正在同步到 GitHub...';
+            btn.innerText = '正在同步到云端数据库...';
 
-            const commitMsg = isNew ? '发布新文章: ' + title : '更新文章: ' + title;
-            const success = await syncToGitHub(commitMsg);
+            const success = await syncToVercel(articleData);
 
             btn.disabled = false;
-            btn.innerText = '保存文章到 GitHub';
+            btn.innerText = '保存文章';
 
             if (success) {
-                alert('保存成功！代码已提交到 GitHub。');
+                alert('保存成功！');
                 hideEditor();
-                renderTable();
+                fetchArticlesFromVercel();
             } else {
-                // 如果失败重新拉取最新数据防止不同步
-                fetchArticlesFromGitHub();
+                fetchArticlesFromVercel();
             }
         };
     </script>

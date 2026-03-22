@@ -81,21 +81,16 @@
                     async function initLatestArticles() {
                         let blogArticles = [];
                         try {
-                            // 从 GitHub API 实时拉取最新数据
-                            const owner = 'langhuanaibu';
-                            const repo = 'my-blog';
-                            const url = `https://api.github.com/repos/${owner}/${repo}/contents/articles.json?t=` + new Date().getTime();
+                            // 从 Vercel API 实时拉取最新数据
+                            const url = `https://my-blog-sable-omega.vercel.app/api/getArticles?t=` + new Date().getTime();
                             
-                            const response = await fetch(url, {
-                                headers: {
-                                    'Accept': 'application/vnd.github.v3+json'
-                                }
-                            });
+                            const response = await fetch(url);
                             
                             if (response.ok) {
                                 const data = await response.json();
-                                const content = b64_to_utf8(data.content);
-                                blogArticles = JSON.parse(content);
+                                if (data && data.success) {
+                                    blogArticles = data.data;
+                                }
                             }
                         } catch (error) {
                             console.error('获取文章失败:', error);
