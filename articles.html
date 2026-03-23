@@ -267,12 +267,15 @@
                 // 获取当前文章的完整阅读状态
                 fetchFullReadCount(articleId);
                 
-                // 为所有的 <pre> 标签添加 line-numbers 类，并触发 Prism.js 高亮
+                // 为所有的 <pre> 标签添加相关类，并触发 Prism.js 高亮
                 const preElements = document.querySelectorAll('#article-content pre');
                 preElements.forEach(pre => {
-                    pre.classList.add('line-numbers');
-                    // 还可以添加 mac 风格的窗口圆点样式类
+                    // 如果代码块不是用 mac-style-code，则加上
                     pre.classList.add('mac-style-code');
+                    
+                    // 为了与 labuladong 类似，不再强制加行号插件的类，而是使用默认渲染
+                    // 仅当用户明确需要行号时才保留 line-numbers
+                    // pre.classList.add('line-numbers');
                 });
                 if (window.Prism) {
                     Prism.highlightAllUnder(document.getElementById('article-content'));

@@ -1171,20 +1171,20 @@ body {
     }
 }
 
-/* ====== 代码块美化 (重构版) ====== */
+/* ====== 代码块美化 (极简重构版：对齐 labuladong 与 VSCode) ====== */
 /* 外层容器：负责背景和基础内边距 */
 pre[class*="language-"].mac-style-code {
     position: relative;
-    border-radius: 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     margin: 1.5em 0;
-    /* 取消原有的顶部 padding，我们用单独的元素或直接包裹来处理 */
-    padding: 1em 1em 1em 3.8em !important;
-    background-color: #252526 !important; /* VSCode 默认底色 */
-    overflow: hidden; /* 防止内容溢出 */
+    /* 取消自带行号左侧冗余，保持极简 */
+    padding: 3.5em 1.5em 1.5em 1.5em !important;
+    background-color: #1e1e1e !important; /* VSCode 默认深灰底色 */
+    overflow-x: auto;
 }
 
-/* Mac 风格左上角三个圆点 - 直接基于 pre 定位 */
+/* Mac 风格左上角三个圆点 */
 pre[class*="language-"].mac-style-code::before {
     content: " ";
     position: absolute;
@@ -1198,7 +1198,7 @@ pre[class*="language-"].mac-style-code::before {
     z-index: 2;
 }
 
-/* 顶部背景栏：使用绝对定位覆盖顶部区域，但不影响内部排版流 */
+/* 顶部背景栏 */
 pre[class*="language-"].mac-style-code::after {
     content: " ";
     position: absolute;
@@ -1206,23 +1206,24 @@ pre[class*="language-"].mac-style-code::after {
     left: 0;
     width: 100%;
     height: 40px;
-    background-color: #252526;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: #2d2d2d; /* 稍浅一点的灰色作为标题栏 */
+    border-bottom: 1px solid #111;
     z-index: 1;
 }
 
-/* 确保代码内容在顶部栏之下但可见，我们需要给代码内容一个向下的 margin */
+/* 确保代码内容在顶部栏之下 */
 pre[class*="language-"] > code {
     display: block !important;
     position: relative;
     z-index: 3;
-    margin-top: 30px !important; /* 为顶部工具栏留出空间 */
+    /* 核心：行高和字体与 VSCode 保持一致 */
     line-height: 1.6 !important;
     font-size: 14px !important;
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace !important;
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    color: #d4d4d4 !important; /* VSCode 默认代码颜色 */
 }
 
-/* 调整工具栏位置 */
+/* 调整工具栏位置 (语言标签、复制按钮) */
 div.code-toolbar > .toolbar {
     top: 8px !important;
     right: 15px !important;
@@ -1232,48 +1233,25 @@ div.code-toolbar > .toolbar {
 div.code-toolbar > .toolbar > .toolbar-item > a, 
 div.code-toolbar > .toolbar > .toolbar-item > button, 
 div.code-toolbar > .toolbar > .toolbar-item > span {
-    color: #a0a0a0;
-    background: transparent;
+    color: #999;
+    background: #333;
     border-radius: 4px;
-    padding: 4px 8px;
-    transition: all 0.3s ease;
+    padding: 4px 10px;
+    transition: all 0.2s ease;
     font-size: 12px;
     font-family: 'Noto Sans SC', sans-serif;
+    border: 1px solid #444;
     box-shadow: none !important;
 }
 
 div.code-toolbar > .toolbar > .toolbar-item > a:hover, 
 div.code-toolbar > .toolbar > .toolbar-item > button:hover {
     color: #fff;
-    background: rgba(255,255,255,0.1);
+    background: #444;
     cursor: pointer;
 }
 
-/* 完美适配行号插件 */
+/* 隐藏有问题的行号插件样式，让代码更纯粹地像 labuladong 一样展示 */
 .line-numbers .line-numbers-rows {
-    /* 行号容器绝对定位在 pre 内部 */
-    position: absolute !important;
-    pointer-events: none;
-    top: 0 !important;
-    font-size: 100% !important;
-    left: -3.8em !important;
-    width: 3em !important; /* 行号区域宽度 */
-    letter-spacing: -1px;
-    border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
-    /* 关键：行号的排版必须和 code 完全一致 */
-    margin-top: 30px !important; /* 与 code 的 margin-top 保持一致 */
-    line-height: 1.6 !important;
-}
-
-.line-numbers-rows > span {
-    display: block;
-    counter-increment: linenumber;
-}
-
-.line-numbers-rows > span:before {
-    content: counter(linenumber);
-    color: #858585; /* VSCode 行号颜色 */
-    display: block;
-    padding-right: 0.8em;
-    text-align: right;
+    display: none !important;
 }
