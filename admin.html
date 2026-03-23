@@ -112,11 +112,14 @@
                 </div>
                 <div class="form-group">
                     <label>分类</label>
-                    <select id="edit-category" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; background-color: #f8f9fa;">
-                        <option value="" disabled selected>请选择文章分类</option>
-                        <option value="技术学习">技术学习</option>
-                        <option value="随笔">生活随笔</option>
-                    </select>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="edit-category" required style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; background-color: #f8f9fa;">
+                            <option value="" disabled selected>请选择文章分类</option>
+                            <option value="技术学习">技术学习</option>
+                            <option value="随笔">生活随笔</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" onclick="addNewCategoryPrompt()" style="white-space: nowrap;">添加新栏目</button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>
@@ -253,6 +256,28 @@
                     const data = await response.json();
                     if (data.success) {
                         articles = data.data;
+                        
+                        // 动态更新分类下拉框
+                        const select = document.getElementById('edit-category');
+                        const existingCategories = new Set(['技术学习', '随笔', '数据结构与算法']);
+                        articles.forEach(article => {
+                            if (article.category) {
+                                existingCategories.add(article.category);
+                            }
+                        });
+                        
+                        // 清空除了第一个提示选项之外的所有选项
+                        while (select.options.length > 1) {
+                            select.remove(1);
+                        }
+                        
+                        existingCategories.forEach(cat => {
+                            const option = document.createElement('option');
+                            option.value = cat;
+                            option.text = cat;
+                            select.add(option);
+                        });
+                        
                     } else {
                         throw new Error(data.error || '获取失败');
                     }
@@ -301,6 +326,28 @@
         function hideEditor() {
             document.getElementById('editor-section').style.display = 'none';
             document.getElementById('articles-container').style.display = 'block';
+        }
+
+        function addNewCategoryPrompt() {
+            const newCat = prompt('请输入新栏目名称:');
+            if (newCat && newCat.trim()) {
+                const select = document.getElementById('edit-category');
+                const catName = newCat.trim();
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === catName) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    const option = document.createElement('option');
+                    option.value = catName;
+                    option.text = catName;
+                    select.add(option);
+                }
+                select.value = catName;
+            }
         }
 
         function editArticle(id) {

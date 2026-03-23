@@ -134,6 +134,42 @@
                             
                             latestArticlesContainer.innerHTML += articleHTML;
                         });
+                        
+                        // 动态生成知识专栏（分类）
+                        const categoriesGrid = document.getElementById('dynamic-categories-grid');
+                        const existingCategories = new Set();
+                        // 保证默认分类按特定顺序显示
+                        const defaultCategories = ['技术学习', '数据结构与算法', '随笔'];
+                        
+                        blogArticles.forEach(article => {
+                            if (article.category) existingCategories.add(article.category);
+                        });
+                        
+                        // 合并默认分类和动态分类
+                        defaultCategories.forEach(c => existingCategories.add(c));
+                        
+                        categoriesGrid.innerHTML = '';
+                        
+                        // 配置分类的图标和描述映射
+                        const categoryMeta = {
+                            '技术学习': { icon: '💻', desc: '记录自己的一些技术栈' },
+                            '数据结构与算法': { icon: '🧮', desc: '修炼内功，提升算法思维' },
+                            '随笔': { icon: '📝', desc: '日常感悟与折腾记录' }
+                        };
+                        
+                        existingCategories.forEach(cat => {
+                            const meta = categoryMeta[cat] || { icon: '📌', desc: `关于 ${cat} 的相关文章` };
+                            const displayName = cat === '随笔' ? '生活随笔' : cat;
+                            
+                            const catHTML = `
+                                <a href="articles.html?category=${encodeURIComponent(cat)}" class="category-card">
+                                    <div class="category-icon">${meta.icon}</div>
+                                    <h3 class="category-name">${displayName}</h3>
+                                    <p class="category-desc">${meta.desc}</p>
+                                </a>
+                            `;
+                            categoriesGrid.innerHTML += catHTML;
+                        });
                     }
                     
                     // 页面加载完成后初始化最新文章
@@ -146,17 +182,8 @@
         <section id="categories" class="categories-section">
             <div class="container">
                 <h2 class="section-title">知识专栏</h2>
-                <div class="categories-grid">
-                    <a href="articles.html?category=技术学习" class="category-card">
-                        <div class="category-icon">💻</div>
-                        <h3 class="category-name">技术学习</h3>
-                        <p class="category-desc">记录自己的一些技术栈</p>
-                    </a>
-                    <a href="articles.html?category=随笔" class="category-card">
-                        <div class="category-icon">📝</div>
-                        <h3 class="category-name">生活随笔</h3>
-                        <p class="category-desc">日常感悟与折腾记录</p>
-                    </a>
+                <div class="categories-grid" id="dynamic-categories-grid">
+                    <p style="text-align: center; width: 100%;">加载中...</p>
                 </div>
             </div>
         </section>

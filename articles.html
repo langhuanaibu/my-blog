@@ -61,10 +61,9 @@
                             </div>
                             
                             <!-- 新增分类筛选 -->
-                            <div class="category-filter" style="margin-bottom: 20px; display: flex; gap: 10px;">
-                                <button class="filter-btn active" data-category="all" style="flex: 1; padding: 6px; border: 1px solid var(--border-color); background: var(--nav-hover); color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;">全部</button>
-                                <button class="filter-btn" data-category="技术学习" style="flex: 1; padding: 6px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); border-radius: 4px; cursor: pointer; transition: all 0.3s ease;">技术学习</button>
-                                <button class="filter-btn" data-category="随笔" style="flex: 1; padding: 6px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); border-radius: 4px; cursor: pointer; transition: all 0.3s ease;">生活随笔</button>
+                            <div class="category-filter" id="category-filter-container" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="filter-btn active" data-category="all" style="padding: 6px 12px; border: 1px solid var(--border-color); background: var(--nav-hover); color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;">全部</button>
+                                <!-- 动态生成的分类按钮将放在这里 -->
                             </div>
 
                             <div id="articles-nav">加载中...</div>
@@ -143,6 +142,29 @@
                     }
                     
                     blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    // 动态生成分类按钮
+                    const categoryContainer = document.getElementById('category-filter-container');
+                    const existingCategories = new Set(['技术学习', '随笔', '数据结构与算法']);
+                    blogArticles.forEach(article => {
+                        if (article.category) existingCategories.add(article.category);
+                    });
+                    
+                    // 保留"全部"按钮，清空其它
+                    categoryContainer.innerHTML = '<button class="filter-btn active" data-category="all" style="padding: 6px 12px; border: 1px solid var(--border-color); background: var(--nav-hover); color: white; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;">全部</button>';
+                    
+                    existingCategories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'filter-btn';
+                        btn.setAttribute('data-category', cat);
+                        btn.style.cssText = 'padding: 6px 12px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); border-radius: 4px; cursor: pointer; transition: all 0.3s ease;';
+                        btn.textContent = cat === '随笔' ? '生活随笔' : cat;
+                        categoryContainer.appendChild(btn);
+                    });
+                    
+                    // 重新绑定分类按钮事件
+                    bindFilterEvents();
+                    
                     renderArticlesList();
                     
                     // 如果URL中有文章ID，显示对应的文章
@@ -476,31 +498,16 @@
             }
         }
 
-        // 页面加载完成后执行
-        document.addEventListener('DOMContentLoaded', () => {
-            loadArticles().then(() => {
-                // 处理 URL 参数，支持分类过滤
-                const urlParams = new URLSearchParams(window.location.search);
-                const categoryFilter = urlParams.get('category');
-                
-                if (categoryFilter) {
-                    // 更新分类按钮状态
-                    document.querySelectorAll('.filter-btn').forEach(btn => {
-                        if (btn.getAttribute('data-category') === categoryFilter) {
-                            btn.click(); // 触发点击事件来处理过滤逻辑
-                        }
-                    });
-                }
-            }).catch(error => {
-                console.error("加载文章列表失败:", error);
-            });
-            
-            // 分类筛选功能实现
+        function bindFilterEvents() {
             const filterBtns = document.querySelectorAll('.filter-btn');
             filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
+                // 移除旧的事件监听器以防重复绑定
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function() {
                     // 更新按钮样式
-                    filterBtns.forEach(b => {
+                    document.querySelectorAll('.filter-btn').forEach(b => {
                         b.style.background = 'transparent';
                         b.style.color = 'var(--text-color)';
                         b.classList.remove('active');
@@ -534,7 +541,27 @@
                     renderArticlesList(filtered);
                 });
             });
+        }
 
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', () => {
+            loadArticles().then(() => {
+                // 处理 URL 参数，支持分类过滤
+                const urlParams = new URLSearchParams(window.location.search);
+                const categoryFilter = urlParams.get('category');
+                
+                if (categoryFilter) {
+                    // 更新分类按钮状态
+                    document.querySelectorAll('.filter-btn').forEach(btn => {
+                        if (btn.getAttribute('data-category') === categoryFilter) {
+                            btn.click(); // 触发点击事件来处理过滤逻辑
+                        }
+                    });
+                }
+            }).catch(error => {
+                console.error("加载文章列表失败:", error);
+            });
+            
             // 搜索功能实现
             const searchInput = document.getElementById('search-input');
             if (searchInput) {
