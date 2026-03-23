@@ -123,6 +123,7 @@
                         内容 (支持HTML)
                         <button type="button" id="insert-img-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 10px;">插入图片</button>
                         <button type="button" id="insert-code-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入代码块</button>
+                        <button type="button" id="insert-link-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入跳转链接</button>
                         <span id="img-upload-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
                     </label>
                     <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
@@ -491,6 +492,27 @@
             // 将光标移动到代码块中间，方便直接输入
             const newCursorPos = startPos + codeTemplate.indexOf(selectedText || '// 在这里输入代码');
             const selectionLength = (selectedText || '// 在这里输入代码').length;
+            
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos + selectionLength);
+        });
+
+        // 插入跳转链接功能
+        document.getElementById('insert-link-btn').addEventListener('click', function() {
+            const textarea = document.getElementById('edit-content');
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            const selectedText = text.substring(startPos, endPos) || '点击这里跳转';
+            // target="_blank" 确保是在新标签页打开
+            const linkTemplate = `<a href="https://example.com" target="_blank" style="color: #0366d6; text-decoration: underline;">${selectedText}</a>`;
+            
+            textarea.value = text.substring(0, startPos) + linkTemplate + text.substring(endPos);
+            
+            // 将光标移动到 href 的 URL 处方便修改
+            const newCursorPos = startPos + linkTemplate.indexOf('https://example.com');
+            const selectionLength = 'https://example.com'.length;
             
             textarea.focus();
             textarea.setSelectionRange(newCursorPos, newCursorPos + selectionLength);
