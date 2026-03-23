@@ -1247,30 +1247,28 @@ div.code-toolbar > .toolbar > .toolbar-item > button:hover {
 
 /* 适配行号插件 */
 .line-numbers .line-numbers-rows {
-    /* 调整行号容器的初始位置，使其与代码行对齐 */
-    top: 40px !important; /* 顶部栏高度是40px，所以从40px开始向下排布 */
-    left: 0 !important;
-    width: 3.8em !important; /* 确保宽度足够 */
-    padding-top: 1em !important; /* 与代码内容的默认 padding 对齐 */
+    /* 重置为 Prism 默认的绝对定位，不再强行固定高度和左侧位置 */
+    top: 45px !important; /* 恢复为基于 pre 的 padding-top (45px) 开始排布 */
+    left: -3.8em !important;
+    width: 3em !important;
+    padding-top: 0 !important;
     border-right: 1px solid rgba(255,255,255,0.1) !important;
-    /* 修复由于 margin 导致的错位问题 */
-    margin-top: 0 !important;
-    padding-bottom: 0 !important;
     /* 强制行高和字体大小一致 */
     line-height: 1.5 !important;
     font-size: 14px !important;
+    margin: 0 !important;
 }
 
 /* 调整代码块左侧 padding 以容纳行号 */
 pre[class*="language-"].line-numbers {
     padding-left: 3.8em !important;
-    padding-top: 40px !important; /* 与顶部栏高度一致，不使用45px */
+    padding-top: 45px !important; /* 恢复为 45px 容纳顶部栏 */
 }
 
 /* 确保代码内容本身没有多余的外边距导致错位 */
 pre[class*="language-"] > code {
     display: block !important;
-    padding-top: 1em !important; /* 与行号的 padding-top 保持一致 */
+    padding-top: 0 !important; /* 取消额外 padding，让其自然贴合 pre 的内边距 */
     /* 强制行高和字体大小一致 */
     line-height: 1.5 !important;
     font-size: 14px !important;
