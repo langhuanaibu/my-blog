@@ -1253,9 +1253,18 @@ div.code-toolbar > .toolbar > .toolbar-item > button:hover {
     width: 3.8em !important; /* 确保宽度足够 */
     padding-top: 1em !important; /* 与代码内容的默认 padding 对齐 */
     border-right: 1px solid rgba(255,255,255,0.1) !important;
+    /* 修复由于 margin 导致的错位问题 */
+    margin-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 /* 调整代码块左侧 padding 以容纳行号 */
 pre[class*="language-"].line-numbers {
     padding-left: 3.8em !important;
+}
+
+/* 确保代码内容本身没有多余的外边距导致错位 */
+pre[class*="language-"] > code {
+    display: block !important;
+    padding-top: 1em !important; /* 与行号的 padding-top 保持一致 */
 }
