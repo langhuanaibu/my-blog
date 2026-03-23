@@ -1096,6 +1096,7 @@ body {
     .main {
         margin-top: 0;
     }
+}
 
     .header-content {
         flex-direction: column;
@@ -1168,4 +1169,82 @@ body {
     .blog-card-content {
         padding: 20px;
     }
+}
+
+/* ====== 代码块美化 (Mac 风格 + 类似 labuladong) ====== */
+pre[class*="language-"].mac-style-code {
+    position: relative;
+    padding-top: 45px !important;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    background-color: #1e1e1e !important;
+    margin: 1.5em 0;
+    overflow: visible;
+}
+
+/* Mac 风格左上角三个圆点 */
+pre[class*="language-"].mac-style-code::before {
+    content: " ";
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #fc625d;
+    box-shadow: 20px 0 0 #fdbc40, 40px 0 0 #35cd4b;
+    z-index: 2;
+}
+
+/* 顶部背景栏 */
+pre[class*="language-"].mac-style-code::after {
+    content: " ";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background-color: #2d2d2d;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    z-index: 1;
+}
+
+/* 确保代码内容在顶部栏之上 */
+pre[class*="language-"].mac-style-code > code {
+    position: relative;
+    z-index: 3;
+}
+
+/* 调整工具栏（语言标签、复制按钮）位置 */
+div.code-toolbar > .toolbar {
+    top: 8px !important;
+    right: 15px !important;
+    z-index: 4 !important;
+}
+
+div.code-toolbar > .toolbar > .toolbar-item > a, 
+div.code-toolbar > .toolbar > .toolbar-item > button, 
+div.code-toolbar > .toolbar > .toolbar-item > span {
+    color: #a0a0a0;
+    background: transparent;
+    border-radius: 4px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+    font-size: 12px;
+    font-family: 'Noto Sans SC', sans-serif;
+    box-shadow: none !important;
+}
+
+div.code-toolbar > .toolbar > .toolbar-item > a:hover, 
+div.code-toolbar > .toolbar > .toolbar-item > button:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+}
+
+/* 适配行号插件 */
+.line-numbers .line-numbers-rows {
+    top: 45px !important;
+    border-right: 1px solid rgba(255,255,255,0.1) !important;
 }

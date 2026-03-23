@@ -122,6 +122,7 @@
                     <label>
                         内容 (支持HTML)
                         <button type="button" id="insert-img-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 10px;">插入图片</button>
+                        <button type="button" id="insert-code-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入代码块</button>
                         <span id="img-upload-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
                     </label>
                     <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
@@ -472,6 +473,27 @@
         // 图片上传与插入功能
         document.getElementById('insert-img-btn').addEventListener('click', function() {
             document.getElementById('image-upload-input').click();
+        });
+
+        // 插入代码块功能
+        document.getElementById('insert-code-btn').addEventListener('click', function() {
+            const textarea = document.getElementById('edit-content');
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            // 如果有选中的文本，将其包裹在代码块中；否则插入一个空代码块
+            const selectedText = text.substring(startPos, endPos);
+            const codeTemplate = `\n<pre><code class="language-javascript">\n${selectedText || '// 在这里输入代码'}\n</code></pre>\n`;
+            
+            textarea.value = text.substring(0, startPos) + codeTemplate + text.substring(endPos);
+            
+            // 将光标移动到代码块中间，方便直接输入
+            const newCursorPos = startPos + codeTemplate.indexOf(selectedText || '// 在这里输入代码');
+            const selectionLength = (selectedText || '// 在这里输入代码').length;
+            
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos + selectionLength);
         });
 
         document.getElementById('image-upload-input').addEventListener('change', async function(e) {

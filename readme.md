@@ -152,3 +152,9 @@
 - **现象**：访问 `/api/saveArticle` 时，Vercel 返回 `The page could not be found` 的 HTML 页面，而不是执行对应的 Node.js 函数。
 - **原因**：`vercel.json` 路由配置不当。旧版配置 `"dest": "/api/$1"` 可能会被 Vercel 当作静态目录查找，而不是匹配到 `saveArticle.js` 这个可执行文件。
 - **解决**：在 `vercel.json` 的 routes 中显式加上 `.js` 后缀，如：`"src": "/api/(.*)", "dest": "/api/$1.js"`，确保请求精确路由到函数文件。
+
+### 坑 8：CORS 预检请求拦截导致 "Failed to fetch" (跨域请求头缺失)
+- **现象**：在后台页面发布文章时，前端报错 `同步到云端失败: Failed to fetch`。
+- **原因**：前端发送带有 `Authorization: Bearer <token>` 的跨域 POST 请求时，浏览器会先发送 `OPTIONS` 预检请求。如果后端接口的响应头 `Access-Control-Allow-Headers` 中没有包含 `Authorization`，浏览器会认为服务器拒绝携带该鉴权信息，直接拦截真实的 POST 请求。
+- **解决**：在后端的 API 文件（如 `saveArticle.js`、`deleteArticle.js`）中，修改跨域响应头设置，显式添加 `Authorization` 支持：
+  `res.setHeader('Access-Control-Allow-Headers', '..., X-Api-Version, Authorization');`

@@ -8,6 +8,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- 引入 Twikoo 评论系统核心脚本 -->
     <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
+    
+    <!-- 引入 Prism.js 代码高亮样式 -->
+    <link href="https://cdn.staticfile.net/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link href="https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <link href="https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+
     <script>
         // 初始化主题
         const savedTheme = localStorage.getItem('theme') || 'light';
@@ -259,6 +265,17 @@
                 
                 // 获取当前文章的完整阅读状态
                 fetchFullReadCount(articleId);
+                
+                // 为所有的 <pre> 标签添加 line-numbers 类，并触发 Prism.js 高亮
+                const preElements = document.querySelectorAll('#article-content pre');
+                preElements.forEach(pre => {
+                    pre.classList.add('line-numbers');
+                    // 还可以添加 mac 风格的窗口圆点样式类
+                    pre.classList.add('mac-style-code');
+                });
+                if (window.Prism) {
+                    Prism.highlightAllUnder(document.getElementById('article-content'));
+                }
             } else {
                 articleDetail.innerHTML = `<h3>文章未找到</h3>`;
             }
@@ -582,6 +599,21 @@
             }, 100);
         }
     </script>
+    
+    <!-- Prism.js 核心及常用语言与插件 -->
+    <script src="https://cdn.staticfile.net/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-go.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <!-- Prism.js 插件：行号、工具栏、显示语言、复制到剪贴板 -->
+    <script src="https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/plugins/show-language/prism-show-language.min.js"></script>
+    <script src="https://cdn.staticfile.net/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    
     <script src="script.js"></script>
 </body>
 </html>
