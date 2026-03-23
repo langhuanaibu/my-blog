@@ -1256,6 +1256,8 @@ div.code-toolbar > .toolbar > .toolbar-item > button:hover {
     /* 修复由于 margin 导致的错位问题 */
     margin-top: 0 !important;
     padding-bottom: 0 !important;
+    /* 强制行高一致 */
+    line-height: 1.5 !important;
 }
 
 /* 调整代码块左侧 padding 以容纳行号 */
@@ -1267,4 +1269,6 @@ pre[class*="language-"].line-numbers {
 pre[class*="language-"] > code {
     display: block !important;
     padding-top: 1em !important; /* 与行号的 padding-top 保持一致 */
+    /* 强制行高一致 */
+    line-height: 1.5 !important;
 }
