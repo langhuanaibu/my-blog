@@ -97,6 +97,7 @@
 
 5. **新增代码块高亮与 Mac 风格 UI (Prism.js)**：
    - 在 `articles.html` 引入 Prism.js 及其插件（行号、语言显示、一键复制）。
+   - 将 Prism.js 的主题切换为 `prism-vsc-dark-plus`，实现与 VSCode 极其相似的代码高亮配色。
    - 在 `style.css` 中自定义 `.mac-style-code` 类，纯手写 Mac 风格“红黄绿”三个小圆点装饰。
    - 在 `admin.html` 编辑器中新增“插入代码块”快捷按钮。
 6. **后台编辑器增强 HTML 快捷插入功能**：

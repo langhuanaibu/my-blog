@@ -1247,6 +1247,15 @@ div.code-toolbar > .toolbar > .toolbar-item > button:hover {
 
 /* 适配行号插件 */
 .line-numbers .line-numbers-rows {
+    /* 调整行号容器的初始位置，使其与代码行对齐 */
     top: 45px !important;
+    left: -3.8em !important;
+    width: 3.8em !important; /* 确保宽度足够 */
+    padding-top: 1em !important; /* 与代码内容的默认 padding 对齐 */
     border-right: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* 调整代码块左侧 padding 以容纳行号 */
+pre[class*="language-"].line-numbers {
+    padding-left: 3.8em !important;
 }
