@@ -536,8 +536,16 @@
             const text = textarea.value;
             
             // 如果有选中的文本，将其包裹在代码块中；否则插入一个空代码块
-            const selectedText = text.substring(startPos, endPos);
-            const codeTemplate = `\n<pre><code class="language-javascript">\n${selectedText || '// 在这里输入代码'}\n</code></pre>\n`;
+            let selectedText = text.substring(startPos, endPos);
+            
+            // 修复头文件消失的问题：将 < 和 > 转义为 HTML 实体
+            if (selectedText) {
+                selectedText = selectedText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+            
+            // 使用 language-none 作为默认，利用 Prism.js 插件显示纯文本，
+            // 提示用户可以手动修改 language-xxx 为自己想要的语言，比如 language-cpp
+            const codeTemplate = `\n<pre><code class="language-none">\n${selectedText || '// 在这里输入代码'}\n</code></pre>\n`;
             
             textarea.value = text.substring(0, startPos) + codeTemplate + text.substring(endPos);
             
