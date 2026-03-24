@@ -131,6 +131,7 @@
                         <button type="button" id="insert-title-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">H3</button>
                         <button type="button" id="insert-red-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: red;">红字</button>
                         <button type="button" id="insert-blue-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: #0366d6;">蓝字</button>
+                        <button type="button" id="insert-yellow-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: #e3a600;">黄字</button>
                         <span id="img-upload-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
                     </label>
                     <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
@@ -615,7 +616,7 @@
             const text = textarea.value;
             
             const selectedText = text.substring(startPos, endPos) || '红色文字';
-            const template = `<span style="color: red; font-weight: bold;">${selectedText}</span>`;
+            const template = `<span style="color: red;">${selectedText}</span>`;
             
             textarea.value = text.substring(0, startPos) + template + text.substring(endPos);
             
@@ -634,7 +635,26 @@
             const text = textarea.value;
             
             const selectedText = text.substring(startPos, endPos) || '蓝色文字';
-            const template = `<span style="color: #0366d6; font-weight: bold;">${selectedText}</span>`;
+            const template = `<span style="color: #0366d6;">${selectedText}</span>`;
+            
+            textarea.value = text.substring(0, startPos) + template + text.substring(endPos);
+            
+            const newCursorPos = startPos + template.indexOf(selectedText);
+            const selectionLength = selectedText.length;
+            
+            textarea.focus();
+            textarea.setSelectionRange(newCursorPos, newCursorPos + selectionLength);
+        });
+
+        // 插入黄字功能
+        document.getElementById('insert-yellow-btn').addEventListener('click', function() {
+            const textarea = document.getElementById('edit-content');
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            const text = textarea.value;
+            
+            const selectedText = text.substring(startPos, endPos) || '黄色文字';
+            const template = `<span style="color: #e3a600;">${selectedText}</span>`;
             
             textarea.value = text.substring(0, startPos) + template + text.substring(endPos);
             
