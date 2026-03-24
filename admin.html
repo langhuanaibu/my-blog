@@ -759,8 +759,16 @@
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('edit-title').value;
             const category = document.getElementById('edit-category').value;
-            const contentBody = document.getElementById('edit-content').value;
+            let contentBody = document.getElementById('edit-content').value;
             
+            // 核心修复：在提交前，扫描整个文章内容，找到所有的 <code>...</code> 块
+            // 并将里面的 < 和 > 进行转义，这样即使是用户手敲的 #include <iostream> 也能被正确保存和显示
+            contentBody = contentBody.replace(/<code([^>]*)>([\s\S]*?)<\/code>/g, function(match, attributes, codeContent) {
+                // 转义 < 和 >
+                const escapedContent = codeContent.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<code${attributes}>${escapedContent}</code>`;
+            });
+
             const fullContent = `<h2>${title}</h2>\n${contentBody}`;
             const today = new Date().toISOString().split('T')[0];
             
