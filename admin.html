@@ -294,7 +294,8 @@
                 renderTable();
             } catch (error) {
                 alert('获取文章数据失败: ' + error.message);
-                clearConfig();
+                // 暂时注释掉错误时的自动清除配置，避免稍有网络波动就让用户重新登录
+                // clearConfig();
             } finally {
                 document.getElementById('loading-msg').style.display = 'none';
                 document.getElementById('articles-table').style.display = 'table';
