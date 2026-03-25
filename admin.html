@@ -247,17 +247,17 @@
 
         // 从 Vercel 获取文章
         async function fetchArticlesFromVercel() {
-            const url = `https://api.aoiblog.top/api/getArticles?t=` + new Date().getTime();
+            const url = `https://api.aoiblog.top/api/getArticles`;
             
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('articles-table').style.display = 'none';
 
             try {
+                // Vercel Edge Cache 可能对带有随机 query 参数和自定义 headers 的跨域请求进行拦截并返回不带 CORS 头的 500/502
+                // 回退到最简单、最兼容的 GET 请求，不带任何可能触发 OPTIONS 预检的自定义 header 和参数
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    cache: 'no-store' // 使用标准的 fetch API 禁用缓存，而不是手动拼接时间戳
                 });
                 if (response.ok) {
                     const data = await response.json();

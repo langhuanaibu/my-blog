@@ -83,13 +83,12 @@
                         let blogArticles = [];
                         try {
                             // 从 Vercel API 实时拉取最新数据
-                            const url = `https://api.aoiblog.top/api/getArticles?t=` + new Date().getTime();
+                            // 去除时间戳参数，改用 fetch 原生的 no-store 防止 Vercel 边缘缓存节点拦截
+                            const url = `https://api.aoiblog.top/api/getArticles`;
                             
                             const response = await fetch(url, {
                                 method: 'GET',
-                                headers: {
-                                    'Accept': 'application/json'
-                                }
+                                cache: 'no-store'
                             });
                             
                             if (response.ok) {

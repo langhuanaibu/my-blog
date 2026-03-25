@@ -127,15 +127,13 @@
         async function loadArticles() {
             try {
                 // 从 Vercel API 实时拉取最新数据
-                // 修复：添加时间戳缓存破坏参数的方式改为 & 而不是 ?，因为如果有其他参数可能会冲突，这里直接用 ? 是没问题的因为是第一个参数
-                // 另一个可能的问题是，Vercel的某些缓存机制可能导致请求异常，这里加上 headers
-                const url = `https://api.aoiblog.top/api/getArticles?t=` + new Date().getTime();
+                // 修复：Vercel Edge 可能会拦截带有未知 query 参数或自定义 header 的请求
+                // 改用标准的 fetch cache: 'no-store' 来避免缓存，去除 URL 上的时间戳
+                const url = `https://api.aoiblog.top/api/getArticles`;
                 
                 const response = await fetch(url, {
                     method: 'GET',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    cache: 'no-store' // 告诉浏览器和 CDN 代理不要缓存此请求
                 });
 
                 if (response.ok) {
