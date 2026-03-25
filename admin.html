@@ -253,7 +253,12 @@
             document.getElementById('articles-table').style.display = 'none';
 
             try {
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -339,6 +344,7 @@
                 for (let i = 0; i < select.options.length; i++) {
                     if (select.options[i].value === catName) {
                         exists = true;
+                        select.selectedIndex = i;
                         break;
                     }
                 }
@@ -347,8 +353,10 @@
                     option.value = catName;
                     option.text = catName;
                     select.add(option);
+                    select.selectedIndex = select.options.length - 1;
                 }
-                select.value = catName;
+                // 触发 change 事件以确保任何绑定的监听器都能响应
+                select.dispatchEvent(new Event('change'));
             }
         }
 

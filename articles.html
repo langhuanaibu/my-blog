@@ -127,9 +127,16 @@
         async function loadArticles() {
             try {
                 // 从 Vercel API 实时拉取最新数据
+                // 修复：添加时间戳缓存破坏参数的方式改为 & 而不是 ?，因为如果有其他参数可能会冲突，这里直接用 ? 是没问题的因为是第一个参数
+                // 另一个可能的问题是，Vercel的某些缓存机制可能导致请求异常，这里加上 headers
                 const url = `https://api.aoiblog.top/api/getArticles?t=` + new Date().getTime();
                 
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
 
                 if (response.ok) {
                     const data = await response.json();
