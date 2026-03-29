@@ -218,3 +218,18 @@
   2. 鼠标**右键长按**浏览器地址栏左侧的“刷新 🔄”按钮。
   3. 在弹出的菜单中选择 **“清空缓存并硬性重新加载” (Empty Cache and Hard Reload)**。
   4. 或使用无痕/隐私模式 (`Ctrl + Shift + N`) 进行测试验证。
+
+### 坑 14：Vercel Serverless 环境下 Token 中的空格导致 401 Unauthorized
+- **现象**：在后台保存或删除文章时，控制台报错 `401 Unauthorized`，且确认 Vercel 环境变量和后台填写的 Token 肉眼看是一致的。
+- **原因**：用户在后台输入 Token，或者通过浏览器缓存回填时，不小心在末尾或开头多带了一个**不可见的空格**或换行符，导致鉴权比对失败。
+- **解决**：在前端发起请求拼接 `Authorization: Bearer <token>` 之前，必须强制对 Token 执行 `.trim()` 操作，例如：`const vercelToken = localStorage.getItem('vercel_token').trim();`。
+
+### 坑 15：路由变更导致相对路径图片全部 404
+- **现象**：博客从某个版本回退或重新部署后，所有文章里的配图以及首页的背景图片全部裂开不显示。
+- **原因**：
+  1. CSS 中的背景图写成了 `url('hero-bg.png')`，在某些严格解析下找不到相对路径。
+  2. 文章正文保存的图片路径是相对路径 `images/xxx.png`，一旦页面路由不是纯粹的根目录，就会去错误的目录下找图片。
+- **解决**：
+  1. 将 CSS 里的背景图路径显式改为当前目录 `url('./hero-bg.png')` 或绝对根目录。
+  2. 在前端渲染文章 HTML 前，通过正则将相对路径强制替换为绝对根路径：
+     `content.replace(/src=(['"])images\//g, 'src=$1/images/')`。
