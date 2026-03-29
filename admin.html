@@ -385,7 +385,8 @@
 
         // 保存/更新到 Vercel (MongoDB)
         async function syncToVercel(articleData) {
-            const vercelToken = localStorage.getItem('vercel_token');
+            // 获取并去掉可能的额外引号或空白
+            const vercelToken = localStorage.getItem('vercel_token').trim();
             const url = `https://api.aoiblog.top/api/saveArticle`;
             
             try {
