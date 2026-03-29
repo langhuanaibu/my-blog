@@ -733,8 +733,8 @@
                         });
 
                         if (response.ok) {
-                            // 使用相对路径，为了兼容未来可能的域名变更
-                            const imageUrl = `images/${filename}`;
+                            // 无论在前台还是后台，我们统一使用带斜杠的绝对路径，确保不被路由影响
+                            const imageUrl = `/images/${filename}`;
                             const imgTag = `\n<img src="${imageUrl}" alt="图片" style="max-width: 100%;">\n`;
                             
                             const textarea = document.getElementById('edit-content');
