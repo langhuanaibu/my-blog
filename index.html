@@ -112,9 +112,8 @@
                         latestArticlesContainer.innerHTML = '';
                         
                         latestThree.forEach(article => {
-                            // 提取文章摘要（前100个字符）
-                            const decodedContent = article.content ? b64_to_utf8(article.content) : '';
-                            const contentText = decodedContent.replace(/<[^>]*>/g, '');
+                            // 由于后端返回的已经是明文，直接使用即可，不需要解码
+                            const contentText = (article.content || '').replace(/<[^>]*>/g, '');
                             const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
                             
                             // 计算阅读时长 (假设 300字/分钟)
