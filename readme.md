@@ -233,3 +233,9 @@
   1. 将 CSS 里的背景图路径显式改为当前目录 `url('./hero-bg.png')` 或绝对根目录。
   2. 在前端渲染文章 HTML 前，通过正则将相对路径强制替换为绝对根路径：
      `content.replace(/src=(['"])images\//g, 'src=$1/images/')`。
+
+### 坑 16：部署到 Vercel 后，静态图片文件报 404
+- **现象**：前端修改了图片为绝对路径，且 GitHub 仓库的 `images/` 目录下确实有图片，但部署到 Vercel 后访问依然返回 `404 Not Found`。
+- **原因**：本项目是一个原生 HTML/JS 混合 Vercel Serverless 的特殊架构。在你的 `vercel.json` 配置文件中，只显式声明了打包 `*.html`, `*.css`, `*.js` 以及后端的 `api/*.js`，**并没有告诉 Vercel 要把 `images/` 这个文件夹暴露出去**。Vercel 在构建时就直接把图片忽略了。
+- **解决**：
+  在 `vercel.json` 的 `builds` 数组中添加 `{"src": "images/*", "use": "@vercel/static"}`，并在 `routes` 中添加对应的转发规则，让 Vercel 知道这些图片是需要对外提供的静态资源。
