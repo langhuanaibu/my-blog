@@ -270,7 +270,7 @@
                     <div style="text-align: right; font-size: 12px; color: var(--meta-color); margin-top: 5px; display: none;" id="read-progress-text">阅读进度: 0%</div>
                     
                     <div id="article-content" class="article-content" data-article-id="${articleId}">
-                        ${article.content}
+                        ${article.content.replace(/src=(['"])images\//g, 'src=$1/images/')}
                     </div>
                     <div class="article-modify">
                         <p>最后修改日期：<span>${article.modifyDate}</span></p>
