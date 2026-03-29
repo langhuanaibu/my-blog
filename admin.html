@@ -376,6 +376,10 @@
             if (titleMatch) {
                 content = content.replace(titleMatch[0], '');
             }
+            
+            // 解码 PrismJS 转义，方便在后台编辑
+            content = content.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+            
             document.getElementById('edit-content').value = content;
         }
 
@@ -385,6 +389,8 @@
             const url = `https://api.aoiblog.top/api/saveArticle`;
             
             try {
+                // 如果文章内容包含大量代码或 HTML 标签，可能被 WAF 拦截
+                // 使用 JSON 传输时，需要确保内容被正确转义
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
@@ -779,18 +785,20 @@
             });
 
             const fullContent = `<h2>${title}</h2>\n${contentBody}`;
+            
+            // 重要：获取原文章数据（如果是编辑的话）
+            const originalArticle = id ? articles.find(a => a.id === id) : null;
+            
             const today = new Date().toISOString().split('T')[0];
             
             let articleData = {
                 id: id || 'article_' + Date.now(),
                 title: title,
-                date: today, // 如果是编辑，后续可以在后端保留原日期，这里简便处理
+                date: originalArticle ? originalArticle.date : today, // 保留原日期
                 modifyDate: today,
                 category: category,
                 content: fullContent
             };
-
-            // 如果是编辑，保留原来的发布日期
             if (id) {
                 const existing = articles.find(a => a.id === id);
                 if (existing) {
