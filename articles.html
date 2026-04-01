@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- 引入 Twikoo 评论系统核心脚本 -->
     <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
+    <!-- 引入 marked.js 解析 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <!-- 引入 Prism.js 代码高亮样式 (VSCode 风格主题) -->
     <!-- 替换为 prism-vsc-dark-plus 主题，这与 VSCode 默认深色主题最接近 -->
@@ -270,7 +272,7 @@
                     <div style="text-align: right; font-size: 12px; color: var(--meta-color); margin-top: 5px; display: none;" id="read-progress-text">阅读进度: 0%</div>
                     
                     <div id="article-content" class="article-content" data-article-id="${articleId}">
-                        ${(article.content || '').replace(/src=(['"])images\//g, 'src=$1/images/').replace(/src=(['"])\.\/images\//g, 'src=$1/images/')}
+                        ${marked.parse((article.content || '').replace(/src=(['"])images\//g, 'src=$1/images/').replace(/src=(['"])\.\/images\//g, 'src=$1/images/'))}
                     </div>
                     <div class="article-modify">
                         <p>最后修改日期：<span>${article.modifyDate}</span></p>

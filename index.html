@@ -7,6 +7,8 @@
     <title>我的个人博客</title>
     <link rel="stylesheet" href="style.css?v=2">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入 marked.js 解析 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         // 初始化主题
         const savedTheme = localStorage.getItem('theme') || 'light';
@@ -112,8 +114,9 @@
                         latestArticlesContainer.innerHTML = '';
                         
                         latestThree.forEach(article => {
-                            // 由于后端返回的已经是明文，直接使用即可，不需要解码
-                            const contentText = (article.content || '').replace(/<[^>]*>/g, '');
+                            // 使用 marked 解析 Markdown 并去除 HTML 标签以获取纯文本摘要
+                            const htmlContent = marked.parse(article.content || '');
+                            const contentText = htmlContent.replace(/<[^>]*>/g, '');
                             const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
                             
                             // 计算阅读时长 (假设 300字/分钟)
@@ -291,7 +294,7 @@
         </div>
     </div>
 
-    <!-- 引入 Twikoo 核心脚本 -->
+    <!-- 引入 Twikoo 评论系统核心脚本 -->
     <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
     <script>
         // 初始化主页留言板
