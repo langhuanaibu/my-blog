@@ -496,7 +496,7 @@
                     // 查找对应文章标题
                     const article = articles.find(a => a.id === comment.url);
                     articleTitle = article ? article.title : '未知文章';
-                    targetUrl = `articles.html#${comment.url}`;
+                    targetUrl = `articles.html?id=${comment.url}#twikoo-comments`;
                     typeBadge = '<span style="background: #e8f5e9; color: #388e3c; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px;">文章评论</span>';
                 }
                 
