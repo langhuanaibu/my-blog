@@ -20,22 +20,6 @@
     {
       "src": "images/*",
       "use": "@vercel/static"
-    },
-    {
-      "src": "vue-home/*.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "vue-home/*.ico",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "vue-home/assets/css/*.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "vue-home/assets/js/*.js",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -46,10 +30,6 @@
     {
       "src": "/images/(.*)",
       "dest": "/images/$1"
-    },
-    {
-      "src": "/vue-home/(.*)",
-      "dest": "/vue-home/$1"
     },
     {
       "src": "/(.*)",
