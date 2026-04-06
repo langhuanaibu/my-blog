@@ -428,6 +428,11 @@ No Next.js version detected. Make sure your package.json has "next" in either "d
 - 新增 `public/images/my-avatar.jpg` 作为博客导航头像和我的友链头像
 - 朋友友链文案改为“漫漫长路，原作清风伴君途”
 
+### 后台发文链路检查
+- 后台页面当前通过同域 `/api/saveArticle`、`/api/getArticles`、`/api/deleteArticle` 与 Vercel Functions 通信
+- 发文成功后会立即重新拉取文章列表，前台首页与文章页也都从同域 `/api/getArticles` 读取数据
+- 本地仓库未提供 `.env`，因此无法在本机完整模拟 MongoDB 与管理员口令环境；线上是否能真正发布成功取决于 Vercel 项目里是否已配置 `MONGODB_URI` 和 `ADMIN_TOKEN`
+
 ### 新踩坑
 #### `api.aoiblog.top` 可能被 Vercel Security Checkpoint 单独拦截
 - 现象：文章列表和后台请求接口失败，接口直接返回 `403 Vercel Security Checkpoint`

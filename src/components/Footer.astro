@@ -2,12 +2,11 @@
 const { isIndex = true } = Astro.props;
 ---
 <footer class="footer">
-    <div class="footer__inner">
-        <p>&copy; 2026 我的个人博客. 保留所有权利.</p>
-        <div class="footer__links">
-            <a href="https://github.com/langhuanaibu" target="_blank" rel="noreferrer">GitHub</a>
-            {isIndex && <a href="/#friends">友情链接</a>}
-            <a href="/admin.html">后台管理</a>
-        </div>
+  <div class="footer__inner">
+    <p>&copy; 2026 我的个人博客. 保留所有权利。</p>
+    <div class="footer__links">
+      <a href="https://github.com/langhuanaibu" target="_blank" rel="noreferrer">GitHub</a>
+      {isIndex && <a href="/#friends">友情链接</a>}
     </div>
+  </div>
 </footer>
