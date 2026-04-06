@@ -249,7 +249,7 @@
 
         // 从 Vercel 获取文章
         async function fetchArticlesFromVercel() {
-            const url = `https://api.aoiblog.top/api/getArticles`;
+            const url = `/api/getArticles`;
             
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('articles-table').style.display = 'none';
@@ -389,7 +389,7 @@
         async function syncToVercel(articleData) {
             // 获取并去掉可能的额外引号或空白
             const vercelToken = localStorage.getItem('vercel_token').trim();
-            const url = `https://api.aoiblog.top/api/saveArticle`;
+            const url = `/api/saveArticle`;
             
             try {
                 // 如果文章内容包含大量代码或 HTML 标签，可能被 WAF 拦截
@@ -425,7 +425,7 @@
                 document.body.style.cursor = 'wait';
                 
                 try {
-                    const response = await fetch('https://api.aoiblog.top/api/deleteArticle', {
+                    const response = await fetch('/api/deleteArticle', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${vercelToken}`,

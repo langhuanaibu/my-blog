@@ -360,6 +360,37 @@ git push origin main
 
 ---
 
+### 8. Vercel 项目框架预设选错会把 Astro 项目当成 Next.js
+
+#### 现象
+Vercel 部署页面出现类似报错：
+
+```text
+No Next.js version detected. Make sure your package.json has "next" in either "dependencies" or "devDependencies".
+```
+
+#### 原因
+这不是仓库里真的缺少 `next`，而是 Vercel 项目设置里的 **Framework Preset** 被错误设成了 `Next.js`。
+
+当前项目实际是：
+
+- 前台：Astro
+- 后端：顶层 `api/` 目录中的 Vercel Functions
+
+所以一旦项目预设成 Next.js，Vercel 就会按 Next.js 的构建逻辑去检查并报错。
+
+#### 解决
+到 Vercel 项目设置中手动改为正确的构建方式：
+
+- Framework Preset：`Astro`
+- Root Directory：仓库根目录
+- Build Command：`npm run build`
+- Output Directory：`dist`
+
+如果这个项目是之前用错误预设创建出来的，也可以直接重新导入仓库并选择 Astro。
+
+---
+
 ## 维护约定
 
 后续在这个仓库继续改动时，默认遵守以下约定：
@@ -379,3 +410,22 @@ git push origin main
 - 为文章页补充 SEO 元信息生成
 - 将部分首页数据获取逻辑进一步组件化
 - 后续视需要决定是否把内容管理迁移到更完整的 Astro 内容体系
+---
+
+## 2026-04-06 补充记录
+
+### API 同域回切修复
+- 将前台页面和 `public/admin.html` 中写死的 `https://api.aoiblog.top/api/*` 改为同域 `/api/*`
+- 本次改动不涉及文章正文、MongoDB 结构或后台表单逻辑
+
+### 新踩坑
+#### `api.aoiblog.top` 可能被 Vercel Security Checkpoint 单独拦截
+- 现象：文章列表和后台请求接口失败，接口直接返回 `403 Vercel Security Checkpoint`
+- 原因：页面从 `www.aoiblog.top` 跨域请求 `api.aoiblog.top` 时，Vercel 可能把 `api` 子域名当成独立站点再次做浏览器校验
+- 解决：优先统一使用当前站点同域接口
+
+```text
+/api/getArticles
+/api/saveArticle
+/api/deleteArticle
+```
