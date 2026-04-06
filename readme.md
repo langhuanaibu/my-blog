@@ -418,6 +418,11 @@ No Next.js version detected. Make sure your package.json has "next" in either "d
 - 将前台页面和 `public/admin.html` 中写死的 `https://api.aoiblog.top/api/*` 改为同域 `/api/*`
 - 本次改动不涉及文章正文、MongoDB 结构或后台表单逻辑
 
+### 首页 Hero 与导航微调
+- 顶部导航移除“博客”和“后台”入口
+- 首页 Hero 右侧改为展示旧版首页头图 `/images/img_1774022028502.png`
+- 移除“写作自述”卡片，保留首页主标题、原文案和两个主按钮
+
 ### 新踩坑
 #### `api.aoiblog.top` 可能被 Vercel Security Checkpoint 单独拦截
 - 现象：文章列表和后台请求接口失败，接口直接返回 `403 Vercel Security Checkpoint`

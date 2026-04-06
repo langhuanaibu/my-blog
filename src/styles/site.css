@@ -218,23 +218,37 @@ img { max-width: 100%; display: block; }
   align-items: stretch;
 }
 
-.hero-card {
-  display: grid;
-  gap: 16px;
-  padding: 26px;
+.hero-visual {
+  position: relative;
+  min-height: 320px;
+  margin: 0;
+  overflow: hidden;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.36);
   border: 1px solid rgba(255, 255, 255, 0.32);
+  box-shadow: var(--shadow-soft);
 }
 
-:root[data-theme='dark'] .hero-card {
-  background: rgba(255, 255, 255, 0.02);
+.hero-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), transparent 24%),
+    linear-gradient(135deg, rgba(29, 23, 16, 0.06), rgba(29, 23, 16, 0.18));
+  pointer-events: none;
+}
+
+.hero-visual__image {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  object-fit: cover;
+  object-position: center;
+}
+
+:root[data-theme='dark'] .hero-visual {
   border-color: rgba(255, 255, 255, 0.06);
 }
-
-.hero-card__label { font-size: 0.82rem; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.08em; }
-.hero-card__value { font-family: var(--font-sans); font-size: clamp(1.4rem, 2vw, 1.8rem); color: var(--heading); }
-.hero-card__text { color: var(--text-soft); }
 
 .grid-two {
   display: grid;

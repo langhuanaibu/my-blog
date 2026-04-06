@@ -25,14 +25,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               </noscript>
               <div class="hero-actions">
                 <a href="/articles.html" class="btn btn-primary">📖 阅读最新文章</a>
-                <a href="#about" class="btn btn-secondary">👨‍💻 关于我</a>
+                <a href="#about" class="btn btn-secondary">🧑‍💻 关于我</a>
               </div>
             </div>
-            <div class="hero-card">
-              <span class="hero-card__label">写作自述</span>
-              <div class="hero-card__value">乌幕屏，海相续，举眼茫茫，静听细浪语</div>
-              <p class="hero-card__text">这里记录技术学习、算法思考，也收纳那些慢慢发酵的随笔与想法。</p>
-            </div>
+            <figure class="hero-visual">
+              <img src="/images/img_1774022028502.png" alt="博客首页头图" class="hero-visual__image" />
+            </figure>
           </div>
         </div>
       </div>
@@ -84,7 +82,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <li>C++ & C</li>
                 <li>Python</li>
                 <li>Git & GitHub</li>
-                <li>持续学习和完善技术栈中……</li>
+                <li>持续学习和完善技术栈中...</li>
               </ul>
             </div>
           </div>
@@ -101,7 +99,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class="contact-card">
             <div class="section-copy">
-              <p>欢迎在这里留下你的足迹、建议或任何想对我说的话！</p>
+              <p>欢迎在这里留下你的足迹、建议或任何想对我说的话，</p>
               <p><strong>邮箱：</strong>antemeridiem@foxmail.com</p>
               <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu" target="_blank">github.com/langhuanaibu</a></p>
             </div>
@@ -120,8 +118,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <a href="https://www.cloudtide.xyz/" target="_blank" rel="noreferrer" class="friend-card">
               <img src="https://api.dicebear.com/7.x/bottts/svg?seed=friend1" alt="Friend Avatar">
               <div>
-                <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拾云的博客</h3>
-                <p style="font-size: 12px;">正在优化中……</p>
+                <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拂云的博客</h3>
+                <p style="font-size: 12px;">正在优化中...</p>
               </div>
             </a>
 
@@ -191,7 +189,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <article class="blog-card">
             <div class="blog-meta">
               <span>${article.date}</span>
-              <span>⏱️ 约 ${readTime} 分钟阅读</span>
+              <span>约 ${readTime} 分钟阅读</span>
             </div>
             <h3 class="blog-title"><a href="/articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
             <div class="blog-tags">
@@ -214,21 +212,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       blogArticles.forEach((article) => {
         if (article.category) existingCategories.add(article.category);
       });
-      defaultCategories.forEach((c) => existingCategories.add(c));
+      defaultCategories.forEach((category) => existingCategories.add(category));
 
       categoriesGrid.innerHTML = '';
       const categoryMeta = {
-        '技术学习': { icon: '💻', desc: '记录自己的一些技术栈' },
-        '数据结构与算法': { icon: '🧮', desc: '修炼内功，提升算法思维' },
-        '随笔': { icon: '📝', desc: '日常感悟与折腾记录' }
+        技术学习: { icon: '📇', desc: '记录自己的一些技术栈' },
+        数据结构与算法: { icon: '🧠', desc: '修炼内功，提升算法思维' },
+        随笔: { icon: '📝', desc: '日常感悟与折腾记录' }
       };
 
-      existingCategories.forEach((cat) => {
-        const meta = categoryMeta[cat] || { icon: '📌', desc: `关于 ${cat} 的相关文章` };
-        const displayName = cat === '随笔' ? '生活随笔' : cat;
+      existingCategories.forEach((category) => {
+        const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
+        const displayName = category === '随笔' ? '生活随笔' : category;
 
         categoriesGrid.innerHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(cat)}" class="category-card">
+          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card">
             <div class="category-icon">${meta.icon}</div>
             <h3 class="category-name">${displayName}</h3>
             <p class="category-desc">${meta.desc}</p>
