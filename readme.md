@@ -433,6 +433,12 @@ No Next.js version detected. Make sure your package.json has "next" in either "d
 - 发文成功后会立即重新拉取文章列表，前台首页与文章页也都从同域 `/api/getArticles` 读取数据
 - 本地仓库未提供 `.env`，因此无法在本机完整模拟 MongoDB 与管理员口令环境；线上是否能真正发布成功取决于 Vercel 项目里是否已配置 `MONGODB_URI` 和 `ADMIN_TOKEN`
 
+### GitHub Pages 失败邮件说明
+- 当前主站已经迁移到 Vercel，但 GitHub 仓库侧如果还开启了 Pages，GitHub 仍会尝试对仓库做默认 Pages 构建
+- 本仓库根目录没有站点专用的 `.github/workflows` Pages 工作流，若 Actions 里出现 `pages build and deployment`，通常是 GitHub Pages 设置仍然开启，且正在走默认 Jekyll 构建
+- 这类失败邮件一般不影响 Vercel 线上站点访问
+- 如果后续完全不再使用 GitHub Pages，建议到 GitHub 仓库 `Settings -> Pages` 里关闭 Pages 部署，避免持续收到失败邮件
+
 ### 新踩坑
 #### `api.aoiblog.top` 可能被 Vercel Security Checkpoint 单独拦截
 - 现象：文章列表和后台请求接口失败，接口直接返回 `403 Vercel Security Checkpoint`
