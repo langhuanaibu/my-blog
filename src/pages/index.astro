@@ -116,15 +116,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class="friends-grid">
             <a href="https://www.cloudtide.xyz/" target="_blank" rel="noreferrer" class="friend-card">
-              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=friend1" alt="Friend Avatar">
+              <img src="/images/friend-avatar.jpg" alt="晚风拂云的头像">
               <div>
                 <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拂云的博客</h3>
-                <p style="font-size: 12px;">正在优化中...</p>
+                <p style="font-size: 12px;">漫漫长路，原作清风伴君途</p>
               </div>
             </a>
 
             <a href="https://langhuanaibu.github.io/my-blog/" target="_blank" rel="noreferrer" class="friend-card">
-              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aoitsuki" alt="My Avatar">
+              <img src="/images/my-avatar.jpg" alt="Aoitsuki 的头像">
               <div>
                 <h3 style="margin: 0 0 5px 0; font-size: 16px;">Aoitsuki's Blog</h3>
                 <p style="font-size: 12px;">乌幕屏，海相续...</p>
@@ -145,19 +145,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <script is:inline>
-    function b64_to_utf8(str) {
-      try {
-        return decodeURIComponent(escape(window.atob(str)));
-      } catch (e) {
-        const binString = window.atob(str);
-        const bytes = new Uint8Array(binString.length);
-        for (let i = 0; i < binString.length; i++) {
-          bytes[i] = binString.charCodeAt(i);
-        }
-        return new TextDecoder('utf-8').decode(bytes);
-      }
-    }
-
     async function initLatestArticles() {
       let blogArticles = [];
       try {
@@ -216,7 +203,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       categoriesGrid.innerHTML = '';
       const categoryMeta = {
-        技术学习: { icon: '📇', desc: '记录自己的一些技术栈' },
+        技术学习: { icon: '📚', desc: '记录自己的一些技术栈' },
         数据结构与算法: { icon: '🧠', desc: '修炼内功，提升算法思维' },
         随笔: { icon: '📝', desc: '日常感悟与折腾记录' }
       };

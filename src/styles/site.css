@@ -98,7 +98,27 @@ img { max-width: 100%; display: block; }
 
 :root[data-theme='dark'] .site-header__inner { background: rgba(28, 22, 18, 0.8); }
 
-.brand { display: flex; flex-direction: column; gap: 2px; }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+}
 
 .brand__title {
   font-family: var(--font-sans);
@@ -341,6 +361,8 @@ img { max-width: 100%; display: block; }
   border-radius: 50%;
   flex: 0 0 auto;
   border: 1px solid var(--line);
+  object-fit: cover;
+  object-position: center;
 }
 
 .footer { padding: 0 20px 30px; }
