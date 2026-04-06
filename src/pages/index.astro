@@ -1,255 +1,255 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
-<BaseLayout title="我的个人博客" isIndex=true>
-    <Fragment slot="head">
-    <!-- 引入 marked.js 解析 Markdown -->
+<BaseLayout
+  title="我的个人博客"
+  description="Aoitsuki 的个人博客首页，记录技术学习、算法思考、生活随笔与留言。"
+  isIndex={true}
+  pageClass="page-home"
+>
+  <Fragment slot="head">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
-    </Fragment>
+  </Fragment>
 
-
-        <section id="home" class="hero">
-            <div class="container">
-                <div class="hero-content">
-                    <h1 class="hero-title">Aoitsuki</h1>
-                    <p class="hero-subtitle" id="typewriter-text"></p>
-                    <!-- 如果你在没有 JS 的环境下，作为后备文本 -->
-                    <noscript>
-                        <p class="hero-subtitle">乌幕屏，海相续，举眼茫茫，静听细浪语</p>
-                    </noscript>
-                    <div class="hero-actions">
-                        <a href="articles.html" class="btn btn-primary">📖 阅读最新文章</a>
-                        <a href="#about" class="btn btn-secondary">👨‍💻 关于我</a>
-                    </div>
-                </div>
+  <section id="home" class="page-shell">
+    <div class="page-shell__inner">
+      <div class="panel hero-panel">
+        <div class="hero-panel__content">
+          <span class="hero-panel__eyebrow">Notebook</span>
+          <div class="hero-grid">
+            <div>
+              <h1 class="hero-title">Aoitsuki</h1>
+              <p class="hero-subtitle" id="typewriter-text"></p>
+              <noscript>
+                <p class="hero-subtitle">乌幕屏，海相续，举眼茫茫，静听细浪语</p>
+              </noscript>
+              <div class="hero-actions">
+                <a href="/articles.html" class="btn btn-primary">📖 阅读最新文章</a>
+                <a href="#about" class="btn btn-secondary">👨‍💻 关于我</a>
+              </div>
             </div>
+            <div class="hero-card">
+              <span class="hero-card__label">写作自述</span>
+              <div class="hero-card__value">乌幕屏，海相续，举眼茫茫，静听细浪语</div>
+              <p class="hero-card__text">这里记录技术学习、算法思考，也收纳那些慢慢发酵的随笔与想法。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section id="blog" class="panel section-panel">
+        <div class="section-header">
+          <div>
+            <span class="panel-kicker">Latest</span>
+            <h2 class="section-title">最新文章</h2>
+          </div>
+          <a href="/articles.html" class="btn btn-secondary">查看全部文章</a>
+        </div>
+        <div class="cards-grid" id="latest-articles">
+          <p class="panel-empty">加载中...</p>
+        </div>
+      </section>
+
+      <div class="grid-two">
+        <section id="categories" class="panel section-panel">
+          <div class="section-header">
+            <div>
+              <span class="panel-kicker">Topics</span>
+              <h2 class="section-title">知识专栏</h2>
+            </div>
+          </div>
+          <div class="cards-grid" id="dynamic-categories-grid">
+            <p class="panel-empty">加载中...</p>
+          </div>
         </section>
 
-        <section id="blog" class="blog-section">
-            <div class="container">
-                <h2 class="section-title">最新文章</h2>
-                <div class="blog-grid" id="latest-articles">
-                    <!-- 动态生成的最新文章将显示在这里 -->
-                    <p style="text-align: center; width: 100%;">加载中...</p>
-                </div>
-                <script is:inline is:inline>
-                    // Base64 解码函数（支持中文）
-                    function b64_to_utf8(str) {
-                        try {
-                            return decodeURIComponent(escape(window.atob(str)));
-                        } catch (e) {
-                            const binString = window.atob(str);
-                            const bytes = new Uint8Array(binString.length);
-                            for (let i = 0; i < binString.length; i++) {
-                                bytes[i] = binString.charCodeAt(i);
-                            }
-                            return new TextDecoder('utf-8').decode(bytes);
-                        }
-                    }
-
-                    // 初始化最新文章
-                    async function initLatestArticles() {
-                        let blogArticles = [];
-                        try {
-                            // 从 Vercel API 实时拉取最新数据
-                            // 去除时间戳参数，改用 fetch 原生的 no-store 防止 Vercel 边缘缓存节点拦截
-                            const url = `https://api.aoiblog.top/api/getArticles`;
-                            
-                            const response = await fetch(url, {
-                                method: 'GET',
-                                cache: 'no-store'
-                            });
-                            
-                            if (response.ok) {
-                                const data = await response.json();
-                                if (data && data.success) {
-                                    blogArticles = data.data;
-                                }
-                            }
-                        } catch (error) {
-                            console.error('获取文章失败:', error);
-                        }
-                        
-                        // 按照创建日期排序（最新的在前）
-                        blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        
-                        // 只显示最新的三篇文章
-                        const latestThree = blogArticles.slice(0, 3);
-                        
-                        // 动态生成文章列表
-                        const latestArticlesContainer = document.getElementById('latest-articles');
-                        latestArticlesContainer.innerHTML = '';
-                        
-                        latestThree.forEach(article => {
-                            // 使用 marked 解析 Markdown 并去除 HTML 标签以获取纯文本摘要
-                            const htmlContent = marked.parse(article.content || '');
-                            const contentText = htmlContent.replace(/<[^>]*>/g, '');
-                            const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
-                            
-                            // 计算阅读时长 (假设 300字/分钟)
-                            const wordCount = contentText.length;
-                            const readTime = Math.ceil(wordCount / 300) || 1;
-                            
-                            const articleHTML = `
-                                <article class="blog-card">
-                                    <div class="blog-card-content">
-                                        <div class="blog-meta">
-                                            <span class="blog-date">${article.date}</span>
-                                            <span class="blog-read-time">⏱️ 约 ${readTime} 分钟阅读</span>
-                                        </div>
-                                        <h3 class="blog-title"><a href="articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
-                                        <div class="blog-tags" style="margin-bottom: 10px;">
-                                            <span style="display:inline-block; padding: 2px 8px; background: var(--nav-hover); color: #fff; border-radius: 4px; font-size: 12px;">${article.category || '未分类'}</span>
-                                        </div>
-                                        <p class="blog-excerpt">${excerpt}</p>
-                                        <a href="articles.html#${article.id}" class="btn btn-secondary">阅读更多</a>
-                                    </div>
-                                </article>
-                            `;
-                            
-                            latestArticlesContainer.innerHTML += articleHTML;
-                        });
-                        
-                        // 动态生成知识专栏（分类）
-                        const categoriesGrid = document.getElementById('dynamic-categories-grid');
-                        const existingCategories = new Set();
-                        // 保证默认分类按特定顺序显示
-                        const defaultCategories = ['技术学习', '数据结构与算法', '随笔'];
-                        
-                        blogArticles.forEach(article => {
-                            if (article.category) existingCategories.add(article.category);
-                        });
-                        
-                        // 合并默认分类和动态分类
-                        defaultCategories.forEach(c => existingCategories.add(c));
-                        
-                        categoriesGrid.innerHTML = '';
-                        
-                        // 配置分类的图标和描述映射
-                        const categoryMeta = {
-                            '技术学习': { icon: '💻', desc: '记录自己的一些技术栈' },
-                            '数据结构与算法': { icon: '🧮', desc: '修炼内功，提升算法思维' },
-                            '随笔': { icon: '📝', desc: '日常感悟与折腾记录' }
-                        };
-                        
-                        existingCategories.forEach(cat => {
-                            const meta = categoryMeta[cat] || { icon: '📌', desc: `关于 ${cat} 的相关文章` };
-                            const displayName = cat === '随笔' ? '生活随笔' : cat;
-                            
-                            const catHTML = `
-                                <a href="articles.html?category=${encodeURIComponent(cat)}" class="category-card">
-                                    <div class="category-icon">${meta.icon}</div>
-                                    <h3 class="category-name">${displayName}</h3>
-                                    <p class="category-desc">${meta.desc}</p>
-                                </a>
-                            `;
-                            categoriesGrid.innerHTML += catHTML;
-                        });
-                    }
-                    
-                    // 页面加载完成后初始化最新文章
-                    document.addEventListener('DOMContentLoaded', initLatestArticles);
-                </script>
+        <section id="about" class="panel section-panel">
+          <div class="section-header">
+            <div>
+              <span class="panel-kicker">About</span>
+              <h2 class="section-title">关于我</h2>
             </div>
+          </div>
+          <div class="contact-card">
+            <div>
+              <p>一名富有人文情怀的工科生</p>
+              <p>一名勇于实践的理想主义者</p>
+              <p>一名极度乐观的悲观主义者</p>
+            </div>
+            <div>
+              <h3>技术栈</h3>
+              <ul class="skills-list">
+                <li>HTML5 & CSS3</li>
+                <li>JavaScript</li>
+                <li>C++ & C</li>
+                <li>Python</li>
+                <li>Git & GitHub</li>
+                <li>持续学习和完善技术栈中……</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="grid-two">
+        <section id="contact" class="panel section-panel">
+          <div class="section-header">
+            <div>
+              <span class="panel-kicker">Guestbook</span>
+              <h2 class="section-title">留言板</h2>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="section-copy">
+              <p>欢迎在这里留下你的足迹、建议或任何想对我说的话！</p>
+              <p><strong>邮箱：</strong>antemeridiem@foxmail.com</p>
+              <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu" target="_blank">github.com/langhuanaibu</a></p>
+            </div>
+            <div id="twikoo-comments" class="panel" style="padding: 20px;"></div>
+          </div>
         </section>
 
-        <!-- 新增：知识体系/专栏模块 -->
-        <section id="categories" class="categories-section">
-            <div class="container">
-                <h2 class="section-title">知识专栏</h2>
-                <div class="categories-grid" id="dynamic-categories-grid">
-                    <p style="text-align: center; width: 100%;">加载中...</p>
-                </div>
+        <section id="friends" class="panel section-panel">
+          <div class="section-header">
+            <div>
+              <span class="panel-kicker">Friends</span>
+              <h2 class="section-title">友情链接</h2>
             </div>
-        </section>
+          </div>
+          <div class="friends-grid">
+            <a href="https://www.cloudtide.xyz/" target="_blank" rel="noreferrer" class="friend-card">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=friend1" alt="Friend Avatar">
+              <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拾云的博客</h3>
+                <p style="font-size: 12px;">正在优化中……</p>
+              </div>
+            </a>
 
-        <section id="about" class="about-section">
-            <div class="container">
-                <div class="about-content">
-                    <div class="about-text">
-                        <h2 class="section-title">关于我</h2>
-                        <p>一名富有人文情怀的工科生</p>
-                        <p>一名勇于实践的理想主义者</p>
-                        <p>一名极度乐观的悲观主义者</p>
-                    </div>
-                    <div class="about-info">
-                        <h3>技术栈</h3>
-                        <ul class="skills-list">
-                            <li>HTML5 & CSS3</li>
-                            <li>JavaScript</li>
-                            <li>C++ & C</li>
-                            <li>Python</li>
-                            <li>Git & GitHub</li>
-                            <li>持续学习和完善技术栈中……</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
+            <a href="https://langhuanaibu.github.io/my-blog/" target="_blank" rel="noreferrer" class="friend-card">
+              <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aoitsuki" alt="My Avatar">
+              <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 16px;">Aoitsuki's Blog</h3>
+                <p style="font-size: 12px;">乌幕屏，海相续...</p>
+              </div>
+            </a>
 
-        <section id="contact" class="contact-section">
-            <div class="container">
-                <h2 class="section-title">留言板</h2>
-                <div class="contact-content">
-                    <div class="contact-info">
-                        <p>欢迎在这里留下你的足迹、建议或任何想对我说的话！</p>
-                        <p><strong>邮箱：</strong>antemeridiem@foxmail.com</p>
-                        <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu" target="_blank">github.com/langhuanaibu</a></p>
-                    </div>
-                    <!-- 引入 Twikoo 评论系统 -->
-                    <div id="twikoo-comments" style="background: var(--card-bg); padding: 20px; border-radius: 10px; box-shadow: 0 5px 15px var(--card-shadow);"></div>
-                </div>
-            </div>
+            <a href="https://labuladong.online/zh/" target="_blank" rel="noopener noreferrer" class="friend-card">
+              <img src="https://api.dicebear.com/7.x/shapes/svg?seed=algo" alt="labuladong">
+              <div>
+                <h3 style="margin: 0 0 5px 0; font-size: 16px;">labuladong 的算法笔记</h3>
+                <p style="font-size: 12px;">最高效的算法刷题解决方案</p>
+              </div>
+            </a>
+          </div>
         </section>
+      </div>
+    </div>
+  </section>
 
-        <!-- 新增：友情链接模块 -->
-        <section id="friends" class="friends-section" style="padding: 40px 0;">
-            <div class="container">
-                <h2 class="section-title">友情链接</h2>
-                <div class="friends-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
-                    <!-- 朋友的博客卡片 -->
-                    <a href="cloudtide.xyz" target="_blank" class="friend-card" style="display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-radius: 8px; text-decoration: none; color: var(--text-color); box-shadow: 0 2px 10px var(--card-shadow); transition: transform 0.3s ease;">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=friend1" alt="Friend Avatar" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
-                        <div>
-                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拾云的博客</h3>
-                            <p style="margin: 0; font-size: 12px; color: var(--meta-color);">正在优化中……</p>
-                        </div>
-                    </a>
-                    
-                    <!-- 你的博客卡片（通常也会放自己的让别人复制） -->
-                    <a href="https://langhuanaibu.github.io/my-blog/" target="_blank" class="friend-card" style="display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-radius: 8px; text-decoration: none; color: var(--text-color); box-shadow: 0 2px 10px var(--card-shadow); transition: transform 0.3s ease;">
-                        <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aoitsuki" alt="My Avatar" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
-                        <div>
-                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">Aoitsuki's Blog</h3>
-                            <p style="margin: 0; font-size: 12px; color: var(--meta-color);">乌幕屏，海相续...</p>
-                        </div>
-                    </a>
-                    
-                    <!-- labuladong 的算法笔记 -->
-                    <a href="https://labuladong.online/zh/" target="_blank" rel="noopener" class="friend-card" style="display: flex; align-items: center; padding: 15px; background: var(--card-bg); border-radius: 8px; text-decoration: none; color: var(--text-color); box-shadow: 0 2px 10px var(--card-shadow); transition: transform 0.3s ease;">
-                        <img src="https://api.dicebear.com/7.x/shapes/svg?seed=algo" alt="labuladong" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 15px;">
-                        <div>
-                            <h3 style="margin: 0 0 5px 0; font-size: 16px;">labuladong 的算法笔记</h3>
-                            <p style="margin: 0; font-size: 12px; color: var(--meta-color);">最高效的算法刷题解决方案</p>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </section>
-    
+  <script is:inline>
+    function b64_to_utf8(str) {
+      try {
+        return decodeURIComponent(escape(window.atob(str)));
+      } catch (e) {
+        const binString = window.atob(str);
+        const bytes = new Uint8Array(binString.length);
+        for (let i = 0; i < binString.length; i++) {
+          bytes[i] = binString.charCodeAt(i);
+        }
+        return new TextDecoder('utf-8').decode(bytes);
+      }
+    }
 
-    <Fragment slot="scripts">
-<!-- 引入 Twikoo 评论系统核心脚本 -->
-    <script is:inline src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
-    <script is:inline is:inline>
-        // 初始化主页留言板
-        twikoo.init({
-            envId: 'https://twikoo.aoiblog.top', 
-            el: '#twikoo-comments', 
-            path: '/', // 使用根路径标识主页留言
-            lang: 'zh-CN',
+    async function initLatestArticles() {
+      let blogArticles = [];
+      try {
+        const response = await fetch('https://api.aoiblog.top/api/getArticles', {
+          method: 'GET',
+          cache: 'no-store'
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.success) blogArticles = data.data;
+        }
+      } catch (error) {
+        console.error('获取文章失败:', error);
+      }
+
+      blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const latestThree = blogArticles.slice(0, 3);
+      const latestArticlesContainer = document.getElementById('latest-articles');
+      latestArticlesContainer.innerHTML = '';
+
+      latestThree.forEach((article) => {
+        const htmlContent = marked.parse(article.content || '');
+        const contentText = htmlContent.replace(/<[^>]*>/g, '');
+        const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
+        const readTime = Math.ceil(contentText.length / 300) || 1;
+
+        latestArticlesContainer.innerHTML += `
+          <article class="blog-card">
+            <div class="blog-meta">
+              <span>${article.date}</span>
+              <span>⏱️ 约 ${readTime} 分钟阅读</span>
+            </div>
+            <h3 class="blog-title"><a href="/articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
+            <div class="blog-tags">
+              <span class="panel-kicker" style="font-size: 0.72rem;">${article.category || '未分类'}</span>
+            </div>
+            <p class="blog-excerpt">${excerpt}</p>
+            <a href="/articles.html#${article.id}" class="btn btn-secondary">阅读更多</a>
+          </article>
+        `;
+      });
+
+      if (!latestThree.length) {
+        latestArticlesContainer.innerHTML = '<p class="panel-empty">暂时还没有文章，稍后再来看看。</p>';
+      }
+
+      const categoriesGrid = document.getElementById('dynamic-categories-grid');
+      const existingCategories = new Set();
+      const defaultCategories = ['技术学习', '数据结构与算法', '随笔'];
+
+      blogArticles.forEach((article) => {
+        if (article.category) existingCategories.add(article.category);
+      });
+      defaultCategories.forEach((c) => existingCategories.add(c));
+
+      categoriesGrid.innerHTML = '';
+      const categoryMeta = {
+        '技术学习': { icon: '💻', desc: '记录自己的一些技术栈' },
+        '数据结构与算法': { icon: '🧮', desc: '修炼内功，提升算法思维' },
+        '随笔': { icon: '📝', desc: '日常感悟与折腾记录' }
+      };
+
+      existingCategories.forEach((cat) => {
+        const meta = categoryMeta[cat] || { icon: '📌', desc: `关于 ${cat} 的相关文章` };
+        const displayName = cat === '随笔' ? '生活随笔' : cat;
+
+        categoriesGrid.innerHTML += `
+          <a href="/articles.html?category=${encodeURIComponent(cat)}" class="category-card">
+            <div class="category-icon">${meta.icon}</div>
+            <h3 class="category-name">${displayName}</h3>
+            <p class="category-desc">${meta.desc}</p>
+          </a>
+        `;
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initLatestArticles);
+  </script>
+
+  <Fragment slot="scripts">
+    <script is:inline src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
+    <script is:inline>
+      twikoo.init({
+        envId: 'https://twikoo.aoiblog.top',
+        el: '#twikoo-comments',
+        path: '/',
+        lang: 'zh-CN'
+      });
     </script>
-    <script is:inline src="script.js"></script>
-    </Fragment>
+    <script is:inline src="/script.js"></script>
+  </Fragment>
 </BaseLayout>

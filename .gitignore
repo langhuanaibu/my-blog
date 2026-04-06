@@ -1,2 +1,5 @@
 .vscode/
 vue-demo/
+node_modules/
+.astro/
+dist/
