@@ -206,6 +206,12 @@ npm run preview
 - 本地预览 `/articles.html` 返回 `200`
 - 改造已提交并推送到 `main`
 
+#### Vercel 部署兼容修复
+- 将 `package.json` 中的 Node 版本约束从 `>=24.14.1` 调整为 `24.x`
+- 删除 `vercel.json`
+- 原因是当前项目已经是标准 Astro 静态站结构，Vercel 对 Astro 项目通常使用零配置更稳
+- 顶层 `api/` 目录本身就是 Vercel Functions 约定路径，不需要再额外写 `/api/(.*) -> /api/$1.js` 的 rewrite
+
 ---
 
 ## 踩坑记录
@@ -277,6 +283,50 @@ PowerShell 输出 Astro 文件时，中文显示成乱码。
 node_modules/
 .astro/
 dist/
+```
+
+---
+
+### 5. Astro 项目在 Vercel 上尽量不要额外写 rewrite
+
+#### 现象
+项目本地 `npm run build` 正常，但 Vercel 端可能出现部署异常、路由行为不一致，或者部署后访问结果和本地预览不完全一致。
+
+#### 原因
+当前项目已经是标准 Astro 静态站，同时仓库根目录还有顶层 `api/` 目录。对这种结构来说：
+
+- Astro 前台通常用 Vercel 零配置部署更稳
+- 顶层 `api/*.js` 本身就是 Vercel Functions 的默认约定路径
+- 额外再写 `vercel.json` 的 rewrite，反而容易让 Astro 路由和 Vercel 路由叠加，增加不确定性
+
+#### 解决
+- 删除 `vercel.json`
+- 保留 Astro 默认构建输出
+- 保留顶层 `api/` 目录作为 Vercel Functions
+
+---
+
+### 6. Node 版本约束在部署平台上不要写得过窄
+
+#### 现象
+本地能用某个精确 Node 版本运行，但部署平台对精确 patch 版本的识别不一定完全一致。
+
+#### 原因
+像 `>=24.14.1` 这种写法虽然本地可用，但在部署平台上不如 `24.x` 这种主版本范围更稳、更符合托管平台的识别习惯。
+
+#### 解决
+在 `package.json` 中优先写：
+
+```json
+"engines": {
+  "node": "24.x"
+}
+```
+
+本地仍然继续通过 `.nvmrc` 固定具体版本：
+
+```text
+24.14.1
 ```
 
 ---
