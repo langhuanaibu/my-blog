@@ -1,0 +1,30 @@
+---
+const { isIndex = true } = Astro.props;
+const logo = isIndex ? "蓝月亮" : "我的博客";
+const homeLink = isIndex ? "#home" : "index.html#home";
+const blogLink = isIndex ? "#blog" : "index.html#blog";
+const articlesLink = isIndex ? "articles.html" : "articles.html";
+const aboutLink = isIndex ? "#about" : "index.html#about";
+const contactLink = isIndex ? "#contact" : "index.html#contact";
+---
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <h1 class="logo">{logo}</h1>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li class="nav-item"><a href={homeLink} class="nav-link">首页</a></li>
+                    <li class="nav-item"><a href={blogLink} class="nav-link">博客</a></li>
+                    <li class="nav-item"><a href={articlesLink} class="nav-link">我的文章</a></li>
+                    <li class="nav-item"><a href={aboutLink} class="nav-link">关于我</a></li>
+                    <li class="nav-item"><a href={contactLink} class="nav-link">联系</a></li>
+                    <li class="nav-item">
+                        <button id="theme-toggle" class="theme-toggle" aria-label="切换主题">
+                            🌞
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>
