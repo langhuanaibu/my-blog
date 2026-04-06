@@ -331,6 +331,35 @@ dist/
 
 ---
 
+### 7. `node_modules` 即使写进了 `.gitignore`，如果之前已经提交过，Vercel 仍然会拉到仓库里
+
+#### 现象
+Vercel 部署时出现：
+
+```text
+Command "npm run build" exited with 126
+```
+
+本地构建正常，但线上构建在安装依赖后直接失败。
+
+#### 原因
+`.gitignore` 只能阻止“新文件继续被追踪”，不能自动把“之前已经提交进 Git 的 `node_modules/`”移出版本库。
+
+如果仓库里已经追踪了从 Windows 提交上去的 `node_modules/.bin/*` 文件，Vercel 的 Linux 构建环境就可能因为可执行权限或脚本兼容问题触发 `exit 126`。
+
+#### 解决
+确认 `node_modules/` 已写入 `.gitignore` 后，还必须执行一次：
+
+```powershell
+git rm -r --cached node_modules
+git commit -m "fix: remove tracked node_modules from repo"
+git push origin main
+```
+
+这样只会把 `node_modules` 从 Git 跟踪中移除，不会删除本地磁盘里的依赖目录。
+
+---
+
 ## 维护约定
 
 后续在这个仓库继续改动时，默认遵守以下约定：
