@@ -391,6 +391,23 @@ No Next.js version detected. Make sure your package.json has "next" in either "d
 
 ---
 
+### 9. GitHub Pages 误用 Jekyll 导致 Astro 构建报错
+
+#### 现象
+在 GitHub 的 Actions 页面，自动触发的 `pages build and deployment` 任务持续失败，并在 `build` 阶段报错：
+```text
+Logging at level: debug GitHub Pages: github-pages v232 GitHub Pages: jekyll v3.10.0 Theme: jekyll-theme-primer ... Requiring:
+```
+
+#### 原因
+项目实际部署在 Vercel 上，但 GitHub 仓库默认开启了 GitHub Pages，且没有配置专门的 Astro 构建工作流。因此，GitHub Pages 默认使用自带的 Jekyll（基于 Ruby）来尝试构建我们的 Node.js/Astro 项目。Jekyll 无法理解 Astro 的项目结构（如 `.astro` 或 `node_modules` 等带有特殊符号的文件），从而导致构建崩溃。
+
+#### 解决
+- **方案一（推荐）**：在项目根目录创建一个名为 `.nojekyll` 的空文件。这会明确告诉 GitHub 不要使用 Jekyll 来构建此仓库，从而消除由于 Jekyll 解析导致的报错。
+- **方案二**：直接前往 GitHub 仓库的 `Settings -> Pages`，将 `Build and deployment` 的 Source 设置为 `None`，彻底关闭 GitHub Pages 功能。
+
+---
+
 ## 维护约定
 
 后续在这个仓库继续改动时，默认遵守以下约定：
