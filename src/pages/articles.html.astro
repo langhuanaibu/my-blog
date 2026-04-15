@@ -275,7 +275,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         articleDetail.innerHTML = `
           <header class="article-header">
-            <span class="panel-kicker">Post</span>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="panel-kicker">Post</span>
+              <button id="focus-mode-toggle" class="btn-focus-mode">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                <span>专注阅读</span>
+              </button>
+            </div>
             <h1 class="article-title">${article.title}</h1>
             <div class="article-meta">
               <span>发布日期：${article.date}</span>
@@ -308,6 +314,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         generateTOC();
         initReadProgress();
         fetchFullReadCount(articleId);
+
+        // 绑定专注阅读模式事件
+        setTimeout(() => {
+          const focusBtn = document.getElementById('focus-mode-toggle');
+          if (focusBtn) {
+            const isFocus = document.body.classList.contains('focus-mode-active');
+            if (isFocus) {
+              focusBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7"/></svg> <span>退出专注</span>';
+            }
+            focusBtn.addEventListener('click', () => {
+              const isActive = document.body.classList.toggle('focus-mode-active');
+              if (isActive) {
+                focusBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7"/></svg> <span>退出专注</span>';
+              } else {
+                focusBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg> <span>专注阅读</span>';
+              }
+            });
+          }
+        }, 0);
 
         document.querySelectorAll('#article-content pre').forEach((pre) => {
           pre.classList.add('mac-style-code');
