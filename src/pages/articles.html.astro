@@ -499,11 +499,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           focusBtn.addEventListener('click', () => {
             const isActive = document.body.classList.toggle('focus-mode-active');
             if (isActive) {
-              focusBtn.innerHTML = '<span>退出专注</span>';
-              focusBtn.setAttribute('title', '退出专注模式');
+              focusBtn.innerText = '退出专注';
+              focusBtn.classList.add('btn-primary');
+              focusBtn.classList.remove('btn-secondary');
             } else {
-              focusBtn.innerHTML = '<span>专注阅读</span>';
-              focusBtn.setAttribute('title', '专注阅读模式');
+              focusBtn.innerText = '专注阅读';
+              focusBtn.classList.add('btn-secondary');
+              focusBtn.classList.remove('btn-primary');
             }
           });
         }
@@ -514,11 +516,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           tocBtn.addEventListener('click', () => {
             const isHidden = document.body.classList.toggle('hide-toc-active');
             if (isHidden) {
-              tocBtn.innerHTML = '<span>显示大纲</span>';
-              tocBtn.setAttribute('title', '显示文章大纲');
+              tocBtn.innerText = '显示大纲';
+              tocBtn.classList.add('btn-primary');
+              tocBtn.classList.remove('btn-secondary');
             } else {
-              tocBtn.innerHTML = '<span>隐藏大纲</span>';
-              tocBtn.setAttribute('title', '隐藏文章大纲');
+              tocBtn.innerText = '隐藏大纲';
+              tocBtn.classList.add('btn-secondary');
+              tocBtn.classList.remove('btn-primary');
             }
           });
         }
@@ -575,11 +579,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <Fragment slot="floating-menu-extra">
-    <button id="toc-mode-toggle" class="floating-btn action-btn text-btn" type="button" aria-label="隐藏大纲" title="隐藏文章大纲">
-      <span>隐藏大纲</span>
-    </button>
-    <button id="focus-mode-toggle" class="floating-btn action-btn text-btn" type="button" aria-label="专注阅读模式" title="专注阅读模式">
-      <span>专注阅读</span>
-    </button>
+    <div class="panel article-tools-panel">
+      <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
+        <span class="panel-kicker">Tools</span>
+        <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
+      </div>
+      <div class="article-tools-actions">
+        <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+          隐藏大纲
+        </button>
+        <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+          专注阅读
+        </button>
+      </div>
+    </div>
   </Fragment>
 </BaseLayout>

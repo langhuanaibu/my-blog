@@ -420,11 +420,29 @@ img { max-width: 100%; display: block; }
 .footer__links { display: flex; gap: 16px; flex-wrap: wrap; }
 .footer__links a:hover { color: var(--heading); }
 
+/* 浮动操作按钮 */
 .floating-menu {
   position: fixed;
-  right: 22px;
-  bottom: 24px;
-  z-index: 30;
+  bottom: 40px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 1000;
+  align-items: flex-end;
+}
+
+.article-tools-panel {
+  padding: 16px;
+  width: 160px;
+  box-shadow: var(--shadow);
+  margin-bottom: 8px;
+}
+
+.article-tools-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .floating-actions {
