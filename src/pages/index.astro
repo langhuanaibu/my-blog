@@ -9,6 +9,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 >
   <Fragment slot="head">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
+    <script is:inline>
+      if (window.location.pathname === '/' && !sessionStorage.getItem('introPlayed')) {
+        document.documentElement.classList.add('intro-active');
+      }
+    </script>
   </Fragment>
 
   <section id="home" class="page-shell">
@@ -275,6 +280,103 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         el: '#twikoo-comments',
         path: '/',
         lang: 'zh-CN'
+      });
+    </script>
+    <script is:inline>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (document.documentElement.classList.contains('intro-active')) {
+          const heroPanel = document.querySelector('.hero-panel');
+          const headerAvatar = document.querySelector('.brand__avatar');
+          
+          if (heroPanel) {
+            heroPanel.animate([
+              { transform: 'translateY(-100vh)', opacity: 1 },
+              { transform: 'translateY(30px)', opacity: 1, offset: 0.6 },
+              { transform: 'translateY(-15px)', opacity: 1, offset: 0.8 },
+              { transform: 'translateY(0)', opacity: 1 }
+            ], {
+              duration: 1000,
+              easing: 'cubic-bezier(0.28, 0.84, 0.42, 1)',
+              fill: 'forwards'
+            });
+          }
+
+          const flyingAvatar = document.createElement('img');
+          flyingAvatar.src = headerAvatar ? headerAvatar.src : '/images/my-avatar.jpg';
+          flyingAvatar.className = 'flying-avatar';
+          
+          const avatarSize = 120;
+          flyingAvatar.style.width = `${avatarSize}px`;
+          flyingAvatar.style.height = `${avatarSize}px`;
+          flyingAvatar.style.top = '50%';
+          flyingAvatar.style.left = '50%';
+          flyingAvatar.style.marginLeft = `-${avatarSize/2}px`;
+          flyingAvatar.style.marginTop = `-${avatarSize/2}px`;
+          document.body.appendChild(flyingAvatar);
+
+          const avatarDropAnim = flyingAvatar.animate([
+            { transform: 'translateY(-100vh) scale(1)', opacity: 1 },
+            { transform: 'translateY(30px) scale(1)', opacity: 1, offset: 0.6 },
+            { transform: 'translateY(-15px) scale(1)', opacity: 1, offset: 0.8 },
+            { transform: 'translateY(0) scale(1)', opacity: 1 }
+          ], {
+            duration: 1000,
+            delay: 250,
+            easing: 'cubic-bezier(0.28, 0.84, 0.42, 1)',
+            fill: 'forwards'
+          });
+
+          avatarDropAnim.onfinish = () => {
+            setTimeout(() => {
+              if (!headerAvatar) {
+                document.documentElement.classList.remove('intro-active');
+                sessionStorage.setItem('introPlayed', 'true');
+                return;
+              }
+              
+              const targetRect = headerAvatar.getBoundingClientRect();
+              const startX = window.innerWidth / 2;
+              const startY = window.innerHeight / 2;
+              const targetX = targetRect.left + targetRect.width / 2;
+              const targetY = targetRect.top + targetRect.height / 2;
+              
+              const tx = targetX - startX;
+              const ty = targetY - startY;
+              const targetScale = targetRect.width / avatarSize;
+
+              const flightAnim = flyingAvatar.animate([
+                { transform: `translate(0px, 0px) scale(1)`, opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(${targetScale})`, opacity: 1 }
+              ], {
+                duration: 800,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                fill: 'forwards'
+              });
+
+              flightAnim.onfinish = () => {
+                flyingAvatar.remove();
+                headerAvatar.style.opacity = '1';
+                
+                document.documentElement.classList.remove('intro-active');
+                
+                const hiddenElements = document.querySelectorAll('.site-header, #blog, .grid-two, .footer, .floating-menu');
+                hiddenElements.forEach((el, index) => {
+                  el.animate([
+                    { opacity: 0, transform: 'translateY(20px)' },
+                    { opacity: 1, transform: 'translateY(0)' }
+                  ], {
+                    duration: 600,
+                    delay: index * 100,
+                    easing: 'ease-out',
+                    fill: 'both'
+                  });
+                });
+
+                sessionStorage.setItem('introPlayed', 'true');
+              };
+            }, 1200);
+          };
+        }
       });
     </script>
     <script is:inline src="/script.js"></script>
