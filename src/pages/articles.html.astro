@@ -508,6 +508,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           });
         }
 
+        // 全局绑定隐藏大纲按钮
+        const tocBtn = document.getElementById('toc-mode-toggle');
+        if (tocBtn) {
+          tocBtn.addEventListener('click', () => {
+            const isHidden = document.body.classList.toggle('hide-toc-active');
+            if (isHidden) {
+              tocBtn.innerHTML = '<span>显示大纲</span>';
+              tocBtn.setAttribute('title', '显示文章大纲');
+            } else {
+              tocBtn.innerHTML = '<span>隐藏大纲</span>';
+              tocBtn.setAttribute('title', '隐藏文章大纲');
+            }
+          });
+        }
+
         const urlParams = new URLSearchParams(window.location.search);
         const categoryFilter = urlParams.get('category');
         if (categoryFilter) {
@@ -560,6 +575,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <Fragment slot="floating-menu-extra">
+    <button id="toc-mode-toggle" class="floating-btn action-btn text-btn" type="button" aria-label="隐藏大纲" title="隐藏文章大纲">
+      <span>隐藏大纲</span>
+    </button>
     <button id="focus-mode-toggle" class="floating-btn action-btn text-btn" type="button" aria-label="专注阅读模式" title="专注阅读模式">
       <span>专注阅读</span>
     </button>

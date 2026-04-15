@@ -475,6 +475,16 @@ img { max-width: 100%; display: block; }
 
 .article-page-shell .panel { padding: 24px; }
 
+/* 隐藏大纲模式 (Hide TOC Mode) */
+body.hide-toc-active .page-articles .page-shell__inner,
+body.hide-toc-active .article-page-grid {
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 2.3fr);
+}
+
+body.hide-toc-active .article-toc-panel {
+  display: none !important;
+}
+
 /* 使文章页的左右侧边栏固定在视口中 */
 .article-nav-panel,
 .article-toc-panel {
