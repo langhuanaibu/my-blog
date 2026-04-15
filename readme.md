@@ -489,4 +489,4 @@ Logging at level: debug GitHub Pages: github-pages v232 GitHub Pages: jekyll v3.
 - **使用 ES Module 引入**：在 Astro 的 `<script is:inline>` 中使用 pretext 时，需要改为 `<script type="module" is:inline>` 以便支持 `import` 语法。
 - **精准多行截断**：在首页摘要中，使用 `prepareWithSegments` 和 `layoutWithLines` 提前计算出正好适应容器宽度的 3 行文本，拼接后插入 DOM，取代了不可控的 CSS `-webkit-line-clamp`。
 - **长列表虚拟化**：在文章列表页，使用 pretext 极速预计算每篇文章标题由于换行导致的精确高度。结合固定边距得出每个列表项的绝对高度和偏移量（top）。然后在 `scroll` 事件中，仅渲染可视区域内的文章节点，并使用绝对定位。这样无论文章多少，DOM 节点数始终保持在极低水平，实现了高性能的虚拟列表。
-- **瀑布流布局**：在首页分类卡片中，同样使用 pretext 预先计算描述文本的高度，在 JS 中直接得出卡片总高度并分配到最短列，最后将计算好 `top` 和 `left` 的 HTML 字符串一次性插入 DOM，完美避免了瀑布流布局的性能瓶颈。
+- **瀑布流布局**：最初尝试使用 pretext 预计算首页分类卡片的高度并进行绝对定位，但由于卡片中包含了 emoji 图标、不同级别的标题以及边距，这些元素在不同操作系统和浏览器下的实际渲染高度（包括行高差异）难以做到 100% 精确的像素级预估，导致最终渲染时卡片出现了由于绝对定位计算不准带来的高度溢出或重叠。为了保证完美的视觉效果，现已**改用原生的 CSS Multi-column（多列布局）**。CSS Multi-column 同样不需要 JS 频繁操作 DOM 和测量，性能极佳，且由浏览器引擎负责排版，彻底避免了跨端兼容和字体渲染差异带来的错位问题。

@@ -220,9 +220,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       defaultCategories.forEach((category) => existingCategories.add(category));
 
       categoriesGrid.innerHTML = '';
-      // 改变类别容器为相对定位以便实现瀑布流
-      categoriesGrid.style.position = 'relative';
+      // 改为使用 CSS 多列布局 (Multi-column) 实现原生的高性能瀑布流
+      // 避免手动计算图标、内外边距等在不同系统下的像素差异
       categoriesGrid.style.display = 'block';
+      categoriesGrid.style.columnCount = window.innerWidth > 1100 ? 3 : 1;
+      categoriesGrid.style.columnGap = '18px';
 
       const categoryMeta = {
         技术学习: { icon: '📚', desc: '记录自己的一些技术栈' },
@@ -230,55 +232,24 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         随笔: { icon: '📝', desc: '日常感悟与折腾记录' }
       };
 
-      // 瀑布流布局计算
-      const colCount = window.innerWidth > 1100 ? 3 : 1;
-      const gap = 18;
-      const colWidth = categoriesGrid.clientWidth > 0 
-        ? (categoriesGrid.clientWidth - gap * (colCount - 1)) / colCount 
-        : 300;
-      
-      const colHeights = Array(colCount).fill(0);
       let masonryHTML = '';
 
       existingCategories.forEach((category) => {
         const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
         const displayName = category === '随笔' ? '生活随笔' : category;
 
-        // 预估卡片高度: padding (44) + gap (14 * 2) + icon (1.8rem*1.75 ≈ 51) + title (1.17em*1.35 ≈ 26) + desc text
-        let descHeight = 28;
-        try {
-          const prepared = prepareWithSegments(meta.desc, font);
-          const { height } = layoutWithLines(prepared, colWidth - 44, 28);
-          descHeight = height;
-        } catch(e) {}
-
-        // 加上一个小小的缓冲(如4px)防止不同浏览器字体渲染差异导致溢出
-        const cardHeight = 44 + 28 + 51 + 26 + descHeight + 4;
-
-        // 找到最矮的列
-        let minColIdx = 0;
-        for (let i = 1; i < colCount; i++) {
-          if (colHeights[i] < colHeights[minColIdx]) {
-            minColIdx = i;
-          }
-        }
-
-        const top = colHeights[minColIdx];
-        const left = minColIdx * (colWidth + gap);
-
+        // break-inside: avoid 防止卡片被截断到两列
+        // min-height: auto 覆盖原有的 100% 避免高度异常
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="position: absolute; top: ${top}px; left: ${left}px; width: ${colWidth}px; height: ${cardHeight}px; box-sizing: border-box; overflow: hidden;">
+          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
             <div class="category-icon">${meta.icon}</div>
             <h3 class="category-name">${displayName}</h3>
             <p class="category-desc">${meta.desc}</p>
           </a>
         `;
-
-        colHeights[minColIdx] += cardHeight + gap;
       });
 
       categoriesGrid.innerHTML = masonryHTML;
-      categoriesGrid.style.height = Math.max(...colHeights) + 'px';
     }
 
     document.addEventListener('DOMContentLoaded', initLatestArticles);
