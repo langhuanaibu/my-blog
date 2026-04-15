@@ -486,8 +486,7 @@ img { max-width: 100%; display: block; }
 }
 
 /* 专注阅读模式 (Focus Mode) */
-body.focus-mode-active .article-nav-panel,
-body.focus-mode-active .article-toc-panel {
+body.focus-mode-active .article-nav-panel {
   filter: blur(8px) grayscale(0.5);
   opacity: 0.15;
   pointer-events: none; /* 模糊状态下不可点击 */
