@@ -244,7 +244,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
         const displayName = category === '随笔' ? '生活随笔' : category;
 
-        // 预估卡片高度: padding (44) + gap (14 * 2) + icon (~29) + title (~22) + desc text
+        // 预估卡片高度: padding (44) + gap (14 * 2) + icon (1.8rem*1.75 ≈ 51) + title (1.17em*1.35 ≈ 26) + desc text
         let descHeight = 28;
         try {
           const prepared = prepareWithSegments(meta.desc, font);
@@ -252,7 +252,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           descHeight = height;
         } catch(e) {}
 
-        const cardHeight = 44 + 28 + 29 + 22 + descHeight;
+        // 加上一个小小的缓冲(如4px)防止不同浏览器字体渲染差异导致溢出
+        const cardHeight = 44 + 28 + 51 + 26 + descHeight + 4;
 
         // 找到最矮的列
         let minColIdx = 0;
@@ -266,7 +267,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const left = minColIdx * (colWidth + gap);
 
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="position: absolute; top: ${top}px; left: ${left}px; width: ${colWidth}px; box-sizing: border-box;">
+          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="position: absolute; top: ${top}px; left: ${left}px; width: ${colWidth}px; height: ${cardHeight}px; box-sizing: border-box; overflow: hidden;">
             <div class="category-icon">${meta.icon}</div>
             <h3 class="category-name">${displayName}</h3>
             <p class="category-desc">${meta.desc}</p>
