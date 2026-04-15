@@ -36,7 +36,9 @@ import '../styles/site.css';
         <slot />
     </main>
     <Footer isIndex={isIndex} />
-    <FloatingMenu />
+    <FloatingMenu>
+        <slot name="floating-menu-extra" />
+    </FloatingMenu>
     <slot name="scripts" />
 </body>
 </html>
