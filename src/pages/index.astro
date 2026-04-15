@@ -10,7 +10,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <Fragment slot="head">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
     <script is:inline>
-      if (window.location.pathname === '/' && !sessionStorage.getItem('introPlayed')) {
+      if (window.location.pathname === '/') {
         document.documentElement.classList.add('intro-active');
       }
     </script>
@@ -330,7 +330,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             setTimeout(() => {
               if (!headerAvatar) {
                 document.documentElement.classList.remove('intro-active');
-                sessionStorage.setItem('introPlayed', 'true');
                 return;
               }
               
@@ -371,8 +370,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     fill: 'both'
                   });
                 });
-
-                sessionStorage.setItem('introPlayed', 'true');
               };
             }, 1200);
           };
