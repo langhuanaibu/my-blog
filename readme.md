@@ -473,3 +473,20 @@ Logging at level: debug GitHub Pages: github-pages v232 GitHub Pages: jekyll v3.
 /api/saveArticle
 /api/deleteArticle
 ```
+
+---
+
+### 10. 使用 Pretext 优化前端文本测量与布局
+
+#### 现象
+在博客首页截断摘要（直接切 100 字符）会导致半个单词被截断、卡片高度不一；在文章列表页，若一次性渲染所有文章的 DOM 节点，长列表会导致页面滚动卡顿。
+
+#### 原因
+传统的前端文本截断和高度测量通常依赖于将元素插入 DOM 后读取 `offsetHeight`，这种做法会触发浏览器昂贵的重排（Reflow），在长列表或瀑布流布局中会导致严重的性能问题（Layout Thrashing）。
+
+#### 解决
+引入了 `@chenglou/pretext` 库，这是一个极速、不依赖 DOM 的文本测量与布局引擎。
+- **使用 ES Module 引入**：在 Astro 的 `<script is:inline>` 中使用 pretext 时，需要改为 `<script type="module" is:inline>` 以便支持 `import` 语法。
+- **精准多行截断**：在首页摘要中，使用 `prepareWithSegments` 和 `layoutWithLines` 提前计算出正好适应容器宽度的 3 行文本，拼接后插入 DOM，取代了不可控的 CSS `-webkit-line-clamp`。
+- **长列表虚拟化**：在文章列表页，使用 pretext 极速预计算每篇文章标题由于换行导致的精确高度。结合固定边距得出每个列表项的绝对高度和偏移量（top）。然后在 `scroll` 事件中，仅渲染可视区域内的文章节点，并使用绝对定位。这样无论文章多少，DOM 节点数始终保持在极低水平，实现了高性能的虚拟列表。
+- **瀑布流布局**：在首页分类卡片中，同样使用 pretext 预先计算描述文本的高度，在 JS 中直接得出卡片总高度并分配到最短列，最后将计算好 `top` 和 `left` 的 HTML 字符串一次性插入 DOM，完美避免了瀑布流布局的性能瓶颈。
