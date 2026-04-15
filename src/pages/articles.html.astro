@@ -499,10 +499,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           focusBtn.addEventListener('click', () => {
             const isActive = document.body.classList.toggle('focus-mode-active');
             if (isActive) {
-              focusBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M10 14l-7 7M14 10l7-7"/></svg>';
+              focusBtn.innerHTML = '<span>退出专注</span>';
               focusBtn.setAttribute('title', '退出专注模式');
             } else {
-              focusBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>';
+              focusBtn.innerHTML = '<span>专注阅读</span>';
               focusBtn.setAttribute('title', '专注阅读模式');
             }
           });
@@ -560,10 +560,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <Fragment slot="floating-menu-extra">
-    <button id="focus-mode-toggle" class="floating-btn action-btn" type="button" aria-label="专注阅读模式" title="专注阅读模式">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
-      </svg>
+    <button id="focus-mode-toggle" class="floating-btn action-btn text-btn" type="button" aria-label="专注阅读模式" title="专注阅读模式">
+      <span>专注阅读</span>
     </button>
   </Fragment>
 </BaseLayout>
