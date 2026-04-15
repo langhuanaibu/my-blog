@@ -317,6 +317,23 @@ img { max-width: 100%; display: block; }
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
+@keyframes dropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--drop-dist, -50px));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-drop-play {
+  animation: dropIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0; /* hold initial state */
+}
+
 .blog-card:hover,
 .category-card:hover,
 .friend-card:hover {
