@@ -334,6 +334,24 @@ img { max-width: 100%; display: block; }
   opacity: 0; /* hold initial state */
 }
 
+@keyframes flipIn {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) rotateX(25deg) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) rotateX(0) translateY(0);
+  }
+}
+
+.anim-flip-play {
+  animation: flipIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation-delay: calc(var(--flip-delay, 0s) + 0.2s); /* 稍微比上面 drop 动画晚一点开始 */
+  opacity: 0;
+  transform-origin: bottom center;
+}
+
 .blog-card:hover,
 .category-card:hover,
 .friend-card:hover {

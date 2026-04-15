@@ -238,6 +238,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       };
 
       let masonryHTML = '';
+      let categoryIndex = 0;
 
       existingCategories.forEach((category) => {
         const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
@@ -245,13 +246,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         // break-inside: avoid 防止卡片被截断到两列
         // min-height: auto 覆盖原有的 100% 避免高度异常
+        // 为每张卡片赋予动态递增的 animation-delay 实现交错“发牌”或“翻转”
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
+          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
             <div class="category-icon">${meta.icon}</div>
             <h3 class="category-name">${displayName}</h3>
             <p class="category-desc">${meta.desc}</p>
           </a>
         `;
+        categoryIndex++;
       });
 
       categoriesGrid.innerHTML = masonryHTML;
