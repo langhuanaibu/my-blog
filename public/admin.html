@@ -126,17 +126,18 @@
                         内容 (支持HTML)
                         <button type="button" id="insert-img-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 10px;">插入图片</button>
                         <button type="button" id="insert-code-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入代码块</button>
-                        <button type="button" id="insert-link-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入跳转链接</button>
+                        <button type="button" id="insert-link-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">插入网址链接</button>
                         <button type="button" id="insert-bold-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; font-weight: bold;">B</button>
                         <button type="button" id="insert-title-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">H3</button>
                         <button type="button" id="insert-red-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: red;">红字</button>
                         <button type="button" id="insert-blue-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: #0366d6;">蓝字</button>
                         <button type="button" id="insert-yellow-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; color: #e3a600;">黄字</button>
                         <button type="button" id="upload-md-btn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px; background-color: #6f42c1; color: white;">导入MD</button>
-                        <span id="img-upload-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
+                        <span id="editor-action-status" style="font-size: 12px; color: #666; margin-left: 10px; display: none;"></span>
                     </label>
                     <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
                     <input type="file" id="md-upload-input" accept=".md" style="display: none;">
+                    <div class="help-text">插入网址链接时，系统会自动抓取网页原标题，并以可点击链接形式插入正文。</div>
                     <textarea id="edit-content" rows="15" required></textarea>
                 </div>
                 <div>
@@ -232,6 +233,72 @@
         // Base64 编码和解码（支持中文）
         function utf8_to_b64(str) {
             return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function setEditorActionStatus(message, type = 'info') {
+            const statusText = document.getElementById('editor-action-status');
+            if (!statusText) return;
+
+            const colors = {
+                info: '#666',
+                success: 'green',
+                error: 'red'
+            };
+
+            statusText.style.display = message ? 'inline' : 'none';
+            statusText.style.color = colors[type] || colors.info;
+            statusText.innerText = message || '';
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function insertTextAtCursor(textToInsert, selectionStartOffset = 0, selectionEndOffset = 0) {
+            const textarea = document.getElementById('edit-content');
+            const startPos = textarea.selectionStart;
+            const endPos = textarea.selectionEnd;
+            const text = textarea.value;
+
+            textarea.value = text.substring(0, startPos) + textToInsert + text.substring(endPos);
+
+            textarea.focus();
+            textarea.setSelectionRange(startPos + selectionStartOffset, startPos + selectionEndOffset);
+        }
+
+        function normalizeExternalUrl(input) {
+            const raw = (input || '').trim();
+            if (!raw) {
+                throw new Error('网址不能为空');
+            }
+
+            const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+            const normalized = new URL(withProtocol);
+
+            if (!['http:', 'https:'].includes(normalized.protocol)) {
+                throw new Error('仅支持 http 或 https 链接');
+            }
+
+            return normalized.toString();
+        }
+
+        async function fetchLinkTitle(url) {
+            const response = await fetch(`/api/fetchLinkTitle?url=${encodeURIComponent(url)}`, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `请求失败: ${response.status}`);
+            }
+
+            return data;
         }
 
         function b64_to_utf8(str) {
@@ -612,24 +679,50 @@
         });
 
         // 插入跳转链接功能
-        document.getElementById('insert-link-btn').addEventListener('click', function() {
-            const textarea = document.getElementById('edit-content');
-            const startPos = textarea.selectionStart;
-            const endPos = textarea.selectionEnd;
-            const text = textarea.value;
-            
-            const selectedText = text.substring(startPos, endPos) || '点击这里跳转';
-            // target="_blank" 确保是在新标签页打开
-            const linkTemplate = `<a href="https://example.com" target="_blank" style="color: #0366d6; text-decoration: underline;">${selectedText}</a>`;
-            
-            textarea.value = text.substring(0, startPos) + linkTemplate + text.substring(endPos);
-            
-            // 将光标移动到 href 的 URL 处方便修改
-            const newCursorPos = startPos + linkTemplate.indexOf('https://example.com');
-            const selectionLength = 'https://example.com'.length;
-            
-            textarea.focus();
-            textarea.setSelectionRange(newCursorPos, newCursorPos + selectionLength);
+        document.getElementById('insert-link-btn').addEventListener('click', async function() {
+            const rawUrl = prompt('请输入要插入的网址：', 'https://');
+            if (rawUrl === null) return;
+
+            const button = document.getElementById('insert-link-btn');
+            let normalizedUrl = '';
+
+            try {
+                normalizedUrl = normalizeExternalUrl(rawUrl);
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+
+            button.disabled = true;
+            setEditorActionStatus('正在抓取网页标题...', 'info');
+
+            try {
+                const linkData = await fetchLinkTitle(normalizedUrl);
+                const linkTitle = escapeHtml(linkData.title || normalizedUrl);
+                const safeUrl = escapeHtml(linkData.url || normalizedUrl);
+                const linkTemplate = `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color: #0366d6; text-decoration: underline;">${linkTitle}</a>`;
+
+                insertTextAtCursor(
+                    linkTemplate,
+                    linkTemplate.indexOf(linkTitle),
+                    linkTemplate.indexOf(linkTitle) + linkTitle.length
+                );
+                setEditorActionStatus(`已插入链接：${linkData.title}`, 'success');
+                setTimeout(() => setEditorActionStatus(''), 3000);
+            } catch (error) {
+                const fallbackTitle = escapeHtml(normalizedUrl);
+                const fallbackTemplate = `<a href="${fallbackTitle}" target="_blank" rel="noopener noreferrer" style="color: #0366d6; text-decoration: underline;">${fallbackTitle}</a>`;
+
+                insertTextAtCursor(
+                    fallbackTemplate,
+                    fallbackTemplate.indexOf(fallbackTitle),
+                    fallbackTemplate.indexOf(fallbackTitle) + fallbackTitle.length
+                );
+                setEditorActionStatus(`标题抓取失败，已按网址插入：${error.message}`, 'error');
+                setTimeout(() => setEditorActionStatus(''), 5000);
+            } finally {
+                button.disabled = false;
+            }
         });
 
         // 插入加粗文字功能
@@ -732,7 +825,7 @@
             if (!file) return;
 
             const btn = document.getElementById('insert-img-btn');
-            const statusText = document.getElementById('img-upload-status');
+            const statusText = document.getElementById('editor-action-status');
             
             btn.disabled = true;
             statusText.style.display = 'inline';

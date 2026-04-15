@@ -450,6 +450,12 @@ Logging at level: debug GitHub Pages: github-pages v232 GitHub Pages: jekyll v3.
 - 发文成功后会立即重新拉取文章列表，前台首页与文章页也都从同域 `/api/getArticles` 读取数据
 - 本地仓库未提供 `.env`，因此无法在本机完整模拟 MongoDB 与管理员口令环境；线上是否能真正发布成功取决于 Vercel 项目里是否已配置 `MONGODB_URI` 和 `ADMIN_TOKEN`
 
+### 后台插入网址标题链接
+- 后台编辑器新增“插入网址链接”按钮
+- 输入外部网址后，后台会通过同域接口 `/api/fetchLinkTitle` 抓取目标网页标题
+- 插入到文章正文中的结果为可点击 `<a>` 链接，前台阅读界面直接显示网页原标题并可跳转
+- 如果目标网页标题抓取失败，会自动回退为“以网址原文作为链接文字”插入，避免发文中断
+
 ### GitHub Pages 失败邮件说明
 - 当前主站已经迁移到 Vercel，但 GitHub 仓库侧如果还开启了 Pages，GitHub 仍会尝试对仓库做默认 Pages 构建
 - 本仓库根目录没有站点专用的 `.github/workflows` Pages 工作流，若 Actions 里出现 `pages build and deployment`，通常是 GitHub Pages 设置仍然开启，且正在走默认 Jekyll 构建

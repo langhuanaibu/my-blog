@@ -58,7 +58,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <Fragment slot="scripts">
-    <script is:inline>
+    <script type="module" is:inline>
+      import { prepare, layout } from 'https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.5/dist/layout.js';
       let blogArticles = [];
 
       function b64_to_utf8(str) {
@@ -122,44 +123,142 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         bindFilterEvents();
       }
 
+      let virtualListState = { items: [], totalHeight: 0, rendered: new Set() };
+      
       function renderArticlesList(articlesToRender) {
         const articlesNav = document.getElementById('articles-nav');
         const listToRender = articlesToRender || blogArticles;
-        articlesNav.innerHTML = '';
-
+        
         if (!listToRender.length) {
           articlesNav.innerHTML = '<p class="panel-empty">暂无文章</p>';
+          articlesNav.style.height = 'auto';
           return;
         }
 
         const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
+        
+        // 虚拟列表相关计算
+        const gap = 12; // .article-nav-list gap
+        const paddingY = 28; // 14px * 2 padding
+        const metaHeight = 20; // line-height approx
+        const dateHeight = 20;
+        const innerGap = 12; // 6px * 2
+        
+        // 获取容器宽度减去 padding 供文本测量
+        // 如果在移动端或者宽度为0，使用预估宽度
+        const containerWidth = articlesNav.clientWidth > 0 ? articlesNav.clientWidth - 32 : 240; 
+        const font = '16px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 
-        listToRender.forEach((article) => {
+        let currentTop = 0;
+        virtualListState.items = listToRender.map(article => {
           const isRead = Boolean(readHistory[article.id]);
           const readBadge = isRead ? '<span class="article-item-read">已读</span>' : '';
+          
+          let titleHeight = 24;
+          try {
+            // 使用 pretext 极速测算标题换行后的高度
+            // 因为可能带有已读徽章，宽度预留一定缓冲
+            const prepared = prepare(article.title + (isRead ? '已读' : ''), font);
+            const layoutResult = layout(prepared, containerWidth - 20, 24); // 24 is line height 1.5 * 16
+            titleHeight = layoutResult.height;
+          } catch(e) {}
+          
+          const itemHeight = paddingY + innerGap + metaHeight + dateHeight + titleHeight;
+          const itemTop = currentTop;
+          currentTop += itemHeight + gap;
+          
+          return {
+            article,
+            readBadge,
+            top: itemTop,
+            height: itemHeight,
+            bottom: itemTop + itemHeight,
+            id: article.id
+          };
+        });
+        
+        virtualListState.totalHeight = currentTop - gap; // 减去最后一个多余的gap
+        
+        // 设置占位高度和相对定位
+        articlesNav.style.position = 'relative';
+        articlesNav.style.height = virtualListState.totalHeight + 'px';
+        articlesNav.innerHTML = '';
+        virtualListState.rendered.clear();
 
-          articlesNav.innerHTML += `
-            <div class="article-item">
-              <a href="#${article.id}" class="article-link" data-id="${article.id}">
-                <span class="article-item-meta">${article.category || '未分类'}</span>
-                <span class="article-item-title">${article.title} ${readBadge}</span>
-                <span class="article-item-date">${article.date}</span>
-              </a>
-            </div>
-          `;
+        updateVirtualList();
+      }
+
+      function updateVirtualList() {
+        const articlesNav = document.getElementById('articles-nav');
+        if (!articlesNav || virtualListState.items.length === 0) return;
+
+        const navRect = articlesNav.getBoundingClientRect();
+        // 如果列表本身完全不在可视区域附近，则不急于渲染
+        // 但考虑到滚动，通常我们渲染当前可视窗口对应的高度范围内的节点
+        const windowHeight = window.innerHeight;
+        const navTopInViewport = navRect.top;
+        
+        // 可视区域在列表本地坐标系中的范围
+        const visibleTop = Math.max(0, -navTopInViewport - 300); // 上缓冲 300px
+        const visibleBottom = visibleTop + windowHeight + 600; // 下缓冲 300px
+        
+        const itemsToRender = virtualListState.items.filter(item => 
+          item.bottom >= visibleTop && item.top <= visibleBottom
+        );
+
+        const newRenderedIds = new Set(itemsToRender.map(item => item.id));
+
+        // 移除已经不在可视区域的节点
+        Array.from(articlesNav.children).forEach(child => {
+          const id = child.dataset.id;
+          if (!newRenderedIds.has(id)) {
+            articlesNav.removeChild(child);
+            virtualListState.rendered.delete(id);
+          }
         });
 
-        document.querySelectorAll('.article-link').forEach((link) => {
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            document.querySelectorAll('.article-link').forEach((a) => a.classList.remove('active'));
-            link.classList.add('active');
-            const articleId = link.dataset.id;
-            showArticle(articleId);
-            history.pushState(null, '', `#${articleId}`);
-          });
+        // 添加新进入可视区域的节点
+        itemsToRender.forEach(item => {
+          if (!virtualListState.rendered.has(item.id)) {
+            const div = document.createElement('div');
+            div.className = 'article-item';
+            div.dataset.id = item.id;
+            div.style.position = 'absolute';
+            div.style.top = item.top + 'px';
+            div.style.left = '0';
+            div.style.right = '0';
+            
+            // 决定当前是否 active
+            const hash = window.location.hash.substring(1);
+            const activeClass = hash === item.id ? 'active' : '';
+
+            div.innerHTML = `
+              <a href="#${item.id}" class="article-link ${activeClass}" data-id="${item.id}">
+                <span class="article-item-meta">${item.article.category || '未分类'}</span>
+                <span class="article-item-title">${item.article.title} ${item.readBadge}</span>
+                <span class="article-item-date">${item.article.date}</span>
+              </a>
+            `;
+            
+            // 绑定事件
+            const link = div.querySelector('.article-link');
+            link.addEventListener('click', (e) => {
+              e.preventDefault();
+              document.querySelectorAll('.article-link').forEach((a) => a.classList.remove('active'));
+              link.classList.add('active');
+              showArticle(item.id);
+              history.pushState(null, '', '#' + item.id);
+            });
+
+            articlesNav.appendChild(div);
+            virtualListState.rendered.add(item.id);
+          }
         });
       }
+
+      window.addEventListener('scroll', () => {
+        updateVirtualList();
+      });
 
       function showArticle(articleId) {
         const articleDetail = document.getElementById('article-detail');

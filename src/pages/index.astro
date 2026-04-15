@@ -144,7 +144,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 
-  <script is:inline>
+  <script type="module" is:inline>
+    import { prepareWithSegments, layoutWithLines } from 'https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.5/dist/layout.js';
+
     async function initLatestArticles() {
       let blogArticles = [];
       try {
@@ -166,11 +168,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const latestArticlesContainer = document.getElementById('latest-articles');
       latestArticlesContainer.innerHTML = '';
 
+      // 获取容器大致宽度用于文本测量，预设 300px 作为 fallback
+      const containerWidth = latestArticlesContainer.clientWidth > 0 ? (latestArticlesContainer.clientWidth / 3 - 44) : 300;
+      const font = '16px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+
       latestThree.forEach((article) => {
         const htmlContent = marked.parse(article.content || '');
         const contentText = htmlContent.replace(/<[^>]*>/g, '');
-        const excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
         const readTime = Math.ceil(contentText.length / 300) || 1;
+
+        let excerpt = '';
+        try {
+          const prepared = prepareWithSegments(contentText, font);
+          // 容器宽度，行高预估 28 (16 * 1.75)
+          const { lines } = layoutWithLines(prepared, containerWidth, 28);
+          const excerptLines = lines.slice(0, 3).map(l => l.text.trim());
+          excerpt = excerptLines.join(' ');
+          if (lines.length > 3) excerpt += '...';
+        } catch (e) {
+          // Fallback
+          excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
+        }
 
         latestArticlesContainer.innerHTML += `
           <article class="blog-card">
@@ -202,27 +220,71 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       defaultCategories.forEach((category) => existingCategories.add(category));
 
       categoriesGrid.innerHTML = '';
+      // 改变类别容器为相对定位以便实现瀑布流
+      categoriesGrid.style.position = 'relative';
+      categoriesGrid.style.display = 'block';
+
       const categoryMeta = {
         技术学习: { icon: '📚', desc: '记录自己的一些技术栈' },
         数据结构与算法: { icon: '🧠', desc: '修炼内功，提升算法思维' },
         随笔: { icon: '📝', desc: '日常感悟与折腾记录' }
       };
 
+      // 瀑布流布局计算
+      const colCount = window.innerWidth > 1100 ? 3 : 1;
+      const gap = 18;
+      const colWidth = categoriesGrid.clientWidth > 0 
+        ? (categoriesGrid.clientWidth - gap * (colCount - 1)) / colCount 
+        : 300;
+      
+      const colHeights = Array(colCount).fill(0);
+      let masonryHTML = '';
+
       existingCategories.forEach((category) => {
         const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
         const displayName = category === '随笔' ? '生活随笔' : category;
 
-        categoriesGrid.innerHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card">
+        // 预估卡片高度: padding (44) + gap (14 * 2) + icon (~29) + title (~22) + desc text
+        let descHeight = 28;
+        try {
+          const prepared = prepareWithSegments(meta.desc, font);
+          const { height } = layoutWithLines(prepared, colWidth - 44, 28);
+          descHeight = height;
+        } catch(e) {}
+
+        const cardHeight = 44 + 28 + 29 + 22 + descHeight;
+
+        // 找到最矮的列
+        let minColIdx = 0;
+        for (let i = 1; i < colCount; i++) {
+          if (colHeights[i] < colHeights[minColIdx]) {
+            minColIdx = i;
+          }
+        }
+
+        const top = colHeights[minColIdx];
+        const left = minColIdx * (colWidth + gap);
+
+        masonryHTML += `
+          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card" style="position: absolute; top: ${top}px; left: ${left}px; width: ${colWidth}px; box-sizing: border-box;">
             <div class="category-icon">${meta.icon}</div>
             <h3 class="category-name">${displayName}</h3>
             <p class="category-desc">${meta.desc}</p>
           </a>
         `;
+
+        colHeights[minColIdx] += cardHeight + gap;
       });
+
+      categoriesGrid.innerHTML = masonryHTML;
+      categoriesGrid.style.height = Math.max(...colHeights) + 'px';
     }
 
     document.addEventListener('DOMContentLoaded', initLatestArticles);
+    window.addEventListener('resize', () => {
+      // 简单处理响应式：窗口大小改变时重新计算
+      initLatestArticles();
+    });
   </script>
 
   <Fragment slot="scripts">
