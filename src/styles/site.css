@@ -846,16 +846,29 @@ html.intro-active .anim-flip-play {
     display: block; padding-bottom: 80px;
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
     transform-origin: top center;
+    background: transparent;
   }
 
-  body.mobile-panel-open { background-color: #000; }
-  body.mobile-panel-open .site-header,
-  body.mobile-panel-open .article-page-grid {
-    transform: scale(0.93) translateY(10px);
+  body.mobile-panel-open { background-color: #000; overflow: hidden; }
+  
+  body.mobile-panel-open .site-header {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  body.mobile-panel-open .article-page-shell {
+    transform: scale(0.92) translateY(12px);
     filter: brightness(0.6);
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
     pointer-events: none;
+    transform-origin: top center;
+    background: var(--bg);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
+  }
+  
+  .article-page-shell {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
   }
 
   /* Convert sidebars to bottom sheets */
