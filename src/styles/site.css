@@ -846,6 +846,37 @@ html.intro-active .anim-flip-play {
     display: block; padding-bottom: 80px;
     background: transparent;
   }
+  
+  /* Reset Grid layout for desktop when outside stack wrapper */
+  @media (min-width: 1101px) {
+    .mobile-stack-wrapper {
+      display: contents; /* Removes wrapper from layout */
+    }
+    .article-page-shell {
+      position: relative; /* For sidebars to position correctly */
+    }
+    .article-nav-panel {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .mobile-stack-wrapper {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .article-toc-panel {
+      grid-column: 3;
+      grid-row: 1;
+    }
+    .article-page-shell {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(0, 2.5fr) minmax(240px, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .article-page-grid {
+      display: contents;
+    }
+  }
 
   body.mobile-panel-open { background-color: var(--bg); overflow: hidden; }
   
