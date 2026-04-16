@@ -844,37 +844,35 @@ html.intro-active .anim-flip-play {
 
   .article-page-shell .article-page-grid {
     display: block; padding-bottom: 80px;
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
-    transform-origin: top center;
     background: transparent;
   }
 
-  body.mobile-panel-open { background-color: #000; overflow: hidden; }
+  body.mobile-panel-open { background-color: var(--bg); overflow: hidden; }
   
   body.mobile-panel-open .site-header {
     transform: translateY(-100%);
     opacity: 0;
   }
 
-  body.mobile-panel-open .article-page-shell {
+  /* Wrapper for stacking effect */
+  .mobile-stack-wrapper {
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
+    transform-origin: top center;
+    background: var(--bg);
+  }
+
+  body.mobile-panel-open .mobile-stack-wrapper {
     transform: scale(0.92) translateY(12px);
-    filter: brightness(0.6);
+    filter: brightness(0.7);
     border-radius: 20px;
     overflow: hidden;
     pointer-events: none;
-    transform-origin: top center;
-    background: var(--bg);
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
-  }
-  
-  .article-page-shell {
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
   }
 
   /* Convert sidebars to bottom sheets */
   .article-nav-panel, .article-toc-panel {
     position: fixed; top: auto; bottom: -100%; left: 0; width: 100%;
-    max-height: 80vh; background: var(--bg); z-index: 1600;
+    max-height: 80vh; background: var(--bg); z-index: 2500;
     border-radius: 32px 32px 0 0; padding: 40px 20px 80px 20px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
     transition: bottom 0.5s cubic-bezier(0.32, 0.72, 0, 1);
     overflow-y: auto;
@@ -887,6 +885,10 @@ html.intro-active .anim-flip-play {
   }
   .article-nav-panel.active, .article-toc-panel.active {
     bottom: 65px;
+  }
+  
+  .mobile-overlay {
+    z-index: 2400;
   }
 
   /* Inset Grouped List for Mobile */
