@@ -779,6 +779,7 @@ html.intro-active .anim-flip-play {
 }
 
 .mobile-bottom-nav, .mobile-overlay { display: none; }
+.mobile-only-text { display: none; }
 
 @media (max-width: 1100px) {
   .hero-grid,
@@ -788,6 +789,9 @@ html.intro-active .anim-flip-play {
   .cards-grid { grid-template-columns: 1fr; }
   
   .article-toc-panel { order: 3; }
+
+  .desktop-only-text { display: none; }
+  .mobile-only-text { display: block; }
 
   /* Hide desktop floating menu on mobile/tablet */
   .floating-menu { display: none !important; }
