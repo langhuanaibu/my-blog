@@ -632,7 +632,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
           // Close panels when a link is clicked
           panelArticles.addEventListener('click', (e) => {
-            if (e.target.closest('a') || e.target.closest('.filter-btn')) {
+            if (e.target.closest('a')) {
               setTimeout(closeAllMobilePanels, 300);
             }
           });
