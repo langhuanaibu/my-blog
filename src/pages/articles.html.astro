@@ -597,6 +597,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           if(mobileOverlay) mobileOverlay.classList.remove('active');
           if(btnArticles) btnArticles.classList.remove('active');
           if(btnToc) btnToc.classList.remove('active');
+          document.body.classList.remove('mobile-panel-open');
         }
 
         if (btnArticles && btnToc) {
@@ -608,6 +609,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               panelArticles.classList.add('active');
               mobileOverlay.classList.add('active');
               btnArticles.classList.add('active');
+              document.body.classList.add('mobile-panel-open');
             }
           });
 
@@ -619,6 +621,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               panelToc.classList.add('active');
               mobileOverlay.classList.add('active');
               btnToc.classList.add('active');
+              document.body.classList.add('mobile-panel-open');
             }
           });
 
