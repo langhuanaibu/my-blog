@@ -846,13 +846,6 @@ html.intro-active .anim-flip-play {
     display: block; padding-bottom: 80px;
     background: transparent;
   }
-  
-  /* Reset Grid layout for desktop */
-  @media (min-width: 1101px) {
-    .mobile-stack-wrapper {
-      display: contents; /* Removes wrapper from layout */
-    }
-  }
 
   body.mobile-panel-open { background-color: var(--bg); overflow: hidden; }
   
@@ -861,20 +854,18 @@ html.intro-active .anim-flip-play {
     opacity: 0;
   }
 
-  /* Wrapper for stacking effect */
-  .mobile-stack-wrapper {
+  /* Wrapper for stacking effect applied to article content only */
+  .article-content-panel {
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
     transform-origin: top center;
-    background: transparent;
   }
 
-  body.mobile-panel-open .mobile-stack-wrapper {
+  body.mobile-panel-open .article-content-panel {
     transform: scale(0.92) translateY(12px);
     filter: brightness(0.7);
     border-radius: 20px;
     overflow: hidden;
     pointer-events: none;
-    background: var(--bg);
   }
 
   /* Mobile specific overrides */
