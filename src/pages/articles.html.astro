@@ -16,51 +16,50 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <section class="page-shell article-page-shell">
-      <div class="mobile-stack-wrapper">
-        <div class="page-shell__inner article-page-grid">
-          <article class="panel panel-content article-content-panel">
-            <div id="article-detail" class="article-detail-empty">
-              <span class="panel-kicker">Reading</span>
-              <h2>请选择一篇文章开始阅读</h2>
-              <p class="desktop-only-text">从左侧列表中选择一篇文章，即可在中间查看完整内容。</p>
-              <p class="mobile-only-text">点击下方导航栏的“文章”，在列表中选择一篇开始阅读。</p>
-            </div>
-          </article>
-        </div> <!-- End page-shell__inner -->
-      </div> <!-- End mobile-stack-wrapper -->
+    <div class="mobile-stack-wrapper">
+      <div class="page-shell__inner article-page-grid">
+        <aside class="panel panel-nav article-nav-panel">
+          <div class="panel-heading">
+            <span class="panel-kicker">Archive</span>
+            <h1>我的文章</h1>
+            <p>按时间、分类与关键词检索最近写下的内容。</p>
+          </div>
 
-      <!-- Sidebars placed outside the stack wrapper for mobile -->
-      <aside class="panel panel-nav article-nav-panel">
-        <div class="panel-heading">
-          <span class="panel-kicker">Archive</span>
-          <h1>我的文章</h1>
-          <p>按时间、分类与关键词检索最近写下的内容。</p>
-        </div>
+          <div class="search-box paper-search">
+            <input type="text" id="search-input" placeholder="搜索文章标题或内容..." />
+          </div>
 
-        <div class="search-box paper-search">
-          <input type="text" id="search-input" placeholder="搜索文章标题或内容..." />
-        </div>
+          <div class="category-filter paper-filters" id="category-filter-container">
+            <button class="filter-btn active" data-category="all">全部</button>
+          </div>
 
-        <div class="category-filter paper-filters" id="category-filter-container">
-          <button class="filter-btn active" data-category="all">全部</button>
-        </div>
+          <div id="articles-nav" class="article-nav-list">
+            <p class="panel-empty">加载中...</p>
+          </div>
+        </aside>
 
-        <div id="articles-nav" class="article-nav-list">
-          <p class="panel-empty">加载中...</p>
-        </div>
-      </aside>
+        <article class="panel panel-content article-content-panel">
+          <div id="article-detail" class="article-detail-empty">
+            <span class="panel-kicker">Reading</span>
+            <h2>请选择一篇文章开始阅读</h2>
+            <p class="desktop-only-text">从左侧列表中选择一篇文章，即可在中间查看完整内容。</p>
+            <p class="mobile-only-text">点击下方导航栏的“文章”，在列表中选择一篇开始阅读。</p>
+          </div>
+        </article>
 
-      <aside class="panel panel-toc article-toc-panel">
-        <div class="panel-heading panel-heading--compact">
-          <span class="panel-kicker">Outline</span>
-          <h2>文章大纲</h2>
-        </div>
-        <ul id="toc-list" class="toc-list">
-          <li class="toc-item"><span class="panel-empty">暂无目录</span></li>
-        </ul>
-      </aside>
+        <aside class="panel panel-toc article-toc-panel">
+          <div class="panel-heading panel-heading--compact">
+            <span class="panel-kicker">Outline</span>
+            <h2>文章大纲</h2>
+          </div>
+          <ul id="toc-list" class="toc-list">
+            <li class="toc-item"><span class="panel-empty">暂无目录</span></li>
+          </ul>
+        </aside>
+      </div> <!-- End page-shell__inner -->
+    </div> <!-- End mobile-stack-wrapper -->
 
-      <!-- Mobile Bottom Navigation -->
+    <!-- Mobile Bottom Navigation -->
     <div class="mobile-overlay" id="mobile-overlay"></div>
     <div class="mobile-bottom-nav">
       <button class="mobile-nav-btn" id="mobile-btn-articles">

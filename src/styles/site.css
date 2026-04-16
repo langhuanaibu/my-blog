@@ -847,34 +847,10 @@ html.intro-active .anim-flip-play {
     background: transparent;
   }
   
-  /* Reset Grid layout for desktop when outside stack wrapper */
+  /* Reset Grid layout for desktop */
   @media (min-width: 1101px) {
     .mobile-stack-wrapper {
       display: contents; /* Removes wrapper from layout */
-    }
-    .article-page-shell {
-      position: relative; /* For sidebars to position correctly */
-    }
-    .article-nav-panel {
-      grid-column: 1;
-      grid-row: 1;
-    }
-    .mobile-stack-wrapper {
-      grid-column: 2;
-      grid-row: 1;
-    }
-    .article-toc-panel {
-      grid-column: 3;
-      grid-row: 1;
-    }
-    .article-page-shell {
-      display: grid;
-      grid-template-columns: minmax(280px, 1fr) minmax(0, 2.5fr) minmax(240px, 1fr);
-      gap: 24px;
-      align-items: start;
-    }
-    .article-page-grid {
-      display: contents;
     }
   }
 
@@ -889,7 +865,7 @@ html.intro-active .anim-flip-play {
   .mobile-stack-wrapper {
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s;
     transform-origin: top center;
-    background: var(--bg);
+    background: transparent;
   }
 
   body.mobile-panel-open .mobile-stack-wrapper {
@@ -898,9 +874,10 @@ html.intro-active .anim-flip-play {
     border-radius: 20px;
     overflow: hidden;
     pointer-events: none;
+    background: var(--bg);
   }
 
-  /* Convert sidebars to bottom sheets */
+  /* Mobile specific overrides */
   .article-nav-panel, .article-toc-panel {
     position: fixed; top: auto; bottom: -100%; left: 0; width: 100%;
     max-height: 80vh; background: var(--bg); z-index: 2500;
