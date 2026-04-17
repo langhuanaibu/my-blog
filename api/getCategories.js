@@ -16,6 +16,15 @@ module.exports = async (req, res) => {
         const { db } = await connectToDatabase();
         let categories = await db.collection('categories').find({}).toArray();
 
+        // 获取所有现有的文章，提取它们用到的分类
+        const articles = await db.collection('articles').find({}).project({ category: 1 }).toArray();
+        const usedCategories = new Set();
+        articles.forEach(a => {
+            if (a.category && a.category !== '未分类') {
+                usedCategories.add(a.category);
+            }
+        });
+
         // 初始化默认栏目
         if (categories.length === 0) {
             const defaults = [
@@ -25,6 +34,27 @@ module.exports = async (req, res) => {
             ];
             await db.collection('categories').insertMany(defaults);
             categories = defaults;
+        }
+
+        // 检查是否有文章使用了尚未存在于 categories 集合中的分类
+        const existingCatNames = new Set(categories.map(c => c.name));
+        const missingCategories = [];
+        
+        usedCategories.forEach(catName => {
+            if (!existingCatNames.has(catName)) {
+                missingCategories.push({
+                    name: catName,
+                    icon: '🗂',
+                    desc: `关于 ${catName} 的相关文章`,
+                    id: 'cat_' + Date.now() + Math.floor(Math.random() * 1000)
+                });
+            }
+        });
+
+        // 如果发现缺失的分类，自动将它们添加到 categories 集合中
+        if (missingCategories.length > 0) {
+            await db.collection('categories').insertMany(missingCategories);
+            categories = categories.concat(missingCategories);
         }
 
         res.status(200).json({ success: true, data: categories });
