@@ -220,47 +220,43 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         latestArticlesContainer.innerHTML = '<p class="panel-empty">暂时还没有文章，稍后再来看看。</p>';
       }
 
+      // 获取专栏数据
+      let categories = [];
+      try {
+        const catRes = await fetch('/api/getCategories', { method: 'GET', cache: 'no-store' });
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          if (catData && catData.success) categories = catData.data;
+        }
+      } catch (e) {
+        console.error('获取栏目失败:', e);
+      }
+
       const categoriesGrid = document.getElementById('dynamic-categories-grid');
-      const existingCategories = new Set();
-      const defaultCategories = ['技术学习', '数据结构与算法', '随笔'];
-
-      blogArticles.forEach((article) => {
-        if (article.category) existingCategories.add(article.category);
-      });
-      defaultCategories.forEach((category) => existingCategories.add(category));
-
       categoriesGrid.innerHTML = '';
       // 改为使用 CSS 多列布局 (Multi-column) 实现原生的高性能瀑布流
-      // 避免手动计算图标、内外边距等在不同系统下的像素差异
       categoriesGrid.style.display = 'block';
       categoriesGrid.style.columnCount = window.innerWidth > 1100 ? 3 : 1;
       categoriesGrid.style.columnGap = '18px';
 
-      const categoryMeta = {
-        技术学习: { icon: '📚', desc: '记录自己的一些技术栈' },
-        数据结构与算法: { icon: '🧠', desc: '修炼内功，提升算法思维' },
-        随笔: { icon: '📝', desc: '日常感悟与折腾记录' }
-      };
-
       let masonryHTML = '';
       let categoryIndex = 0;
 
-      existingCategories.forEach((category) => {
-        const meta = categoryMeta[category] || { icon: '🗂', desc: `关于 ${category} 的相关文章` };
-        const displayName = category === '随笔' ? '生活随笔' : category;
-
-        // break-inside: avoid 防止卡片被截断到两列
-        // min-height: auto 覆盖原有的 100% 避免高度异常
-        // 为每张卡片赋予动态递增的 animation-delay 实现交错“发牌”或“翻转”
+      categories.forEach((cat) => {
+        const displayName = cat.name === '随笔' ? '生活随笔' : cat.name;
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(category)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
-            <div class="category-icon">${meta.icon}</div>
+          <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
+            <div class="category-icon">${cat.icon || '🗂'}</div>
             <h3 class="category-name">${displayName}</h3>
-            <p class="category-desc">${meta.desc}</p>
+            <p class="category-desc">${cat.desc || ''}</p>
           </a>
         `;
         categoryIndex++;
       });
+
+      if (!categories.length) {
+        masonryHTML = '<p class="panel-empty">暂无专栏</p>';
+      }
 
       categoriesGrid.innerHTML = masonryHTML;
     }

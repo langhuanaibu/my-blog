@@ -55,6 +55,7 @@
             <h2>博客后台管理</h2>
             <div>
                 <button onclick="showArticles()" class="btn btn-primary" id="nav-articles-btn" style="margin-right: 10px;">文章管理</button>
+                <button onclick="showCategories()" class="btn btn-secondary" id="nav-categories-btn" style="margin-right: 10px;">栏目管理</button>
                 <button onclick="showComments()" class="btn btn-secondary" id="nav-comments-btn" style="margin-right: 10px;">最新评论</button>
                 <a href="index.html" class="btn btn-secondary" style="margin-right: 10px;">返回前台</a>
                 <button onclick="clearConfig()" class="btn btn-secondary">重新配置</button>
@@ -97,6 +98,27 @@
                     </tr>
                 </thead>
                 <tbody id="comments-tbody">
+                    <!-- 动态填充 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 栏目管理模块 -->
+        <div id="categories-container" style="display: none;">
+            <div style="margin-bottom: 15px;">
+                <button onclick="addNewCategoryPrompt(true)" class="btn btn-primary">添加新栏目</button>
+            </div>
+            <div id="categories-loading-msg" style="text-align: center; padding: 20px; display: none;">正在拉取栏目数据，请稍候...</div>
+            <table class="article-table" id="categories-table">
+                <thead>
+                    <tr>
+                        <th>栏目名称</th>
+                        <th>图标</th>
+                        <th>描述</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="categories-tbody">
                     <!-- 动态填充 -->
                 </tbody>
             </table>
@@ -150,6 +172,7 @@
 
     <script>
         let articles = [];
+        let categoriesList = [];
         let fileSha = null; // 用于更新文件时所需的 sha 值
 
         // 初始化
@@ -166,7 +189,7 @@
                 document.getElementById('github-owner').value = owner;
                 document.getElementById('github-repo').value = repo;
                 document.getElementById('github-token').value = token;
-                fetchArticlesFromVercel();
+                fetchCategoriesList().then(() => fetchArticlesFromVercel());
             } else {
                 document.getElementById('config-section').style.display = 'block';
                 document.getElementById('admin-section').style.display = 'none';
@@ -314,6 +337,45 @@
             }
         }
 
+        // 获取栏目列表
+        async function fetchCategoriesList() {
+            document.getElementById('categories-loading-msg').style.display = 'block';
+            document.getElementById('categories-table').style.display = 'none';
+            try {
+                const response = await fetch('/api/getCategories', { method: 'GET', cache: 'no-store' });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        categoriesList = data.data;
+                        updateCategorySelect();
+                        renderCategoriesTable();
+                    }
+                }
+            } catch (e) {
+                console.error('获取栏目失败', e);
+            } finally {
+                document.getElementById('categories-loading-msg').style.display = 'none';
+                document.getElementById('categories-table').style.display = 'table';
+            }
+        }
+
+        function updateCategorySelect() {
+            const select = document.getElementById('edit-category');
+            while (select.options.length > 1) {
+                select.remove(1);
+            }
+            categoriesList.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.name;
+                option.text = cat.name;
+                select.add(option);
+            });
+            const option = document.createElement('option');
+            option.value = '未分类';
+            option.text = '未分类';
+            select.add(option);
+        }
+
         // 从 Vercel 获取文章
         async function fetchArticlesFromVercel() {
             const url = `/api/getArticles`;
@@ -322,38 +384,16 @@
             document.getElementById('articles-table').style.display = 'none';
 
             try {
-                // Vercel Edge Cache 可能对带有随机 query 参数和自定义 headers 的跨域请求进行拦截并返回不带 CORS 头的 500/502
-                // 回退到最简单、最兼容的 GET 请求，不带任何可能触发 OPTIONS 预检的自定义 header 和参数
                 const response = await fetch(url, {
                     method: 'GET',
-                    cache: 'no-store' // 使用标准的 fetch API 禁用缓存，而不是手动拼接时间戳
+                    cache: 'no-store' // 使用标准的 fetch API 禁用缓存
                 });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
                         articles = data.data;
-                        
                         // 动态更新分类下拉框
-                        const select = document.getElementById('edit-category');
-                        const existingCategories = new Set(['技术学习', '随笔', '数据结构与算法']);
-                        articles.forEach(article => {
-                            if (article.category) {
-                                existingCategories.add(article.category);
-                            }
-                        });
-                        
-                        // 清空除了第一个提示选项之外的所有选项
-                        while (select.options.length > 1) {
-                            select.remove(1);
-                        }
-                        
-                        existingCategories.forEach(cat => {
-                            const option = document.createElement('option');
-                            option.value = cat;
-                            option.text = cat;
-                            select.add(option);
-                        });
-                        
+                        updateCategorySelect();
                     } else {
                         throw new Error(data.error || '获取失败');
                     }
@@ -405,28 +445,84 @@
             document.getElementById('articles-container').style.display = 'block';
         }
 
-        function addNewCategoryPrompt() {
+        function addNewCategoryPrompt(fromAdmin = false) {
             const newCat = prompt('请输入新栏目名称:');
             if (newCat && newCat.trim()) {
-                const select = document.getElementById('edit-category');
                 const catName = newCat.trim();
-                let exists = false;
-                for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value === catName) {
-                        exists = true;
-                        select.selectedIndex = i;
-                        break;
+                const icon = prompt('请输入栏目图标 (Emoji，如 📚):', '🗂');
+                const desc = prompt('请输入栏目描述:', `关于 ${catName} 的相关文章`);
+                
+                const vercelToken = localStorage.getItem('vercel_token');
+                fetch('/api/saveCategory', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${vercelToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ category: { name: catName, icon: icon || '🗂', desc: desc || '' } })
+                }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        alert('栏目添加成功！');
+                        fetchCategoriesList().then(() => {
+                            if (!fromAdmin) {
+                                const select = document.getElementById('edit-category');
+                                select.value = catName;
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        });
+                    } else {
+                        alert('添加失败: ' + data.error);
                     }
+                }).catch(e => {
+                    alert('网络错误');
+                });
+            }
+        }
+
+        function renderCategoriesTable() {
+            const tbody = document.getElementById('categories-tbody');
+            tbody.innerHTML = '';
+            
+            categoriesList.forEach(cat => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${cat.name}</td>
+                    <td>${cat.icon || '🗂'}</td>
+                    <td>${cat.desc || ''}</td>
+                    <td>
+                        <button class="action-btn delete-btn" onclick="deleteCategoryItem('${cat.name}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function deleteCategoryItem(name) {
+            if (confirm(`确定要删除栏目【${name}】吗？\n删除后，该栏目下的文章将被标记为“未分类”。`)) {
+                const vercelToken = localStorage.getItem('vercel_token');
+                document.body.style.cursor = 'wait';
+                try {
+                    const response = await fetch('/api/deleteCategory', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${vercelToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name: name })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('删除成功！相关文章已移至“未分类”。');
+                        fetchCategoriesList();
+                        fetchArticlesFromVercel(); // 重新获取文章列表以更新显示
+                    } else {
+                        alert('删除失败: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('网络错误，删除失败');
+                } finally {
+                    document.body.style.cursor = 'default';
                 }
-                if (!exists) {
-                    const option = document.createElement('option');
-                    option.value = catName;
-                    option.text = catName;
-                    select.add(option);
-                    select.selectedIndex = select.options.length - 1;
-                }
-                // 触发 change 事件以确保任何绑定的监听器都能响应
-                select.dispatchEvent(new Event('change'));
             }
         }
 
@@ -591,21 +687,38 @@
         function showArticles() {
             document.getElementById('articles-container').style.display = 'block';
             document.getElementById('comments-container').style.display = 'none';
+            document.getElementById('categories-container').style.display = 'none';
             document.getElementById('editor-section').style.display = 'none';
             
             document.getElementById('nav-articles-btn').className = 'btn btn-primary';
             document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-categories-btn').className = 'btn btn-secondary';
         }
 
         function showComments() {
             document.getElementById('articles-container').style.display = 'none';
             document.getElementById('comments-container').style.display = 'block';
+            document.getElementById('categories-container').style.display = 'none';
             document.getElementById('editor-section').style.display = 'none';
             
             document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
             document.getElementById('nav-comments-btn').className = 'btn btn-primary';
+            document.getElementById('nav-categories-btn').className = 'btn btn-secondary';
             
             fetchComments();
+        }
+
+        function showCategories() {
+            document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('comments-container').style.display = 'none';
+            document.getElementById('categories-container').style.display = 'block';
+            document.getElementById('editor-section').style.display = 'none';
+            
+            document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-categories-btn').className = 'btn btn-primary';
+            
+            fetchCategoriesList();
         }
 
         // 图片上传与插入功能

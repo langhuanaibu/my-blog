@@ -127,7 +127,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       function renderCategoryFilters(articles) {
         const categoryContainer = document.getElementById('category-filter-container');
-        const categories = new Set(['技术学习', '随笔', '数据结构与算法']);
+        const categories = new Set();
 
         articles.forEach((article) => {
           if (article.category) categories.add(article.category);
