@@ -848,6 +848,16 @@ html.intro-active .anim-flip-play {
     background: transparent;
   }
 
+  /* 用于隐藏顶部导航栏的样式 */
+  body.mobile-header-hidden .site-header {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  body.mobile-header-hidden .main {
+    padding-top: 28px; /* 减去 header 占据的空间 */
+  }
+
   body.mobile-panel-open { background-color: var(--bg); overflow: hidden; }
   
   body.mobile-panel-open .site-header {
