@@ -55,6 +55,7 @@
             <h2>博客后台管理</h2>
             <div>
                 <button onclick="showArticles()" class="btn btn-primary" id="nav-articles-btn" style="margin-right: 10px;">文章管理</button>
+                <button onclick="showDrafts()" class="btn btn-secondary" id="nav-drafts-btn" style="margin-right: 10px;">草稿箱</button>
                 <button onclick="showCategories()" class="btn btn-secondary" id="nav-categories-btn" style="margin-right: 10px;">栏目管理</button>
                 <button onclick="showComments()" class="btn btn-secondary" id="nav-comments-btn" style="margin-right: 10px;">最新评论</button>
                 <a href="index.html" class="btn btn-secondary" style="margin-right: 10px;">返回前台</a>
@@ -79,6 +80,23 @@
                     </tr>
                 </thead>
                 <tbody id="articles-tbody">
+                    <!-- 动态填充 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 草稿箱模块 -->
+        <div id="drafts-container" style="display: none;">
+            <table class="article-table" id="drafts-table">
+                <thead>
+                    <tr>
+                        <th>草稿标题</th>
+                        <th>分类</th>
+                        <th>最后修改时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="drafts-tbody">
                     <!-- 动态填充 -->
                 </tbody>
             </table>
@@ -163,7 +181,8 @@
                     <textarea id="edit-content" rows="15" required></textarea>
                 </div>
                 <div>
-                    <button type="submit" class="btn btn-primary" id="save-btn">保存文章到云端数据库</button>
+                    <button type="button" class="btn btn-primary" id="publish-btn" onclick="submitArticle(false)">发布文章</button>
+                    <button type="button" class="btn btn-secondary" id="save-draft-btn" onclick="submitArticle(true)">保存草稿</button>
                     <button type="button" class="btn btn-secondary" onclick="hideEditor()">取消</button>
                 </div>
             </form>
@@ -376,16 +395,23 @@
             select.add(option);
         }
 
-        // 从 Vercel 获取文章
+        // 从 Vercel 获取所有文章（包括草稿）
         async function fetchArticlesFromVercel() {
-            const url = `/api/getArticles`;
+            const url = `/api/getAdminArticles`;
+            const vercelToken = localStorage.getItem('vercel_token');
             
             document.getElementById('loading-msg').style.display = 'block';
             document.getElementById('articles-table').style.display = 'none';
+            // 如果有草稿箱表格也先隐藏
+            const draftsTable = document.getElementById('drafts-table');
+            if(draftsTable) draftsTable.style.display = 'none';
 
             try {
                 const response = await fetch(url, {
                     method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${vercelToken}`
+                    },
                     cache: 'no-store' // 使用标准的 fetch API 禁用缓存
                 });
                 if (response.ok) {
@@ -413,22 +439,37 @@
 
         function renderTable() {
             const tbody = document.getElementById('articles-tbody');
+            const draftsTbody = document.getElementById('drafts-tbody');
             tbody.innerHTML = '';
+            if(draftsTbody) draftsTbody.innerHTML = '';
             
             const sortedArticles = [...articles].sort((a, b) => new Date(b.date) - new Date(a.date));
             
             sortedArticles.forEach(article => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${article.title}</td>
-                    <td>${article.category}</td>
-                    <td>${article.date}</td>
-                    <td>
-                        <button class="action-btn edit-btn" onclick="editArticle('${article.id}')">编辑</button>
-                        <button class="action-btn delete-btn" onclick="deleteArticle('${article.id}')">删除</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                if (article.isDraft) {
+                    tr.innerHTML = `
+                        <td>${article.title} <span style="color: #999; font-size: 12px;">(草稿)</span></td>
+                        <td>${article.category}</td>
+                        <td>${article.modifyDate || article.date}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="editArticle('${article.id}')">继续编辑</button>
+                            <button class="action-btn delete-btn" onclick="deleteArticle('${article.id}')">删除</button>
+                        </td>
+                    `;
+                    if(draftsTbody) draftsTbody.appendChild(tr);
+                } else {
+                    tr.innerHTML = `
+                        <td>${article.title}</td>
+                        <td>${article.category}</td>
+                        <td>${article.date}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="editArticle('${article.id}')">编辑</button>
+                            <button class="action-btn delete-btn" onclick="deleteArticle('${article.id}')">删除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
             });
         }
 
@@ -438,11 +479,17 @@
             document.getElementById('editor-form').reset();
             document.getElementById('edit-id').value = '';
             document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('drafts-container').style.display = 'none';
+            restoreLocalDraft();
         }
 
         function hideEditor() {
             document.getElementById('editor-section').style.display = 'none';
             document.getElementById('articles-container').style.display = 'block';
+            document.getElementById('drafts-container').style.display = 'none';
+            document.getElementById('nav-articles-btn').className = 'btn btn-primary';
+            document.getElementById('nav-drafts-btn').className = 'btn btn-secondary';
+            clearLocalDraft();
         }
 
         function addNewCategoryPrompt(fromAdmin = false) {
@@ -686,22 +733,39 @@
 
         function showArticles() {
             document.getElementById('articles-container').style.display = 'block';
+            document.getElementById('drafts-container').style.display = 'none';
             document.getElementById('comments-container').style.display = 'none';
             document.getElementById('categories-container').style.display = 'none';
             document.getElementById('editor-section').style.display = 'none';
             
             document.getElementById('nav-articles-btn').className = 'btn btn-primary';
+            document.getElementById('nav-drafts-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-categories-btn').className = 'btn btn-secondary';
+        }
+
+        function showDrafts() {
+            document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('drafts-container').style.display = 'block';
+            document.getElementById('comments-container').style.display = 'none';
+            document.getElementById('categories-container').style.display = 'none';
+            document.getElementById('editor-section').style.display = 'none';
+            
+            document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-drafts-btn').className = 'btn btn-primary';
             document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
             document.getElementById('nav-categories-btn').className = 'btn btn-secondary';
         }
 
         function showComments() {
             document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('drafts-container').style.display = 'none';
             document.getElementById('comments-container').style.display = 'block';
             document.getElementById('categories-container').style.display = 'none';
             document.getElementById('editor-section').style.display = 'none';
             
             document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-drafts-btn').className = 'btn btn-secondary';
             document.getElementById('nav-comments-btn').className = 'btn btn-primary';
             document.getElementById('nav-categories-btn').className = 'btn btn-secondary';
             
@@ -710,11 +774,13 @@
 
         function showCategories() {
             document.getElementById('articles-container').style.display = 'none';
+            document.getElementById('drafts-container').style.display = 'none';
             document.getElementById('comments-container').style.display = 'none';
             document.getElementById('categories-container').style.display = 'block';
             document.getElementById('editor-section').style.display = 'none';
             
             document.getElementById('nav-articles-btn').className = 'btn btn-secondary';
+            document.getElementById('nav-drafts-btn').className = 'btn btn-secondary';
             document.getElementById('nav-comments-btn').className = 'btn btn-secondary';
             document.getElementById('nav-categories-btn').className = 'btn btn-primary';
             
@@ -1014,8 +1080,72 @@
             }
         });
 
-        document.getElementById('editor-form').onsubmit = async function(e) {
+        // 本地自动保存草稿机制
+        let autoSaveInterval = null;
+
+        document.getElementById('edit-content').addEventListener('input', () => {
+            clearTimeout(autoSaveInterval);
+            autoSaveInterval = setTimeout(saveLocalDraft, 3000);
+        });
+        document.getElementById('edit-title').addEventListener('input', () => {
+            clearTimeout(autoSaveInterval);
+            autoSaveInterval = setTimeout(saveLocalDraft, 3000);
+        });
+
+        function saveLocalDraft() {
+            const id = document.getElementById('edit-id').value;
+            if (id) return; // 编辑已存在的文章/草稿时暂不使用本地草稿
+            
+            const title = document.getElementById('edit-title').value;
+            const content = document.getElementById('edit-content').value;
+            const category = document.getElementById('edit-category').value;
+            
+            if (title || content) {
+                localStorage.setItem('blog_local_draft', JSON.stringify({
+                    title, content, category, timestamp: Date.now()
+                }));
+                setEditorActionStatus('已自动保存到本地', 'success');
+                setTimeout(() => setEditorActionStatus(''), 2000);
+            }
+        }
+
+        function restoreLocalDraft() {
+            const draftJson = localStorage.getItem('blog_local_draft');
+            if (draftJson && !document.getElementById('edit-id').value) {
+                try {
+                    const draft = JSON.parse(draftJson);
+                    if (draft.title || draft.content) {
+                        if (confirm('发现上次未保存的草稿，是否恢复？')) {
+                            document.getElementById('edit-title').value = draft.title || '';
+                            document.getElementById('edit-content').value = draft.content || '';
+                            if(draft.category) {
+                                document.getElementById('edit-category').value = draft.category;
+                            }
+                        } else {
+                            clearLocalDraft();
+                        }
+                    }
+                } catch(e) {
+                    clearLocalDraft();
+                }
+            }
+        }
+
+        function clearLocalDraft() {
+            localStorage.removeItem('blog_local_draft');
+        }
+
+        document.getElementById('editor-form').addEventListener('submit', function(e) {
             e.preventDefault();
+        });
+
+        async function submitArticle(isDraft) {
+            const form = document.getElementById('editor-form');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
             const id = document.getElementById('edit-id').value;
             const title = document.getElementById('edit-title').value;
             const category = document.getElementById('edit-category').value;
@@ -1042,7 +1172,8 @@
                 date: originalArticle ? originalArticle.date : today, // 保留原日期
                 modifyDate: today,
                 category: category,
-                content: fullContent
+                content: fullContent,
+                isDraft: isDraft
             };
             if (id) {
                 const existing = articles.find(a => a.id === id);
@@ -1051,23 +1182,33 @@
                 }
             }
 
-            const btn = document.getElementById('save-btn');
-            btn.disabled = true;
-            btn.innerText = '正在同步到云端数据库...';
+            const publishBtn = document.getElementById('publish-btn');
+            const saveDraftBtn = document.getElementById('save-draft-btn');
+            publishBtn.disabled = true;
+            saveDraftBtn.disabled = true;
+            
+            if(isDraft) {
+                saveDraftBtn.innerText = '正在保存...';
+            } else {
+                publishBtn.innerText = '正在发布...';
+            }
 
             const success = await syncToVercel(articleData);
 
-            btn.disabled = false;
-            btn.innerText = '保存文章';
+            publishBtn.disabled = false;
+            saveDraftBtn.disabled = false;
+            publishBtn.innerText = '发布文章';
+            saveDraftBtn.innerText = '保存草稿';
 
             if (success) {
-                alert('保存成功！');
+                alert(isDraft ? '草稿保存成功！' : '发布成功！');
+                clearLocalDraft();
                 hideEditor();
                 fetchArticlesFromVercel();
             } else {
                 fetchArticlesFromVercel();
             }
-        };
+        }
     </script>
 </body>
 </html>
