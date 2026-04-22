@@ -40,7 +40,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
       </div>
 
-      <section id="blog" class="panel section-panel">
+      <section id="blog" class="panel section-panel section-panel--latest">
         <div class="section-header">
           <div class="section-header__main">
             <span class="panel-kicker">Latest</span>
@@ -48,25 +48,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <a href="/articles.html" class="btn btn-secondary">查看全部文章</a>
         </div>
-        <div class="cards-grid" id="latest-articles">
+        <div class="cards-grid cards-grid--latest" id="latest-articles">
           <p class="panel-empty">加载中...</p>
         </div>
       </section>
 
       <div class="grid-two">
-        <section id="categories" class="panel section-panel">
+        <section id="categories" class="panel section-panel section-panel--topics">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Topics</span>
               <h2 class="section-title">知识专栏</h2>
             </div>
           </div>
-          <div class="cards-grid" id="dynamic-categories-grid">
+          <div class="cards-grid cards-grid--topics" id="dynamic-categories-grid">
             <p class="panel-empty">加载中...</p>
           </div>
         </section>
 
-        <section id="about" class="panel section-panel">
+        <section id="about" class="panel section-panel section-panel--about">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">About</span>
@@ -95,7 +95,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
 
       <div class="grid-two">
-        <section id="contact" class="panel section-panel">
+        <section id="contact" class="panel section-panel section-panel--contact">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Guestbook</span>
@@ -112,7 +112,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </section>
 
-        <section id="friends" class="panel section-panel">
+        <section id="friends" class="panel section-panel section-panel--friends">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Friends</span>
@@ -200,8 +200,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         // 使用 pretext 算出的文本高度，加上一些基准偏移，动态决定每张卡片的下落距离
         const dropDist = excerptHeight + 30;
 
+        const featuredClass = index === 0 ? ' blog-card--featured' : '';
         latestArticlesContainer.innerHTML += `
-          <article class="blog-card anim-drop-play" style="--drop-dist: -${dropDist}px; --delay: ${index * 0.15}s;">
+          <article class="blog-card${featuredClass} anim-drop-play" style="--drop-dist: -${dropDist}px; --delay: ${index * 0.15}s;">
             <div class="blog-card__topline">
               <div class="blog-meta">
                 <span>${article.date}</span>
@@ -251,8 +252,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       categories.forEach((cat) => {
         const displayName = cat.name === '随笔' ? '生活随笔' : cat.name;
+        const accentClass = categoryIndex % 3 === 0 ? ' category-card--accent' : '';
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
+          <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card${accentClass} anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
             <div class="category-icon">${cat.icon || '🗂'}</div>
             <div class="category-card__content">
               <h3 class="category-name">${displayName}</h3>
