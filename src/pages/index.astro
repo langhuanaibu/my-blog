@@ -22,7 +22,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="hero-panel__content">
           <span class="hero-panel__eyebrow">Notebook</span>
           <div class="hero-grid">
-            <div>
+            <div class="hero-copy">
               <h1 class="hero-title">Aoitsuki</h1>
               <p class="hero-subtitle" id="typewriter-text"></p>
               <noscript>
@@ -42,7 +42,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <section id="blog" class="panel section-panel">
         <div class="section-header">
-          <div>
+          <div class="section-header__main">
             <span class="panel-kicker">Latest</span>
             <h2 class="section-title">最新文章</h2>
           </div>
@@ -56,7 +56,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="grid-two">
         <section id="categories" class="panel section-panel">
           <div class="section-header">
-            <div>
+            <div class="section-header__main">
               <span class="panel-kicker">Topics</span>
               <h2 class="section-title">知识专栏</h2>
             </div>
@@ -68,7 +68,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <section id="about" class="panel section-panel">
           <div class="section-header">
-            <div>
+            <div class="section-header__main">
               <span class="panel-kicker">About</span>
               <h2 class="section-title">关于我</h2>
             </div>
@@ -97,7 +97,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="grid-two">
         <section id="contact" class="panel section-panel">
           <div class="section-header">
-            <div>
+            <div class="section-header__main">
               <span class="panel-kicker">Guestbook</span>
               <h2 class="section-title">留言板</h2>
             </div>
@@ -114,7 +114,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <section id="friends" class="panel section-panel">
           <div class="section-header">
-            <div>
+            <div class="section-header__main">
               <span class="panel-kicker">Friends</span>
               <h2 class="section-title">友情链接</h2>
             </div>
@@ -191,7 +191,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           const excerptLines = lines.slice(0, 3).map(l => l.text.trim());
           excerpt = excerptLines.join(' ');
           if (lines.length > 3) excerpt += '...';
-          excerptHeight = Math.min(height, 84); // 限制最多3行的高度
+          excerptHeight = Math.min(height, 84); // 限制最大 3 行的高度
         } catch (e) {
           // Fallback
           excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
@@ -202,16 +202,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         latestArticlesContainer.innerHTML += `
           <article class="blog-card anim-drop-play" style="--drop-dist: -${dropDist}px; --delay: ${index * 0.15}s;">
-            <div class="blog-meta">
-              <span>${article.date}</span>
-              <span>约 ${readTime} 分钟阅读</span>
+            <div class="blog-card__topline">
+              <div class="blog-meta">
+                <span>${article.date}</span>
+                <span>约 ${readTime} 分钟阅读</span>
+              </div>
+              <span class="blog-card__index">0${index + 1}</span>
             </div>
-            <h3 class="blog-title"><a href="/articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
-            <div class="blog-tags">
-              <span class="panel-kicker" style="font-size: 0.72rem;">${article.category || '未分类'}</span>
+            <div class="blog-card__body">
+              <h3 class="blog-title"><a href="/articles.html#${article.id}" class="blog-link">${article.title}</a></h3>
+              <div class="blog-tags">
+                <span class="panel-kicker" style="font-size: 0.72rem;">${article.category || '未分类'}</span>
+              </div>
+              <p class="blog-excerpt">${excerpt}</p>
             </div>
-            <p class="blog-excerpt">${excerpt}</p>
-            <a href="/articles.html#${article.id}" class="btn btn-secondary">阅读更多</a>
+            <div class="blog-card__footer">
+              <a href="/articles.html#${article.id}" class="btn btn-secondary">阅读更多</a>
+            </div>
           </article>
         `;
       });
@@ -247,8 +254,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         masonryHTML += `
           <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
             <div class="category-icon">${cat.icon || '🗂'}</div>
-            <h3 class="category-name">${displayName}</h3>
-            <p class="category-desc">${cat.desc || ''}</p>
+            <div class="category-card__content">
+              <h3 class="category-name">${displayName}</h3>
+              <p class="category-desc">${cat.desc || ''}</p>
+            </div>
           </a>
         `;
         categoryIndex++;
