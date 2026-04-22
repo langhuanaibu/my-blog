@@ -1170,6 +1170,7 @@ body {
 .hero-visual {
   min-height: 420px;
   border-radius: 16px;
+  aspect-ratio: 4 / 3;
 }
 
 .section-panel {
@@ -1465,9 +1466,9 @@ body {
     max-width: none;
   }
 
-  .hero-visual {
-    min-height: 320px;
-  }
+.hero-visual {
+  min-height: 320px;
+}
 }
 
 @media (max-width: 720px) {
