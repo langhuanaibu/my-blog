@@ -373,10 +373,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             const headerHeight = document.querySelector('.site-header')?.offsetHeight || 90;
             const targetPosition = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
 
-            window.scrollTo({
-              top: targetPosition,
-              behavior: 'smooth'
-            });
+            // 移动端：如果是通过底部弹窗点击的，需要先关闭弹窗，然后再计算和滚动
+            if (window.innerWidth <= 1100 && document.body.classList.contains('mobile-panel-open')) {
+              // 移除 active 样式并关闭面板
+              const panelToc = document.querySelector('.article-toc-panel');
+              const mobileOverlay = document.getElementById('mobile-overlay');
+              const btnToc = document.getElementById('mobile-btn-toc');
+              
+              if(panelToc) panelToc.classList.remove('active');
+              if(mobileOverlay) mobileOverlay.classList.remove('active');
+              if(btnToc) btnToc.classList.remove('active');
+              document.body.classList.remove('mobile-panel-open');
+              
+              // 稍微延迟等待面板收起、body 恢复滚动后再进行 scrollTo
+              setTimeout(() => {
+                 // 重新获取一下准确位置，因为关掉面板可能导致布局变动
+                 const newTargetPosition = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
+                 window.scrollTo({
+                  top: newTargetPosition,
+                  behavior: 'smooth'
+                 });
+              }, 300);
+            } else {
+              window.scrollTo({
+                top: targetPosition,
+                behavior: 'smooth'
+              });
+            }
 
             document.querySelectorAll('.toc-item a').forEach((link) => link.classList.remove('active'));
             a.classList.add('active');
