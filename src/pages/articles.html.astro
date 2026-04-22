@@ -17,7 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <section class="page-shell article-page-shell">
     <div class="page-shell__inner article-page-grid">
-      <aside class="panel panel-nav article-nav-panel">
+      <aside class="panel panel-nav article-nav-panel article-nav-panel--editorial">
         <div class="panel-heading">
           <span class="panel-kicker">Archive</span>
           <h1>我的文章</h1>
@@ -37,7 +37,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </aside>
 
-        <article class="panel panel-content article-content-panel">
+        <article class="panel panel-content article-content-panel article-content-panel--editorial">
           <div id="article-detail" class="article-detail-empty">
             <span class="panel-kicker">Reading</span>
             <h2>请选择一篇文章开始阅读</h2>
@@ -46,7 +46,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
         </article>
 
-        <aside class="panel panel-toc article-toc-panel">
+        <aside class="panel panel-toc article-toc-panel article-toc-panel--editorial">
           <div class="panel-heading panel-heading--compact">
             <span class="panel-kicker">Outline</span>
             <h2>文章大纲</h2>
@@ -304,7 +304,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <header class="article-header">
             <span class="panel-kicker">Post</span>
             <h1 class="article-title">${article.title}</h1>
-            <div class="article-meta">
+            <div class="article-meta article-meta--editorial">
               <span>发布日期：${article.date}</span>
               <span>分类：${article.category || '未分类'}</span>
               <span class="article-views">
@@ -319,13 +319,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             <div id="read-progress-bar" class="read-progress-bar"></div>
           </div>
           <div id="read-progress-text" class="read-progress-text">阅读进度: 0%</div>
-          <div id="article-content" class="article-content prose" data-article-id="${articleId}">
+          <div id="article-content" class="article-content prose article-content--editorial" data-article-id="${articleId}">
             ${marked.parse((article.content || '').replace(/src=(['"])images\//g, 'src=$1/images/').replace(/src=(['"])\.\/images\//g, 'src=$1/images/'))}
           </div>
-          <div class="article-modify">
+          <div class="article-modify article-modify--editorial">
             <p>最后修改日期：<span>${article.modifyDate || article.date}</span></p>
           </div>
-          <section class="article-comments">
+          <section class="article-comments article-comments--editorial">
             <h3>评论区</h3>
             <div id="twikoo-comments"></div>
           </section>
