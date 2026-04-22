@@ -40,7 +40,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </div>
       </div>
 
-      <section id="blog" class="panel section-panel section-panel--latest">
+      <section id="blog" class="panel section-panel">
         <div class="section-header">
           <div class="section-header__main">
             <span class="panel-kicker">Latest</span>
@@ -48,38 +48,38 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <a href="/articles.html" class="btn btn-secondary">查看全部文章</a>
         </div>
-        <div class="cards-grid cards-grid--latest" id="latest-articles">
+        <div class="cards-grid" id="latest-articles">
           <p class="panel-empty">加载中...</p>
         </div>
       </section>
 
-      <div class="grid-two grid-two--editorial">
-        <section id="categories" class="panel section-panel section-panel--topics">
+      <div class="grid-two">
+        <section id="categories" class="panel section-panel">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Topics</span>
               <h2 class="section-title">知识专栏</h2>
             </div>
           </div>
-          <div class="cards-grid cards-grid--topics" id="dynamic-categories-grid">
+          <div class="cards-grid" id="dynamic-categories-grid">
             <p class="panel-empty">加载中...</p>
           </div>
         </section>
 
-        <section id="about" class="panel section-panel section-panel--about">
+        <section id="about" class="panel section-panel">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">About</span>
               <h2 class="section-title">关于我</h2>
             </div>
           </div>
-          <div class="contact-card contact-card--about">
-            <div class="about-copy">
+          <div class="contact-card">
+            <div>
               <p>一名富有人文情怀的工科生</p>
               <p>一名勇于实践的理想主义者</p>
               <p>一名极度乐观的悲观主义者</p>
             </div>
-            <div class="about-skills">
+            <div>
               <h3>技术栈</h3>
               <ul class="skills-list">
                 <li>HTML5 & CSS3</li>
@@ -94,25 +94,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </section>
       </div>
 
-      <div class="grid-two grid-two--editorial">
-        <section id="contact" class="panel section-panel section-panel--contact">
+      <div class="grid-two">
+        <section id="contact" class="panel section-panel">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Guestbook</span>
               <h2 class="section-title">留言板</h2>
             </div>
           </div>
-          <div class="contact-card contact-card--message">
+          <div class="contact-card">
             <div class="section-copy">
               <p>欢迎在这里留下你的足迹、建议或任何想对我说的话，</p>
               <p><strong>邮箱：</strong>antemeridiem@foxmail.com</p>
               <p><strong>GitHub：</strong><a href="https://github.com/langhuanaibu" target="_blank">github.com/langhuanaibu</a></p>
             </div>
-            <div id="twikoo-comments" class="panel contact-card__comments" style="padding: 20px;"></div>
+            <div id="twikoo-comments" class="panel" style="padding: 20px;"></div>
           </div>
         </section>
 
-        <section id="friends" class="panel section-panel section-panel--friends">
+        <section id="friends" class="panel section-panel">
           <div class="section-header">
             <div class="section-header__main">
               <span class="panel-kicker">Friends</span>
@@ -200,10 +200,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         // 使用 pretext 算出的文本高度，加上一些基准偏移，动态决定每张卡片的下落距离
         const dropDist = excerptHeight + 30;
 
-        const featureClass = index === 0 ? 'blog-card--feature' : 'blog-card--compact';
-
         latestArticlesContainer.innerHTML += `
-          <article class="blog-card ${featureClass} anim-drop-play" style="--drop-dist: -${dropDist}px; --delay: ${index * 0.15}s;">
+          <article class="blog-card anim-drop-play" style="--drop-dist: -${dropDist}px; --delay: ${index * 0.15}s;">
             <div class="blog-card__topline">
               <div class="blog-meta">
                 <span>${article.date}</span>
@@ -243,9 +241,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       const categoriesGrid = document.getElementById('dynamic-categories-grid');
       categoriesGrid.innerHTML = '';
-      categoriesGrid.style.display = '';
-      categoriesGrid.style.columnCount = '';
-      categoriesGrid.style.columnGap = '';
+      // 改为使用 CSS 多列布局 (Multi-column) 实现原生的高性能瀑布流
+      categoriesGrid.style.display = 'block';
+      categoriesGrid.style.columnCount = window.innerWidth > 1100 ? 3 : 1;
+      categoriesGrid.style.columnGap = '18px';
 
       let masonryHTML = '';
       let categoryIndex = 0;
@@ -253,7 +252,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       categories.forEach((cat) => {
         const displayName = cat.name === '随笔' ? '生活随笔' : cat.name;
         masonryHTML += `
-          <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s;">
+          <a href="/articles.html?category=${encodeURIComponent(cat.name)}" class="category-card anim-flip-play" style="--flip-delay: ${categoryIndex * 0.12}s; break-inside: avoid; margin-bottom: 18px; min-height: auto; display: inline-flex; width: 100%; box-sizing: border-box;">
             <div class="category-icon">${cat.icon || '🗂'}</div>
             <div class="category-card__content">
               <h3 class="category-name">${displayName}</h3>
