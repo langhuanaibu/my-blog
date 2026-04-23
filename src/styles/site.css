@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -26,16 +26,21 @@
   --header-height: 88px;
   --font-sans: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
   --font-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  
+  /* 添加面板高光变量，便于在深色模式下调暗 */
+  --panel-highlight: rgba(255, 255, 255, 0.5);
+  --card-highlight: rgba(255, 255, 255, 0.56);
+  --reading-highlight: rgba(255, 255, 255, 0.6);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0f0b08;
-  --bg-soft: #17120e;
-  --bg-elevated: rgba(24, 19, 15, 0.8);
-  --paper: rgba(24, 19, 15, 0.92);
-  --paper-strong: #1b1612;
-  --paper-muted: rgba(32, 25, 19, 0.9);
+  --bg: #14110e;
+  --bg-soft: #1a1613;
+  --bg-elevated: rgba(28, 24, 21, 0.8);
+  --paper: rgba(28, 24, 21, 0.92);
+  --paper-strong: #201b18;
+  --paper-muted: rgba(255, 255, 255, 0.12); /* 让按钮在深色背景中更明显，如第三张图的“阅读更多” */
   --line: rgba(255, 237, 213, 0.08);
   --line-strong: rgba(255, 237, 213, 0.16);
   --text: #eadfce;
@@ -48,6 +53,11 @@
   --warning: #f0bb63;
   --shadow-soft: 0 20px 42px rgba(0, 0, 0, 0.22);
   --shadow: 0 30px 78px rgba(0, 0, 0, 0.34);
+  
+  /* 深色模式下极大地降低高光，避免面板发灰/发白，还原深色质感 */
+  --panel-highlight: rgba(255, 255, 255, 0.03);
+  --card-highlight: rgba(255, 255, 255, 0.04);
+  --reading-highlight: rgba(255, 255, 255, 0.03);
 }
 
 * {
@@ -207,7 +217,7 @@ img {
 .panel {
   position: relative;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), transparent 100%),
+    linear-gradient(180deg, var(--panel-highlight), transparent 100%),
     var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -419,7 +429,7 @@ img {
   border-radius: var(--radius-md);
   border: 1px solid var(--line);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.56), transparent 100%),
+    linear-gradient(180deg, var(--card-highlight), transparent 100%),
     var(--paper-strong);
   box-shadow: 0 10px 26px rgba(33, 24, 16, 0.04);
   transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
@@ -608,18 +618,56 @@ img {
   gap: 16px;
 }
 
-/* 在超宽屏幕下，当阅读页达到 1400px 最大宽度时，自动将浮动菜单往右推，避免遮挡大纲 */
+/* 在大屏下，悬浮弹出功能列表避免遮挡大纲 */
+@media (min-width: 1101px) {
+  .page-articles .floating-menu {
+    /* 保持在右下角 */
+    top: auto;
+    bottom: 40px;
+    right: 20px;
+    transform: none;
+    align-items: flex-end;
+  }
+  
+  .page-articles .floating-actions {
+    transform: translateY(10px) scale(0.95);
+    transform-origin: bottom center;
+  }
+  
+  .page-articles .floating-menu.active .floating-actions {
+    transform: translateY(0) scale(1);
+  }
+
+  .page-articles .article-tools-panel {
+    position: absolute;
+    right: 64px; /* 在主按钮的左边弹出 */
+    bottom: 0;
+    top: auto;
+    margin-bottom: 0;
+    transform: translateX(10px) scale(0.95);
+    transform-origin: right bottom;
+  }
+
+  .page-articles .floating-menu.active .article-tools-panel {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* 在超宽屏幕下，将整个浮动菜单推到大纲容器外部右侧 */
 @media (min-width: 1560px) {
   .page-articles .floating-menu {
     right: calc(50vw - 720px - 80px); /* 50vw - container_half - menu_width_offset */
   }
-}
-
-@media (min-width: 1440px) and (max-width: 1559px) {
-  .page-articles .floating-menu {
-    right: 20px;
-    transform: scale(0.9);
+  
+  .page-articles .article-tools-panel {
+    right: 0; /* 空间充足时，对齐按钮右侧向上弹出，完全不碰大纲 */
+    bottom: 220px; /* 在按钮和 actions 的上方 */
+    transform: translateY(10px) scale(0.95);
     transform-origin: bottom right;
+  }
+
+  .page-articles .floating-menu.active .article-tools-panel {
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -627,6 +675,17 @@ img {
   width: 168px;
   padding: 16px;
   margin-bottom: 8px;
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-menu.active .article-tools-panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .article-tools-actions {
@@ -716,7 +775,7 @@ img {
 /* 中间阅读区域保留卡片感，或使其对比度更高 */
 .panel-content--reading {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 100%),
+    linear-gradient(180deg, var(--reading-highlight), transparent 100%),
     var(--paper);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.04); /* 添加柔和的阴影使其浮现 */
 }
