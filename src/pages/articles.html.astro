@@ -566,16 +566,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           focusBtn.addEventListener('click', () => {
             const isActive = document.body.classList.toggle('focus-mode-active');
             if (isActive) {
-              focusBtn.innerText = '退出专注';
-              focusBtn.classList.add('btn-primary');
-              focusBtn.classList.remove('btn-secondary');
+              focusBtn.classList.add('active-state');
+              focusBtn.style.color = 'var(--accent)';
+              focusBtn.style.borderColor = 'var(--accent)';
               // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
-              focusBtn.innerText = '专注阅读';
-              focusBtn.classList.add('btn-secondary');
-              focusBtn.classList.remove('btn-primary');
+              focusBtn.classList.remove('active-state');
+              focusBtn.style.color = '';
+              focusBtn.style.borderColor = '';
               // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
@@ -589,16 +589,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           tocBtn.addEventListener('click', () => {
             const isHidden = document.body.classList.toggle('hide-toc-active');
             if (isHidden) {
-              tocBtn.innerText = '显示大纲';
-              tocBtn.classList.add('btn-primary');
-              tocBtn.classList.remove('btn-secondary');
+              tocBtn.classList.add('active-state');
+              tocBtn.style.color = 'var(--accent)';
+              tocBtn.style.borderColor = 'var(--accent)';
               // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
-              tocBtn.innerText = '隐藏大纲';
-              tocBtn.classList.add('btn-secondary');
-              tocBtn.classList.remove('btn-primary');
+              tocBtn.classList.remove('active-state');
+              tocBtn.style.color = '';
+              tocBtn.style.borderColor = '';
               // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
@@ -743,19 +743,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <script is:inline src="/script.js"></script>
   </Fragment>
   <Fragment slot="floating-menu-extra">
-    <div class="panel article-tools-panel">
-      <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
-        <span class="panel-kicker">Tools</span>
-        <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
-      </div>
-      <div class="article-tools-actions">
-        <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-          隐藏大纲
-        </button>
-        <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-          专注阅读
-        </button>
-      </div>
-    </div>
+    <button id="toc-mode-toggle" class="floating-btn action-btn" type="button" aria-label="隐藏大纲" title="隐藏大纲">纲</button>
+    <button id="focus-mode-toggle" class="floating-btn action-btn" type="button" aria-label="专注阅读" title="专注阅读">专</button>
   </Fragment>
 </BaseLayout>
