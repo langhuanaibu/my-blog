@@ -251,8 +251,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const navTopInViewport = navRect.top;
         
         // 可视区域在列表本地坐标系中的范围
-        const visibleTop = Math.max(0, -navTopInViewport - 300); // 上缓冲 300px
-        const visibleBottom = visibleTop + windowHeight + 600; // 下缓冲 300px
+        // 加大缓冲区域，防止快速滚动或布局变动时出现空白
+        const visibleTop = Math.max(0, -navTopInViewport - 800); // 上缓冲 800px
+        const visibleBottom = visibleTop + windowHeight + 1200; // 下缓冲 1200px
         
         const itemsToRender = virtualListState.items.filter(item => 
           item.bottom >= visibleTop && item.top <= visibleBottom
@@ -300,6 +301,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               link.classList.add('active');
               showArticle(item.id);
               history.pushState(null, '', '#' + item.id);
+              
+              // 手动触发一次 update，防止因布局变动导致的计算滞后
+              setTimeout(updateVirtualList, 100);
             });
 
             articlesNav.appendChild(div);
