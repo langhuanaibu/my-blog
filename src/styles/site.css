@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -683,6 +683,21 @@ img {
 .tools-trigger-btn:hover {
   background: var(--paper-strong);
   border-color: var(--accent-strong);
+}
+
+.global-tools-dropdown {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .global-tools-dropdown {
+    display: block;
+  }
+}
+
+.global-tools-dropdown .tools-trigger-btn:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow);
 }
 
 .article-tools-panel {

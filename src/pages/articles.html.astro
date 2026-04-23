@@ -16,10 +16,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <section class="page-shell article-page-shell">
-    <div class="page-shell__inner article-page-grid">
-      <aside class="panel panel-nav panel-nav--archive article-nav-panel">
-        <div class="panel-heading">
-          <span class="panel-kicker">Archive</span>
+      <div class="page-shell__inner article-page-grid">
+        <aside class="panel panel-nav panel-nav--archive article-nav-panel">
+          <div class="panel-heading">
+            <span class="panel-kicker">Archive</span>
           <h1>我的文章</h1>
           <p>按时间、分类与关键词检索最近写下的内容。</p>
         </div>
@@ -47,39 +47,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </article>
 
         <aside class="panel panel-toc panel-toc--outline article-toc-panel">
-          <div class="panel-heading panel-heading--compact" style="position: relative;">
-            <div style="display: flex; align-items: center; margin-bottom: 16px;">
-              <span class="panel-kicker" style="margin-bottom: 0; position: relative; z-index: 2; box-shadow: 2px 0 8px rgba(0,0,0,0.1);">Outline</span>
-              <!-- 工具栏触发按钮 -->
-              <div class="tools-dropdown-container">
-                <button class="tools-trigger-btn" id="tools-trigger-btn" type="button" aria-label="功能列表" title="功能列表" style="margin-left: -16px; padding-left: 24px; position: relative; z-index: 1; border-color: var(--line-strong);">
-                  <span style="font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-soft);">Tools</span>
-                </button>
-                
-                <!-- 弹出的功能列表面板 -->
-                <div class="panel article-tools-panel" id="article-tools-panel" style="left: 0; right: auto; transform-origin: top left;">
-                  <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
-                    <span class="panel-kicker">Tools</span>
-                    <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
-                  </div>
-                  <div class="article-tools-actions">
-                    <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-                      隐藏大纲
-                    </button>
-                    <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0; margin-top: 8px;">
-                      专注阅读
-                    </button>
-                  </div>
-                </div>
-              </div>
+          <div class="panel-heading panel-heading--compact" style="display: flex; justify-content: space-between; align-items: flex-start; position: relative;">
+            <div>
+              <span class="panel-kicker">Outline</span>
+              <h2>文章大纲</h2>
             </div>
-            <h2>文章大纲</h2>
           </div>
           <ul id="toc-list" class="toc-list">
-          <li class="toc-item"><span class="panel-empty">暂无目录</span></li>
-        </ul>
-      </aside>
-    </div> <!-- End page-shell__inner -->
+            <li class="toc-item"><span class="panel-empty">暂无目录</span></li>
+          </ul>
+        </aside>
+      </div> <!-- End page-shell__inner -->
+      
+      <!-- 悬浮在右下角的全局工具栏按钮 -->
+      <div class="tools-dropdown-container global-tools-dropdown" style="position: fixed; bottom: 40px; right: 40px; z-index: 100;">
+        <button class="tools-trigger-btn" id="tools-trigger-btn" type="button" aria-label="功能列表" title="功能列表" style="width: 48px; height: 48px; padding: 0; border-radius: 50%; background: var(--paper-strong); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text);"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        
+        <!-- 弹出的功能列表面板 -->
+        <div class="panel article-tools-panel" id="article-tools-panel" style="bottom: calc(100% + 16px); right: 0; top: auto; transform-origin: bottom right;">
+          <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
+            <span class="panel-kicker">Tools</span>
+            <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
+          </div>
+          <div class="article-tools-actions">
+            <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+              隐藏大纲
+            </button>
+            <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0; margin-top: 8px;">
+              专注阅读
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
 
     <!-- Mobile Bottom Navigation -->
     <div class="mobile-overlay" id="mobile-overlay"></div>
