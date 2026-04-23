@@ -1324,14 +1324,63 @@ html.intro-active .anim-flip-play {
   }
 
   .site-header__inner {
-    flex-direction: row;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 14px;
     border-radius: 0;
   }
 
+  .brand {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .brand__copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .brand__title {
+    font-size: 0.98rem;
+  }
+
+  .brand__subtitle {
+    max-width: none;
+    white-space: normal;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .site-nav {
-    width: auto;
-    justify-content: flex-end;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    justify-content: stretch;
+  }
+
+  .site-nav a,
+  .site-nav button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 0.92rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.24);
+    border-radius: 14px;
+  }
+
+  .site-nav .theme-toggle {
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+    justify-self: center;
   }
 
   .hero-panel,
