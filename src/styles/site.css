@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -35,29 +35,29 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #14110e;
-  --bg-soft: #1a1613;
-  --bg-elevated: rgba(28, 24, 21, 0.8);
-  --paper: rgba(28, 24, 21, 0.92);
-  --paper-strong: #201b18;
-  --paper-muted: rgba(255, 255, 255, 0.12); /* 让按钮在深色背景中更明显，如第三张图的“阅读更多” */
-  --line: rgba(255, 237, 213, 0.08);
-  --line-strong: rgba(255, 237, 213, 0.16);
+  --bg: #1f1b18; /* 整体背景稍微提亮一点 */
+  --bg-soft: #26221d;
+  --bg-elevated: rgba(31, 27, 24, 0.8);
+  --paper: rgba(31, 27, 24, 0.92);
+  --paper-strong: #2a2420; /* 卡片底色 */
+  --paper-muted: rgba(255, 255, 255, 0.16); /* 按钮底色，让它更明显 */
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
   --text: #eadfce;
-  --text-soft: #ac9d8c;
-  --heading: #fff8f1;
+  --text-soft: #d8cbbb; /* 进一步提升次要文字对比度，使其更亮 */
+  --heading: #ffffff; /* 标题设为纯白以增加对比度 */
   --accent: #deb184;
   --accent-strong: #f2c79f;
-  --accent-soft: rgba(222, 177, 132, 0.13);
+  --accent-soft: rgba(222, 177, 132, 0.15);
   --success: #62c18b;
   --warning: #f0bb63;
-  --shadow-soft: 0 20px 42px rgba(0, 0, 0, 0.22);
-  --shadow: 0 30px 78px rgba(0, 0, 0, 0.34);
+  --shadow-soft: 0 20px 42px rgba(0, 0, 0, 0.35);
+  --shadow: 0 30px 78px rgba(0, 0, 0, 0.5);
   
-  /* 深色模式下极大地降低高光，避免面板发灰/发白，还原深色质感 */
-  --panel-highlight: rgba(255, 255, 255, 0.03);
-  --card-highlight: rgba(255, 255, 255, 0.04);
-  --reading-highlight: rgba(255, 255, 255, 0.03);
+  /* 调整深色模式下的高光 */
+  --panel-highlight: rgba(255, 255, 255, 0.04);
+  --card-highlight: rgba(255, 255, 255, 0.05);
+  --reading-highlight: rgba(255, 255, 255, 0.04);
 }
 
 * {
@@ -170,7 +170,7 @@ img {
 .brand__subtitle {
   max-width: 300px;
   font-size: 0.76rem;
-  color: var(--text-soft);
+  color: var(--text); /* 提高导航栏副标题的对比度 */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -188,7 +188,7 @@ img {
 .site-nav button {
   border: 0;
   background: transparent;
-  color: var(--text-soft);
+  color: var(--heading); /* 提高导航按钮文字亮度 */
   font: inherit;
   font-size: 0.95rem;
   padding: 10px 14px;
@@ -254,8 +254,8 @@ img {
   padding: 7px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.48);
-  color: var(--accent-strong);
+  background: var(--paper-muted);
+  color: var(--text);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -289,7 +289,7 @@ img {
   max-width: 34rem;
   min-height: 2.2rem;
   margin: 0;
-  color: var(--text-soft);
+  color: var(--text); /* 提高首屏副标题亮度 */
   font-size: clamp(1rem, 2vw, 1.14rem);
 }
 
@@ -318,13 +318,19 @@ img {
 
 .btn-primary {
   background: var(--heading);
-  color: #fffdf9;
+  color: var(--bg);
   box-shadow: 0 14px 28px rgba(23, 17, 12, 0.14);
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--paper-strong);
   border-color: var(--line);
+  color: var(--heading);
+}
+
+.btn-secondary:hover {
+  background: var(--paper-muted);
+  border-color: var(--line-strong);
   color: var(--heading);
 }
 
@@ -475,11 +481,23 @@ img {
 }
 
 .blog-meta,
+.blog-meta span,
+.article-meta,
+.article-meta span {
+  color: var(--text); /* 提高元信息对比度 */
+}
+
+.blog-meta,
 .article-meta {
   display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.article-meta {
   flex-wrap: wrap;
   gap: 10px 16px;
-  color: var(--text-soft);
   font-size: 0.92rem;
 }
 
@@ -701,22 +719,25 @@ img {
 .article-tools-actions .btn {
   background: transparent;
   color: var(--text);
+  border: 1px solid var(--line);
 }
 
 .article-tools-actions .btn:hover {
   background: var(--paper-strong);
   color: var(--heading);
+  border-color: var(--line-strong);
 }
 
 .article-tools-actions .btn-primary {
-  background: var(--accent-soft);
+  background: var(--paper-strong);
   color: var(--accent-strong);
-  border-color: var(--accent-soft);
+  border-color: var(--accent-strong);
 }
 
 .article-tools-actions .btn-primary:hover {
-  background: var(--accent);
-  color: var(--paper);
+  background: var(--paper-strong);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .floating-actions {
@@ -921,8 +942,8 @@ body.focus-mode-active .btn-focus-mode {
 
 .filter-btn {
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.36);
-  color: var(--text-soft);
+  background: var(--paper-muted); /* 让未选中的标签也有可见的底色 */
+  color: var(--heading); /* 改为标题色，确保在任何背景下都能看清 */
   padding: 8px 14px;
   border-radius: 999px;
   cursor: pointer;
@@ -932,9 +953,8 @@ body.focus-mode-active .btn-focus-mode {
 .filter-btn.active,
 .filter-btn:hover {
   color: var(--heading);
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  transform: translateY(-1px);
+  border-color: var(--accent-strong);
+  background: var(--paper-strong);
 }
 
 .article-nav-list {
@@ -965,7 +985,7 @@ body.focus-mode-active .btn-focus-mode {
 
 .article-item-meta,
 .article-item-date {
-  color: var(--text-soft);
+  color: var(--text); /* 提高文章列表中日期的对比度 */
   font-size: 0.82rem;
 }
 
