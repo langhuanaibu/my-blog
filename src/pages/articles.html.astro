@@ -59,29 +59,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </aside>
       </div> <!-- End page-shell__inner -->
       
-      <!-- 悬浮在右下角的全局工具栏按钮 -->
-      <div class="tools-dropdown-container global-tools-dropdown" style="position: fixed; bottom: 40px; right: 40px; z-index: 100;">
-        <button class="tools-trigger-btn" id="tools-trigger-btn" type="button" aria-label="功能列表" title="功能列表" style="width: 48px; height: 48px; padding: 0; border-radius: 50%; background: var(--paper-strong); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--text);"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-        
-        <!-- 弹出的功能列表面板 -->
-        <div class="panel article-tools-panel" id="article-tools-panel" style="bottom: calc(100% + 16px); right: 0; top: auto; transform-origin: bottom right;">
-          <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
-            <span class="panel-kicker">Tools</span>
-            <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
-          </div>
-          <div class="article-tools-actions">
-            <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-              隐藏大纲
-            </button>
-            <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0; margin-top: 8px;">
-              专注阅读
-            </button>
-          </div>
-        </div>
-      </div>
-
     </section>
 
     <!-- Mobile Bottom Navigation -->
@@ -629,23 +606,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           });
         }
         
-        // 工具栏下拉逻辑
-        const toolsTriggerBtn = document.getElementById('tools-trigger-btn');
-        const articleToolsPanel = document.getElementById('article-tools-panel');
-        
-        if (toolsTriggerBtn && articleToolsPanel) {
-          toolsTriggerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            articleToolsPanel.classList.toggle('active');
-          });
-          
-          document.addEventListener('click', (e) => {
-            if (!articleToolsPanel.contains(e.target) && !toolsTriggerBtn.contains(e.target)) {
-              articleToolsPanel.classList.remove('active');
-            }
-          });
-        }
-
         const urlParams = new URLSearchParams(window.location.search);
         const categoryFilter = urlParams.get('category');
         if (categoryFilter) {
@@ -781,5 +741,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       Prism.plugins.autoloader.languages_path = 'https://cdn.staticfile.net/prism/1.29.0/components/';
     </script>
     <script is:inline src="/script.js"></script>
+  </Fragment>
+  <Fragment slot="floating-menu-extra">
+    <div class="panel article-tools-panel">
+      <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
+        <span class="panel-kicker">Tools</span>
+        <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
+      </div>
+      <div class="article-tools-actions">
+        <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+          隐藏大纲
+        </button>
+        <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+          专注阅读
+        </button>
+      </div>
+    </div>
   </Fragment>
 </BaseLayout>
