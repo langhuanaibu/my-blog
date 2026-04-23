@@ -214,7 +214,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             titleHeight = layoutResult.height;
           } catch(e) {}
           
-          const itemHeight = paddingY + innerGap + metaHeight + dateHeight + titleHeight;
+          // 给 padding 增加额外的缓冲量 8px，防止不同字体下高度计算不准确导致的底部文字被截断
+          const itemHeight = paddingY + innerGap + metaHeight + dateHeight + titleHeight + 8;
           const itemTop = currentTop;
           currentTop += itemHeight + gap;
           
