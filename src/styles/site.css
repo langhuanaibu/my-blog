@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -606,6 +606,21 @@ img {
   flex-direction: column;
   align-items: flex-end;
   gap: 16px;
+}
+
+/* 在超宽屏幕下，当阅读页达到 1400px 最大宽度时，自动将浮动菜单往右推，避免遮挡大纲 */
+@media (min-width: 1560px) {
+  .page-articles .floating-menu {
+    right: calc(50vw - 720px - 80px); /* 50vw - container_half - menu_width_offset */
+  }
+}
+
+@media (min-width: 1440px) and (max-width: 1559px) {
+  .page-articles .floating-menu {
+    right: 20px;
+    transform: scale(0.9);
+    transform-origin: bottom right;
+  }
 }
 
 .article-tools-panel {
