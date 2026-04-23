@@ -1,4 +1,4 @@
-﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -665,22 +665,45 @@ img {
   font-weight: 500;
 }
 
+.page-articles.page-shell,
+.article-page-shell {
+  max-width: 1400px !important;
+}
+
 .page-articles .page-shell__inner,
 .article-page-grid {
-  grid-template-columns: minmax(250px, 0.9fr) minmax(0, 1.65fr) minmax(220px, 0.68fr);
+  /* 使用更大的最大宽度来获得沉浸式宽屏效果 */
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  /* 调整三列比例，显著加宽中间内容区域，侧边栏固定宽度 */
+  grid-template-columns: 260px minmax(0, 1fr) 220px;
+  gap: 36px;
   align-items: start;
 }
 
 .article-page-shell .panel {
-  padding: 24px;
+  padding: 32px 40px; /* 加大中间内容的内边距，提升呼吸感 */
 }
 
-.panel-nav--archive,
-.panel-content--reading,
-.panel-toc--outline {
+/* 去除侧边栏的卡片背景，让它们融入网页底色 */
+@media (min-width: 1101px) {
+  .panel-nav--archive,
+  .panel-toc--outline {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* 中间阅读区域保留卡片感，或使其对比度更高 */
+.panel-content--reading {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.44), transparent 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), transparent 100%),
     var(--paper);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.04); /* 添加柔和的阴影使其浮现 */
 }
 
 body.hide-toc-active .article-toc-panel {
@@ -1161,6 +1184,10 @@ html.intro-active .anim-flip-play {
 
   .desktop-only-text {
     display: none;
+  }
+
+  .article-page-shell .panel {
+    padding: 20px 24px;
   }
 
   .mobile-only-text {
