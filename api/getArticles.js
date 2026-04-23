@@ -14,8 +14,17 @@ module.exports = async (req, res) => {
 
     try {
         const { db } = await connectToDatabase();
+        
+        // 解析可选的 limit 参数
+        const limit = req.query && req.query.limit ? parseInt(req.query.limit, 10) : 0;
+        
         // 获取所有的已发布文章（排除草稿）
-        const articles = await db.collection('articles').find({ isDraft: { $ne: true } }).sort({ date: -1 }).toArray();
+        let query = db.collection('articles').find({ isDraft: { $ne: true } }).sort({ date: -1 });
+        if (limit > 0) {
+            query = query.limit(limit);
+        }
+        
+        const articles = await query.toArray();
         
         res.status(200).json({ success: true, data: articles });
     } catch (error) {

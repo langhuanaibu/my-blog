@@ -152,24 +152,42 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <script type="module" is:inline>
     import { prepareWithSegments, layoutWithLines } from 'https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.5/dist/layout.js';
 
-    async function initLatestArticles() {
-      let blogArticles = [];
+    let cachedArticles = [];
+    let cachedCategories = [];
+    let isDataLoaded = false;
+
+    async function fetchHomepageData() {
       try {
-        const response = await fetch('/api/getArticles', {
-          method: 'GET',
-          cache: 'no-store'
-        });
+        const [artRes, catRes] = await Promise.all([
+          fetch('/api/getArticles?limit=3', { method: 'GET', cache: 'no-store' }),
+          fetch('/api/getCategories', { method: 'GET', cache: 'no-store' })
+        ]);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.success) blogArticles = data.data;
+        if (artRes.ok) {
+          const data = await artRes.json();
+          if (data && data.success) {
+            cachedArticles = data.data;
+            // 确保按照日期降序排列
+            cachedArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+          }
         }
-      } catch (error) {
-        console.error('获取文章失败:', error);
-      }
 
-      blogArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-      const latestThree = blogArticles.slice(0, 3);
+        if (catRes.ok) {
+          const data = await catRes.json();
+          if (data && data.success) {
+            cachedCategories = data.data;
+          }
+        }
+        
+        isDataLoaded = true;
+      } catch (error) {
+        console.error('获取数据失败:', error);
+      }
+    }
+
+    function renderLatestArticles() {
+      if (!isDataLoaded) return;
+      
       const latestArticlesContainer = document.getElementById('latest-articles');
       latestArticlesContainer.innerHTML = '';
 
@@ -177,7 +195,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const containerWidth = latestArticlesContainer.clientWidth > 0 ? (latestArticlesContainer.clientWidth / 3 - 44) : 300;
       const font = '16px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
 
-      latestThree.forEach((article, index) => {
+      cachedArticles.forEach((article, index) => {
         const htmlContent = marked.parse(article.content || '');
         const contentText = htmlContent.replace(/<[^>]*>/g, '');
         const readTime = Math.ceil(contentText.length / 300) || 1;
@@ -224,22 +242,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         `;
       });
 
-      if (!latestThree.length) {
+      if (!cachedArticles.length) {
         latestArticlesContainer.innerHTML = '<p class="panel-empty">暂时还没有文章，稍后再来看看。</p>';
       }
+    }
 
-      // 获取专栏数据
-      let categories = [];
-      try {
-        const catRes = await fetch('/api/getCategories', { method: 'GET', cache: 'no-store' });
-        if (catRes.ok) {
-          const catData = await catRes.json();
-          if (catData && catData.success) categories = catData.data;
-        }
-      } catch (e) {
-        console.error('获取栏目失败:', e);
-      }
-
+    function renderCategories() {
+      if (!isDataLoaded) return;
+      
       const categoriesGrid = document.getElementById('dynamic-categories-grid');
       categoriesGrid.innerHTML = '';
       // 改为使用 CSS 多列布局 (Multi-column) 实现原生的高性能瀑布流
@@ -250,7 +260,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       let masonryHTML = '';
       let categoryIndex = 0;
 
-      categories.forEach((cat) => {
+      cachedCategories.forEach((cat) => {
         const displayName = cat.name === '随笔' ? '生活随笔' : cat.name;
         const accentClass = categoryIndex % 3 === 0 ? ' category-card--accent' : '';
         masonryHTML += `
@@ -265,17 +275,28 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         categoryIndex++;
       });
 
-      if (!categories.length) {
+      if (!cachedCategories.length) {
         masonryHTML = '<p class="panel-empty">暂无专栏</p>';
       }
 
       categoriesGrid.innerHTML = masonryHTML;
     }
 
-    document.addEventListener('DOMContentLoaded', initLatestArticles);
+    async function initHomepage() {
+      await fetchHomepageData();
+      renderLatestArticles();
+      renderCategories();
+    }
+
+    document.addEventListener('DOMContentLoaded', initHomepage);
+    
+    let resizeTimeout;
     window.addEventListener('resize', () => {
-      // 简单处理响应式：窗口大小改变时重新计算
-      initLatestArticles();
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        renderLatestArticles();
+        renderCategories();
+      }, 200);
     });
   </script>
 
