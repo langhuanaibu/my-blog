@@ -47,9 +47,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         </article>
 
         <aside class="panel panel-toc panel-toc--outline article-toc-panel">
-          <div class="panel-heading panel-heading--compact">
-            <span class="panel-kicker">Outline</span>
-            <h2>文章大纲</h2>
+          <div class="panel-heading panel-heading--compact" style="display: flex; justify-content: space-between; align-items: flex-start; position: relative;">
+            <div>
+              <span class="panel-kicker">Outline</span>
+              <h2>文章大纲</h2>
+            </div>
+            <!-- 工具栏触发按钮 -->
+            <div class="tools-dropdown-container">
+              <button class="tools-trigger-btn" id="tools-trigger-btn" type="button" aria-label="功能列表" title="功能列表">
+                <span class="panel-kicker" style="margin-bottom: 0;">Tools</span>
+              </button>
+              
+              <!-- 弹出的功能列表面板 -->
+              <div class="panel article-tools-panel" id="article-tools-panel">
+                <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
+                  <span class="panel-kicker">Tools</span>
+                  <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
+                </div>
+                <div class="article-tools-actions">
+                  <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+                    隐藏大纲
+                  </button>
+                  <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
+                    专注阅读
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
           <ul id="toc-list" class="toc-list">
           <li class="toc-item"><span class="panel-empty">暂无目录</span></li>
@@ -552,10 +576,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               focusBtn.innerText = '退出专注';
               focusBtn.classList.add('btn-primary');
               focusBtn.classList.remove('btn-secondary');
+              // 关闭弹出的下拉菜单
+              const toolsPanel = document.getElementById('article-tools-panel');
+              if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
               focusBtn.innerText = '专注阅读';
               focusBtn.classList.add('btn-secondary');
               focusBtn.classList.remove('btn-primary');
+              // 关闭弹出的下拉菜单
+              const toolsPanel = document.getElementById('article-tools-panel');
+              if (toolsPanel) toolsPanel.classList.remove('active');
             }
           });
         }
@@ -569,10 +599,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               tocBtn.innerText = '显示大纲';
               tocBtn.classList.add('btn-primary');
               tocBtn.classList.remove('btn-secondary');
+              // 关闭弹出的下拉菜单
+              const toolsPanel = document.getElementById('article-tools-panel');
+              if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
               tocBtn.innerText = '隐藏大纲';
               tocBtn.classList.add('btn-secondary');
               tocBtn.classList.remove('btn-primary');
+              // 关闭弹出的下拉菜单
+              const toolsPanel = document.getElementById('article-tools-panel');
+              if (toolsPanel) toolsPanel.classList.remove('active');
+            }
+          });
+        }
+        
+        // 工具栏下拉逻辑
+        const toolsTriggerBtn = document.getElementById('tools-trigger-btn');
+        const articleToolsPanel = document.getElementById('article-tools-panel');
+        
+        if (toolsTriggerBtn && articleToolsPanel) {
+          toolsTriggerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            articleToolsPanel.classList.toggle('active');
+          });
+          
+          document.addEventListener('click', (e) => {
+            if (!articleToolsPanel.contains(e.target) && !toolsTriggerBtn.contains(e.target)) {
+              articleToolsPanel.classList.remove('active');
             }
           });
         }
@@ -712,22 +765,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       Prism.plugins.autoloader.languages_path = 'https://cdn.staticfile.net/prism/1.29.0/components/';
     </script>
     <script is:inline src="/script.js"></script>
-  </Fragment>
-
-  <Fragment slot="floating-menu-extra">
-    <div class="panel article-tools-panel">
-      <div class="panel-heading panel-heading--compact" style="margin-bottom: 12px;">
-        <span class="panel-kicker">Tools</span>
-        <h2 style="font-size: 1rem; margin: 4px 0 0;">功能列表</h2>
-      </div>
-      <div class="article-tools-actions">
-        <button id="toc-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-          隐藏大纲
-        </button>
-        <button id="focus-mode-toggle" class="btn btn-secondary" type="button" style="width: 100%; justify-content: center; padding: 8px 0;">
-          专注阅读
-        </button>
-      </div>
-    </div>
   </Fragment>
 </BaseLayout>

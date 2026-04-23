@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -637,20 +637,6 @@ img {
   .page-articles .floating-menu.active .floating-actions {
     transform: translateY(0) scale(1);
   }
-
-  .page-articles .article-tools-panel {
-    position: absolute;
-    right: 64px; /* 在主按钮的左边弹出 */
-    bottom: 0;
-    top: auto;
-    margin-bottom: 0;
-    transform: translateX(10px) scale(0.95);
-    transform-origin: right bottom;
-  }
-
-  .page-articles .floating-menu.active .article-tools-panel {
-    transform: translateX(0) scale(1);
-  }
 }
 
 /* 在超宽屏幕下，将整个浮动菜单推到大纲容器外部右侧 */
@@ -658,31 +644,49 @@ img {
   .page-articles .floating-menu {
     right: calc(50vw - 720px - 80px); /* 50vw - container_half - menu_width_offset */
   }
-  
-  .page-articles .article-tools-panel {
-    right: 0; /* 空间充足时，对齐按钮右侧向上弹出，完全不碰大纲 */
-    bottom: 220px; /* 在按钮和 actions 的上方 */
-    transform: translateY(10px) scale(0.95);
-    transform-origin: bottom right;
-  }
+}
 
-  .page-articles .floating-menu.active .article-tools-panel {
-    transform: translateY(0) scale(1);
-  }
+.tools-dropdown-container {
+  position: relative;
+}
+
+.tools-trigger-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tools-trigger-btn:hover {
+  background: var(--paper-strong);
+  border-color: var(--accent-strong);
 }
 
 .article-tools-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
   width: 168px;
   padding: 16px;
   margin-bottom: 8px;
   opacity: 0;
-  transform: translateY(10px) scale(0.95);
+  transform: translateY(-10px) scale(0.95);
   pointer-events: none;
-  transform-origin: bottom right;
+  transform-origin: top right;
   transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--radius-lg);
 }
 
-.floating-menu.active .article-tools-panel {
+.article-tools-panel.active {
   opacity: 1;
   transform: translateY(0) scale(1);
   pointer-events: auto;
@@ -692,6 +696,27 @@ img {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.article-tools-actions .btn {
+  background: transparent;
+  color: var(--text);
+}
+
+.article-tools-actions .btn:hover {
+  background: var(--paper-strong);
+  color: var(--heading);
+}
+
+.article-tools-actions .btn-primary {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-soft);
+}
+
+.article-tools-actions .btn-primary:hover {
+  background: var(--accent);
+  color: var(--paper);
 }
 
 .floating-actions {
