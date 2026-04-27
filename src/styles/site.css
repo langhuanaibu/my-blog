@@ -115,6 +115,27 @@ img {
   pointer-events: none;
 }
 
+.paper-texture {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 19.5px, rgba(129,84,50,0.8) 19.5px, rgba(129,84,50,0.8) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19.5px, rgba(100,65,40,0.6) 19.5px, rgba(100,65,40,0.6) 20px);
+}
+
+[data-theme="dark"] .paper-texture {
+  opacity: 0.13;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 19.5px, rgba(200,170,140,0.6) 19.5px, rgba(200,170,140,0.6) 20px),
+    repeating-linear-gradient(90deg, transparent, transparent 19.5px, rgba(180,150,120,0.5) 19.5px, rgba(180,150,120,0.5) 20px);
+}
+
 .main {
   position: relative;
   z-index: 1;
