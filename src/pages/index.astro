@@ -404,6 +404,111 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
       });
     </script>
+    <script is:inline>
+      (function(){
+        const canvas = document.getElementById('particle-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let particles = [], animId;
+        let isDark = false;
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function makeParticles() {
+          particles = [];
+          const dark = document.documentElement.hasAttribute('data-theme');
+          isDark = dark;
+
+          // 细尘（90颗）：半径 1~4px
+          const dustColors = dark
+            ? ['rgba(200,170,140,A)', 'rgba(215,185,150,A)', 'rgba(180,150,120,A)']
+            : ['rgba(129,84,50,A)', 'rgba(150,105,65,A)', 'rgba(105,70,45,A)'];
+
+          for (let i = 0; i < 90; i++) {
+            const c = dustColors[Math.floor(Math.random() * dustColors.length)];
+            particles.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              r: Math.random() * 3 + 1,
+              vx: (Math.random() - 0.5) * 0.35,
+              vy: -(Math.random() * 0.3 + 0.05),
+              opacity: dark ? (Math.random() * 0.14 + 0.04) : (Math.random() * 0.2 + 0.07),
+              color: c,
+              glow: false,
+            });
+          }
+
+          // 金斑（30颗）：半径 3~8px，带辉光
+          const speckColors = dark
+            ? ['rgba(240,205,165,A)', 'rgba(255,220,175,A)']
+            : ['rgba(190,140,90,A)', 'rgba(210,155,100,A)'];
+
+          for (let i = 0; i < 30; i++) {
+            const c = speckColors[Math.floor(Math.random() * speckColors.length)];
+            particles.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              r: Math.random() * 5 + 3,
+              vx: (Math.random() - 0.5) * 0.2,
+              vy: -(Math.random() * 0.2 + 0.03),
+              opacity: dark ? (Math.random() * 0.22 + 0.08) : (Math.random() * 0.32 + 0.14),
+              color: c,
+              glow: true,
+            });
+          }
+        }
+
+        makeParticles();
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          for (const p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.y < -30) p.y = canvas.height + 30;
+            if (p.y > canvas.height + 30) p.y = -30;
+            if (p.x < -30) p.x = canvas.width + 30;
+            if (p.x > canvas.width + 30) p.x = -30;
+
+            if (Math.random() < 0.002) {
+              p.vx += (Math.random() - 0.5) * 0.06;
+              p.vy += (Math.random() - 0.5) * 0.06;
+              p.vx = Math.max(-0.5, Math.min(0.5, p.vx));
+              p.vy = Math.max(-0.5, Math.min(0.1, p.vy));
+            }
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = p.color.replace('A', String(p.opacity));
+
+            if (p.glow) {
+              ctx.shadowColor = p.color.replace('A', String(p.opacity * 0.5));
+              ctx.shadowBlur = p.r * 3;
+            } else {
+              ctx.shadowColor = 'transparent';
+              ctx.shadowBlur = 0;
+            }
+
+            ctx.fill();
+          }
+          ctx.shadowBlur = 0;
+          animId = requestAnimationFrame(draw);
+        }
+
+        draw();
+
+        const obs = new MutationObserver(() => {
+          const dark = document.documentElement.hasAttribute('data-theme');
+          if (dark !== isDark) makeParticles();
+        });
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      })();
+    </script>
     <script is:inline src="/script.js"></script>
   </Fragment>
 </BaseLayout>

@@ -31,6 +31,7 @@ import '../styles/site.css';
 </head>
 <body class={pageClass}>
     <div class="site-bg"></div>
+    {isIndex && <canvas id="particle-canvas"></canvas>}
     <Header isIndex={isIndex} />
     <main class="main">
         <slot />
