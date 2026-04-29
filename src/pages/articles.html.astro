@@ -9,11 +9,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   showTexture={true}
 >
   <Fragment slot="head">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
-    <script src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js" is:inline></script>
-    <link href="https://cdn.staticfile.net/prism-themes/1.9.0/prism-vsc-dark-plus.min.css" rel="stylesheet" />
-    <link href="https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
-    <link href="https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
   </Fragment>
 
   <section class="page-shell article-page-shell">
@@ -91,29 +86,92 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <Fragment slot="scripts">
     <script type="module" is:inline>
-      import { prepare, layout } from 'https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.5/dist/layout.js';
       let blogArticles = [];
+      let activeArticleId = '';
+      const articleDetails = new Map();
+      const loadedScripts = new Map();
+      const loadedStyles = new Set();
+      let markedPromise = null;
+      let prismPromise = null;
+      let twikooPromise = null;
 
-      function b64_to_utf8(str) {
-        try {
-          return decodeURIComponent(escape(window.atob(str)));
-        } catch (e) {
-          const binString = window.atob(str);
-          const bytes = new Uint8Array(binString.length);
-          for (let i = 0; i < binString.length; i++) {
-            bytes[i] = binString.charCodeAt(i);
+      function loadScript(src) {
+        if (loadedScripts.has(src)) return loadedScripts.get(src);
+
+        const promise = new Promise((resolve, reject) => {
+          const existing = document.querySelector(`script[src="${src}"]`);
+          if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            if (existing.dataset.loaded === 'true') resolve();
+            return;
           }
-          return new TextDecoder('utf-8').decode(bytes);
+
+          const script = document.createElement('script');
+          script.src = src;
+          script.async = true;
+          script.onload = () => {
+            script.dataset.loaded = 'true';
+            resolve();
+          };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+
+        loadedScripts.set(src, promise);
+        return promise;
+      }
+
+      function loadStyle(href) {
+        if (loadedStyles.has(href) || document.querySelector(`link[href="${href}"]`)) return;
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+        loadedStyles.add(href);
+      }
+
+      async function ensureMarked() {
+        if (!markedPromise) {
+          markedPromise = loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js').then(() => window.marked);
         }
+        return markedPromise;
+      }
+
+      async function ensurePrism() {
+        if (!prismPromise) {
+          loadStyle('https://cdn.staticfile.net/prism-themes/1.9.0/prism-vsc-dark-plus.min.css');
+          loadStyle('https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css');
+          loadStyle('https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css');
+
+          prismPromise = loadScript('https://cdn.staticfile.net/prism/1.29.0/prism.min.js')
+            .then(() => Promise.all([
+              loadScript('https://cdn.staticfile.net/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js'),
+              loadScript('https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js'),
+              loadScript('https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js'),
+              loadScript('https://cdn.staticfile.net/prism/1.29.0/plugins/show-language/prism-show-language.min.js'),
+              loadScript('https://cdn.staticfile.net/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js')
+            ]))
+            .then(() => {
+              if (window.Prism?.plugins?.autoloader) {
+                window.Prism.plugins.autoloader.languages_path = 'https://cdn.staticfile.net/prism/1.29.0/components/';
+              }
+              return window.Prism;
+            });
+        }
+        return prismPromise;
+      }
+
+      async function ensureTwikoo() {
+        if (!twikooPromise) {
+          twikooPromise = loadScript('https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js').then(() => window.twikoo);
+        }
+        return twikooPromise;
       }
 
       async function loadArticles() {
         try {
-          const response = await fetch('/api/getArticles', {
-            method: 'GET',
-            cache: 'no-store'
-          });
-
+          const response = await fetch('/api/getArticles?view=list', { method: 'GET' });
           if (!response.ok) throw new Error(`请求失败: ${response.status}`);
 
           const data = await response.json();
@@ -122,6 +180,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           }
 
           blogArticles = data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+          window.blogArticles = blogArticles;
           renderCategoryFilters(blogArticles);
           renderArticlesList();
 
@@ -132,6 +191,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           const nav = document.getElementById('articles-nav');
           if (nav) nav.innerHTML = '<p class="panel-empty">加载失败，请检查网络后刷新重试。</p>';
         }
+      }
+
+      async function loadArticleDetail(articleId) {
+        if (articleDetails.has(articleId)) return articleDetails.get(articleId);
+
+        const response = await fetch(`/api/getArticles?view=detail&id=${encodeURIComponent(articleId)}`, { method: 'GET' });
+        if (!response.ok) throw new Error(`请求失败: ${response.status}`);
+
+        const data = await response.json();
+        if (!data || !data.success || !data.data) {
+          throw new Error('API 返回格式错误');
+        }
+
+        articleDetails.set(articleId, data.data);
+        return data.data;
       }
 
       function renderCategoryFilters(articles) {
@@ -156,11 +230,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       let virtualListState = { items: [], totalHeight: 0, rendered: new Set() };
-      
+
+      function estimateTitleHeight(title, isRead, containerWidth) {
+        const textLength = String(title || '').length + (isRead ? 2 : 0);
+        const charsPerLine = Math.max(8, Math.floor((containerWidth - 20) / 16));
+        return Math.max(24, Math.ceil(textLength / charsPerLine) * 24);
+      }
+
       function renderArticlesList(articlesToRender) {
         const articlesNav = document.getElementById('articles-nav');
         const listToRender = articlesToRender || blogArticles;
-        
+
         if (!listToRender.length) {
           articlesNav.innerHTML = '<p class="panel-empty">暂无文章</p>';
           articlesNav.style.height = 'auto';
@@ -168,38 +248,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
 
         const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
-        
-        // 虚拟列表相关计算
-        const gap = 12; // .article-nav-list gap
-        const paddingY = 28; // 14px * 2 padding
-        const metaHeight = 20; // line-height approx
+        const gap = 12;
+        const paddingY = 28;
+        const metaHeight = 20;
         const dateHeight = 20;
-        const innerGap = 12; // 6px * 2
-        
-        // 获取容器宽度减去 padding 供文本测量
-        // 如果在移动端或者宽度为0，使用预估宽度
-        const containerWidth = articlesNav.clientWidth > 0 ? articlesNav.clientWidth - 32 : 240; 
-        const font = '16px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+        const innerGap = 12;
+        const containerWidth = articlesNav.clientWidth > 0 ? articlesNav.clientWidth - 32 : 240;
 
         let currentTop = 0;
         virtualListState.items = listToRender.map(article => {
           const isRead = Boolean(readHistory[article.id]);
           const readBadge = isRead ? '<span class="article-item-read">已读</span>' : '';
-          
-          let titleHeight = 24;
-          try {
-            // 使用 pretext 极速测算标题换行后的高度
-            // 因为可能带有已读徽章，宽度预留一定缓冲
-            const prepared = prepare(article.title + (isRead ? '已读' : ''), font);
-            const layoutResult = layout(prepared, containerWidth - 20, 24); // 24 is line height 1.5 * 16
-            titleHeight = layoutResult.height;
-          } catch(e) {}
-          
-          // 给 padding 增加额外的缓冲量 8px，防止不同字体下高度计算不准确导致的底部文字被截断
+          const titleHeight = estimateTitleHeight(article.title, isRead, containerWidth);
           const itemHeight = paddingY + innerGap + metaHeight + dateHeight + titleHeight + 8;
           const itemTop = currentTop;
           currentTop += itemHeight + gap;
-          
+
           return {
             article,
             readBadge,
@@ -209,10 +273,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             id: article.id
           };
         });
-        
-        virtualListState.totalHeight = currentTop - gap; // 减去最后一个多余的gap
-        
-        // 设置占位高度和相对定位
+
+        virtualListState.totalHeight = currentTop - gap;
         articlesNav.style.position = 'relative';
         articlesNav.style.height = virtualListState.totalHeight + 'px';
         articlesNav.innerHTML = '';
@@ -226,23 +288,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (!articlesNav || virtualListState.items.length === 0) return;
 
         const navRect = articlesNav.getBoundingClientRect();
-        // 如果列表本身完全不在可视区域附近，则不急于渲染
-        // 但考虑到滚动，通常我们渲染当前可视窗口对应的高度范围内的节点
         const windowHeight = window.innerHeight;
         const navTopInViewport = navRect.top;
-        
-        // 可视区域在列表本地坐标系中的范围
-        // 再次加大缓冲区域：在虚拟列表中文章高度存在波动时，更大的缓冲能彻底消除快速滚动造成的白屏
-        const visibleTop = Math.max(0, -navTopInViewport - 1200); // 上缓冲 1200px
-        const visibleBottom = visibleTop + windowHeight + 1800; // 下缓冲 1800px
-        
-        const itemsToRender = virtualListState.items.filter(item => 
+        const visibleTop = Math.max(0, -navTopInViewport - 1200);
+        const visibleBottom = visibleTop + windowHeight + 1800;
+
+        const itemsToRender = virtualListState.items.filter(item =>
           item.bottom >= visibleTop && item.top <= visibleBottom
         );
 
         const newRenderedIds = new Set(itemsToRender.map(item => item.id));
 
-        // 移除已经不在可视区域的节点
         Array.from(articlesNav.children).forEach(child => {
           const id = child.dataset.id;
           if (!newRenderedIds.has(id)) {
@@ -251,7 +307,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           }
         });
 
-        // 添加新进入可视区域的节点
         itemsToRender.forEach(item => {
           if (!virtualListState.rendered.has(item.id)) {
             const div = document.createElement('div');
@@ -261,11 +316,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             div.style.top = item.top + 'px';
             div.style.left = '0';
             div.style.right = '0';
-            
-            // 决定当前是否 active
-            const hash = window.location.hash.substring(1);
-            const activeClass = hash === item.id ? 'active' : '';
 
+            const activeClass = activeArticleId === item.id || window.location.hash.substring(1) === item.id ? 'active' : '';
             div.innerHTML = `
               <a href="#${item.id}" class="article-link ${activeClass}" data-id="${item.id}">
                 <span class="article-item-meta">${item.article.category || '未分类'}</span>
@@ -273,8 +325,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <span class="article-item-date">${item.article.date}</span>
               </a>
             `;
-            
-            // 绑定事件
+
             const link = div.querySelector('.article-link');
             link.addEventListener('click', (e) => {
               e.preventDefault();
@@ -282,8 +333,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               link.classList.add('active');
               showArticle(item.id);
               history.pushState(null, '', '#' + item.id);
-              
-              // 手动触发多次 update，覆盖由于中间文章内容异步渲染和图片加载导致的高度滞后变动
               setTimeout(updateVirtualList, 50);
               setTimeout(updateVirtualList, 300);
             });
@@ -295,7 +344,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
 
       window.addEventListener('scroll', () => {
-        // 使用 requestAnimationFrame 优化滚动事件处理，避免频繁计算导致的卡顿或布局失效
         if (!window._isScrolling) {
           window._isScrolling = true;
           window.requestAnimationFrame(() => {
@@ -305,63 +353,95 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
       });
 
-      function showArticle(articleId) {
+      async function showArticle(articleId) {
         const articleDetail = document.getElementById('article-detail');
-        const article = blogArticles.find((item) => item.id === articleId);
+        const summary = blogArticles.find((item) => item.id === articleId);
 
-        if (!article) {
+        if (!summary) {
           articleDetail.innerHTML = '<h2>文章未找到</h2>';
           return;
         }
 
+        activeArticleId = articleId;
+        window.activeArticleId = articleId;
         document.querySelectorAll('.article-link').forEach((a) => {
           a.classList.toggle('active', a.dataset.id === articleId);
         });
 
-        articleDetail.innerHTML = `
-          <header class="article-header">
-            <span class="panel-kicker">Post</span>
-            <h1 class="article-title">${article.title}</h1>
-            <div class="article-meta">
-              <span>发布日期：${article.date}</span>
-              <span>分类：${article.category || '未分类'}</span>
-              <span class="article-views">
-                阅读量：<span id="twikoo_visitors" class="twikoo_visitors" data-flag-title="文章阅读量">0</span>
-              </span>
-              <span class="article-full-read" id="full-read-count-display">
-                完整阅读：<span>获取中...</span>
-              </span>
+        articleDetail.innerHTML = '<p class="panel-empty">加载中...</p>';
+
+        try {
+          const [article, marked] = await Promise.all([
+            loadArticleDetail(articleId),
+            ensureMarked()
+          ]);
+
+          if (activeArticleId !== articleId) return;
+
+          const normalizedContent = (article.content || '')
+            .replace(/src=(["'])images\//g, 'src=$1/images/')
+            .replace(/src=(["'])\.\/images\//g, 'src=$1/images/');
+
+          articleDetail.innerHTML = `
+            <header class="article-header">
+              <span class="panel-kicker">Post</span>
+              <h1 class="article-title">${article.title}</h1>
+              <div class="article-meta">
+                <span>发布日期：${article.date}</span>
+                <span>分类：${article.category || '未分类'}</span>
+                <span class="article-views">
+                  阅读量：<span id="twikoo_visitors" class="twikoo_visitors" data-flag-title="文章阅读量">0</span>
+                </span>
+                <span class="article-full-read" id="full-read-count-display">
+                  完整阅读：<span>获取中...</span>
+                </span>
+              </div>
+            </header>
+            <div id="read-progress-container" class="read-progress-container">
+              <div id="read-progress-bar" class="read-progress-bar"></div>
             </div>
-          </header>
-          <div id="read-progress-container" class="read-progress-container">
-            <div id="read-progress-bar" class="read-progress-bar"></div>
-          </div>
-          <div id="read-progress-text" class="read-progress-text">阅读进度: 0%</div>
-          <div id="article-content" class="article-content prose" data-article-id="${articleId}">
-            ${marked.parse((article.content || '').replace(/src=(['"])images\//g, 'src=$1/images/').replace(/src=(['"])\.\/images\//g, 'src=$1/images/'))}
-          </div>
-          <div class="article-modify">
-            <p>最后修改日期：<span>${article.modifyDate || article.date}</span></p>
-          </div>
-          <section class="article-comments">
-            <h3>评论区</h3>
-            <div id="twikoo-comments"></div>
-          </section>
-        `;
+            <div id="read-progress-text" class="read-progress-text">阅读进度: 0%</div>
+            <div id="article-content" class="article-content prose" data-article-id="${articleId}">
+              ${marked.parse(normalizedContent)}
+            </div>
+            <div class="article-modify">
+              <p>最后修改日期：<span>${article.modifyDate || article.date}</span></p>
+            </div>
+            <section class="article-comments">
+              <h3>评论区</h3>
+              <div id="twikoo-comments"></div>
+            </section>
+          `;
 
-        loadTwikoo(articleId);
-        generateTOC();
-        initReadProgress();
-        fetchFullReadCount(articleId);
+          loadTwikoo(articleId);
+          generateTOC();
+          initReadProgress();
+          fetchFullReadCount(articleId);
 
-        document.querySelectorAll('#article-content pre').forEach((pre) => {
-          pre.classList.add('mac-style-code');
-        });
+          const articleContent = document.getElementById('article-content');
+          articleContent?.querySelectorAll('img').forEach((img) => {
+            img.loading = 'lazy';
+            img.decoding = 'async';
+          });
+          articleContent?.querySelectorAll('pre').forEach((pre) => {
+            pre.classList.add('mac-style-code');
+          });
 
-        if (window.Prism) {
-          Prism.highlightAllUnder(document.getElementById('article-content'));
+          if (articleContent?.querySelector('pre code, code[class*="language-"]')) {
+            const Prism = await ensurePrism();
+            if (activeArticleId === articleId && Prism) {
+              Prism.highlightAllUnder(articleContent);
+            }
+          }
+        } catch (error) {
+          console.error('加载文章详情失败:', error);
+          if (activeArticleId === articleId) {
+            articleDetail.innerHTML = '<p class="panel-empty">加载失败，请检查网络后重试。</p>';
+          }
         }
       }
+
+      window.showArticle = showArticle;
 
       function generateTOC() {
         const content = document.getElementById('article-content');
@@ -391,21 +471,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             const headerHeight = document.querySelector('.site-header')?.offsetHeight || 90;
             const targetPosition = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
 
-            // 移动端：如果是通过底部弹窗点击的，需要先关闭弹窗，然后再计算和滚动
             if (window.innerWidth <= 1100 && document.body.classList.contains('mobile-panel-open')) {
-              // 移除 active 样式并关闭面板
               const panelToc = document.querySelector('.article-toc-panel');
               const mobileOverlay = document.getElementById('mobile-overlay');
               const btnToc = document.getElementById('mobile-btn-toc');
-              
+
               if(panelToc) panelToc.classList.remove('active');
               if(mobileOverlay) mobileOverlay.classList.remove('active');
               if(btnToc) btnToc.classList.remove('active');
               document.body.classList.remove('mobile-panel-open');
-              
-              // 稍微延迟等待面板收起、body 恢复滚动后再进行 scrollTo
+
               setTimeout(() => {
-                 // 重新获取一下准确位置，因为关掉面板可能导致布局变动
                  const newTargetPosition = heading.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
                  window.scrollTo({
                   top: newTargetPosition,
@@ -474,38 +550,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
       }
 
+      function getFilteredArticles() {
+        const keyword = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const category = activeFilter?.dataset.category || 'all';
+        let filtered = blogArticles;
+
+        if (category !== 'all') {
+          filtered = filtered.filter((article) => article.category === category);
+        }
+
+        if (keyword) {
+          filtered = filtered.filter((article) => {
+            const titleMatch = (article.title || '').toLowerCase().includes(keyword);
+            const excerptMatch = (article.excerpt || '').toLowerCase().includes(keyword);
+            return titleMatch || excerptMatch;
+          });
+        }
+
+        return filtered;
+      }
+
       function bindFilterEvents() {
         document.querySelectorAll('.filter-btn').forEach((btn) => {
           btn.addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach((button) => button.classList.remove('active'));
             btn.classList.add('active');
-
-            const category = btn.dataset.category;
-            const keyword = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
-            let filtered = blogArticles;
-
-            if (category !== 'all') {
-              filtered = filtered.filter((article) => article.category === category);
-            }
-
-            if (keyword) {
-              filtered = filtered.filter((article) => {
-                const titleMatch = article.title.toLowerCase().includes(keyword);
-                const contentText = (article.content || '').replace(/<[^>]+>/g, '').toLowerCase();
-                return titleMatch || contentText.includes(keyword);
-              });
-            }
-
-            renderArticlesList(filtered);
+            renderArticlesList(getFilteredArticles());
           });
         });
       }
 
-      function loadTwikoo(articleId) {
-        setTimeout(() => {
+      async function loadTwikoo(articleId) {
+        setTimeout(async () => {
           const container = document.getElementById('twikoo-comments');
           if (!container) return;
           container.innerHTML = '';
+          const twikoo = await ensureTwikoo();
+          if (!twikoo) return;
           twikoo.init({
             envId: 'https://twikoo.aoiblog.top',
             el: '#twikoo-comments',
@@ -561,7 +643,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       document.addEventListener('DOMContentLoaded', async () => {
         await loadArticles();
 
-        // 全局绑定专注模式按钮
         const focusBtn = document.getElementById('focus-mode-toggle');
         if (focusBtn) {
           focusBtn.addEventListener('click', () => {
@@ -570,21 +651,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               focusBtn.classList.add('active-state');
               focusBtn.style.color = 'var(--accent)';
               focusBtn.style.borderColor = 'var(--accent)';
-              // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
               focusBtn.classList.remove('active-state');
               focusBtn.style.color = '';
               focusBtn.style.borderColor = '';
-              // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             }
           });
         }
 
-        // 全局绑定隐藏大纲按钮
         const tocBtn = document.getElementById('toc-mode-toggle');
         if (tocBtn) {
           tocBtn.addEventListener('click', () => {
@@ -593,20 +671,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               tocBtn.classList.add('active-state');
               tocBtn.style.color = 'var(--accent)';
               tocBtn.style.borderColor = 'var(--accent)';
-              // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             } else {
               tocBtn.classList.remove('active-state');
               tocBtn.style.color = '';
               tocBtn.style.borderColor = '';
-              // 关闭弹出的下拉菜单
               const toolsPanel = document.getElementById('article-tools-panel');
               if (toolsPanel) toolsPanel.classList.remove('active');
             }
           });
         }
-        
+
         const urlParams = new URLSearchParams(window.location.search);
         const categoryFilter = urlParams.get('category');
         if (categoryFilter) {
@@ -617,29 +693,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-          searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-            const activeFilter = document.querySelector('.filter-btn.active');
-            const category = activeFilter?.dataset.category || 'all';
-            let filtered = blogArticles;
-
-            if (category !== 'all') {
-              filtered = filtered.filter((article) => article.category === category);
-            }
-
-            if (keyword) {
-              filtered = filtered.filter((article) => {
-                const titleMatch = article.title.toLowerCase().includes(keyword);
-                const contentText = (article.content || '').replace(/<[^>]+>/g, '').toLowerCase();
-                return titleMatch || contentText.includes(keyword);
-              });
-            }
-
-            renderArticlesList(filtered);
+          searchInput.addEventListener('input', () => {
+            renderArticlesList(getFilteredArticles());
           });
         }
 
-        // Mobile Bottom Nav Logic
         const mobileOverlay = document.getElementById('mobile-overlay');
         const btnArticles = document.getElementById('mobile-btn-articles');
         const btnToc = document.getElementById('mobile-btn-toc');
@@ -685,7 +743,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
           mobileOverlay.addEventListener('click', closeAllMobilePanels);
 
-          // Close panels when a link is clicked
           panelArticles.addEventListener('click', (e) => {
             if (e.target.closest('a')) {
               setTimeout(closeAllMobilePanels, 300);
@@ -723,23 +780,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             window.scrollTo({ top: 0, behavior: 'smooth' });
           });
         }
-
       });
-    </script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/prism.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-c.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-cpp.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-go.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-java.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-python.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/plugins/show-language/prism-show-language.min.js"></script>
-    <script is:inline src="https://cdn.staticfile.net/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
-    <script is:inline>
-      Prism.plugins.autoloader.languages_path = 'https://cdn.staticfile.net/prism/1.29.0/components/';
     </script>
     <script is:inline src="/script.js"></script>
   </Fragment>

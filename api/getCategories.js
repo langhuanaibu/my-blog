@@ -14,6 +14,7 @@ module.exports = async (req, res) => {
 
     try {
         const { db } = await connectToDatabase();
+        res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
         let categories = await db.collection('categories').find({}).toArray();
 
         // 获取所有现有的文章，提取它们用到的分类

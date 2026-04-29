@@ -8,7 +8,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   pageClass="page-home"
 >
   <Fragment slot="head">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" is:inline></script>
     <script is:inline>
       if (window.location.pathname === '/') {
         document.documentElement.classList.add('intro-active');
@@ -34,7 +33,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               </div>
             </div>
             <figure class="hero-visual">
-              <img src="/images/img_1774022028502.png" alt="博客首页头图" class="hero-visual__image" />
+              <picture>
+                <source srcset="/images/img_1774022028502.avif" type="image/avif" />
+                <source srcset="/images/img_1774022028502.webp" type="image/webp" />
+                <img src="/images/img_1774022028502.png" alt="博客首页头图" class="hero-visual__image" width="1127" height="865" fetchpriority="high" decoding="async" />
+              </picture>
             </figure>
           </div>
         </div>
@@ -121,7 +124,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           </div>
           <div class="friends-grid">
             <a href="https://www.cloudtide.xyz/" target="_blank" rel="noreferrer" class="friend-card">
-              <img src="/images/friend-avatar.jpg" alt="晚风拾云的头像">
+              <img src="/images/friend-avatar.jpg" alt="晚风拾云的头像" loading="lazy" decoding="async">
               <div>
                 <h3 style="margin: 0 0 5px 0; font-size: 16px;">晚风拾云的博客</h3>
                 <p style="font-size: 12px;">漫漫长路，原作清风伴君途</p>
@@ -129,7 +132,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </a>
 
             <a href="https://langhuanaibu.github.io/my-blog/" target="_blank" rel="noreferrer" class="friend-card">
-              <img src="/images/my-avatar.jpg" alt="Aoitsuki 的头像">
+              <img src="/images/my-avatar.jpg" alt="Aoitsuki 的头像" loading="lazy" decoding="async">
               <div>
                 <h3 style="margin: 0 0 5px 0; font-size: 16px;">Aoitsuki's Blog</h3>
                 <p style="font-size: 12px;">乌幕屏，海相续...</p>
@@ -137,7 +140,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             </a>
 
             <a href="https://labuladong.online/zh/" target="_blank" rel="noopener noreferrer" class="friend-card">
-              <img src="https://api.dicebear.com/7.x/shapes/svg?seed=algo" alt="labuladong">
+              <img src="https://api.dicebear.com/7.x/shapes/svg?seed=algo" alt="labuladong" loading="lazy" decoding="async">
               <div>
                 <h3 style="margin: 0 0 5px 0; font-size: 16px;">labuladong 的算法笔记</h3>
                 <p style="font-size: 12px;">最高效的算法刷题解决方案</p>
@@ -150,8 +153,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </section>
 
   <script type="module" is:inline>
-    import { prepareWithSegments, layoutWithLines } from 'https://cdn.jsdelivr.net/npm/@chenglou/pretext@0.0.5/dist/layout.js';
-
     let cachedArticles = [];
     let cachedCategories = [];
     let isDataLoaded = false;
@@ -159,8 +160,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     async function fetchHomepageData() {
       try {
         const [artRes, catRes] = await Promise.all([
-          fetch('/api/getArticles?limit=3', { method: 'GET', cache: 'no-store' }),
-          fetch('/api/getCategories', { method: 'GET', cache: 'no-store' })
+          fetch('/api/getArticles?limit=3&view=list', { method: 'GET' }),
+          fetch('/api/getCategories', { method: 'GET' })
         ]);
 
         if (artRes.ok) {
@@ -191,32 +192,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const latestArticlesContainer = document.getElementById('latest-articles');
       latestArticlesContainer.innerHTML = '';
 
-      // 获取容器大致宽度用于文本测量，预设 300px 作为 fallback
-      const containerWidth = latestArticlesContainer.clientWidth > 0 ? (latestArticlesContainer.clientWidth / 3 - 44) : 300;
-      const font = '16px "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
-
       cachedArticles.forEach((article, index) => {
-        const htmlContent = marked.parse(article.content || '');
-        const contentText = htmlContent.replace(/<[^>]*>/g, '');
-        const readTime = Math.ceil(contentText.length / 300) || 1;
-
-        let excerpt = '';
-        let excerptHeight = 84; // 默认 3 行 * 28px
-        try {
-          const prepared = prepareWithSegments(contentText, font);
-          // 容器宽度，行高预估 28 (16 * 1.75)
-          const { lines, height } = layoutWithLines(prepared, containerWidth, 28);
-          const excerptLines = lines.slice(0, 3).map(l => l.text.trim());
-          excerpt = excerptLines.join(' ');
-          if (lines.length > 3) excerpt += '...';
-          excerptHeight = Math.min(height, 84); // 限制最大 3 行的高度
-        } catch (e) {
-          // Fallback
-          excerpt = contentText.substring(0, 100) + (contentText.length > 100 ? '...' : '');
-        }
-
-        // 使用 pretext 算出的文本高度，加上一些基准偏移，动态决定每张卡片的下落距离
-        const dropDist = excerptHeight + 30;
+        const excerpt = article.excerpt || '';
+        const readTime = article.readTime || 1;
+        const dropDist = 114;
 
         const featuredClass = index === 0 ? ' blog-card--featured' : '';
         latestArticlesContainer.innerHTML += `
@@ -301,14 +280,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </script>
 
   <Fragment slot="scripts">
-    <script is:inline src="https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js"></script>
     <script is:inline>
-      twikoo.init({
-        envId: 'https://twikoo.aoiblog.top',
-        el: '#twikoo-comments',
-        path: '/',
-        lang: 'zh-CN'
-      });
+      (function () {
+        const comments = document.getElementById('twikoo-comments');
+        if (!comments) return;
+
+        let loaded = false;
+        function loadTwikoo() {
+          if (loaded) return;
+          loaded = true;
+
+          const script = document.createElement('script');
+          script.src = 'https://cdn.staticfile.net/twikoo/1.6.32/twikoo.all.min.js';
+          script.async = true;
+          script.onload = () => {
+            if (!window.twikoo) return;
+            window.twikoo.init({
+              envId: 'https://twikoo.aoiblog.top',
+              el: '#twikoo-comments',
+              path: '/',
+              lang: 'zh-CN'
+            });
+          };
+          document.head.appendChild(script);
+        }
+
+        if ('IntersectionObserver' in window) {
+          const observer = new IntersectionObserver((entries) => {
+            if (entries.some((entry) => entry.isIntersecting)) {
+              observer.disconnect();
+              loadTwikoo();
+            }
+          }, { rootMargin: '240px' });
+          observer.observe(comments);
+        } else {
+          const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 1200));
+          schedule(loadTwikoo);
+        }
+      })();
     </script>
     <script is:inline>
       document.addEventListener('DOMContentLoaded', () => {
@@ -406,6 +415,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </script>
     <script is:inline>
       (function(){
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         const canvas = document.getElementById('particle-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -463,8 +473,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           }
         }
 
-        makeParticles();
-
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           for (const p of particles) {
@@ -500,7 +508,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           animId = requestAnimationFrame(draw);
         }
 
-        draw();
+        function startParticles() {
+          makeParticles();
+          draw();
+        }
+
+        const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 900));
+        schedule(startParticles);
 
         const obs = new MutationObserver(() => {
           const dark = document.documentElement.hasAttribute('data-theme');
