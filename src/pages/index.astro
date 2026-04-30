@@ -435,55 +435,63 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           isDark = dark;
 
           const baseColors = dark
-            ? [[222, 177, 132], [242, 199, 159], [197, 139, 90]]
-            : [[216, 185, 138], [201, 155, 104], [240, 217, 181]];
+            ? [[222, 177, 132], [242, 199, 159], [255, 225, 190]]
+            : [[200, 160, 120], [180, 140, 100], [160, 115, 75]];
 
           function pickColor() {
-            const rgb = baseColors[Math.floor(Math.random() * baseColors.length)];
-            return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},PLACEHOLDER)`;
+            return baseColors[Math.floor(Math.random() * baseColors.length)];
           }
 
-          // Distant layer: fine, slow, paper-dust-like particles.
-          for (let i = 0; i < 70; i++) {
+          // 远景层：60 颗，小、慢、淡
+          for (let i = 0; i < 60; i++) {
+            const [r, g, b] = pickColor();
+            const baseVy = Math.random() * 0.06 + 0.04;
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 0.9 + 0.5,
-              vy: Math.random() * 0.2 + 0.12,
-              opacity: Math.random() * 0.08 + 0.06,
-              color: pickColor(),
+              r: Math.random() * 1.2 + 0.8,
+              vy: baseVy,
+              baseVy: baseVy,
+              opacity: Math.random() * 0.04 + 0.06,
+              color: `rgba(${r},${g},${b},PLACEHOLDER)`,
               swayAmp: Math.random() * 0.3 + 0.1,
-              swayFreq: Math.random() * 0.02 + 0.01,
+              swayFreq: Math.random() * 0.03 + 0.005,
               swayPhase: Math.random() * Math.PI * 2,
             });
           }
 
-          // Middle layer: soft warm motes with restrained visibility.
-          for (let i = 0; i < 65; i++) {
+          // 中景层：80 颗
+          for (let i = 0; i < 80; i++) {
+            const [r, g, b] = pickColor();
+            const baseVy = Math.random() * 0.12 + 0.08;
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 1.4 + 1.2,
-              vy: Math.random() * 0.32 + 0.28,
-              opacity: Math.random() * 0.12 + 0.1,
-              color: pickColor(),
+              r: Math.random() * 2 + 2,
+              vy: baseVy,
+              baseVy: baseVy,
+              opacity: Math.random() * 0.08 + 0.12,
+              color: `rgba(${r},${g},${b},PLACEHOLDER)`,
               swayAmp: Math.random() * 0.6 + 0.3,
-              swayFreq: Math.random() * 0.025 + 0.012,
+              swayFreq: Math.random() * 0.04 + 0.008,
               swayPhase: Math.random() * Math.PI * 2,
             });
           }
 
-          // Foreground layer: sparse, gentle amber specks.
-          for (let i = 0; i < 18; i++) {
+          // 近景层：30 颗
+          for (let i = 0; i < 30; i++) {
+            const [r, g, b] = pickColor();
+            const baseVy = Math.random() * 0.20 + 0.16;
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 1.8 + 2.2,
-              vy: Math.random() * 0.48 + 0.52,
-              opacity: Math.random() * 0.14 + 0.16,
-              color: pickColor(),
+              r: Math.random() * 3 + 4,
+              vy: baseVy,
+              baseVy: baseVy,
+              opacity: Math.random() * 0.16 + 0.22,
+              color: `rgba(${r},${g},${b},PLACEHOLDER)`,
               swayAmp: Math.random() * 1 + 0.5,
-              swayFreq: Math.random() * 0.03 + 0.015,
+              swayFreq: Math.random() * 0.05 + 0.01,
               swayPhase: Math.random() * Math.PI * 2,
             });
           }
@@ -494,6 +502,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           frameCount++;
 
           for (const f of flakes) {
+            // 垂直速度微漂移，打破匀速下落的机械感
+            f.vy = f.baseVy + (Math.random() - 0.5) * f.baseVy * 0.4;
             f.y += f.vy;
             f.x += Math.sin(frameCount * f.swayFreq + f.swayPhase) * f.swayAmp * 0.3;
 
@@ -501,10 +511,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               f.swayPhase += (Math.random() - 0.5) * 0.3;
             }
 
-            if (f.y > canvas.height + 50) {
-              f.y = -50;
-              f.x = Math.random() * canvas.width;
-            }
+            if (f.y > canvas.height + 50) { f.y = -50; f.x = Math.random() * canvas.width; }
             if (f.x > canvas.width + 50) f.x = -50;
             if (f.x < -50) f.x = canvas.width + 50;
 
