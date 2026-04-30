@@ -435,22 +435,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           isDark = dark;
 
           const baseColors = dark
-            ? [[200, 215, 240], [185, 200, 230], [210, 220, 245]]
-            : [[180, 200, 225], [160, 185, 215], [190, 210, 235]];
+            ? [[222, 177, 132], [242, 199, 159], [197, 139, 90]]
+            : [[216, 185, 138], [201, 155, 104], [240, 217, 181]];
 
           function pickColor() {
             const rgb = baseColors[Math.floor(Math.random() * baseColors.length)];
             return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},PLACEHOLDER)`;
           }
 
-          // 远景层：60 颗，小、慢、淡
-          for (let i = 0; i < 60; i++) {
+          // Distant layer: fine, slow, paper-dust-like particles.
+          for (let i = 0; i < 70; i++) {
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 1.2 + 0.8,
-              vy: Math.random() * 0.25 + 0.15,
-              opacity: Math.random() * 0.1 + 0.08,
+              r: Math.random() * 0.9 + 0.5,
+              vy: Math.random() * 0.2 + 0.12,
+              opacity: Math.random() * 0.08 + 0.06,
               color: pickColor(),
               swayAmp: Math.random() * 0.3 + 0.1,
               swayFreq: Math.random() * 0.02 + 0.01,
@@ -458,14 +458,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             });
           }
 
-          // 中景层：80 颗，中等大小、速度、透明度
-          for (let i = 0; i < 80; i++) {
+          // Middle layer: soft warm motes with restrained visibility.
+          for (let i = 0; i < 65; i++) {
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 2 + 2,
-              vy: Math.random() * 0.4 + 0.4,
-              opacity: Math.random() * 0.2 + 0.15,
+              r: Math.random() * 1.4 + 1.2,
+              vy: Math.random() * 0.32 + 0.28,
+              opacity: Math.random() * 0.12 + 0.1,
               color: pickColor(),
               swayAmp: Math.random() * 0.6 + 0.3,
               swayFreq: Math.random() * 0.025 + 0.012,
@@ -473,14 +473,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             });
           }
 
-          // 近景层：30 颗，大、快、明显摇摆
-          for (let i = 0; i < 30; i++) {
+          // Foreground layer: sparse, gentle amber specks.
+          for (let i = 0; i < 18; i++) {
             flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 3 + 4,
-              vy: Math.random() * 0.7 + 0.8,
-              opacity: Math.random() * 0.25 + 0.25,
+              r: Math.random() * 1.8 + 2.2,
+              vy: Math.random() * 0.48 + 0.52,
+              opacity: Math.random() * 0.14 + 0.16,
               color: pickColor(),
               swayAmp: Math.random() * 1 + 0.5,
               swayFreq: Math.random() * 0.03 + 0.015,
