@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿:root {
   color-scheme: light;
   --bg: #efe7db;
   --bg-soft: #f7f2eb;
@@ -1393,13 +1393,12 @@ html.intro-active .anim-flip-play {
   }
 
   .article-content-panel {
-    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), filter 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s ease;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1), border-radius 0.4s ease;
     transform-origin: top center;
   }
 
   body.mobile-panel-open .article-content-panel {
     transform: scale(0.93) translateY(12px);
-    filter: brightness(0.72);
     border-radius: 26px;
     overflow: hidden;
     pointer-events: none;

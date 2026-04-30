@@ -237,6 +237,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return Math.max(24, Math.ceil(textLength / charsPerLine) * 24);
       }
 
+      function closeAllMobilePanels() {
+        document.querySelector('.article-nav-panel')?.classList.remove('active');
+        document.querySelector('.article-toc-panel')?.classList.remove('active');
+        document.getElementById('mobile-overlay')?.classList.remove('active');
+        document.getElementById('mobile-btn-articles')?.classList.remove('active');
+        document.getElementById('mobile-btn-toc')?.classList.remove('active');
+        document.body.classList.remove('mobile-panel-open');
+      }
+
       function renderArticlesList(articlesToRender) {
         const articlesNav = document.getElementById('articles-nav');
         const listToRender = articlesToRender || blogArticles;
@@ -329,6 +338,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             const link = div.querySelector('.article-link');
             link.addEventListener('click', (e) => {
               e.preventDefault();
+              if (window.innerWidth <= 1100) closeAllMobilePanels();
               document.querySelectorAll('.article-link').forEach((a) => a.classList.remove('active'));
               link.classList.add('active');
               showArticle(item.id);
@@ -707,15 +717,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const panelArticles = document.querySelector('.article-nav-panel');
         const panelToc = document.querySelector('.article-toc-panel');
 
-        function closeAllMobilePanels() {
-          if(panelArticles) panelArticles.classList.remove('active');
-          if(panelToc) panelToc.classList.remove('active');
-          if(mobileOverlay) mobileOverlay.classList.remove('active');
-          if(btnArticles) btnArticles.classList.remove('active');
-          if(btnToc) btnToc.classList.remove('active');
-          document.body.classList.remove('mobile-panel-open');
-        }
-
         if (btnArticles && btnToc) {
           btnArticles.addEventListener('click', () => {
             if (panelArticles.classList.contains('active')) {
@@ -745,12 +746,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
           panelArticles.addEventListener('click', (e) => {
             if (e.target.closest('a')) {
-              setTimeout(closeAllMobilePanels, 300);
+              closeAllMobilePanels();
             }
           });
           panelToc.addEventListener('click', (e) => {
             if (e.target.closest('a')) {
-              setTimeout(closeAllMobilePanels, 300);
+              closeAllMobilePanels();
             }
           });
 
