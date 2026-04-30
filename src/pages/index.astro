@@ -179,7 +179,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             cachedCategories = data.data;
           }
         }
-        
+
         isDataLoaded = true;
       } catch (error) {
         console.error('获取数据失败:', error);
@@ -188,7 +188,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function renderLatestArticles() {
       if (!isDataLoaded) return;
-      
+
       const latestArticlesContainer = document.getElementById('latest-articles');
       latestArticlesContainer.innerHTML = '';
 
@@ -228,7 +228,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     function renderCategories() {
       if (!isDataLoaded) return;
-      
+
       const categoriesGrid = document.getElementById('dynamic-categories-grid');
       categoriesGrid.innerHTML = '';
       // 改为使用 CSS 多列布局 (Multi-column) 实现原生的高性能瀑布流
@@ -268,7 +268,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     document.addEventListener('DOMContentLoaded', initHomepage);
-    
+
     let resizeTimeout;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimeout);
@@ -324,7 +324,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (document.documentElement.classList.contains('intro-active')) {
           const heroPanel = document.querySelector('.hero-panel');
           const headerAvatar = document.querySelector('.brand__avatar');
-          
+
           if (heroPanel) {
             heroPanel.animate([
               { transform: 'translateY(-100vh)', opacity: 1 },
@@ -341,7 +341,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           const flyingAvatar = document.createElement('img');
           flyingAvatar.src = headerAvatar ? headerAvatar.src : '/images/my-avatar.jpg';
           flyingAvatar.className = 'flying-avatar';
-          
+
           const avatarSize = 120;
           flyingAvatar.style.width = `${avatarSize}px`;
           flyingAvatar.style.height = `${avatarSize}px`;
@@ -369,13 +369,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 document.documentElement.classList.remove('intro-active');
                 return;
               }
-              
+
               const targetRect = headerAvatar.getBoundingClientRect();
               const startX = window.innerWidth / 2;
               const startY = window.innerHeight / 2;
               const targetX = targetRect.left + targetRect.width / 2;
               const targetY = targetRect.top + targetRect.height / 2;
-              
+
               const tx = targetX - startX;
               const ty = targetY - startY;
               const targetScale = targetRect.width / avatarSize;
@@ -392,9 +392,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               flightAnim.onfinish = () => {
                 flyingAvatar.remove();
                 headerAvatar.style.opacity = '1';
-                
+
                 document.documentElement.classList.remove('intro-active');
-                
+
                 const hiddenElements = document.querySelectorAll('.site-header, #blog, .grid-two, .footer, .floating-menu');
                 hiddenElements.forEach((el, index) => {
                   el.animate([
@@ -416,10 +416,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <script is:inline>
       (function(){
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const canvas = document.getElementById('particle-canvas');
+        const canvas = document.getElementById('snow-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        let particles = [], animId;
+        let flakes = [], animId, frameCount = 0;
         let isDark = false;
 
         function resize() {
@@ -429,96 +429,105 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         resize();
         window.addEventListener('resize', resize);
 
-        function makeParticles() {
-          particles = [];
+        function makeSnowflakes() {
+          flakes = [];
           const dark = document.documentElement.hasAttribute('data-theme');
           isDark = dark;
 
-          // 细尘（90颗）：半径 1~4px
-          const dustColors = dark
-            ? ['rgba(200,170,140,A)', 'rgba(215,185,150,A)', 'rgba(180,150,120,A)']
-            : ['rgba(129,84,50,A)', 'rgba(150,105,65,A)', 'rgba(105,70,45,A)'];
+          const baseColors = dark
+            ? [[200, 215, 240], [185, 200, 230], [210, 220, 245]]
+            : [[180, 200, 225], [160, 185, 215], [190, 210, 235]];
 
-          for (let i = 0; i < 90; i++) {
-            const c = dustColors[Math.floor(Math.random() * dustColors.length)];
-            particles.push({
+          function pickColor() {
+            const rgb = baseColors[Math.floor(Math.random() * baseColors.length)];
+            return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},PLACEHOLDER)`;
+          }
+
+          // 远景层：60 颗，小、慢、淡
+          for (let i = 0; i < 60; i++) {
+            flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 3 + 1,
-              vx: (Math.random() - 0.5) * 0.35,
-              vy: -(Math.random() * 0.3 + 0.05),
-              opacity: dark ? (Math.random() * 0.14 + 0.04) : (Math.random() * 0.2 + 0.07),
-              color: c,
-              glow: false,
+              r: Math.random() * 1.2 + 0.8,
+              vy: Math.random() * 0.25 + 0.15,
+              opacity: Math.random() * 0.1 + 0.08,
+              color: pickColor(),
+              swayAmp: Math.random() * 0.3 + 0.1,
+              swayFreq: Math.random() * 0.02 + 0.01,
+              swayPhase: Math.random() * Math.PI * 2,
             });
           }
 
-          // 金斑（30颗）：半径 3~8px，带辉光
-          const speckColors = dark
-            ? ['rgba(240,205,165,A)', 'rgba(255,220,175,A)']
-            : ['rgba(190,140,90,A)', 'rgba(210,155,100,A)'];
-
-          for (let i = 0; i < 30; i++) {
-            const c = speckColors[Math.floor(Math.random() * speckColors.length)];
-            particles.push({
+          // 中景层：80 颗，中等大小、速度、透明度
+          for (let i = 0; i < 80; i++) {
+            flakes.push({
               x: Math.random() * canvas.width,
               y: Math.random() * canvas.height,
-              r: Math.random() * 5 + 3,
-              vx: (Math.random() - 0.5) * 0.2,
-              vy: -(Math.random() * 0.2 + 0.03),
-              opacity: dark ? (Math.random() * 0.22 + 0.08) : (Math.random() * 0.32 + 0.14),
-              color: c,
-              glow: true,
+              r: Math.random() * 2 + 2,
+              vy: Math.random() * 0.4 + 0.4,
+              opacity: Math.random() * 0.2 + 0.15,
+              color: pickColor(),
+              swayAmp: Math.random() * 0.6 + 0.3,
+              swayFreq: Math.random() * 0.025 + 0.012,
+              swayPhase: Math.random() * Math.PI * 2,
+            });
+          }
+
+          // 近景层：30 颗，大、快、明显摇摆
+          for (let i = 0; i < 30; i++) {
+            flakes.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              r: Math.random() * 3 + 4,
+              vy: Math.random() * 0.7 + 0.8,
+              opacity: Math.random() * 0.25 + 0.25,
+              color: pickColor(),
+              swayAmp: Math.random() * 1 + 0.5,
+              swayFreq: Math.random() * 0.03 + 0.015,
+              swayPhase: Math.random() * Math.PI * 2,
             });
           }
         }
 
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          for (const p of particles) {
-            p.x += p.vx;
-            p.y += p.vy;
-            if (p.y < -30) p.y = canvas.height + 30;
-            if (p.y > canvas.height + 30) p.y = -30;
-            if (p.x < -30) p.x = canvas.width + 30;
-            if (p.x > canvas.width + 30) p.x = -30;
+          frameCount++;
 
-            if (Math.random() < 0.002) {
-              p.vx += (Math.random() - 0.5) * 0.06;
-              p.vy += (Math.random() - 0.5) * 0.06;
-              p.vx = Math.max(-0.5, Math.min(0.5, p.vx));
-              p.vy = Math.max(-0.5, Math.min(0.1, p.vy));
+          for (const f of flakes) {
+            f.y += f.vy;
+            f.x += Math.sin(frameCount * f.swayFreq + f.swayPhase) * f.swayAmp * 0.3;
+
+            if (Math.random() < 0.003) {
+              f.swayPhase += (Math.random() - 0.5) * 0.3;
             }
+
+            if (f.y > canvas.height + 50) {
+              f.y = -50;
+              f.x = Math.random() * canvas.width;
+            }
+            if (f.x > canvas.width + 50) f.x = -50;
+            if (f.x < -50) f.x = canvas.width + 50;
 
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fillStyle = p.color.replace('A', String(p.opacity));
-
-            if (p.glow) {
-              ctx.shadowColor = p.color.replace('A', String(p.opacity * 0.5));
-              ctx.shadowBlur = p.r * 3;
-            } else {
-              ctx.shadowColor = 'transparent';
-              ctx.shadowBlur = 0;
-            }
-
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fillStyle = f.color.replace('PLACEHOLDER', String(f.opacity));
             ctx.fill();
           }
-          ctx.shadowBlur = 0;
+
           animId = requestAnimationFrame(draw);
         }
 
-        function startParticles() {
-          makeParticles();
+        function start() {
+          makeSnowflakes();
           draw();
         }
 
-        const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 900));
-        schedule(startParticles);
+        const schedule = window.requestIdleCallback || ((cb) => setTimeout(cb, 900));
+        schedule(start);
 
         const obs = new MutationObserver(() => {
           const dark = document.documentElement.hasAttribute('data-theme');
-          if (dark !== isDark) makeParticles();
+          if (dark !== isDark) makeSnowflakes();
         });
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
       })();
