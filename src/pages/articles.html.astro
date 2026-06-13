@@ -35,10 +35,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <article class="panel panel-content panel-content--reading article-content-panel">
           <div id="article-detail" class="article-detail-empty">
-            <span class="panel-kicker">Reading</span>
-            <h2>请选择一篇文章开始阅读</h2>
-            <p class="desktop-only-text">从左侧列表中选择一篇文章，即可在中间查看完整内容。</p>
-            <p class="mobile-only-text">点击下方导航栏的“文章”，在列表中选择一篇开始阅读。</p>
+            <p class="panel-empty">加载中...</p>
           </div>
         </article>
 
@@ -86,8 +83,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <Fragment slot="scripts">
     <script type="module" is:inline>
+      import {
+        filterArticles,
+        renderArticleCardMarkup,
+        sortArticlesNewestFirst
+      } from '/article-archive.mjs';
+
       let blogArticles = [];
       let activeArticleId = '';
+      let archiveScrollPosition = 0;
       const articleDetails = new Map();
       const loadedScripts = new Map();
       const loadedStyles = new Set();
@@ -179,17 +183,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             throw new Error('API 返回格式错误');
           }
 
-          blogArticles = data.data.sort((a, b) => new Date(b.date) - new Date(a.date));
+          blogArticles = sortArticlesNewestFirst(data.data);
           window.blogArticles = blogArticles;
           renderCategoryFilters(blogArticles);
           renderArticlesList();
 
           const hash = window.location.hash;
-          if (hash) showArticle(hash.substring(1));
+          if (hash) {
+            showArticle(hash.substring(1));
+          } else {
+            renderArticleArchive(blogArticles);
+          }
         } catch (error) {
           console.error('加载文章失败:', error);
           const nav = document.getElementById('articles-nav');
           if (nav) nav.innerHTML = '<p class="panel-empty">加载失败，请检查网络后刷新重试。</p>';
+          const articleDetail = document.getElementById('article-detail');
+          if (articleDetail) articleDetail.innerHTML = '<p class="panel-empty">加载失败，请检查网络后刷新重试。</p>';
         }
       }
 
@@ -231,6 +241,67 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       let virtualListState = { items: [], totalHeight: 0, rendered: new Set() };
 
+      function resetTOC() {
+        const tocList = document.getElementById('toc-list');
+        if (tocList) {
+          tocList.innerHTML = '<li class="toc-item"><span class="panel-empty">暂无目录</span></li>';
+        }
+      }
+
+      function renderArticleArchive(articlesToRender = getFilteredArticles(), options = {}) {
+        const { restoreScroll = false, updateHistory = false } = options;
+        const articleDetail = document.getElementById('article-detail');
+        if (!articleDetail) return;
+
+        activeArticleId = '';
+        window.activeArticleId = '';
+        document.querySelectorAll('.article-link').forEach((link) => link.classList.remove('active'));
+        resetTOC();
+
+        if (updateHistory && window.location.hash) {
+          history.pushState(null, '', `${window.location.pathname}${window.location.search}`);
+        }
+
+        const readHistory = JSON.parse(localStorage.getItem('readHistory') || '{}');
+        const cards = articlesToRender
+          .map((article) => renderArticleCardMarkup(article, Boolean(readHistory[article.id])))
+          .join('');
+
+        articleDetail.className = 'article-archive-view';
+        articleDetail.innerHTML = `
+          <header class="article-archive-header">
+            <div>
+              <span class="panel-kicker">Archive</span>
+              <h2>全部文章</h2>
+            </div>
+            <span class="article-archive-count">${articlesToRender.length} 篇</span>
+          </header>
+          <div class="article-summary-list">
+            ${cards || '<p class="panel-empty article-archive-empty">没有找到匹配的文章。</p>'}
+          </div>
+        `;
+
+        articleDetail.querySelectorAll('.article-summary-card').forEach((card) => {
+          card.addEventListener('click', () => {
+            archiveScrollPosition = window.scrollY;
+            const articleId = card.dataset.articleId;
+            showArticle(articleId);
+            history.pushState(null, '', `#${articleId}`);
+          });
+        });
+
+        if (restoreScroll) {
+          requestAnimationFrame(() => window.scrollTo({ top: archiveScrollPosition, behavior: 'auto' }));
+        }
+      }
+
+      function applyArticleFilters() {
+        const filteredArticles = getFilteredArticles();
+        archiveScrollPosition = 0;
+        renderArticlesList(filteredArticles);
+        renderArticleArchive(filteredArticles, { updateHistory: true });
+      }
+
       function estimateTitleHeight(title, isRead, containerWidth) {
         const textLength = String(title || '').length + (isRead ? 2 : 0);
         const charsPerLine = Math.max(8, Math.floor((containerWidth - 20) / 16));
@@ -253,6 +324,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (!listToRender.length) {
           articlesNav.innerHTML = '<p class="panel-empty">暂无文章</p>';
           articlesNav.style.height = 'auto';
+          virtualListState.items = [];
+          virtualListState.rendered.clear();
           return;
         }
 
@@ -339,6 +412,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             link.addEventListener('click', (e) => {
               e.preventDefault();
               if (window.innerWidth <= 1100) closeAllMobilePanels();
+              archiveScrollPosition = window.scrollY;
               document.querySelectorAll('.article-link').forEach((a) => a.classList.remove('active'));
               link.classList.add('active');
               showArticle(item.id);
@@ -378,6 +452,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           a.classList.toggle('active', a.dataset.id === articleId);
         });
 
+        articleDetail.className = 'article-detail-reading';
         articleDetail.innerHTML = '<p class="panel-empty">加载中...</p>';
 
         try {
@@ -393,6 +468,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             .replace(/src=(["'])\.\/images\//g, 'src=$1/images/');
 
           articleDetail.innerHTML = `
+            <button class="article-back-button" id="article-back-button" type="button">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span>返回文章列表</span>
+            </button>
             <header class="article-header">
               <span class="panel-kicker">Post</span>
               <h1 class="article-title">${article.title}</h1>
@@ -422,6 +501,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
               <div id="twikoo-comments"></div>
             </section>
           `;
+
+          document.getElementById('article-back-button')?.addEventListener('click', () => {
+            renderArticleArchive(getFilteredArticles(), { restoreScroll: true, updateHistory: true });
+          });
 
           loadTwikoo(articleId);
           generateTOC();
@@ -564,21 +647,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const keyword = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
         const activeFilter = document.querySelector('.filter-btn.active');
         const category = activeFilter?.dataset.category || 'all';
-        let filtered = blogArticles;
-
-        if (category !== 'all') {
-          filtered = filtered.filter((article) => article.category === category);
-        }
-
-        if (keyword) {
-          filtered = filtered.filter((article) => {
-            const titleMatch = (article.title || '').toLowerCase().includes(keyword);
-            const excerptMatch = (article.excerpt || '').toLowerCase().includes(keyword);
-            return titleMatch || excerptMatch;
-          });
-        }
-
-        return filtered;
+        return filterArticles(blogArticles, { category, keyword });
       }
 
       function bindFilterEvents() {
@@ -586,7 +655,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           btn.addEventListener('click', () => {
             document.querySelectorAll('.filter-btn').forEach((button) => button.classList.remove('active'));
             btn.classList.add('active');
-            renderArticlesList(getFilteredArticles());
+            applyArticleFilters();
           });
         });
       }
@@ -704,7 +773,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
           searchInput.addEventListener('input', () => {
-            renderArticlesList(getFilteredArticles());
+            applyArticleFilters();
           });
         }
 
