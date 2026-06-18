@@ -3,3 +3,5 @@ vue-demo/
 node_modules/
 .astro/
 dist/
+.worktrees/
+db.json

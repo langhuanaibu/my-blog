@@ -1,0 +1,67 @@
+title: Aoitsuki
+subtitle: "乌幕屿，海相续，举眼茫茫，静听细浪语"
+description: "Aoitsuki 的个人博客，记录技术学习、算法思考、生活随笔与留言。"
+keywords: "Aoitsuki, blog, Hexo, Fluid"
+author: Aoitsuki
+language: zh-CN
+timezone: Asia/Shanghai
+
+url: https://aoiblog.top
+root: /
+permalink: :year/:month/:day/:title/
+pretty_urls:
+  trailing_index: false
+  trailing_html: false
+
+source_dir: source
+public_dir: dist
+tag_dir: tags
+archive_dir: archives
+category_dir: categories
+skip_render:
+  - articles.html
+
+new_post_name: :year-:month-:day-:title.md
+default_layout: post
+titlecase: false
+external_link:
+  enable: true
+  field: site
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+syntax_highlighter: highlight.js
+highlight:
+  line_number: true
+  auto_detect: false
+  tab_replace: ""
+  wrap: true
+  hljs: false
+
+theme: fluid
+
+index_generator:
+  path: ""
+  per_page: 10
+  order_by: -date
+
+archive_generator:
+  per_page: 10
+  yearly: true
+  monthly: true
+  daily: false
+
+category_generator:
+  per_page: 10
+  order_by: -date
+
+feed:
+  type: atom
+  path: atom.xml
+  limit: 20
+  content: true
+
+sitemap:
+  path: sitemap.xml
