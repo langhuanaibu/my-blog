@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文章跳转 - Aoitsuki</title>
+  <meta name="robots" content="noindex">
+  <script>
+    const articleMap = {
+  "article_1778150721669": "/2026/05/07/typescript-yu-fa/",
+  "article_1778042546856": "/2026/05/06/c-su-tong-bi-ji/",
+  "article_1777641068079": "/2026/05/01/shi-pin-wen-jian-jie-gou-yu-bian-ma-xue-xi-bi-ji/",
+  "article_1777639404279": "/2026/05/01/yi-dian-si-kao-yu-zong-jie/",
+  "article_1776430310445": "/2026/04/17/ni-ma-de-wei-shen-me-shang-ban-zhe-me-lei/",
+  "article_1776429194802": "/2026/04/17/git-tuan-dui-kai-fa-gui-fan-yu-chong-tu-chu-li-sop/",
+  "article_1776182215026": "/2026/04/14/git-chang-yong-ming-ling-zong-jie-bi-ji/",
+  "article_1775182229767": "/2026/04/03/ming-ling-xing-xue-xi-zhi-nan/",
+  "article_1775210699454": "/2026/04/03/ye-wu-yu-chan-pin/",
+  "article_1775191607175": "/2026/04/03/markdown-yu-fa-bi-ji/",
+  "article_1775055741133": "/2026/04/01/sql/",
+  "article_1774585936462": "/2026/03/27/bo-ke-geng-xin-sheng-ming/",
+  "article_1774454571938": "/2026/03/25/he-gui-gu-ma-nong-liao-yang-long-xia-dang-sheng-chan-li-bu-zai-shi-wen-ti-ren-gai-zen-me-huo/",
+  "article_1774454087284": "/2026/03/25/javascript/",
+  "article_1774409965259": "/2026/03/25/b-zhan-shi-pin-shou-ji-lu/",
+  "article_1774365835226": "/2026/03/24/shu-ju-jie-gou-yu-suan-fa-xue-xi-ri-ji-li-lun-bu-fen/",
+  "article_1774253776836": "/2026/03/23/shu-ju-jie-gou-yu-suan-fa-xue-xi-ri-ji/",
+  "article_vibe_coding_reflection": "/2026/03/22/vibe-coding-shi-dai-wen-ke-sheng-gong-ke-sheng-yu-ai-hong-liu-zhong-de-ge-ti-zun-yan/",
+  "article_1774022033700": "/2026/03/20/ce-shi/"
+};
+    const id = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
+    const target = articleMap[id];
+    window.location.replace(target || '/archives/');
+  </script>
+</head>
+<body>
+  <p>正在跳转到新的文章地址...</p>
+</body>
+</html>
