@@ -4,6 +4,7 @@ date: "2026-04-03"
 updated: "2026-04-03"
 categories:
   - "产品"
+index_img: "/images/covers/defaults/product.webp"
 old_id: "article_1775210699454"
 twikooPath: "article_1775210699454"
 ---

@@ -1,0 +1,8 @@
+{
+  "技术学习": "/images/covers/defaults/technology-learning.webp",
+  "数据结构与算法": "/images/covers/defaults/data-structures-algorithms.webp",
+  "随笔": "/images/covers/defaults/essays.webp",
+  "产品": "/images/covers/defaults/product.webp",
+  "测试": "/images/covers/defaults/testing.webp",
+  "default": "/images/covers/defaults/fallback.webp"
+}

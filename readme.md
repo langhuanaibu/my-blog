@@ -9,6 +9,8 @@
 - 内容源：`source/_posts/*.md`
 - 静态资源：`source/images/`
 - 自定义脚本：`source/js/`
+- Vercel API：`api/`
+- 在线后台：`/admin/`
 - 构建输出：`dist/`
 - 部署平台：Vercel
 - 评论系统：Twikoo
@@ -19,7 +21,12 @@
 ```text
 source/_posts/          文章 Markdown
 source/images/          图片资源
+source/images/covers/   文章封面图
 source/js/              自定义前端脚本
+source/css/             自定义前端样式
+source/admin/           在线后台页面
+source/_data/           分类封面等站点数据
+api/                    Vercel Serverless API
 source/about/           关于页面
 source/friends/         友情链接页面
 source/guestbook/       留言板页面
@@ -57,10 +64,54 @@ npm run preview
 
 ## 内容维护
 
-- 新文章写入 `source/_posts/`。
+- 在线后台地址是 `/admin/`。登录后可以发布、编辑、删除文章，也可以上传文章封面和正文图片。
+- 新文章最终会写入 `source/_posts/`。
 - 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`。
+- 默认分类封面配置在 `source/_data/category-covers.json`。
+- 文章 front matter 中的 `index_img` 是首页卡片封面；如果后台没有上传单篇封面，会自动使用分类默认封面。
 - 文章 URL 使用 `/:year/:month/:day/:title/`。
 - 迁移自旧站的文章保留 `old_id` 和 `twikooPath` front matter，用于旧链接兼容和 Twikoo 评论路径。
+
+## 在线后台环境变量
+
+部署到 Vercel 后，后台写文章需要在 Vercel 项目环境变量中配置：
+
+```text
+ADMIN_TOKEN=后台登录口令
+GITHUB_TOKEN=具有目标仓库 contents 写权限的 GitHub token
+GITHUB_OWNER=langhuanaibu
+GITHUB_REPO=my-blog
+GITHUB_BRANCH=main
+```
+
+浏览器只保存 `ADMIN_TOKEN`，GitHub token 只保存在服务端环境变量中。
+
+## 修改网站文字
+
+- 站点标题、副标题、描述、域名：改 `_config.yml`。
+- 导航、首页标语、页脚、关于页头像/简介：改 `_config.fluid.yml`。
+- 关于页正文：改 `source/about/index.md`。
+- 友链页正文：改 `source/friends/index.md`。
+- 留言页正文：改 `source/guestbook/index.md`。
+- 文章标题、分类、日期、封面、正文：优先通过 `/admin/` 编辑，也可以直接改 `source/_posts/*.md`。
+
+## 发布新文章
+
+推荐方式：
+
+1. 打开 `/admin/`。
+2. 输入后台口令。
+3. 点击“新文章”。
+4. 填标题、日期、分类和 Markdown 正文。
+5. 可选上传封面；不上传时使用分类默认封面。
+6. 点击“发布”，后台会提交 Markdown 和图片到 GitHub，Vercel 会自动重新部署。
+
+本地方式：
+
+1. 在 `source/_posts/` 新建 Markdown 文件。
+2. 图片放到 `source/images/`。
+3. 在 front matter 中填写 `title`、`date`、`categories`、`index_img`。
+4. 运行 `npm run build` 验证。
 
 ## 迁移说明
 

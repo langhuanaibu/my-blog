@@ -4,6 +4,7 @@ date: "2026-03-22"
 updated: "2026-03-21"
 categories:
   - "随笔"
+index_img: "/images/covers/defaults/essays.webp"
 old_id: "article_vibe_coding_reflection"
 twikooPath: "article_vibe_coding_reflection"
 ---
