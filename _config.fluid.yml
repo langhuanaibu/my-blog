@@ -22,6 +22,7 @@ index:
     text: "乌幕屿，海相续，举眼茫茫，静听细浪语"
 
 post:
+  default_index_img: /images/covers/defaults/fallback.webp
   banner_img: /images/img_1774022028502.png
   banner_img_height: 55
   comments:
@@ -69,6 +70,10 @@ page:
 
 custom_js:
   - /js/twikoo-legacy-path.js
+  - /js/aoiblog-home.js
+
+custom_css:
+  - /css/aoiblog-home.css
 
 footer:
   content: '<span>Aoitsuki</span>'

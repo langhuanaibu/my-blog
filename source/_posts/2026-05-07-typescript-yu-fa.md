@@ -4,6 +4,7 @@ date: "2026-05-07"
 updated: "2026-05-07"
 categories:
   - "技术学习"
+index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1778150721669"
 twikooPath: "article_1778150721669"
 ---

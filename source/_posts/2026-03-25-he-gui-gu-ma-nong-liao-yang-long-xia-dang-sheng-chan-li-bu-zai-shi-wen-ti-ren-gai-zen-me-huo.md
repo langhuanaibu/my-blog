@@ -4,6 +4,7 @@ date: "2026-03-25"
 updated: "2026-03-25"
 categories:
   - "随笔"
+index_img: "/images/covers/defaults/essays.webp"
 old_id: "article_1774454571938"
 twikooPath: "article_1774454571938"
 ---

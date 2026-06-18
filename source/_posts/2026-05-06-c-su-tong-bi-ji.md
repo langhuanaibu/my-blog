@@ -4,6 +4,7 @@ date: "2026-05-06"
 updated: "2026-05-06"
 categories:
   - "数据结构与算法"
+index_img: "/images/covers/defaults/data-structures-algorithms.webp"
 old_id: "article_1778042546856"
 twikooPath: "article_1778042546856"
 ---

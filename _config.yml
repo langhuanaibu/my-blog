@@ -20,6 +20,7 @@ archive_dir: archives
 category_dir: categories
 skip_render:
   - articles.html
+  - admin/**
 
 new_post_name: :year-:month-:day-:title.md
 default_layout: post

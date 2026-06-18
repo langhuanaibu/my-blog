@@ -8,6 +8,7 @@ const COMMENTS_TITLE = '\u8bc4\u8bba\u533a';
 const root = process.cwd();
 const postsDir = path.join(root, 'source', '_posts');
 const sourceDir = path.join(root, 'source');
+const coverMapPath = path.join(sourceDir, '_data', 'category-covers.json');
 
 function yamlString(value) {
   return JSON.stringify(String(value ?? ''));
@@ -43,6 +44,14 @@ function normalizeContent(content) {
     .replace(/\]\(images\//g, '](/images/');
 }
 
+async function readCoverMap() {
+  try {
+    return JSON.parse(await fs.readFile(coverMapPath, 'utf8'));
+  } catch {
+    return { default: '/images/covers/defaults/fallback.webp' };
+  }
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -74,6 +83,8 @@ async function writePost(article, usedSlugs, mapping) {
   const permalink = `/${year}/${month}/${day}/${slug}/`;
   const content = normalizeContent(article.content);
   const category = article.category || UNCATEGORIZED;
+  const coverMap = await readCoverMap();
+  const indexImg = coverMap[category] || coverMap.default;
 
   const frontMatter = [
     '---',
@@ -82,6 +93,7 @@ async function writePost(article, usedSlugs, mapping) {
     `updated: ${yamlString(normalizeDate(article.modifyDate || date))}`,
     'categories:',
     `  - ${yamlString(category)}`,
+    `index_img: ${yamlString(indexImg)}`,
     `old_id: ${yamlString(article.id)}`,
     `twikooPath: ${yamlString(article.id)}`,
     '---',

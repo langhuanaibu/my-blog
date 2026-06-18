@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>博客后台 - Aoitsuki</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --line: #d9e1ec;
+      --text: #263242;
+      --muted: #66758a;
+      --primary: #286f8f;
+      --primary-dark: #1e566f;
+      --danger: #bd3d3a;
+      --shadow: 0 18px 42px rgba(37, 45, 56, 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+      line-height: 1.6;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button,
+    .link-button {
+      min-height: 38px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0.45rem 0.9rem;
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    button:hover,
+    .link-button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary,
+    .link-button.secondary {
+      border-color: var(--line);
+      background: #fff;
+      color: var(--text);
+    }
+
+    button.secondary:hover,
+    .link-button.secondary:hover {
+      background: var(--surface-soft);
+    }
+
+    button.danger {
+      background: var(--danger);
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.66;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .login {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: 1.5rem;
+    }
+
+    .login-panel {
+      width: min(420px, 100%);
+      padding: 2rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .login-panel h1,
+    .topbar h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .login-panel form {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .shell {
+      width: min(1280px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 1.2rem 0 2rem;
+    }
+
+    .topbar,
+    .toolbar,
+    .workspace,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      padding: 0.9rem 1rem;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .article-list {
+      min-height: 720px;
+      border-right: 1px solid var(--line);
+      background: var(--surface-soft);
+    }
+
+    .article-item {
+      width: 100%;
+      min-height: 92px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      padding: 0.9rem 1rem;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+    }
+
+    .article-item:hover,
+    .article-item.active {
+      background: #edf6f8;
+    }
+
+    .article-title {
+      display: block;
+      font-weight: 700;
+    }
+
+    .article-meta {
+      display: block;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .editor {
+      min-width: 0;
+      padding: 1.2rem;
+    }
+
+    .empty {
+      display: grid;
+      min-height: 540px;
+      place-items: center;
+      color: var(--muted);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 1rem;
+    }
+
+    .field {
+      display: grid;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0.65rem 0.75rem;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 420px;
+      resize: vertical;
+      font-family: Consolas, "SFMono-Regular", monospace;
+      line-height: 1.7;
+    }
+
+    .cover-row {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .cover-preview {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .cover-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+
+    .editor-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .preview {
+      min-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 1rem;
+      background: var(--surface-soft);
+    }
+
+    .preview img {
+      max-width: 100%;
+      border-radius: 6px;
+    }
+
+    .preview pre {
+      overflow: auto;
+      border-radius: 6px;
+      padding: 0.9rem;
+      background: #1f2937;
+      color: #e5e7eb;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 960px) {
+      .workspace,
+      .editor-grid,
+      .cover-row,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .article-list {
+        min-height: auto;
+        max-height: 320px;
+        overflow: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <section id="loginView" class="login">
+    <div class="login-panel">
+      <h1>博客后台</h1>
+      <form id="loginForm">
+        <label for="adminToken">后台口令</label>
+        <input id="adminToken" type="password" autocomplete="current-password" required>
+        <button type="submit">登录</button>
+        <div id="loginStatus" class="status"></div>
+      </form>
+    </div>
+  </section>
+
+  <main id="adminView" class="shell hidden">
+    <header class="topbar">
+      <h1>博客后台</h1>
+      <button id="logoutBtn" class="secondary" type="button">退出</button>
+    </header>
+
+    <div class="toolbar">
+      <button id="newPostBtn" type="button">新文章</button>
+      <button id="refreshBtn" class="secondary" type="button">刷新</button>
+      <a class="link-button secondary" href="/">返回前台</a>
+      <span id="status" class="status"></span>
+    </div>
+
+    <section class="workspace">
+      <aside id="articleList" class="article-list"></aside>
+
+      <section class="editor">
+        <div id="emptyState" class="empty">选择一篇文章，或者新建文章</div>
+
+        <form id="editorForm" class="hidden">
+          <input id="filePath" type="hidden">
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="title">标题</label>
+              <input id="title" type="text" required>
+            </div>
+            <div class="field">
+              <label for="date">日期</label>
+              <input id="date" type="date" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="category">分类</label>
+            <input id="category" list="categoryOptions" required>
+            <datalist id="categoryOptions"></datalist>
+          </div>
+
+          <div class="field">
+            <label>封面</label>
+            <div class="cover-row">
+              <div class="cover-preview"><img id="coverPreview" alt=""></div>
+              <div>
+                <input id="coverUrl" type="text" placeholder="/images/covers/defaults/fallback.webp">
+                <div class="inline-actions" style="margin-top: 0.75rem;">
+                  <button id="uploadCoverBtn" class="secondary" type="button">上传封面</button>
+                  <button id="useDefaultCoverBtn" class="secondary" type="button">使用分类默认</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="content">正文</label>
+            <div class="inline-actions" style="margin-bottom: 0.75rem;">
+              <button id="uploadContentImageBtn" class="secondary" type="button">插入图片</button>
+              <button id="importMarkdownBtn" class="secondary" type="button">导入 Markdown</button>
+            </div>
+            <div class="editor-grid">
+              <textarea id="content" required></textarea>
+              <div id="preview" class="preview"></div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <div class="inline-actions">
+              <button id="saveBtn" type="submit">发布</button>
+              <button id="deleteBtn" class="danger hidden" type="button">删除</button>
+            </div>
+            <button id="cancelBtn" class="secondary" type="button">取消</button>
+          </div>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <input id="coverFile" class="hidden" type="file" accept="image/*">
+  <input id="contentImageFile" class="hidden" type="file" accept="image/*">
+  <input id="markdownFile" class="hidden" type="file" accept=".md,.markdown,text/markdown,text/plain">
+
+  <script>
+    const state = {
+      token: localStorage.getItem('aoiblog_admin_token') || '',
+      articles: [],
+      categories: [],
+      coverMap: {},
+      current: null,
+      coverTouched: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(message, target = $('status')) {
+      if (target) target.textContent = message || '';
+    }
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${state.token}`,
+          ...(options.headers || {})
+        }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || `请求失败: ${response.status}`);
+      }
+      return data.data;
+    }
+
+    function showAdmin() {
+      $('loginView').classList.add('hidden');
+      $('adminView').classList.remove('hidden');
+    }
+
+    function showLogin() {
+      $('adminView').classList.add('hidden');
+      $('loginView').classList.remove('hidden');
+    }
+
+    async function loadAll() {
+      setStatus('正在加载...');
+      const categoriesData = await api('/api/adminArticles?view=categories');
+      state.categories = categoriesData.categories || [];
+      state.coverMap = categoriesData.coverMap || {};
+      renderCategoryOptions();
+      state.articles = await api('/api/adminArticles');
+      renderArticles();
+      setStatus(`已加载 ${state.articles.length} 篇文章`);
+    }
+
+    function renderCategoryOptions() {
+      $('categoryOptions').innerHTML = state.categories
+        .map((category) => `<option value="${escapeHtml(category)}"></option>`)
+        .join('');
+    }
+
+    function renderArticles() {
+      if (!state.articles.length) {
+        $('articleList').innerHTML = '<div class="empty">暂无文章</div>';
+        return;
+      }
+
+      $('articleList').innerHTML = state.articles.map((article) => {
+        const active = state.current?.filePath === article.filePath ? ' active' : '';
+        return `
+          <button class="article-item${active}" type="button" data-path="${escapeHtml(article.filePath)}">
+            <span class="article-title">${escapeHtml(article.title)}</span>
+            <span class="article-meta">${escapeHtml(article.date || '')} / ${escapeHtml(article.category || '')}</span>
+          </button>
+        `;
+      }).join('');
+
+      document.querySelectorAll('.article-item').forEach((item) => {
+        item.addEventListener('click', () => editPost(item.dataset.path));
+      });
+    }
+
+    function defaultCover(category) {
+      return state.coverMap[category] || state.coverMap.default || '/images/covers/defaults/fallback.webp';
+    }
+
+    function updateCoverPreview() {
+      const url = $('coverUrl').value.trim() || defaultCover($('category').value.trim());
+      $('coverPreview').src = url;
+    }
+
+    function showEditor(article = null) {
+      state.current = article;
+      state.coverTouched = Boolean(article?.index_img && article.index_img !== defaultCover(article.category));
+      $('emptyState').classList.add('hidden');
+      $('editorForm').classList.remove('hidden');
+      $('deleteBtn').classList.toggle('hidden', !article?.filePath);
+      $('filePath').value = article?.filePath || '';
+      $('title').value = article?.title || '';
+      $('date').value = article?.date || today();
+      $('category').value = article?.category || state.categories[0] || '';
+      $('coverUrl').value = article?.index_img || defaultCover($('category').value);
+      $('content').value = article?.content || '';
+      updateCoverPreview();
+      updatePreview();
+      renderArticles();
+    }
+
+    async function editPost(filePath) {
+      try {
+        setStatus('正在打开文章...');
+        const article = await api(`/api/adminArticles?filePath=${encodeURIComponent(filePath)}`);
+        showEditor(article);
+        setStatus('文章已打开');
+      } catch (error) {
+        setStatus(error.message);
+      }
+    }
+
+    function newPost() {
+      showEditor({
+        title: '',
+        date: today(),
+        category: state.categories[0] || '',
+        index_img: '',
+        content: ''
+      });
+      $('title').focus();
+    }
+
+    function hideEditor() {
+      state.current = null;
+      $('editorForm').classList.add('hidden');
+      $('emptyState').classList.remove('hidden');
+      renderArticles();
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function renderMarkdown(markdown) {
+      const codeBlocks = [];
+      let html = String(markdown || '').replace(/```([\s\S]*?)```/g, (_, code) => {
+        codeBlocks.push(`<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+        return `@@CODE_BLOCK_${codeBlocks.length - 1}@@`;
+      });
+
+      html = escapeHtml(html)
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+
+      html = `<p>${html}</p>`.replace(/<p>\s*<\/p>/g, '');
+      codeBlocks.forEach((block, index) => {
+        html = html.replace(`@@CODE_BLOCK_${index}@@`, block);
+      });
+      return html;
+    }
+
+    function updatePreview() {
+      $('preview').innerHTML = renderMarkdown($('content').value);
+    }
+
+    function insertAtCursor(text) {
+      const textarea = $('content');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      textarea.value = textarea.value.slice(0, start) + text + textarea.value.slice(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + text.length;
+      updatePreview();
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function uploadImage(file, purpose) {
+      const dataUrl = await readFileAsDataUrl(file);
+      return api('/api/adminUpload', {
+        method: 'POST',
+        body: JSON.stringify({
+          purpose,
+          fileName: file.name,
+          dataUrl
+        })
+      });
+    }
+
+    async function savePost(event) {
+      event.preventDefault();
+      const saveBtn = $('saveBtn');
+      saveBtn.disabled = true;
+      setStatus('正在提交...');
+
+      try {
+        const article = {
+          filePath: $('filePath').value,
+          title: $('title').value.trim(),
+          date: $('date').value,
+          category: $('category').value.trim(),
+          index_img: $('coverUrl').value.trim(),
+          content: $('content').value
+        };
+
+        const saved = await api('/api/adminArticles', {
+          method: 'POST',
+          body: JSON.stringify({ article })
+        });
+
+        setStatus('已提交到 GitHub，Vercel 会自动重新部署');
+        state.current = saved;
+        await loadAll();
+        showEditor(saved);
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    async function deleteCurrentPost() {
+      if (!state.current?.filePath) return;
+      if (!confirm(`确认删除《${state.current.title}》？`)) return;
+
+      $('deleteBtn').disabled = true;
+      setStatus('正在删除...');
+
+      try {
+        await api('/api/adminArticles', {
+          method: 'DELETE',
+          body: JSON.stringify({ filePath: state.current.filePath })
+        });
+        hideEditor();
+        await loadAll();
+        setStatus('文章已删除');
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        $('deleteBtn').disabled = false;
+      }
+    }
+
+    $('loginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      state.token = $('adminToken').value.trim();
+      localStorage.setItem('aoiblog_admin_token', state.token);
+      setStatus('正在登录...', $('loginStatus'));
+
+      try {
+        showAdmin();
+        await loadAll();
+        setStatus('', $('loginStatus'));
+      } catch (error) {
+        localStorage.removeItem('aoiblog_admin_token');
+        state.token = '';
+        showLogin();
+        setStatus(error.message, $('loginStatus'));
+      }
+    });
+
+    $('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('aoiblog_admin_token');
+      state.token = '';
+      showLogin();
+    });
+
+    $('refreshBtn').addEventListener('click', loadAll);
+    $('newPostBtn').addEventListener('click', newPost);
+    $('cancelBtn').addEventListener('click', hideEditor);
+    $('editorForm').addEventListener('submit', savePost);
+    $('deleteBtn').addEventListener('click', deleteCurrentPost);
+    $('content').addEventListener('input', updatePreview);
+    $('coverUrl').addEventListener('input', () => {
+      state.coverTouched = true;
+      updateCoverPreview();
+    });
+    $('category').addEventListener('input', () => {
+      if (!state.coverTouched) {
+        $('coverUrl').value = defaultCover($('category').value.trim());
+      }
+      updateCoverPreview();
+    });
+
+    $('useDefaultCoverBtn').addEventListener('click', () => {
+      state.coverTouched = false;
+      $('coverUrl').value = defaultCover($('category').value.trim());
+      updateCoverPreview();
+    });
+
+    $('uploadCoverBtn').addEventListener('click', () => $('coverFile').click());
+    $('uploadContentImageBtn').addEventListener('click', () => $('contentImageFile').click());
+    $('importMarkdownBtn').addEventListener('click', () => $('markdownFile').click());
+
+    $('coverFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      setStatus('正在上传封面...');
+
+      try {
+        const image = await uploadImage(file, 'cover');
+        $('coverUrl').value = image.url;
+        state.coverTouched = true;
+        updateCoverPreview();
+        setStatus('封面已上传');
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    $('contentImageFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      setStatus('正在上传图片...');
+
+      try {
+        const image = await uploadImage(file, 'content');
+        insertAtCursor(`\n![${file.name}](${image.url})\n`);
+        setStatus('图片已插入');
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    $('markdownFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      const titleMatch = text.match(/^#\s+(.+)$/m);
+
+      if (!$('title').value && titleMatch) {
+        $('title').value = titleMatch[1].trim();
+      }
+
+      $('content').value = text.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^#\s+(.+)\n?/, '').trim();
+      updatePreview();
+      event.target.value = '';
+    });
+
+    if (state.token) {
+      $('adminToken').value = state.token;
+      showAdmin();
+      loadAll().catch((error) => {
+        setStatus(error.message);
+      });
+    } else {
+      showLogin();
+    }
+  </script>
+</body>
+</html>
