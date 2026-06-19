@@ -19,7 +19,7 @@ index:
   banner_img_height: 80
   slogan:
     enable: true
-    text: "乌幕屿，海相续，举眼茫茫，静听细浪语"
+    text: "乌幕屏，海相续，举眼茫茫，静听细浪语"
 
 post:
   default_index_img: /images/covers/defaults/fallback.webp
@@ -55,7 +55,7 @@ about:
   banner_img: /images/img_1774022028502.png
   banner_img_height: 55
   avatar: /images/my-avatar.jpg
-  name: Aoitsuki
+  name: "Aoitsuki"
   intro: "一名富有人文情怀的工科生"
   icons:
     - { class: "iconfont icon-github-fill", link: "https://github.com/langhuanaibu", tip: "GitHub" }
@@ -76,4 +76,4 @@ custom_css:
   - /css/aoiblog-home.css
 
 footer:
-  content: '<span>Aoitsuki</span>'
+  content: "<span>Aoitsuki</span>"
