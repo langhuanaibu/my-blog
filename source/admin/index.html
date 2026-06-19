@@ -145,6 +145,12 @@
       font-size: 0.92rem;
     }
 
+    .view-button.active {
+      border-color: rgba(40, 111, 143, 0.22);
+      background: #e7f3f6;
+      color: var(--primary-dark);
+    }
+
     .workspace {
       display: grid;
       grid-template-columns: 320px minmax(0, 1fr);
@@ -300,6 +306,25 @@
       border-top: 1px solid var(--line);
     }
 
+    .settings-panel {
+      padding: 1.2rem;
+    }
+
+    .settings-panel h2 {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+    }
+
+    .settings-section {
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .settings-section:last-child {
+      border-bottom: 0;
+    }
+
     @media (max-width: 960px) {
       .workspace,
       .editor-grid,
@@ -338,13 +363,15 @@
     </header>
 
     <div class="toolbar">
+      <button id="postsViewBtn" class="secondary view-button active" type="button">文章管理</button>
+      <button id="settingsViewBtn" class="secondary view-button" type="button">站点设置</button>
       <button id="newPostBtn" type="button">新文章</button>
       <button id="refreshBtn" class="secondary" type="button">刷新</button>
       <a class="link-button secondary" href="/">返回前台</a>
       <span id="status" class="status"></span>
     </div>
 
-    <section class="workspace">
+    <section id="postsView" class="workspace">
       <aside id="articleList" class="article-list"></aside>
 
       <section class="editor">
@@ -406,6 +433,81 @@
         </form>
       </section>
     </section>
+
+    <section id="settingsView" class="panel settings-panel hidden">
+      <form id="settingsForm">
+        <div class="settings-section">
+          <h2>站点文本</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="settingTitle">站点标题</label>
+              <input id="settingTitle" type="text" required>
+            </div>
+            <div class="field">
+              <label for="settingSubtitle">站点副标题</label>
+              <input id="settingSubtitle" type="text">
+            </div>
+          </div>
+          <div class="field">
+            <label for="settingSlogan">首页标语</label>
+            <input id="settingSlogan" type="text">
+          </div>
+          <div class="field">
+            <label for="settingFooter">页脚文本</label>
+            <input id="settingFooter" type="text">
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>关于信息</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="settingAboutName">昵称</label>
+              <input id="settingAboutName" type="text">
+            </div>
+            <div class="field">
+              <label for="settingAboutIntro">简介</label>
+              <input id="settingAboutIntro" type="text">
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>导航名称</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="navHome">首页</label>
+              <input id="navHome" type="text">
+            </div>
+            <div class="field">
+              <label for="navArchive">归档</label>
+              <input id="navArchive" type="text">
+            </div>
+            <div class="field">
+              <label for="navCategory">分类</label>
+              <input id="navCategory" type="text">
+            </div>
+            <div class="field">
+              <label for="navAbout">关于</label>
+              <input id="navAbout" type="text">
+            </div>
+            <div class="field">
+              <label for="navLinks">友链</label>
+              <input id="navLinks" type="text">
+            </div>
+            <div class="field">
+              <label for="navGuestbook">留言</label>
+              <input id="navGuestbook" type="text">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="saveSettingsBtn" type="submit">保存站点设置</button>
+          <button id="reloadSettingsBtn" class="secondary" type="button">重新读取</button>
+        </div>
+      </form>
+    </section>
   </main>
 
   <input id="coverFile" class="hidden" type="file" accept="image/*">
@@ -418,6 +520,7 @@
       articles: [],
       categories: [],
       coverMap: {},
+      settings: null,
       current: null,
       coverTouched: false
     };
@@ -467,6 +570,86 @@
       state.articles = await api('/api/adminArticles');
       renderArticles();
       setStatus(`已加载 ${state.articles.length} 篇文章`);
+    }
+
+    async function loadSettings() {
+      setStatus('正在读取站点设置...');
+      state.settings = await api('/api/adminSettings');
+      renderSettings();
+      setStatus('站点设置已读取');
+    }
+
+    function renderSettings() {
+      const settings = state.settings || {};
+      const nav = settings.nav || {};
+      $('settingTitle').value = settings.title || '';
+      $('settingSubtitle').value = settings.subtitle || '';
+      $('settingSlogan').value = settings.slogan || '';
+      $('settingFooter').value = settings.footerText || '';
+      $('settingAboutName').value = settings.aboutName || '';
+      $('settingAboutIntro').value = settings.aboutIntro || '';
+      $('navHome').value = nav.home || '';
+      $('navArchive').value = nav.archive || '';
+      $('navCategory').value = nav.category || '';
+      $('navAbout').value = nav.about || '';
+      $('navLinks').value = nav.links || '';
+      $('navGuestbook').value = nav.guestbook || '';
+    }
+
+    function showPostsView() {
+      $('postsView').classList.remove('hidden');
+      $('settingsView').classList.add('hidden');
+      $('postsViewBtn').classList.add('active');
+      $('settingsViewBtn').classList.remove('active');
+      $('newPostBtn').classList.remove('hidden');
+    }
+
+    async function showSettingsView() {
+      $('postsView').classList.add('hidden');
+      $('settingsView').classList.remove('hidden');
+      $('postsViewBtn').classList.remove('active');
+      $('settingsViewBtn').classList.add('active');
+      $('newPostBtn').classList.add('hidden');
+
+      if (!state.settings) {
+        await loadSettings();
+      }
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      $('saveSettingsBtn').disabled = true;
+      setStatus('正在保存站点设置...');
+
+      try {
+        state.settings = await api('/api/adminSettings', {
+          method: 'POST',
+          body: JSON.stringify({
+            settings: {
+              title: $('settingTitle').value.trim(),
+              subtitle: $('settingSubtitle').value.trim(),
+              slogan: $('settingSlogan').value.trim(),
+              footerText: $('settingFooter').value.trim(),
+              aboutName: $('settingAboutName').value.trim(),
+              aboutIntro: $('settingAboutIntro').value.trim(),
+              nav: {
+                home: $('navHome').value.trim(),
+                archive: $('navArchive').value.trim(),
+                category: $('navCategory').value.trim(),
+                about: $('navAbout').value.trim(),
+                links: $('navLinks').value.trim(),
+                guestbook: $('navGuestbook').value.trim()
+              }
+            }
+          })
+        });
+        renderSettings();
+        setStatus('站点设置已提交到 GitHub，Vercel 会自动重新部署');
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        $('saveSettingsBtn').disabled = false;
+      }
     }
 
     function renderCategoryOptions() {
@@ -698,6 +881,10 @@
     });
 
     $('refreshBtn').addEventListener('click', loadAll);
+    $('postsViewBtn').addEventListener('click', showPostsView);
+    $('settingsViewBtn').addEventListener('click', showSettingsView);
+    $('settingsForm').addEventListener('submit', saveSettings);
+    $('reloadSettingsBtn').addEventListener('click', loadSettings);
     $('newPostBtn').addEventListener('click', newPost);
     $('cancelBtn').addEventListener('click', hideEditor);
     $('editorForm').addEventListener('submit', savePost);
