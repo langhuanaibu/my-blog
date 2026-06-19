@@ -29,35 +29,90 @@
 }
 
 body {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(149, 91, 48, 0.18), transparent 30%),
-    radial-gradient(circle at 100% 0%, rgba(255, 238, 211, 0.34), transparent 22%),
-    linear-gradient(180deg, var(--aoi-bg-soft) 0%, var(--aoi-bg) 44%, #e4cfb6 100%) !important;
+  background: var(--aoi-bg) !important;
   color: var(--aoi-text);
 }
 
 [data-user-color-scheme="dark"] body {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(155, 98, 55, 0.22), transparent 30%),
-    radial-gradient(circle at 100% 0%, rgba(224, 173, 120, 0.12), transparent 24%),
-    linear-gradient(180deg, var(--aoi-bg-soft) 0%, var(--aoi-bg) 48%, #17110d 100%) !important;
+  background: var(--aoi-bg) !important;
 }
 
 #web_bg {
+  position: fixed;
+  inset: 0;
   background:
-    linear-gradient(135deg, rgba(255, 248, 236, 0.32), transparent 24%),
-    radial-gradient(circle at 20% 14%, rgba(155, 98, 55, 0.08), transparent 22%),
-    linear-gradient(180deg, transparent, rgba(80, 49, 28, 0.03)) !important;
+    radial-gradient(circle at 0% 0%, rgba(149, 91, 48, 0.18), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(255, 238, 211, 0.34), transparent 24%),
+    linear-gradient(180deg, var(--aoi-bg-soft), var(--aoi-bg)) !important;
+  background-attachment: fixed !important;
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
 }
 
 [data-user-color-scheme="dark"] #web_bg {
   background:
-    linear-gradient(135deg, rgba(244, 207, 167, 0.08), transparent 24%),
-    radial-gradient(circle at 20% 14%, rgba(224, 173, 120, 0.1), transparent 22%),
-    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.12)) !important;
+    radial-gradient(circle at 0% 0%, rgba(155, 98, 55, 0.2), transparent 32%),
+    radial-gradient(circle at 100% 0%, rgba(224, 173, 120, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--aoi-bg-soft), var(--aoi-bg)) !important;
 }
 
 .navbar,
+#navbar {
+  background-color: rgba(255, 249, 239, 0.92) !important;
+  backdrop-filter: saturate(160%) blur(18px);
+  -webkit-backdrop-filter: saturate(160%) blur(18px);
+}
+
+[data-user-color-scheme="dark"] .navbar,
+[data-user-color-scheme="dark"] #navbar {
+  background-color: rgba(25, 19, 15, 0.92) !important;
+}
+
+.navbar .navbar-brand,
+.navbar .navbar-brand:hover,
+.navbar .navbar-nav .nav-link,
+.navbar .navbar-nav .nav-link:hover,
+.navbar .navbar-nav .nav-item,
+.navbar .navbar-nav .nav-item a,
+.navbar .navbar-toggler,
+.navbar i,
+.navbar svg,
+#navbar .navbar-brand,
+#navbar .navbar-brand:hover,
+#navbar .navbar-nav .nav-link,
+#navbar .navbar-nav .nav-link:hover,
+#navbar .navbar-nav .nav-item,
+#navbar .navbar-nav .nav-item a,
+#navbar .navbar-toggler,
+#navbar i,
+#navbar svg {
+  color: var(--aoi-heading) !important;
+  text-shadow: none !important;
+}
+
+[data-user-color-scheme="dark"] .navbar .navbar-brand,
+[data-user-color-scheme="dark"] .navbar .navbar-brand:hover,
+[data-user-color-scheme="dark"] .navbar .navbar-nav .nav-link,
+[data-user-color-scheme="dark"] .navbar .navbar-nav .nav-link:hover,
+[data-user-color-scheme="dark"] .navbar .navbar-nav .nav-item,
+[data-user-color-scheme="dark"] .navbar .navbar-nav .nav-item a,
+[data-user-color-scheme="dark"] .navbar .navbar-toggler,
+[data-user-color-scheme="dark"] .navbar i,
+[data-user-color-scheme="dark"] .navbar svg,
+[data-user-color-scheme="dark"] #navbar .navbar-brand,
+[data-user-color-scheme="dark"] #navbar .navbar-brand:hover,
+[data-user-color-scheme="dark"] #navbar .navbar-nav .nav-link,
+[data-user-color-scheme="dark"] #navbar .navbar-nav .nav-link:hover,
+[data-user-color-scheme="dark"] #navbar .navbar-nav .nav-item,
+[data-user-color-scheme="dark"] #navbar .navbar-nav .nav-item a,
+[data-user-color-scheme="dark"] #navbar .navbar-toggler,
+[data-user-color-scheme="dark"] #navbar i,
+[data-user-color-scheme="dark"] #navbar svg {
+  color: var(--aoi-heading) !important;
+}
+
+.navbar,
+#navbar,
 #board,
 .card,
 .post,
@@ -111,6 +166,8 @@ body {
   height: 100vh;
   pointer-events: none;
   opacity: 0.08;
+  background-attachment: fixed;
+  background-repeat: repeat;
   background-image:
     repeating-linear-gradient(0deg, transparent, transparent 23px, rgba(111, 61, 32, 0.7) 23px, rgba(111, 61, 32, 0.7) 24px),
     repeating-linear-gradient(90deg, transparent, transparent 23px, rgba(111, 61, 32, 0.55) 23px, rgba(111, 61, 32, 0.55) 24px);
