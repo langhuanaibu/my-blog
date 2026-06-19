@@ -112,6 +112,7 @@
   if (isPost) {
     document.body.classList.add('aoiblog-post');
     addPaperTexture();
+  }
 
   // ---- Mobile TOC ----
   function initMobileToc() {
@@ -141,7 +142,7 @@
     var panel = document.createElement('div');
     panel.className = 'aoi-toc-panel';
     panel.id = 'aoi-toc-panel';
-    panel.innerHTML = '<div class="aoi-toc-panel__header"><span class="aoi-toc-panel__title">ндубд©б╪</span><button class="aoi-toc-panel__close" id="aoi-toc-close" aria-label="╧ь╠уд©б╪">\u2715</button></div><div class="aoi-toc-panel__body" id="aoi-toc-panel-body"></div>';
+    panel.innerHTML = '<div class="aoi-toc-panel__header"><span class="aoi-toc-panel__title">О©╫О©╫О©╫О©╫д©б╪</span><button class="aoi-toc-panel__close" id="aoi-toc-close" aria-label="О©╫ь╠О©╫д©б╪">\u2715</button></div><div class="aoi-toc-panel__body" id="aoi-toc-panel-body"></div>';
     document.body.appendChild(panel);
 
     // Clone TOC content into panel
@@ -152,7 +153,7 @@
     var btn = document.createElement('button');
     btn.className = 'aoi-mobile-toc-btn';
     btn.id = 'aoi-toc-btn';
-    btn.setAttribute('aria-label', 'ндубд©б╪');
+    btn.setAttribute('aria-label', 'О©╫О©╫О©╫О©╫д©б╪');
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
     document.body.appendChild(btn);
 
