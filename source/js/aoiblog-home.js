@@ -112,6 +112,7 @@
   if (isPost) {
     document.body.classList.add('aoiblog-post');
     addPaperTexture();
+    initMobileToc();
   }
 
   if (!isHome) return;
@@ -228,5 +229,4 @@
     observer.observe(tocBody, { attributes: true, subtree: true, attributeFilter: ['class'] });
   }
 
-  initMobileToc();
 })();
