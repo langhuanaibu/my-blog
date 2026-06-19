@@ -65,6 +65,7 @@ npm run preview
 ## 内容维护
 
 - 在线后台地址是 `/admin/`。登录后可以发布、编辑、删除文章，也可以上传文章封面和正文图片。
+- 后台“站点设置”可以修改常用展示文本，包括站点标题、副标题、首页标语、页脚文本、关于页昵称/简介和现有导航显示名。
 - 新文章最终会写入 `source/_posts/`。
 - 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`。
 - 默认分类封面配置在 `source/_data/category-covers.json`。
@@ -74,7 +75,7 @@ npm run preview
 
 ## 在线后台环境变量
 
-部署到 Vercel 后，后台写文章需要在 Vercel 项目环境变量中配置：
+部署到 Vercel 后，后台写文章和保存站点设置需要在 Vercel 项目环境变量中配置：
 
 ```text
 ADMIN_TOKEN=后台登录口令
@@ -88,8 +89,9 @@ GITHUB_BRANCH=main
 
 ## 修改网站文字
 
-- 站点标题、副标题、描述、域名：改 `_config.yml`。
-- 导航、首页标语、页脚、关于页头像/简介：改 `_config.fluid.yml`。
+- 站点标题、副标题、首页标语、页脚、关于页昵称/简介、现有导航显示名：优先通过 `/admin/` 的“站点设置”修改。
+- 站点描述、域名、语言、构建目录等底层配置：改 `_config.yml`。
+- 导航链接、导航图标、头像、背景图、主题开关等主题配置：改 `_config.fluid.yml`。
 - 关于页正文：改 `source/about/index.md`。
 - 友链页正文：改 `source/friends/index.md`。
 - 留言页正文：改 `source/guestbook/index.md`。
