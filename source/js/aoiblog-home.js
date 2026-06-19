@@ -112,23 +112,102 @@
   if (isPost) {
     document.body.classList.add('aoiblog-post');
     addPaperTexture();
+
+  // ---- Mobile TOC ----
+  function initMobileToc() {
+    var tocBody = document.getElementById('toc-body');
+    if (!tocBody) return;
+
+    // Wait for tocbot to populate
+    var checkToc = setInterval(function () {
+      var items = tocBody.querySelectorAll('.tocbot-link');
+      if (items.length > 0) {
+        clearInterval(checkToc);
+        buildMobileToc(tocBody);
+      }
+    }, 300);
+    // Stop waiting after 8s
+    setTimeout(function () { clearInterval(checkToc); }, 8000);
   }
 
-  if (!isHome) return;
+  function buildMobileToc(tocBody) {
+    // Create overlay
+    var overlay = document.createElement('div');
+    overlay.className = 'aoi-toc-overlay';
+    overlay.id = 'aoi-toc-overlay';
+    document.body.appendChild(overlay);
 
-  document.body.classList.add('aoiblog-home');
-  addSnowCanvas();
+    // Create panel
+    var panel = document.createElement('div');
+    panel.className = 'aoi-toc-panel';
+    panel.id = 'aoi-toc-panel';
+    panel.innerHTML = '<div class="aoi-toc-panel__header"><span class="aoi-toc-panel__title">文章目录</span><button class="aoi-toc-panel__close" id="aoi-toc-close" aria-label="关闭目录">\u2715</button></div><div class="aoi-toc-panel__body" id="aoi-toc-panel-body"></div>';
+    document.body.appendChild(panel);
 
-  if (path !== '/') return;
+    // Clone TOC content into panel
+    var body = document.getElementById('aoi-toc-panel-body');
+    body.appendChild(tocBody.cloneNode(true));
 
-  var bannerText = document.querySelector('#banner .banner-text');
-  if (!bannerText || bannerText.querySelector('.home-avatar')) return;
+    // Create floating button
+    var btn = document.createElement('button');
+    btn.className = 'aoi-mobile-toc-btn';
+    btn.id = 'aoi-toc-btn';
+    btn.setAttribute('aria-label', '文章目录');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+    document.body.appendChild(btn);
 
-  var avatar = document.createElement('img');
-  avatar.className = 'home-avatar';
-  avatar.src = '/images/my-avatar.jpg';
-  avatar.alt = 'Aoitsuki';
-  avatar.loading = 'eager';
+    function openPanel() {
+      panel.classList.add('active');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
 
-  bannerText.insertBefore(avatar, bannerText.firstChild);
+    function closePanel() {
+      panel.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    btn.addEventListener('click', function () {
+      if (panel.classList.contains('active')) {
+        closePanel();
+      } else {
+        openPanel();
+      }
+    });
+
+    overlay.addEventListener('click', closePanel);
+    document.getElementById('aoi-toc-close').addEventListener('click', closePanel);
+
+    // Close panel when clicking a TOC link
+    body.addEventListener('click', function (e) {
+      if (e.target.closest('.tocbot-link')) {
+        setTimeout(closePanel, 200);
+      }
+    });
+
+    // Sync active highlight from original TOC
+    var observer = new MutationObserver(function () {
+      var originals = tocBody.querySelectorAll('.tocbot-active-link');
+      var clones = body.querySelectorAll('.tocbot-link');
+      clones.forEach(function (link) {
+        link.classList.remove('tocbot-active-link');
+        link.style.fontWeight = '';
+        link.style.color = '';
+      });
+      originals.forEach(function (active) {
+        var href = active.getAttribute('href');
+        if (href) {
+          var clone = body.querySelector('.tocbot-link[href="' + href + '"]');
+          if (clone) {
+            clone.classList.add('tocbot-active-link');
+            clone.style.fontWeight = 'bold';
+          }
+        }
+      });
+    });
+    observer.observe(tocBody, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  }
+
+  initMobileToc();
 })();

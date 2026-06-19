@@ -395,3 +395,118 @@ body {
 [data-user-color-scheme="dark"] .friend-card small {
   color: var(--aoi-muted);
 }
+
+/* ---- Mobile TOC ---- */
+.aoi-mobile-toc-btn {
+  display: none;
+  position: fixed;
+  right: 16px;
+  bottom: 100px;
+  z-index: 1050;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--aoi-line, #ddd);
+  border-radius: 50%;
+  background: var(--aoi-paper, #fff);
+  color: var(--aoi-text, #333);
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,.12);
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.aoi-mobile-toc-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 18px rgba(0,0,0,.18);
+}
+.aoi-mobile-toc-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+}
+
+.aoi-toc-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,.4);
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.aoi-toc-overlay.active {
+  opacity: 1;
+}
+
+.aoi-toc-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2100;
+  width: 300px;
+  max-width: 85vw;
+  background: var(--aoi-panel-bg, #fefaf2);
+  box-shadow: -4px 0 24px rgba(0,0,0,.15);
+  transform: translateX(100%);
+  transition: transform .35s cubic-bezier(.32,.72,0,1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.aoi-toc-panel.active {
+  transform: translateX(0);
+}
+.aoi-toc-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--aoi-line, #eee);
+  flex-shrink: 0;
+}
+.aoi-toc-panel__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--aoi-heading, #222);
+}
+.aoi-toc-panel__close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: var(--aoi-bg-soft, #f0ebe0);
+  color: var(--aoi-text-soft, #999);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: background-color .2s ease;
+}
+.aoi-toc-panel__close:hover {
+  background: var(--aoi-accent-soft, #e8d5c0);
+}
+.aoi-toc-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 20px 40px;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 991px) {
+  .aoi-mobile-toc-btn {
+    display: flex;
+  }
+  .aoi-toc-overlay {
+    display: block;
+  }
+}
+@media (min-width: 992px) {
+  .aoi-toc-panel,
+  .aoi-toc-overlay {
+    display: none !important;
+  }
+}

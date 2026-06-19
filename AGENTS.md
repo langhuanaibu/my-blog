@@ -4,10 +4,10 @@
 
 ## 项目结构
 
-- 这是一个混合使用 Astro + Vercel + MongoDB 的博客项目。
-- 前端页面和 UI 位于 `src/`。
-- Vercel API 路由位于 `api/`。
-- 静态后台页面和可直接访问的资源位于 `public/`，尤其是 `public/admin.html`。
+- 这是一个 Hexo + Fluid + Vercel 静态博客项目。
+- 文章 Markdown 位于 `source/_posts/`。
+- Vercel API 路由位于 `api/`，用于在线后台的发布和设置功能。
+- 在线后台页面位于 `source/admin/index.html`。
 - 历史重构记录放在 `docs/archive/`。
 
 ## 修改边界
