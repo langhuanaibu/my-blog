@@ -433,10 +433,12 @@ body {
   z-index: 2000;
   background: rgba(0,0,0,.4);
   opacity: 0;
+  pointer-events: none;
   transition: opacity .3s ease;
 }
 .aoi-toc-overlay.active {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .aoi-toc-panel {
