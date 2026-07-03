@@ -14,18 +14,20 @@
 
 - 只做增量修改，并保持已部署站点稳定。
 - 仅修改用户明确要求的范围。
-- 除非用户明确提出，否则不要重写 API、不要大幅改动后台逻辑、不要编辑现有文章内容，也不要修改数据库结构。
+- 除非用户明确提出，否则不要重写 API、不要大幅改动后台逻辑、不要编辑现有文章内容。
 - 如果用户要求调整 UI 界面、视觉风格或样式表现，不要修改博客中的任何文本内容，包括标题、正文、按钮文案、说明文字和其他展示文本，除非用户明确要求同时修改文案。
 - 不要把临时文件放在仓库根目录。根目录应只保留全局配置和项目文档，例如 `readme.md`、`memory.md` 和 `skill.md`。
 - 每次改动完成前，必须清理为调试、测试或预览临时创建的文件、目录和临时代码，不要把测试或临时内容留在工作区。
 
 ## 目录与命名规则
 
-- `src/` 仅用于 Astro 前端源码，不要把后端逻辑或临时脚本混进去。
-- `src/pages/` 存放路由页面。适用时使用小写 kebab-case 命名，例如 `blog-post.astro`。
-- `src/components/` 和 `src/layouts/` 存放 UI 组件和布局组件。使用 PascalCase 命名，例如 `Header.astro`。
-- `public/` 存放必须能通过 URL 直接访问的文件，例如 `admin.html`、图片、基础 CSS 和浏览器端 JS。
-- `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `getArticles.js`，并复用现有数据库连接模式。
+- `source/_posts/` 存放文章 Markdown 文件，格式 `YYYY-MM-DD-slug.md`。
+- `source/images/` 存放图片资源，含 `covers/` 子目录。
+- `source/js/` 和 `source/css/` 存放自定义前端脚本和样式。
+- `source/admin/` 存放在线后台页面。
+- `source/about/`、`source/friends/`、`source/guestbook/` 存放独立页面的 Markdown 源文件。
+- `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `adminArticles.js`。
+- `tools/` 存放迁移和维护工具脚本。
 
 ## 产品与体验规则
 
@@ -50,7 +52,7 @@
 ## 验证规则
 
 - 修改代码后，按需运行 `npm run build` 或 `npm run dev`。
-- 验证页面仍能正常加载、`public/admin.html` 仍兼容、API 改动已正确接通。
+- 验证页面仍能正常加载、`source/admin/index.html` 仍兼容、API 改动已正确接通。
 - 验证结束后检查工作区，确认没有遗留测试文件、临时文件或临时调试代码。
 - 没有说明执行过哪些验证前，不要声称工作已完成。
 
