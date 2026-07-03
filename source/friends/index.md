@@ -16,7 +16,7 @@ title: 友情链接
     <img src="/images/my-avatar.jpg" alt="Aoitsuki's Blog 头像">
     <span>
       <strong>Aoitsuki's Blog</strong>
-      <small>乌幕屿，海相续...</small>
+      <small>乌幕屏，海相续...</small>
       <em>langhuanaibu.github.io/my-blog</em>
     </span>
   </a>
