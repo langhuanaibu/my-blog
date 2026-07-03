@@ -1,0 +1,1 @@
+window.NEWS_MANIFEST = ["2026-07-03"];

@@ -30,6 +30,7 @@ api/                    Vercel Serverless API
 source/about/           关于页面
 source/friends/         友情链接页面
 source/guestbook/       留言板页面
+source/news/            每日新闻日报页（静态，数据由外部管线生成）
 tools/                  迁移和维护工具
 docs/archive/           历史架构与迁移记录
 _config.yml             Hexo 主配置
@@ -128,3 +129,12 @@ GITHUB_BRANCH=main
 - 旧 Astro 前台、Vercel API 和静态后台不再作为运行入口保留。
 
 详细决策见 `docs/archive/2026-06-18-hexo-fluid-migration.md`。
+
+## 每日日报页（/news/）
+
+`source/news/` 是一个独立的静态"每日新闻驾驶舱"页面，通过导航菜单"日报"访问（`/news/`）。
+
+- 页面与数据均为纯静态文件，`_config.yml` 的 `skip_render: news/**` 保证 Hexo 原样拷贝、不经主题渲染。
+- 数据文件（`source/news/data/`）由独立项目 `D:\每日新闻网站` 的 `daily_news.py` 每日生成并自动同步过来，本仓库不含生成逻辑、无新增依赖。
+- 同步脚本只会本地 commit 数据文件（`Update daily briefing data (日期)`），不会自动 push；上线时机手动控制。
+- 移除方式：删除 `source/news/`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。

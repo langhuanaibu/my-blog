@@ -10,6 +10,7 @@ navbar:
     - { key: "about", name: "关于", link: "/about/", icon: "iconfont icon-user-fill" }
     - { key: "links", name: "友链", link: "/friends/", icon: "iconfont icon-link-fill" }
     - { key: "guestbook", name: "留言", link: "/guestbook/", icon: "iconfont icon-comment" }
+    - { key: "news", name: "日报", link: "/news/" }
 
 search:
   enable: false

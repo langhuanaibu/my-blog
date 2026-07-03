@@ -21,6 +21,7 @@ category_dir: categories
 skip_render:
   - articles.html
   - admin/**
+  - news/**
 
 new_post_name: :year-:month-:day-:title.md
 default_layout: post
