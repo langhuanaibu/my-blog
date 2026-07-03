@@ -37,35 +37,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r news-pipeline/requirements.txt
 
-      - name: Check LLM API connectivity (diagnostic)
-        env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-        run: |
-          pip show openai httpx | grep -E "^(Name|Version)"
-          python - <<'PY'
-          import os, traceback
-          import requests
-          print("--- requests POST ---")
-          try:
-              r = requests.post("https://api.deepseek.com/v1/chat/completions",
-                  headers={"Authorization": f"Bearer {os.environ['LLM_API_KEY']}"},
-                  json={"model": "deepseek-chat", "max_tokens": 5,
-                        "messages": [{"role": "user", "content": "hi"}]}, timeout=30)
-              print("requests:", r.status_code, r.text[:120])
-          except Exception:
-              traceback.print_exc()
-          print("--- openai client ---")
-          from openai import OpenAI
-          c = OpenAI(base_url="https://api.deepseek.com/v1", api_key=os.environ["LLM_API_KEY"])
-          try:
-              r = c.chat.completions.create(model="deepseek-chat", max_tokens=5,
-                  messages=[{"role": "user", "content": "hi"}])
-              print("openai OK:", r.choices[0].message.content)
-          except Exception as e:
-              traceback.print_exc()
-              print("CAUSE:", repr(e.__cause__))
-          PY
-
       - name: Generate daily briefing
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
