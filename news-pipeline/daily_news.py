@@ -589,10 +589,10 @@ def main():
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
 
     # ---- 环境变量覆盖（供云端 CI 使用，本地运行无感知） ----
-    if os.environ.get("LLM_API_KEY"):
-        cfg["llm"]["api_key"] = os.environ["LLM_API_KEY"]
-    if os.environ.get("PREFILTER_API_KEY"):
-        cfg.setdefault("prefilter", {})["api_key"] = os.environ["PREFILTER_API_KEY"]
+    if os.environ.get("LLM_API_KEY", "").strip():
+        cfg["llm"]["api_key"] = os.environ["LLM_API_KEY"].strip()
+    if os.environ.get("PREFILTER_API_KEY", "").strip():
+        cfg.setdefault("prefilter", {})["api_key"] = os.environ["PREFILTER_API_KEY"].strip()
     if os.environ.get("BLOG_DIR"):
         cfg.setdefault("publish", {})["blog_dir"] = os.environ["BLOG_DIR"]
     if os.environ.get("BLOG_GIT_COMMIT") == "0":
