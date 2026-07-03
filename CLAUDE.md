@@ -19,6 +19,7 @@
 - **`source/about/`, `source/friends/`, `source/guestbook/`**：独立页面的 Markdown 源文件。
 - **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`）。
 - **`tools/`**：迁移和维护工具脚本。
+- **`news-pipeline/`**：每日新闻日报生成管线（Python），由 GitHub Actions 每日运行，数据写入 `source/news/data/`。本目录是唯一真源（原 `D:\每日新闻网站` 已退役）。
 - **`docs/archive/`**：存放历史重构文档归档。
 
 ## 3. 交互设计与工作流
@@ -31,3 +32,4 @@
 - **清理收尾**：验证结束后必须检查工作区，确认没有遗留测试文件、临时文件或临时调试代码。
 - **文档同步**：架构变动、运行方式变动或有复用价值的踩坑经验，必须更新至 `readme.md`。
 - **Git操作**：Commit message 用简明英文。**严禁自动 `git push`**（仅用于跨设备同步，需等待用户明确指令）。
+  - **唯一例外**：GitHub Actions 的 `daily-news.yml` 每日自动 commit + push，且仅限 `source/news/data/` 路径。管线脚本内置数据校验（精选非空、文件完整），校验失败即中止、不提交。此例外经用户明确批准（2026-07-04），不得扩大到其他路径。

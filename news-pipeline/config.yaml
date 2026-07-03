@@ -1,0 +1,80 @@
+# ============================================================
+# 每日新闻驾驶舱 - 主配置（云端 CI 版）
+# ============================================================
+# 注意：本仓库为公开仓库，API key 绝不写在这里。
+# 云端由 GitHub Actions 通过环境变量 LLM_API_KEY 注入（存于仓库 Secrets）。
+# ============================================================
+
+llm:
+  # 任何 OpenAI 兼容接口都可以。示例：
+  #   DeepSeek:  base_url: https://api.deepseek.com/v1     model: deepseek-chat
+  #   Kimi:      base_url: https://api.moonshot.cn/v1      model: moonshot-v1-32k
+  #   智谱:      base_url: https://open.bigmodel.cn/api/paas/v4   model: glm-4-plus
+  #   OpenAI:    base_url: https://api.openai.com/v1       model: gpt-4o-mini
+  base_url: https://api.deepseek.com/v1
+  api_key: ""   # 由环境变量 LLM_API_KEY 注入，不要在这里填
+  model: deepseek-chat
+  temperature: 0.3
+  # 单次请求最大重试次数
+  max_retries: 3
+
+# 预筛模型（可选）：先用便宜模型过滤垃圾/无关条目，再交给上面的主模型评分。
+# 省钱：主模型只处理幸存者。留空 api_key 则直接复用主模型配置。
+prefilter:
+  enabled: true
+  base_url: ""
+  api_key: ""
+  model: ""
+
+# 抓取时间窗口（小时）：只保留最近 N 小时内发布的内容
+window_hours: 26
+
+# 每个源最多取多少条（防止某个源刷屏）
+max_per_source: 25
+
+# ---------- 精选机制：阈值制（不硬凑固定条数） ----------
+# 质量分过线才能进精选；新闻淡的日子精选少，大新闻日精选多
+pick_threshold: 68   # 精选门槛分（0-99）
+pick_min: 8          # 保底条数：过线不足时按分数补齐到这个数
+pick_max: 24         # 上限：过线太多时只取最高的这些
+secondary_count: 25  # 次级条目条数（折叠在"更多资讯"里）
+
+# ---------- 评分公式（代码合成，不让模型打总分） ----------
+scoring:
+  # LLM 只打 5 个维度分项分（0-10），最终分由下面的权重合成：
+  #   impact     影响面（波及多少人/多大市场）
+  #   novelty    新颖性（是新事还是旧闻翻炒）
+  #   substance  实质性（有无真实信息增量，还是口水/软文）
+  #   evidence   佐证强度（官方确认/多源交叉 vs 单源爆料）
+  #   durability 持续重要性（一周后还重要吗）
+  dim_weights:
+    impact: 0.30
+    novelty: 0.20
+    substance: 0.25
+    evidence: 0.15
+    durability: 0.10
+  # 信源层级乘数：二手/社区来源同样的内容，最终分打折
+  tier_multipliers:
+    T1: 1.0
+    T1.5: 0.93
+    T2: 0.83
+
+# 兴趣权重：影响排序。1.0 = 中性，调高该类会更容易进精选
+# 五类均衡就都保持 1.0
+interest_weights:
+  ai: 1.0        # AI
+  tech: 1.0      # 互联网/科技
+  finance: 1.0   # 财经
+  society: 1.0   # 社会
+  world: 1.0     # 国际
+
+# 每类在精选中的最低保底条数（有内容的前提下）
+min_per_category: 2
+
+# ---------- 发布到博客 ----------
+# 云端 CI：数据由 DATA_DIR 环境变量直接写入仓库的 source/news/data/，
+# 此处 blog_dir 留空即跳过同步逻辑；commit + push 由 workflow 负责。
+publish:
+  blog_dir: ""
+  git_commit: false
+  sync_page: false

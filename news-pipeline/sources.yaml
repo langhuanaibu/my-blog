@@ -1,0 +1,217 @@
+# ============================================================
+# 新闻源配置
+# ============================================================
+# 每个源的字段：
+#   id:          唯一标识
+#   name:        显示名称
+#   type:        rss | aihot（AI HOT 走专用 API 适配器）
+#   url:         RSS 地址或 API 地址
+#   source_type: fact(事实源) | analysis(分析源) | opinion(舆论源)
+#   tier:        信源层级（参考 AIHOT 的 T1/T1.5/T2 分级）
+#                T1   = 权威一线媒体 / 官方一手发布（权重最高）
+#                T1.5 = 主流行业媒体 / 专业二手报道
+#                T2   = 聚合站 / 社区 / KOL（同样的分要过更高的门槛）
+#   credibility: 来源可信度 1-10（参与评分）
+#   category:    类别提示 ai/tech/finance/society/world/mixed
+#                （仅作提示，最终分类由 LLM 判断）
+#   enabled:     true/false，临时停用某个源不用删除
+#
+# 增删源直接改这个文件即可，不用动代码。
+# ============================================================
+
+sources:
+  # ---------- AI ----------
+  - id: aihot
+    name: AI HOT 精选
+    type: aihot
+    url: https://aihot.virxact.com/api/public/items
+    source_type: fact
+    tier: "T1.5"
+    credibility: 8
+    category: ai
+    enabled: true
+
+  - id: mit-tr
+    name: MIT Technology Review
+    type: rss
+    url: https://www.technologyreview.com/feed/
+    source_type: analysis
+    tier: "T1.5"
+    credibility: 8
+    category: ai
+    enabled: true
+
+  # ---------- 互联网 / 科技 ----------
+  - id: hn
+    name: Hacker News
+    type: rss
+    url: https://hnrss.org/frontpage
+    source_type: opinion
+    tier: "T2"
+    credibility: 6
+    category: tech
+    enabled: true
+
+  - id: techcrunch
+    name: TechCrunch
+    type: rss
+    url: https://techcrunch.com/feed/
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: tech
+    enabled: true
+
+  - id: verge
+    name: The Verge
+    type: rss
+    url: https://www.theverge.com/rss/index.xml
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: tech
+    enabled: true
+
+  - id: 36kr
+    name: 36氪
+    type: rss
+    url: https://36kr.com/feed
+    source_type: fact
+    tier: "T2"
+    credibility: 6
+    category: tech
+    enabled: true
+
+  - id: ars
+    name: Ars Technica
+    type: rss
+    url: https://feeds.arstechnica.com/arstechnica/index
+    source_type: analysis
+    tier: "T1.5"
+    credibility: 8
+    category: tech
+    enabled: true
+
+  # ---------- 财经 ----------
+  - id: ftcn
+    name: FT中文网
+    type: rss
+    url: https://www.ftchinese.com/rss/news
+    source_type: analysis
+    tier: "T1"
+    credibility: 9
+    category: finance
+    enabled: true
+
+  - id: wscn
+    name: 华尔街见闻
+    type: rss
+    url: https://dedicated.wallstreetcn.com/rss.xml
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: finance
+    enabled: true
+
+  - id: cnbc
+    name: CNBC
+    type: rss
+    url: https://www.cnbc.com/id/100003114/device/rss/rss.html
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: finance
+    enabled: true
+
+  - id: marketwatch
+    name: MarketWatch
+    type: rss
+    url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: finance
+    enabled: true
+
+  # ---------- 社会 / 国际（事实源） ----------
+  - id: bbc-cn
+    name: BBC中文
+    type: rss
+    url: https://feeds.bbci.co.uk/zhongwen/simp/rss.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 9
+    category: mixed
+    enabled: true
+
+  - id: bbc-world
+    name: BBC World
+    type: rss
+    url: https://feeds.bbci.co.uk/news/world/rss.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 9
+    category: world
+    enabled: true
+
+  - id: guardian
+    name: The Guardian
+    type: rss
+    url: https://www.theguardian.com/world/rss
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: world
+    enabled: true
+
+  - id: aljazeera
+    name: Al Jazeera
+    type: rss
+    url: https://www.aljazeera.com/xml/rss/all.xml
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: world
+    enabled: true
+
+  - id: npr
+    name: NPR
+    type: rss
+    url: https://feeds.npr.org/1001/rss.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: world
+    enabled: true
+
+  - id: nyt-cn
+    name: 纽约时报中文网
+    type: rss
+    url: https://cn.nytimes.com/rss/
+    source_type: analysis
+    tier: "T1"
+    credibility: 8
+    category: mixed
+    enabled: true
+
+  # ---------- 分析源 ----------
+  - id: atlantic
+    name: The Atlantic
+    type: rss
+    url: https://www.theatlantic.com/feed/all/
+    source_type: analysis
+    tier: "T1.5"
+    credibility: 8
+    category: mixed
+    enabled: true
+
+  # ---------- 舆论源（默认关闭，需要再开） ----------
+  - id: reddit-worldnews
+    name: Reddit r/worldnews
+    type: rss
+    url: https://www.reddit.com/r/worldnews/.rss
+    source_type: opinion
+    tier: "T2"
+    credibility: 5
+    category: world
+    enabled: false

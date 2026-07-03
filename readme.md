@@ -30,7 +30,8 @@ api/                    Vercel Serverless API
 source/about/           关于页面
 source/friends/         友情链接页面
 source/guestbook/       留言板页面
-source/news/            每日新闻日报页（静态，数据由外部管线生成）
+source/news/            每日新闻日报页（静态，数据由 news-pipeline 生成）
+news-pipeline/          新闻日报生成管线（GitHub Actions 每日运行）
 tools/                  迁移和维护工具
 docs/archive/           历史架构与迁移记录
 _config.yml             Hexo 主配置
@@ -135,6 +136,9 @@ GITHUB_BRANCH=main
 `source/news/` 是一个独立的静态"每日新闻驾驶舱"页面，通过导航菜单"日报"访问（`/news/`）。
 
 - 页面与数据均为纯静态文件，`_config.yml` 的 `skip_render: news/**` 保证 Hexo 原样拷贝、不经主题渲染。
-- 数据文件（`source/news/data/`）由独立项目 `D:\每日新闻网站` 的 `daily_news.py` 每日生成并自动同步过来，本仓库不含生成逻辑、无新增依赖。
-- 同步脚本只会本地 commit 数据文件（`Update daily briefing data (日期)`），不会自动 push；上线时机手动控制。
-- 移除方式：删除 `source/news/`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。
+- 数据由本仓库 `news-pipeline/daily_news.py` 生成（抓取 → LLM 去重评分摘要 → 写入 `source/news/data/`）。改新闻源改 `news-pipeline/sources.yaml`，调评分口味改 `news-pipeline/config.yaml`。
+- **每日自动更新**：GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
+- API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持昨日日报。
+- 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`（本地产物写到 `news-pipeline/data/`，已 gitignore；如需直接写入站点数据，设 `DATA_DIR` 指向 `source/news/data`）。
+- 移除方式：删除 `source/news/`、`news-pipeline/`、`.github/workflows/daily-news.yml`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。
+- 历史沿革：管线原为独立项目 `D:\每日新闻网站`（2026-07-04 迁入本仓库并退役）。
