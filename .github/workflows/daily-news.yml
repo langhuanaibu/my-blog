@@ -37,6 +37,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r news-pipeline/requirements.txt
 
+      - name: Check LLM API connectivity (diagnostic)
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          echo "--- DNS ---"
+          getent hosts api.deepseek.com || echo "DNS resolution FAILED"
+          echo "--- HTTPS ---"
+          curl -sS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" --max-time 20 \
+            -H "Authorization: Bearer $LLM_API_KEY" \
+            https://api.deepseek.com/v1/models || echo "curl FAILED with exit $?"
+
       - name: Generate daily briefing
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
