@@ -5,3 +5,6 @@ node_modules/
 dist/
 .worktrees/
 db.json
+
+# 临时预览调参页（调完删除，见 .trae/documents/preview-effects-plan.md）
+source/preview-effects.html
