@@ -41,12 +41,30 @@ jobs:
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
-          echo "--- DNS ---"
-          getent hosts api.deepseek.com || echo "DNS resolution FAILED"
-          echo "--- HTTPS ---"
-          curl -sS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" --max-time 20 \
-            -H "Authorization: Bearer $LLM_API_KEY" \
-            https://api.deepseek.com/v1/models || echo "curl FAILED with exit $?"
+          pip show openai httpx | grep -E "^(Name|Version)"
+          python - <<'PY'
+          import os, traceback
+          import requests
+          print("--- requests POST ---")
+          try:
+              r = requests.post("https://api.deepseek.com/v1/chat/completions",
+                  headers={"Authorization": f"Bearer {os.environ['LLM_API_KEY']}"},
+                  json={"model": "deepseek-chat", "max_tokens": 5,
+                        "messages": [{"role": "user", "content": "hi"}]}, timeout=30)
+              print("requests:", r.status_code, r.text[:120])
+          except Exception:
+              traceback.print_exc()
+          print("--- openai client ---")
+          from openai import OpenAI
+          c = OpenAI(base_url="https://api.deepseek.com/v1", api_key=os.environ["LLM_API_KEY"])
+          try:
+              r = c.chat.completions.create(model="deepseek-chat", max_tokens=5,
+                  messages=[{"role": "user", "content": "hi"}])
+              print("openai OK:", r.choices[0].message.content)
+          except Exception as e:
+              traceback.print_exc()
+              print("CAUSE:", repr(e.__cause__))
+          PY
 
       - name: Generate daily briefing
         env:
