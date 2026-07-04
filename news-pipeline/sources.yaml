@@ -20,6 +20,37 @@
 # ============================================================
 
 sources:
+  # ---------- AI 官方一手源 ----------
+  - id: openai
+    name: OpenAI News
+    type: rss
+    url: https://openai.com/news/rss.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 9
+    category: ai
+    enabled: true
+
+  - id: huggingface
+    name: Hugging Face Blog
+    type: rss
+    url: https://huggingface.co/blog/feed.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: ai
+    enabled: true
+
+  - id: deepmind
+    name: Google DeepMind Blog
+    type: rss
+    url: https://deepmind.google/blog/rss.xml
+    source_type: fact
+    tier: "T1"
+    credibility: 9
+    category: ai
+    enabled: true
+
   # ---------- AI ----------
   - id: aihot
     name: AI HOT 精选
@@ -39,6 +70,47 @@ sources:
     tier: "T1.5"
     credibility: 8
     category: ai
+    enabled: true
+
+  # ---------- 开发者平台官方一手源 ----------
+  - id: github-blog
+    name: GitHub Blog
+    type: rss
+    url: https://github.blog/feed/
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: tech
+    enabled: true
+
+  - id: github-changelog
+    name: GitHub Changelog
+    type: rss
+    url: https://github.blog/changelog/feed/
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: tech
+    enabled: true
+
+  - id: cloudflare
+    name: Cloudflare Blog
+    type: rss
+    url: https://blog.cloudflare.com/rss/
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: tech
+    enabled: true
+
+  - id: vercel
+    name: Vercel Blog
+    type: rss
+    url: https://vercel.com/atom
+    source_type: fact
+    tier: "T1"
+    credibility: 8
+    category: tech
     enabled: true
 
   # ---------- 互联网 / 科技 ----------

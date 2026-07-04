@@ -13,8 +13,11 @@
     4. LLM 阶段A：去重聚类 + 分类 + 五维分项打分（影响面/新颖/实质/佐证/持续）
     5. 代码合成最终分：维度加权 + 来源可信度 + 信源层级乘数(T1/T1.5/T2) + 兴趣权重
        阈值制精选：过线才进精选（含上下限与五类保底），不硬凑固定条数
+       硬约束：纯舆论源事件封顶在阈值之下，只能进"更多资讯"
     6. LLM 阶段B：对精选生成 一句话摘要 / 为什么重要 / 后续关注 / 状态标记
     7. 写入 data/daily/YYYY-MM-DD.js 和 data/manifest.js（前端直接读）
+    8. 更新 data/source_health.json：滚动记录 14 天各源抓取状态，
+       连续 3 天抓取失败的源发 GitHub Actions ::warning:: 注解
 """
 import argparse
 import concurrent.futures
@@ -80,13 +83,15 @@ def parse_time(entry):
 
 
 def fetch_rss(src, window_start, max_items):
+    """返回 (items, fetch_error)。fetch_error=True 表示抓取本身失败，
+    与"源正常但窗口内无新文章"（items 为空、error=False）区分开。"""
     try:
         resp = requests.get(src["url"], headers={"User-Agent": UA}, timeout=20)
         resp.raise_for_status()
         feed = feedparser.parse(resp.content)
     except Exception as e:
         log(f"  ✗ {src['name']}: 抓取失败 ({e})")
-        return []
+        return [], True
     items = []
     for e in feed.entries:
         pub = parse_time(e)
@@ -109,11 +114,11 @@ def fetch_rss(src, window_start, max_items):
             "cat_hint": src.get("category", "mixed"),
         })
     items.sort(key=lambda x: x["time"], reverse=True)
-    return items[:max_items]
+    return items[:max_items], False
 
 
 def fetch_aihot(src, window_start, max_items):
-    """AI HOT 公开 API 适配器（精选池）"""
+    """AI HOT 公开 API 适配器（精选池）。返回 (items, fetch_error)"""
     since = window_start.strftime("%Y-%m-%dT%H:%M:%SZ")
     url = f"{src['url']}?mode=selected&since={since}&take={min(max_items * 2, 100)}"
     try:
@@ -122,7 +127,7 @@ def fetch_aihot(src, window_start, max_items):
         data = resp.json()
     except Exception as e:
         log(f"  ✗ {src['name']}: 抓取失败 ({e})")
-        return []
+        return [], True
     items = []
     for it in data.get("items", []):
         inner = it.get("source", "")
@@ -145,13 +150,16 @@ def fetch_aihot(src, window_start, max_items):
             "credibility": src["credibility"],
             "cat_hint": "ai",
         })
-    return [x for x in items if x["title"] and x["url"]][:max_items]
+    return [x for x in items if x["title"] and x["url"]][:max_items], False
 
 
 def fetch_all(sources, cfg):
+    """返回 (items, fetch_stats)。fetch_stats 按源记录条数与抓取是否失败，
+    供健康度记录使用。"""
     window_start = datetime.now(timezone.utc) - timedelta(hours=cfg["window_hours"])
     max_items = cfg["max_per_source"]
     results = []
+    fetch_stats = {}
     log(f"开始抓取 {len(sources)} 个源（窗口 {cfg['window_hours']} 小时）...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         futs = {}
@@ -161,10 +169,12 @@ def fetch_all(sources, cfg):
         for fut in concurrent.futures.as_completed(futs):
             src = futs[fut]
             try:
-                items = fut.result()
+                items, err = fut.result()
             except Exception as e:
                 log(f"  ✗ {src['name']}: {e}")
-                items = []
+                items, err = [], True
+            fetch_stats[src["id"]] = {"name": src["name"],
+                                      "count": len(items), "error": err}
             if items:
                 log(f"  ✓ {src['name']}: {len(items)} 条")
             results.extend(items)
@@ -177,7 +187,7 @@ def fetch_all(sources, cfg):
         seen.add(key)
         deduped.append(it)
     log(f"共抓取 {len(results)} 条，URL 去重后 {len(deduped)} 条")
-    return deduped
+    return deduped, fetch_stats
 
 
 # ----------------------------------------------------------------
@@ -342,6 +352,7 @@ def score_and_select(events, items, cfg):
     dim_w = scoring.get("dim_weights", {})
     dim_w = {d: float(dim_w.get(d, 0.2)) for d in DIMS}
     tier_mult = scoring.get("tier_multipliers", {"T1": 1.0, "T1.5": 0.93, "T2": 0.83})
+    threshold = int(cfg.get("pick_threshold", 68))
 
     for ev in events:
         # 事件层级 = 其所有来源中最高的层级（官方/一线优先）
@@ -357,21 +368,28 @@ def score_and_select(events, items, cfg):
         raw = (0.62 * importance + 0.30 * cred + multi_bonus) * 10 \
             * float(tier_mult.get(best_tier, 0.83)) * w
         ev["score"] = int(max(5, min(99, round(raw))))
+        # 舆论源硬约束：事件的所有来源都是舆论源（无事实/分析源交叉）时，
+        # 分数封顶在阈值之下——只能进"更多资讯"，不进精选、不参与保底补位
+        ev["opinion_only"] = all(items[i]["source_type"] == "opinion"
+                                 for i in ev["ids"])
+        if ev["opinion_only"]:
+            ev["score"] = min(ev["score"], threshold - 1)
 
     events.sort(key=lambda e: e["score"], reverse=True)
-    threshold = int(cfg.get("pick_threshold", 68))
     pick_min = int(cfg.get("pick_min", 8))
     pick_max = int(cfg.get("pick_max", 24))
     min_per = cfg.get("min_per_category", 2)
 
     eligible = [e for e in events if e["score"] >= threshold]
     rest = [e for e in events if e["score"] < threshold]
+    # 纯舆论源事件不参与任何补位，只能留在"更多资讯"
+    backfill = [e for e in rest if not e.get("opinion_only")]
 
     picked = []
     # 五类保底：优先从过线的里拿，每类不足再从线下最高分补
     for cat in CATEGORIES:
         cat_pool = ([e for e in eligible if e["category"] == cat] +
-                    [e for e in rest if e["category"] == cat])
+                    [e for e in backfill if e["category"] == cat])
         for e in cat_pool[:min_per]:
             if e not in picked:
                 picked.append(e)
@@ -383,7 +401,7 @@ def score_and_select(events, items, cfg):
             picked.append(e)
     # 不足保底条数时，从线下补齐
     if len(picked) < pick_min:
-        for e in rest:
+        for e in backfill:
             if len(picked) >= pick_min:
                 break
             if e not in picked:
@@ -533,6 +551,45 @@ def write_output(date_str, brief, picked, secondary, items, cfg):
 
 
 # ----------------------------------------------------------------
+# 6.5 信源健康度：滚动记录抓取状态，连续失败报警
+# ----------------------------------------------------------------
+
+HEALTH_KEEP_DAYS = 14
+HEALTH_ALERT_DAYS = 3
+
+
+def update_source_health(fetch_stats, date_str):
+    """把当日各源抓取状态写入 source_health.json（滚动保留最近 14 天），
+    并对"最近 3 个记录日连续抓取失败"的源发 GitHub Actions ::warning:: 注解
+    （本地运行时就是普通日志行）。"""
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    health_file = data_dir / "source_health.json"
+    health = {"days": {}}
+    if health_file.exists():
+        try:
+            health = json.loads(health_file.read_text(encoding="utf-8"))
+        except Exception as e:
+            log(f"  source_health.json 读取失败，重建: {e}")
+            health = {"days": {}}
+    days = health.setdefault("days", {})
+    days[date_str] = {sid: {"count": st["count"], "error": st["error"]}
+                      for sid, st in fetch_stats.items()}
+    for old in sorted(days)[:-HEALTH_KEEP_DAYS]:
+        del days[old]
+    health_file.write_text(json.dumps(health, ensure_ascii=False, indent=1),
+                           encoding="utf-8")
+
+    recent = sorted(days, reverse=True)[:HEALTH_ALERT_DAYS]
+    if len(recent) < HEALTH_ALERT_DAYS:
+        return
+    for sid, st in fetch_stats.items():
+        if all(days[d].get(sid, {}).get("error") for d in recent):
+            print(f"::warning::信源 {st['name']} ({sid}) "
+                  f"已连续 {HEALTH_ALERT_DAYS} 天抓取失败，请检查 RSS 地址是否失效", flush=True)
+
+
+# ----------------------------------------------------------------
 # 7. 同步发布到博客（可选，永不自动 push）
 # ----------------------------------------------------------------
 
@@ -602,18 +659,16 @@ def main():
     sources = [s for s in src_cfg["sources"] if s.get("enabled", True)]
     date_str = args.date or datetime.now().strftime("%Y-%m-%d")
 
-    items = fetch_all(sources, cfg)
+    items, fetch_stats = fetch_all(sources, cfg)
     if not items:
         log("没有抓到任何内容，退出。")
         sys.exit(1)
 
     if args.dry_run:
-        by_src = {}
-        for it in items:
-            by_src[it["source"]] = by_src.get(it["source"], 0) + 1
-        log("dry-run 完成，各源条数：")
-        for k, v in sorted(by_src.items(), key=lambda x: -x[1]):
-            print(f"    {k}: {v}")
+        log("dry-run 完成，各源状态：")
+        for sid, st in sorted(fetch_stats.items(), key=lambda x: -x[1]["count"]):
+            flag = "✗ 抓取失败" if st["error"] else ("- 窗口内无新文章" if st["count"] == 0 else "✓")
+            print(f"    {st['name']}: {st['count']} 条 {flag}")
         return
 
     if "在这里填" in cfg["llm"]["api_key"]:
@@ -645,6 +700,7 @@ def main():
     brief = write_brief(llm, picked)
 
     write_output(date_str, brief, picked, secondary, items, cfg)
+    update_source_health(fetch_stats, date_str)
 
     # ---- 发布前校验：精选非空、输出文件存在且包含当日数据 ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"

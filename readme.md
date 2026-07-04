@@ -137,6 +137,8 @@ GITHUB_BRANCH=main
 
 - 页面与数据均为纯静态文件，`_config.yml` 的 `skip_render: news/**` 保证 Hexo 原样拷贝、不经主题渲染。
 - 数据由本仓库 `news-pipeline/daily_news.py` 生成（抓取 → LLM 去重评分摘要 → 写入 `source/news/data/`）。改新闻源改 `news-pipeline/sources.yaml`，调评分口味改 `news-pipeline/config.yaml`。
+- **信源结构**（2026-07-04 起）：官方一手源（OpenAI/Hugging Face/DeepMind/GitHub/Cloudflare/Vercel，T1）+ 专业媒体 + 舆论源。硬约束：纯舆论源（`source_type: opinion`，如 Hacker News）支撑的事件分数封顶在精选阈值之下，只能进"更多资讯"，有事实/分析源交叉才解除限制。
+- **信源健康度**：管线每次运行把各源抓取状态写入 `source/news/data/source_health.json`（滚动 14 天，区分"抓取失败"与"窗口内无新文章"）；某源连续 3 天抓取失败时在 GitHub Actions 运行页输出 warning 注解。排查时先跑 `python daily_news.py --dry-run` 看各源状态。
 - **每日自动更新**：GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持昨日日报。
 - 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`（本地产物写到 `news-pipeline/data/`，已 gitignore；如需直接写入站点数据，设 `DATA_DIR` 指向 `source/news/data`）。
