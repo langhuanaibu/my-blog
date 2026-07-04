@@ -79,4 +79,3 @@ min_per_category: 2
 publish:
   blog_dir: ""
   git_commit: false
-  sync_page: false

@@ -16,14 +16,33 @@ const {
   normalizeDate
 } = require('./_github');
 
-async function listPosts() {
-  const files = await listDirectory(POSTS_DIR);
-  const posts = [];
+async function mapConcurrent(items, limit, fn) {
+  const results = new Array(items.length);
+  let next = 0;
 
-  for (const file of files.filter((item) => item.type === 'file' && item.name.endsWith('.md'))) {
-    const { content, sha } = await readTextFile(file.path);
-    posts.push(parsePost(file.path, content, sha));
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]);
+    }
   }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker)
+  );
+  return results;
+}
+
+async function listPosts() {
+  const files = (await listDirectory(POSTS_DIR)).filter(
+    (item) => item.type === 'file' && item.name.endsWith('.md')
+  );
+
+  // 并发拉取文章内容，串行逐篇会随文章数增长撞上函数超时
+  const posts = await mapConcurrent(files, 8, async (file) => {
+    const { content, sha } = await readTextFile(file.path);
+    return parsePost(file.path, content, sha);
+  });
 
   posts.sort((a, b) => String(b.date).localeCompare(String(a.date)));
   return posts;
@@ -32,7 +51,7 @@ async function listPosts() {
 async function createPostPath(title, date) {
   const files = await listDirectory(POSTS_DIR);
   const used = new Set(files.map((file) => file.name));
-  const base = `${normalizeDate(date)}-${slugify(title)}`;
+  const base = `${normalizeDate(date).slice(0, 10)}-${slugify(title)}`;
   let name = `${base}.md`;
   let index = 2;
 

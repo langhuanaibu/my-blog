@@ -111,7 +111,6 @@ def fetch_rss(src, window_start, max_items):
             "source_type": src["source_type"],
             "tier": src.get("tier", "T2"),
             "credibility": src["credibility"],
-            "cat_hint": src.get("category", "mixed"),
         })
     items.sort(key=lambda x: x["time"], reverse=True)
     return items[:max_items], False
@@ -148,7 +147,6 @@ def fetch_aihot(src, window_start, max_items):
             "source_type": stype,
             "tier": tier,
             "credibility": src["credibility"],
-            "cat_hint": "ai",
         })
     return [x for x in items if x["title"] and x["url"]][:max_items], False
 
@@ -634,8 +632,6 @@ def publish_to_blog(cfg, date_str):
     for f in (src_data / "daily").glob("*.js"):
         shutil.copy2(f, dst_data / "daily" / f.name)
         n += 1
-    if pub.get("sync_page"):
-        shutil.copy2(ROOT / "index.html", news_dir / "index.html")
     log(f"已同步 {n} 个数据文件到博客 source/news/data/")
 
     if pub.get("git_commit"):
@@ -732,7 +728,7 @@ def main():
         sys.exit(2)
 
     publish_to_blog(cfg, date_str)
-    log("完成 ✓  打开 index.html 查看今日日报")
+    log("完成 ✓  访问 /news/ 查看今日日报")
 
 
 if __name__ == "__main__":

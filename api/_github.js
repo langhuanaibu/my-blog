@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { pinyin } = require('pinyin-pro');
 
 const POSTS_DIR = 'source/_posts';
@@ -5,7 +6,7 @@ const COVER_MAP_PATH = 'source/_data/category-covers.json';
 const FALLBACK_COVER = '/images/covers/defaults/fallback.webp';
 
 function setCors(res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // 鉴权走 Bearer 头不依赖 Cookie，不设 Allow-Credentials（与 * 组合本身非法）
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -21,13 +22,19 @@ function createHttpError(status, message) {
   return error;
 }
 
+function timingSafeEqual(a, b) {
+  const bufA = Buffer.from(String(a));
+  const bufB = Buffer.from(String(b));
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
 function requireAdmin(req) {
   const expected = process.env.ADMIN_TOKEN;
   if (!expected) {
     throw createHttpError(500, 'ADMIN_TOKEN is not configured');
   }
 
-  if (req.headers.authorization !== `Bearer ${expected}`) {
+  if (!timingSafeEqual(req.headers.authorization || '', `Bearer ${expected}`)) {
     throw createHttpError(401, 'Unauthorized');
   }
 }
@@ -73,11 +80,23 @@ async function githubRequest(filePath, options = {}) {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // GitHub 偶发 502 返回 HTML，保留原状态码而不是抛裸 SyntaxError
+      data = null;
+    }
+  }
 
   if (!response.ok) {
     const message = data?.message || `GitHub request failed: ${response.status}`;
     throw createHttpError(response.status, message);
+  }
+
+  if (text && data === null) {
+    throw createHttpError(502, 'GitHub returned a non-JSON response');
   }
 
   return data;
@@ -205,7 +224,11 @@ function parsePost(filePath, source, sha, includeContent = false) {
 
 function normalizeDate(value) {
   const text = String(value || '').trim();
-  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : today();
+  if (!text) return today();
+  // 接受纯日期或带时间的日期（原样保留，日期变了 permalink 就变了）
+  if (/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2})?)?$/.test(text)) return text;
+  // 无法解析的日期直接报错，静默回退到今天会改文章 URL、断开评论关联
+  throw createHttpError(400, `Invalid date: ${text}`);
 }
 
 function today() {
