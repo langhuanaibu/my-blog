@@ -1,0 +1,106 @@
+{
+ "days": {
+  "2026-07-04": {
+   "mit-tr": {
+    "count": 3,
+    "error": false
+   },
+   "github-changelog": {
+    "count": 0,
+    "error": false
+   },
+   "github-blog": {
+    "count": 0,
+    "error": false
+   },
+   "hn": {
+    "count": 20,
+    "error": false
+   },
+   "huggingface": {
+    "count": 0,
+    "error": false
+   },
+   "techcrunch": {
+    "count": 5,
+    "error": false
+   },
+   "deepmind": {
+    "count": 1,
+    "error": false
+   },
+   "ftcn": {
+    "count": 0,
+    "error": true
+   },
+   "verge": {
+    "count": 10,
+    "error": false
+   },
+   "aihot": {
+    "count": 0,
+    "error": true
+   },
+   "ars": {
+    "count": 5,
+    "error": false
+   },
+   "cloudflare": {
+    "count": 0,
+    "error": false
+   },
+   "cnbc": {
+    "count": 18,
+    "error": false
+   },
+   "marketwatch": {
+    "count": 10,
+    "error": false
+   },
+   "openai": {
+    "count": 0,
+    "error": false
+   },
+   "aljazeera": {
+    "count": 25,
+    "error": false
+   },
+   "guardian": {
+    "count": 25,
+    "error": false
+   },
+   "nyt-cn": {
+    "count": 1,
+    "error": false
+   },
+   "npr": {
+    "count": 10,
+    "error": false
+   },
+   "bbc-world": {
+    "count": 21,
+    "error": false
+   },
+   "bbc-cn": {
+    "count": 10,
+    "error": false
+   },
+   "atlantic": {
+    "count": 16,
+    "error": false
+   },
+   "36kr": {
+    "count": 25,
+    "error": false
+   },
+   "vercel": {
+    "count": 0,
+    "error": false
+   },
+   "wscn": {
+    "count": 25,
+    "error": false
+   }
+  }
+ }
+}
