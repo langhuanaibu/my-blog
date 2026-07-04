@@ -142,5 +142,6 @@ GITHUB_BRANCH=main
 - **每日自动更新**：GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持昨日日报。
 - 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`（本地产物写到 `news-pipeline/data/`，已 gitignore；如需直接写入站点数据，设 `DATA_DIR` 指向 `source/news/data`）。
+- 回归测试：`python news-pipeline/tests/test_pipeline.py`（纯逻辑，不调 LLM 不联网；改评分/聚类/健康度逻辑后必跑）。
 - 移除方式：删除 `source/news/`、`news-pipeline/`、`.github/workflows/daily-news.yml`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。
 - 历史沿革：管线原为独立项目 `D:\每日新闻网站`（2026-07-04 迁入本仓库并退役）。
