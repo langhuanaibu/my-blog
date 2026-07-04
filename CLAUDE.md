@@ -10,12 +10,13 @@
 - 旧 Astro 前台、Vercel API 和静态后台（`public/admin.html`）不再作为运行入口。历史记录见 `docs/archive/`。
 
 ## 2. 目录与命名规范
-根目录严禁堆放临时文件，仅限全局配置和规范文档（如 `readme.md`, `memory.md`, `skill.md`）。
+根目录严禁堆放临时文件，仅限全局配置和规范文档（如 `readme.md`, `AGENTS.md`, `CLAUDE.md`）。
 每次改动完成前，必须清理为调试、测试或预览临时创建的文件、目录和临时代码，不得把测试或临时内容留在工作区。
 - **`source/_posts/`**：文章 Markdown 文件，文件名格式 `YYYY-MM-DD-slug.md`。
 - **`source/images/`**：图片资源，含 `covers/` 子目录。
 - **`source/js/` & `source/css/`**：自定义前端脚本和样式。
 - **`source/admin/`**：在线后台页面 `index.html`。
+- **`source/news/`**：每日日报静态页面和生成数据，`source/news/data/` 为线上数据目录。
 - **`source/about/`, `source/friends/`, `source/guestbook/`**：独立页面的 Markdown 源文件。
 - **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`）。
 - **`tools/`**：迁移和维护工具脚本。

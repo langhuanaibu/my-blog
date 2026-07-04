@@ -8,6 +8,7 @@
 - 文章 Markdown 位于 `source/_posts/`。
 - Vercel API 路由位于 `api/`，用于在线后台的发布和设置功能。
 - 在线后台页面位于 `source/admin/index.html`。
+- 每日日报静态页位于 `source/news/`，数据由 `news-pipeline/` 生成。
 - 历史重构记录放在 `docs/archive/`。
 
 ## 修改边界
@@ -16,7 +17,7 @@
 - 仅修改用户明确要求的范围。
 - 除非用户明确提出，否则不要重写 API、不要大幅改动后台逻辑、不要编辑现有文章内容。
 - 如果用户要求调整 UI 界面、视觉风格或样式表现，不要修改博客中的任何文本内容，包括标题、正文、按钮文案、说明文字和其他展示文本，除非用户明确要求同时修改文案。
-- 不要把临时文件放在仓库根目录。根目录应只保留全局配置和项目文档，例如 `readme.md`、`memory.md` 和 `skill.md`。
+- 不要把临时文件放在仓库根目录。根目录应只保留全局配置和项目文档，例如 `readme.md`、`AGENTS.md` 和 `CLAUDE.md`。
 - 每次改动完成前，必须清理为调试、测试或预览临时创建的文件、目录和临时代码，不要把测试或临时内容留在工作区。
 
 ## 目录与命名规则
@@ -25,9 +26,11 @@
 - `source/images/` 存放图片资源，含 `covers/` 子目录。
 - `source/js/` 和 `source/css/` 存放自定义前端脚本和样式。
 - `source/admin/` 存放在线后台页面。
+- `source/news/` 存放每日日报静态页面和生成数据，`source/news/data/` 是线上数据目录。
 - `source/about/`、`source/friends/`、`source/guestbook/` 存放独立页面的 Markdown 源文件。
 - `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `adminArticles.js`。
 - `tools/` 存放迁移和维护工具脚本。
+- `news-pipeline/` 存放每日日报生成管线。改信源优先改 `sources.yaml`，改评分和阈值优先改 `config.yaml`。
 
 ## 产品与体验规则
 
@@ -66,3 +69,4 @@
 - 使用简短的英文提交信息。
 - 除非用户明确要求，否则不要执行 `git push`。
 - 除非用户明确要求，否则不要回退用户自己的改动。
+- 唯一例外：`.github/workflows/daily-news.yml` 可以每日自动 commit + push `source/news/data/`，不得扩大到其他路径。

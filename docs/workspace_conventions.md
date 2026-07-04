@@ -8,7 +8,7 @@
 
 | 目录层级 | 存放内容说明 | 存放规则与边界 |
 | :--- | :--- | :--- |
-| **根目录 `/`** | 项目级配置与规范文档 | 仅限全局配置（如 `package.json`, `_config.yml`, `_config.fluid.yml`）和全局规范文档（如 `CLAUDE.md`, `AGENTS.md`, `readme.md`）。绝不能放具体业务代码或测试文件。 |
+| **根目录 `/`** | 项目级配置与规范文档 | 仅限全局配置（如 `package.json`, `_config.yml`, `_config.fluid.yml`）和全局规范文档（如 `CLAUDE.md`, `AGENTS.md`, `readme.md`）。绝不能放具体业务代码、测试文件、临时记忆或一次性 skill 清单。 |
 | **`/source`** | Hexo 内容源 | 所有博客内容存放于此，Hexo 构建时以这里为入口。 |
 | ├── `/source/_posts` | 文章 Markdown | 文件名格式 `YYYY-MM-DD-slug.md`，包含 front matter（title, date, categories, index_img 等）。 |
 | ├── `/source/images` | 图片资源 | 存放博客文章插图、头像等（如 `my-avatar.jpg`, `img_*.png`），含 `covers/` 子目录。 |
@@ -17,8 +17,11 @@
 | ├── `/source/about` | 关于页面 | 存放 `index.md`。 |
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
+| ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 由管线产出，不手工编辑。 |
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs` 等一次性或维护脚本。 |
+| **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
+| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如 `daily-news.yml`。 |
 
 ---
 
@@ -47,6 +50,7 @@
 - **规则**：遵循业界常规（通常为全小写）。
 - **示例**：`package.json`、`readme.md`。
 - **特殊约定**：最高约束文档保持全大写 `CLAUDE.md` / `AGENTS.md` 以示强调。
+- **根目录边界**：不要再新增 `memory.md`、`skill.md` 这类一次性索引；持久规则进入 `AGENTS.md` / `CLAUDE.md`，面向维护者的说明进入 `readme.md` 或 `docs/`。
 
 ---
 
@@ -61,5 +65,11 @@
 **场景 3：我要给后台增加一个"获取网站摘要"的后端功能**
 👉 **动作**：在 `/api/` 下创建 `getSiteSummary.js`，使用驼峰命名。
 
-**场景 4：我要记录一个 Vercel 部署相关的深坑经验**
-👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`，并在需要时让我更新 `memory.md`。
+**场景 4：我要调整每日日报新闻源**
+👉 **动作**：修改 `news-pipeline/sources.yaml`；不要直接编辑 `source/news/data/` 下的生成数据。
+
+**场景 5：我要调整每日日报评分、阈值或分类偏好**
+👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
+
+**场景 6：我要记录一个 Vercel 部署相关的深坑经验**
+👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。
