@@ -13,3 +13,9 @@ source/preview-effects.html
 news-pipeline/__pycache__/
 news-pipeline/data/
 news-pipeline/run_log.txt
+
+# 密钥与本地环境变量（红线：密钥绝不进仓库）
+.env*
+
+# 本地工具配置（Claude Code 机器级设置，不进仓库）
+.claude/settings.local.json
