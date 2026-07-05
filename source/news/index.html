@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>每日驾驶舱 · Daily Briefing</title>
+<link rel="alternate" type="application/rss+xml" title="每日驾驶舱" href="data/feed.xml">
 <style>
 :root{
   --bg:#0d1117; --bg2:#161b22; --card:#1c2129; --card-h:#222834;
@@ -43,6 +44,8 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .tab:hover{border-color:var(--accent)}
 .tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
 .tab .n{opacity:.7;font-size:11.5px;margin-left:3px}
+.tabs.sub{margin:10px 0 0}
+.tab.sub{padding:3px 11px;font-size:12px;border-radius:14px}
 
 /* ---------- section ---------- */
 .sec-title{margin:26px 0 14px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
@@ -69,6 +72,12 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .tag.st-有争议{background:#3a2510;color:var(--dispute)}
 .tag.st-仅传言{background:#3d1417;color:var(--rumor)}
 .tag.stype{background:transparent;border:1px solid var(--border);color:var(--text3);font-weight:400}
+.tag.topic{background:transparent;border:1px dashed var(--border);color:var(--text2);font-weight:400}
+.tag.day{background:#3a2a10;color:#ffd166;cursor:pointer;user-select:none}
+.tag.day:hover{background:#4a3614}
+.ev-history{display:none;font-size:12.5px;color:var(--text2);border-left:2px solid #6b5618;padding-left:10px}
+.ev-history.open{display:block}
+.ev-history .eh-d{color:var(--text3);margin-right:6px}
 .card h3{font-size:15.5px;line-height:1.45;font-weight:700}
 .card .sum{color:var(--text);font-size:13.5px}
 .kv{font-size:13px;color:var(--text2);padding-left:10px;border-left:2px solid var(--border)}
@@ -92,6 +101,69 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .toggle-more{margin:14px auto 0;display:block;background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 26px;border-radius:20px;cursor:pointer;font-size:13px}
 .toggle-more:hover{border-color:var(--accent);color:var(--text)}
 
+/* ---------- 反馈操作（仅持 token 可见） ---------- */
+.acts{display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px dashed var(--border)}
+.act{font-size:12px;color:var(--text3);cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:2px 10px;user-select:none}
+.act:hover{color:var(--text);border-color:var(--accent)}
+.act.done{color:var(--ok);border-color:var(--ok)}
+.fb-panel:empty{display:none}
+.fb-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.fb-tip{font-size:12px;color:var(--text2);margin-bottom:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--border);cursor:pointer;color:var(--text2);user-select:none}
+.chip.on,.chip:hover{border-color:var(--accent);color:var(--accent2)}
+.fb-note{width:100%;margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:12.5px;min-height:44px;resize:vertical;font-family:inherit}
+.fb-btns{margin-top:8px;display:flex;gap:8px}
+.fb-go{background:var(--accent);border:none;color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
+.fb-cancel{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
+.hidden-bar{margin-top:10px;font-size:12.5px;color:var(--text3)}
+.hidden-bar a{cursor:pointer}
+.hidden-row{display:flex;gap:10px;padding:6px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;margin-top:6px;font-size:12.5px;color:var(--text3);align-items:baseline}
+.hidden-row .rt{flex:1}
+.hidden-row a{cursor:pointer}
+/* ---------- 追踪中 ---------- */
+.trk{background:var(--card);border:1px solid var(--border);border-left:3px solid #6b5618;border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.trk-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;cursor:pointer}
+.trk-top b{font-size:13.5px}
+.trk-upd{font-size:12px;color:var(--text3);margin-left:auto}
+.trk-hist{display:none;margin-top:8px;font-size:12.5px;color:var(--text2);border-left:2px solid #6b5618;padding-left:10px}
+.trk.open .trk-hist{display:block}
+/* ---------- 搜索 ---------- */
+.searchbox{position:relative}
+.searchbox input{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 11px;border-radius:6px;font-size:13px;width:190px}
+.searchbox input:focus{outline:none;border-color:var(--accent)}
+.search-res{display:none;position:absolute;top:115%;left:0;width:min(440px,90vw);max-height:60vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.search-res.open{display:block}
+.sr{padding:8px 12px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--text)}
+.sr:last-child{border-bottom:none}
+.sr:hover{background:var(--card-h)}
+.sr-d{color:var(--text3);margin-right:8px;font-size:11.5px}
+.sr-c{color:var(--accent2);margin-right:8px;font-size:11.5px}
+.sr.none{color:var(--text3);cursor:default}
+.card.hl,.row.hl,.deep.hl{outline:2px solid var(--accent)}
+/* ---------- 深度阅读 ---------- */
+.deep{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--ai);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
+.deep-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.deep-t{font-weight:700;font-size:14.5px;color:var(--text)}
+.tag.mins{background:#241d3d;color:var(--ai)}
+/* ---------- 周视图 ---------- */
+.wk-day{margin-bottom:16px}
+.wk-date{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--accent2);cursor:pointer}
+.wk-date:hover{text-decoration:underline}
+/* ---------- 稍后读抽屉 ---------- */
+.drawer{position:fixed;top:0;right:-400px;width:min(380px,92vw);height:100%;background:var(--bg2);border-left:1px solid var(--border);z-index:50;transition:right .2s;padding:16px 18px;overflow-y:auto}
+.drawer.open{right:0}
+.rl-head{font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;font-size:15px}
+.rl-close{cursor:pointer;color:var(--text3)}
+.rl-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.rl-item.done .rl-t a{text-decoration:line-through;color:var(--text3)}
+.rl-meta{font-size:11.5px;color:var(--text3);margin-top:2px}
+.rl-ops{margin-top:4px;display:flex;gap:12px;font-size:12px}
+.rl-ops span{cursor:pointer;color:var(--text3)}
+.rl-ops span:hover{color:var(--accent2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);color:var(--text);padding:8px 18px;border-radius:8px;z-index:60;font-size:13px}
+.toast.err{border-color:var(--rumor)}
+
 .empty{color:var(--text3);text-align:center;padding:60px 0;font-size:14px}
 footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-height:2}
 .legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
@@ -101,7 +173,12 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 <header>
   <div class="hbar">
     <div class="logo">每日<span>驾驶舱</span> <span style="font-size:12px;color:var(--text3);font-weight:400">Daily Briefing</span></div>
+    <div class="searchbox">
+      <input id="searchInput" placeholder="🔍 搜索历史条目" autocomplete="off">
+      <div id="searchRes" class="search-res"></div>
+    </div>
     <div class="datenav">
+      <button id="viewBtn">🗓 周视图</button>
       <button id="prevBtn">◀ 前一天</button>
       <select id="dateSel"></select>
       <button id="nextBtn">后一天 ▶</button>
@@ -119,14 +196,49 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
       <span style="color:var(--rumor)">● 仅传言</span>
       <span style="color:var(--text3)">｜ 分数 = 重要性 × 来源可信度 × 兴趣权重</span>
     </div>
-    <div>个人信息筛选驾驶舱 · 数据由 daily_news.py 每日生成 · 所有条目保留原文链接</div>
+    <div>个人信息筛选驾驶舱 · 数据由 daily_news.py 每日生成 · 所有条目保留原文链接 · <a href="data/feed.xml">RSS 订阅</a></div>
   </footer>
 </div>
 
 <script src="data/manifest.js"></script>
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
-const state = {date:null, cat:"all", moreOpen:false};
+const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
+               itemsById:{}, view:"day", pendingHighlight:null};
+
+/* ---------- 用户状态：与在线后台共用 token，仅本人可见操作按钮 ---------- */
+const TOKEN = localStorage.getItem("aoiblog_admin_token") || "";
+const NI_REASONS = ["不关心这个领域","这个事看腻了","太水没实质","只是今天不想看"];
+const LS = {
+  get(k){try{return JSON.parse(localStorage.getItem(k)||"{}");}catch(e){return {};}},
+  set(k,v){localStorage.setItem(k,JSON.stringify(v));}
+};
+function itemKey(id){return state.date+":"+id;}
+
+async function postState(type,payload){
+  const r=await fetch("/api/newsState",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:"Bearer "+TOKEN},
+    body:JSON.stringify({type,payload})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
+  return j.data;
+}
+async function getState(type){
+  const r=await fetch("/api/newsState?type="+type,{headers:{Authorization:"Bearer "+TOKEN}});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
+  return j.data;
+}
+let toastTimer=null;
+function toast(msg,err){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const t=document.createElement("div");
+  t.className="toast"+(err?" err":"");
+  t.textContent=msg;
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.remove(),2600);
+}
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
 function safeUrl(u){u=String(u||"");return /^https?:\/\//i.test(u)?u:"#";}
@@ -142,7 +254,7 @@ function fmtTime(iso){
 }
 
 function loadDate(date){
-  state.date=date; state.moreOpen=false;
+  state.date=date; state.moreOpen=false; state.tag=null;
   if(window.NEWS_DATA && window.NEWS_DATA[date]) return render();
   const s=document.createElement("script");
   s.src="data/daily/"+date+".js";
@@ -158,25 +270,160 @@ function srcLinks(it){
 }
 
 function card(it){
-  return `<div class="card">
+  const dayN=+it.day_count||0;
+  const hist=(it.history||[]).map(h=>
+    `<div><span class="eh-d">${esc(h.date)}</span>${esc(h.summary)}</div>`).join("");
+  return `<div class="card" data-id="${esc(it.id)}">
     <div class="card-top">
       <span class="score ${scoreCls(it.score)}">${it.score}</span>
       <span class="tag cat-${it.category}">${CAT[it.category]||it.category}</span>
       ${it.status?`<span class="tag st-${esc(it.status)}">${esc(it.status)}</span>`:""}
+      ${dayN>=2?`<span class="tag day" onclick="toggleHist(this)" title="跨天追踪事件，点击查看此前进展">📌 第${dayN}天</span>`:""}
+      ${(it.tags||[]).map(t=>`<span class="tag topic">${esc(t)}</span>`).join("")}
       <span class="tag stype">${esc(it.source_type||"")}</span>
       <span class="time">${fmtTime(it.time)}</span>
     </div>
     <h3>${esc(it.title)}</h3>
     <div class="sum">${esc(it.summary)}</div>
+    ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
     ${it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""}
     <div class="srcs">${srcLinks(it)}</div>
+    ${actionRow(it)}
   </div>`;
 }
 
+function toggleHist(el){
+  const card=el.closest(".card");
+  const h=card&&card.querySelector(".ev-history");
+  if(h) h.classList.toggle("open");
+}
+
+/* ---------- 反馈操作行（仅持 token 的精选卡片） ---------- */
+function actionRow(it){
+  if(!TOKEN||it.tier!=="pick") return "";
+  const rl=LS.get("news_rl")[itemKey(it.id)];
+  const tracked=LS.get("news_tracked")[it.event_id]===true;
+  return `<div class="acts">
+    <span class="act ${rl?"done":""}" onclick="rlAdd(this,'${esc(it.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span>
+    <span class="act" onclick="fbLike(this,'${esc(it.id)}')">👍 更多类似</span>
+    ${it.event_id?`<span class="act ${tracked?"done":""}" onclick="fbTrack('${esc(it.id)}')">${tracked?"📌 追踪中":"📌 追踪"}</span>`:""}
+    <span class="act" onclick="fbPanel(this,'${esc(it.id)}','src')">🚫 来源</span>
+    <span class="act" onclick="fbPanel(this,'${esc(it.id)}','ni')">✕ 不感兴趣</span>
+  </div>
+  <div class="fb-panel"></div>`;
+}
+
+function fbPanel(el,id,kind){
+  const panel=el.closest(".card").querySelector(".fb-panel");
+  if(panel.dataset.kind===kind&&panel.innerHTML){panel.innerHTML="";panel.dataset.kind="";return;}
+  panel.dataset.kind=kind;
+  const it=state.itemsById[id]||{};
+  if(kind==="src"){
+    panel.innerHTML='<div class="fb-tip">哪个来源质量低？点击即提交</div><div class="chips">'+
+      (it.sources||[]).map((s,i)=>`<span class="chip" onclick="fbSrc(this,'${esc(id)}',${i})">${esc(s.name)}</span>`).join("")+"</div>";
+  }else{
+    panel.innerHTML='<div class="fb-tip">为什么不感兴趣？（可多选，可不选）</div><div class="chips">'+
+      NI_REASONS.map(r=>`<span class="chip" onclick="this.classList.toggle('on')">${r}</span>`).join("")+
+      `</div><textarea class="fb-note" placeholder="补充说明（可选，会进兴趣画像）"></textarea>
+      <div class="fb-btns"><button class="fb-go" onclick="fbNiSubmit(this,'${esc(id)}')">隐藏并提交</button>
+      <button class="fb-cancel" onclick="fbPanel(this,'${esc(id)}','ni')">取消</button></div>`;
+  }
+}
+
+function fbBase(it){
+  const p={date:state.date,item_id:it.id,title:it.title||"",category:it.category||""};
+  if(it.event_id) p.event_id=it.event_id;
+  return p;
+}
+
+function fbNiSubmit(el,id){
+  const it=state.itemsById[id]||{};
+  const panel=el.closest(".fb-panel");
+  const reasons=[...panel.querySelectorAll(".chip.on")].map(c=>c.textContent);
+  const note=(panel.querySelector(".fb-note")||{}).value||"";
+  const hid=LS.get("news_hidden");
+  hid[itemKey(id)]=it.title||id;
+  LS.set("news_hidden",hid);
+  render();
+  toast("已隐藏，明天的排序会参考这条反馈");
+  postState("feedback",{...fbBase(it),action:"not_interested",reasons,note})
+    .catch(e=>toast("同步失败（本地已隐藏）："+e.message,true));
+}
+
+function fbLike(el,id){
+  const it=state.itemsById[id]||{};
+  el.classList.add("done");el.textContent="👍 已记录";
+  postState("feedback",{...fbBase(it),action:"more_like_this"})
+    .then(()=>toast("已记录：更多类似内容"))
+    .catch(e=>toast("同步失败："+e.message,true));
+}
+
+function fbSrc(el,id,srcIdx){
+  const it=state.itemsById[id]||{};
+  const src=(it.sources||[])[srcIdx];
+  if(!src) return;
+  el.classList.add("on");
+  postState("feedback",{...fbBase(it),action:"low_quality_source",source:src.name})
+    .then(()=>toast(`已记录：${src.name} 质量低`))
+    .catch(e=>toast("同步失败："+e.message,true));
+  setTimeout(()=>fbPanel(el,id,"src"),400);
+}
+
+function fbTrack(id){
+  const it=state.itemsById[id]||{};
+  if(!it.event_id) return;
+  const lt=LS.get("news_tracked");
+  const next=lt[it.event_id]!==true;
+  lt[it.event_id]=next;
+  LS.set("news_tracked",lt);
+  render();
+  postState("feedback",{...fbBase(it),action:next?"track":"untrack"})
+    .then(()=>toast(next?"已钉选：即使不进精选也会出现在「追踪中」":"已取消追踪"))
+    .catch(e=>toast("同步失败："+e.message,true));
+}
+
+function trkUntrack(eventId,title){
+  const lt=LS.get("news_tracked");
+  lt[eventId]=false;
+  LS.set("news_tracked",lt);
+  render();
+  postState("feedback",{date:state.date,item_id:eventId,title:title||"",category:"",
+    action:"untrack",event_id:eventId})
+    .then(()=>toast("已取消追踪，明日生效"))
+    .catch(e=>toast("同步失败："+e.message,true));
+}
+
+function rlAdd(el,id){
+  const it=state.itemsById[id]||{};
+  const key=itemKey(id);
+  const rl=LS.get("news_rl");
+  if(rl[key]) return;
+  // 深读条目 url 直接在条目上；新闻条目取首来源链接
+  const url=it.url||((it.sources||[])[0]||{}).url||"";
+  if(!/^https?:\/\//i.test(url)){toast("该条目没有可收藏的链接",true);return;}
+  rl[key]=1;LS.set("news_rl",rl);
+  el.classList.add("done");el.textContent="✓ 已收";
+  postState("read_later",{date:state.date,item_id:id,title:it.title_zh||it.title||"",
+    category:it.category||"deep",url})
+    .then(()=>toast("已加入稍后读"))
+    .catch(e=>toast("同步失败："+e.message,true));
+}
+
+function restoreHidden(key){
+  const hid=LS.get("news_hidden");
+  if(key){delete hid[key];}else{
+    for(const k of Object.keys(hid)) if(k.startsWith(state.date+":")) delete hid[k];
+  }
+  LS.set("news_hidden",hid);
+  render();
+}
+function toggleShowHidden(){state.showHidden=!state.showHidden;render();}
+function toggleTrk(el){el.closest(".trk").classList.toggle("open");}
+
 function row(it){
   const main=it.sources[0]||{};
-  return `<div class="row">
+  return `<div class="row" data-id="${esc(it.id)}">
     <span class="score ${scoreCls(it.score)}">${it.score}</span>
     <span class="tag cat-${it.category}">${CAT[it.category]||it.category}</span>
     ${it.status?`<span class="tag st-${esc(it.status)}">${esc(it.status)}</span>`:""}
@@ -190,8 +437,18 @@ function render(){
   const app=document.getElementById("app");
   if(!d){app.innerHTML='<div class="empty">数据为空</div>';return;}
   const items=d.items||[];
+  state.itemsById={};
+  for(const it of items) state.itemsById[it.id]=it;
+  for(const dp of (d.deep||[])) state.itemsById[dp.id]=dp;
+  const HID=LS.get("news_hidden");
   const flt=it=>state.cat==="all"||it.category===state.cat;
-  const picks=items.filter(i=>i.tier==="pick"&&flt(i));
+  const pickPool=items.filter(i=>i.tier==="pick"&&flt(i)&&!HID[itemKey(i.id)]);
+  const hiddenPicks=items.filter(i=>i.tier==="pick"&&flt(i)&&HID[itemKey(i.id)]);
+  // 标签计数取自"当前类目下全部精选"（先于标签过滤），保证标签条始终完整
+  const tagCounts={};
+  for(const it of pickPool) for(const t of (it.tags||[])) tagCounts[t]=(tagCounts[t]||0)+1;
+  if(state.tag&&!tagCounts[state.tag]) state.tag=null;
+  const picks=state.tag?pickPool.filter(i=>(i.tags||[]).includes(state.tag)):pickPool;
   const mores=items.filter(i=>i.tier==="more"&&flt(i));
   const counts={all:items.length};
   for(const c of Object.keys(CAT)) counts[c]=items.filter(i=>i.category===c).length;
@@ -205,8 +462,59 @@ function render(){
     `<span class="tab ${state.cat===c?"on":""}" onclick="setCat('${c}')">${c==="all"?"全部":CAT[c]}<span class="n">${counts[c]||0}</span></span>`
   ).join("")+"</div>";
 
+  // 细粒度标签条：旧日期数据无 tags 字段时自动隐藏
+  const tagList=Object.keys(tagCounts).sort((a,b)=>tagCounts[b]-tagCounts[a]);
+  if(tagList.length){
+    h+='<div class="tabs sub">'+tagList.map(t=>
+      `<span class="tab sub ${state.tag===t?"on":""}" onclick="setTag('${esc(t)}')">${esc(t)}<span class="n">${tagCounts[t]}</span></span>`
+    ).join("")+"</div>";
+  }
+
   h+=`<div class="sec-title">🎯 每日精选</div>`;
   h+=picks.length?`<div class="grid">${picks.map(card).join("")}</div>`:'<div class="empty">该分类下今天没有精选</div>';
+
+  if(hiddenPicks.length){
+    h+=`<div class="hidden-bar">已隐藏 ${hiddenPicks.length} 条 · <a onclick="toggleShowHidden()">${state.showHidden?"收起":"查看"}</a> · <a onclick="restoreHidden()">全部恢复</a></div>`;
+    if(state.showHidden){
+      h+=hiddenPicks.map(i=>`<div class="hidden-row"><span class="rt">${esc(i.title)}</span><a onclick="restoreHidden('${esc(itemKey(i.id))}')">恢复</a></div>`).join("");
+    }
+  }
+
+  // 深度阅读：管线深读频道推荐（0-3 篇，阈值制）
+  const deep=(d.deep||[]);
+  if(deep.length){
+    h+=`<div class="sec-title">📖 深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
+    h+=deep.map(dp=>{
+      const rl=LS.get("news_rl")[itemKey(dp.id)];
+      return `<div class="deep" data-id="${esc(dp.id)}">
+      <div class="deep-top">
+        <span class="tag mins">📖 约 ${+dp.read_minutes||"?"} 分钟</span>
+        <span class="tag stype">${esc(dp.source||"")}</span>
+        ${dp.lang==="en"?'<span class="tag stype">EN</span>':""}
+        <a class="deep-t" href="${esc(safeUrl(dp.url))}" target="_blank" rel="noopener">${esc(dp.title_zh||dp.title||"")}</a>
+      </div>
+      ${dp.brief?`<div class="sum">${esc(dp.brief)}</div>`:""}
+      ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
+      ${dp.lang==="en"&&dp.title!==dp.title_zh?`<div class="kv"><b>原题</b> · ${esc(dp.title||"")}</div>`:""}
+      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" onclick="rlAdd(this,'${esc(dp.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
+    </div>`;}).join("");
+  }
+
+  // 追踪中：钉选且今天没进精选的事件（数据来自管线 payload.tracking）
+  const trk=(d.tracking||[]).filter(t=>state.cat==="all"||t.category===state.cat);
+  if(trk.length){
+    h+=`<div class="sec-title">📌 追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
+    h+=trk.map(t=>`<div class="trk">
+      <div class="trk-top" onclick="toggleTrk(this)">
+        <span class="tag day">📌 第${+t.day_count||1}天</span>
+        <span class="tag cat-${esc(t.category)}">${CAT[t.category]||esc(t.category)}</span>
+        <b>${esc(t.title)}</b>
+        <span class="trk-upd">${t.updated_today?"今日有新进展":"今日无新进展 · 最后 "+esc(t.last_seen)}</span>
+        ${TOKEN?`<span class="act" onclick="event.stopPropagation();trkUntrack('${esc(t.event_id)}','${esc(t.title)}')">取消追踪</span>`:""}
+      </div>
+      <div class="trk-hist">${(t.history||[]).map(hh=>`<div><span class="eh-d">${esc(hh.date)}</span>${esc(hh.summary)}</div>`).join("")}</div>
+    </div>`).join("");
+  }
 
   if(mores.length){
     h+=`<div class="sec-title">📚 更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
@@ -220,19 +528,187 @@ function render(){
   }
   app.innerHTML=h;
   updateNav();
+  if(state.pendingHighlight){
+    const el=document.querySelector(`[data-id="${CSS.escape(state.pendingHighlight)}"]`);
+    state.pendingHighlight=null;
+    if(el){
+      el.scrollIntoView({block:"center"});
+      el.classList.add("hl");
+      setTimeout(()=>el.classList.remove("hl"),2600);
+    }
+  }
 }
 
-function setCat(c){state.cat=c;render();}
+function setCat(c){state.cat=c;state.tag=null;render();}
+function setTag(t){state.tag=(state.tag===t?null:t);render();}
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
+
+/* ---------- 稍后读抽屉 ---------- */
+function openRl(){
+  const dr=document.getElementById("rlDrawer");
+  dr.classList.toggle("open");
+  if(dr.classList.contains("open")) loadRl();
+}
+async function loadRl(){
+  const dr=document.getElementById("rlDrawer");
+  dr.innerHTML='<div class="rl-head">📥 稍后读 <span class="rl-close" onclick="openRl()">✕</span></div><div class="empty">加载中…</div>';
+  try{
+    const data=await getState("read_later");
+    const all=(data.items||[]).slice().reverse();
+    const todo=all.filter(i=>!i.done), done=all.filter(i=>i.done).slice(0,20);
+    const row=i=>`<div class="rl-item ${i.done?"done":""}">
+      <div class="rl-t"><a href="${esc(safeUrl(i.url))}" target="_blank" rel="noopener">${esc(i.title||i.item_id)}</a></div>
+      <div class="rl-meta">${esc(i.date||"")} · ${CAT[i.category]||esc(i.category||"")}</div>
+      <div class="rl-ops">${i.done?"":`<span onclick="rlOp('${esc(i.item_id)}','${esc(i.date)}','done')">✓ 读完了</span>`}
+      <span onclick="rlOp('${esc(i.item_id)}','${esc(i.date)}','remove')">✕ 移除</span></div>
+    </div>`;
+    dr.innerHTML='<div class="rl-head">📥 稍后读 <span class="rl-close" onclick="openRl()">✕</span></div>'
+      +(todo.length?todo.map(row).join(""):'<div class="empty" style="padding:20px 0">队列是空的</div>')
+      +(done.length?'<div class="rl-head" style="margin-top:18px;font-size:13px;color:var(--text3)">最近读完</div>'+done.map(row).join(""):"");
+  }catch(e){
+    dr.innerHTML='<div class="rl-head">📥 稍后读 <span class="rl-close" onclick="openRl()">✕</span></div><div class="empty">加载失败：'+esc(e.message)+"</div>";
+  }
+}
+function rlOp(id,date,op){
+  postState("read_later",{date,item_id:id,op})
+    .then(()=>{if(op==="remove"){const rl=LS.get("news_rl");delete rl[date+":"+id];LS.set("news_rl",rl);}loadRl();})
+    .catch(e=>toast("操作失败："+e.message,true));
+}
 
 function updateNav(){
   const M=window.NEWS_MANIFEST||[];
+  const week=state.view==="week";
   const i=M.indexOf(state.date);
-  document.getElementById("prevBtn").disabled=(i>=M.length-1);
-  document.getElementById("nextBtn").disabled=(i<=0);
+  document.getElementById("prevBtn").disabled=week||(i>=M.length-1);
+  document.getElementById("nextBtn").disabled=week||(i<=0);
+  document.getElementById("dateSel").disabled=week;
+}
+
+/* ---------- 站内搜索（懒加载 search_index.js） ---------- */
+let idxLoading=false;
+function ensureIndex(cb){
+  if(window.NEWS_INDEX){cb&&cb();return;}
+  if(idxLoading) return;
+  idxLoading=true;
+  const s=document.createElement("script");
+  s.src="data/search_index.js";
+  s.onload=()=>{cb&&cb();};
+  s.onerror=()=>{window.NEWS_INDEX=[];cb&&cb();};
+  document.head.appendChild(s);
+}
+function doSearch(){
+  const box=document.getElementById("searchRes");
+  const q=document.getElementById("searchInput").value.trim().toLowerCase();
+  if(!q){box.innerHTML="";box.classList.remove("open");return;}
+  const terms=q.split(/\s+/);
+  const hits=(window.NEWS_INDEX||[]).filter(r=>{
+    const hay=((r[4]||"")+" "+(r[5]||"")).toLowerCase();
+    return terms.every(t=>hay.includes(t));
+  }).slice(0,30);
+  box.classList.add("open");
+  box.innerHTML=hits.length?hits.map(r=>
+    `<div class="sr" onclick="gotoItem('${esc(r[0])}','${esc(r[1])}')"><span class="sr-d">${esc(r[0])}</span><span class="sr-c">${r[2]==="deep"?"深读":(CAT[r[3]]||esc(r[3]))}</span>${esc(r[4])}</div>`
+  ).join(""):'<div class="sr none">没有匹配条目</div>';
+}
+function gotoItem(date,id){
+  document.getElementById("searchRes").classList.remove("open");
+  document.getElementById("searchInput").value="";
+  state.view="day";
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  state.pendingHighlight=id;
+  state.moreOpen=true;   // 目标可能在"更多资讯"折叠部分
+  const sel=document.getElementById("dateSel");
+  if([...sel.options].some(o=>o.value===date)) sel.value=date;
+  loadDate(date);
+}
+
+/* ---------- 周视图（纯前端聚合近 7 天 + 本周事件线） ---------- */
+function loadDates(dates){
+  return Promise.all(dates.map(dt=>new Promise(res=>{
+    if(window.NEWS_DATA&&window.NEWS_DATA[dt]) return res();
+    const s=document.createElement("script");
+    s.src="data/daily/"+dt+".js";
+    s.onload=res; s.onerror=res;
+    document.head.appendChild(s);
+  })));
+}
+function toggleView(){
+  state.view=state.view==="week"?"day":"week";
+  document.getElementById("viewBtn").textContent=state.view==="week"?"📅 日视图":"🗓 周视图";
+  if(state.view==="week") renderWeek(); else render();
+}
+async function renderWeek(){
+  const app=document.getElementById("app");
+  const dates=(window.NEWS_MANIFEST||[]).slice(0,7);
+  if(!dates.length){app.innerHTML='<div class="empty">还没有数据</div>';return;}
+  app.innerHTML='<div class="empty">加载本周数据…</div>';
+  await loadDates(dates);
+  let h=`<div class="sec-title">🗓 本周概览 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(dates[dates.length-1])} ~ ${esc(dates[0])} · 每日 Top3</span></div>`;
+  for(const dt of dates){
+    const d=window.NEWS_DATA[dt];
+    if(!d) continue;
+    const top=(d.items||[]).filter(i=>i.tier==="pick").sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,3);
+    h+=`<div class="wk-day"><div class="wk-date" onclick="gotoDay('${esc(dt)}')">${esc(dt)} ▸</div><div class="more-list">${top.map(row).join("")}</div></div>`;
+  }
+  // 本周事件线：events.json 拉不到时静默隐藏
+  try{
+    const resp=await fetch("data/events.json");
+    if(resp.ok){
+      const reg=await resp.json();
+      const win=new Set(dates);
+      const evs=(reg.events||[]).filter(e=>{
+        const ds=new Set((e.history||[]).map(x=>x.date));
+        return ds.size>=2&&[...ds].some(x=>win.has(x));
+      });
+      if(evs.length){
+        h+=`<div class="sec-title">🧵 本周事件线 <span style="font-size:12px;color:var(--text3);font-weight:400">(${evs.length} 条跨天事件)</span></div>`;
+        h+=evs.map(e=>{
+          const days=new Set((e.history||[]).map(x=>x.date)).size;
+          const hist=(e.history||[]).slice(-7).reverse();
+          return `<div class="trk open">
+            <div class="trk-top" onclick="toggleTrk(this)">
+              <span class="tag day">📅 第${days}天</span>
+              <span class="tag cat-${esc(e.category)}">${CAT[e.category]||esc(e.category)}</span>
+              <b>${esc(e.title)}</b>
+              ${e.pinned?'<span class="tag stype">📌 已钉选</span>':""}
+              <span class="trk-upd">${e.status==="active"?"进行中":"已归档"}</span>
+            </div>
+            <div class="trk-hist">${hist.map(x=>`<div><span class="eh-d">${esc(x.date)}</span>${esc(x.summary)}</div>`).join("")}</div>
+          </div>`;
+        }).join("");
+      }
+    }
+  }catch(e){}
+  if(state.view!=="week") return;   // 加载期间用户已切回日视图
+  app.innerHTML=h;
+  updateNav();
+}
+function gotoDay(dt){
+  state.view="day";
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  const sel=document.getElementById("dateSel");
+  if([...sel.options].some(o=>o.value===dt)) sel.value=dt;
+  loadDate(dt);
 }
 
 (function init(){
+  if(TOKEN){
+    const drawer=document.createElement("div");
+    drawer.id="rlDrawer";drawer.className="drawer";
+    document.body.appendChild(drawer);
+    const btn=document.createElement("button");
+    btn.textContent="📥 稍后读";
+    btn.onclick=openRl;
+    const nav=document.querySelector(".datenav");
+    nav.insertBefore(btn,nav.firstChild);
+  }
+  const si=document.getElementById("searchInput");
+  si.addEventListener("focus",()=>ensureIndex(doSearch));
+  si.addEventListener("input",()=>ensureIndex(doSearch));
+  document.addEventListener("click",e=>{
+    if(!e.target.closest(".searchbox")) document.getElementById("searchRes").classList.remove("open");
+  });
+  document.getElementById("viewBtn").onclick=toggleView;
   const M=window.NEWS_MANIFEST||[];
   const sel=document.getElementById("dateSel");
   if(!M.length){document.getElementById("app").innerHTML='<div class="empty">还没有任何日报数据。<br><br>先运行 <code style="color:var(--accent2)">python daily_news.py</code> 生成今天的数据。</div>';return;}
