@@ -21,8 +21,10 @@
 """
 import argparse
 import concurrent.futures
+import hashlib
 import html
 import json
+from email.utils import format_datetime
 import os
 import re
 import sys
@@ -101,10 +103,21 @@ def fetch_rss(src, window_start, max_items):
         link = e.get("link", "")
         if not title or not link:
             continue
+        # 全文长度指标（仅深读频道估算阅读时长用，不存全文本身）
+        content = ""
+        if e.get("content"):
+            try:
+                content = strip_html(e["content"][0].get("value", ""))
+            except Exception:
+                content = ""
+        if not content:
+            content = strip_html(e.get("summary", e.get("description", "")))
         items.append({
             "title": title,
             "url": link,
             "desc": strip_html(e.get("summary", e.get("description", "")))[:400],
+            "content_chars": len(re.sub(r"\s", "", content)),
+            "content_words": len(content.split()),
             "time": pub.isoformat(),
             "source": src["name"],
             "source_id": src["id"],
@@ -385,7 +398,8 @@ def score_and_select(events, items, cfg):
         multi_bonus = min(len(set(items[i]["source_id"] for i in ev["ids"])) - 1, 2) * 0.4
         w = float(weights.get(ev["category"], 1.0))
         raw = (0.62 * importance + 0.30 * cred + multi_bonus) * 10 \
-            * float(tier_mult.get(best_tier, 0.83)) * w
+            * float(tier_mult.get(best_tier, 0.83)) * w \
+            * float(ev.get("interest_mult", 1.0))
         ev["score"] = int(max(5, min(99, round(raw))))
         # 舆论源硬约束：事件的所有来源都是舆论源（无事实/分析源交叉）时，
         # 分数封顶在阈值之下——只能进"更多资讯"，不进精选、不参与保底补位
@@ -450,13 +464,18 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
     发展中（事件仍在进行，信息还在更新）
     有争议（各方说法明显冲突）
     仅传言（单一来源爆料，未获证实）
+- tags: 从下面的词表里选 1-2 个最贴切的主题标签，只能用词表里的词，不得自创：
+    {tag_list}
 
 只输出 JSON 数组，每个元素：
-{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "watch": "...", "status": "..."}
+{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "watch": "...", "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
 
 
-def enrich(llm, picked, items):
+def enrich(llm, picked, items, cfg):
+    tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
+    tag_set = set(tag_vocab)
+    system = ENRICH_SYSTEM.format(tag_list="、".join(tag_vocab) if tag_vocab else "（词表为空，tags 输出空数组）")
     batch_size = 6
     for bi in range(0, len(picked), batch_size):
         batch = picked[bi:bi + batch_size]
@@ -469,7 +488,7 @@ def enrich(llm, picked, items):
                             f"{it['title']}：{it['desc'][:200]}")
             blocks.append(f"事件[{bi + j}] {ev['title']}\n" + "\n".join(srcs))
         log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
-        result = llm.json_call(ENRICH_SYSTEM, "\n\n".join(blocks))
+        result = llm.json_call(system, "\n\n".join(blocks))
         for r in result:
             k = r.get("idx")
             if not isinstance(k, int) or not (0 <= k < len(picked)):
@@ -480,6 +499,10 @@ def enrich(llm, picked, items):
             ev["why"] = r.get("why", "")
             ev["watch"] = r.get("watch", "")
             ev["status"] = r.get("status") if r.get("status") in STATUS_SET else "发展中"
+            raw_tags = r.get("tags") or []
+            if not isinstance(raw_tags, list):
+                raw_tags = []
+            ev["tags"] = [t for t in raw_tags if t in tag_set][:2]
     return picked
 
 
@@ -501,6 +524,511 @@ def write_brief(llm, picked):
 
 
 # ----------------------------------------------------------------
+# 5.5 跨天事件登记表：今日精选与历史活跃事件的延续性匹配
+# ----------------------------------------------------------------
+
+EVENT_MATCH_SYSTEM = """你负责维护跨天新闻事件登记表。输入两组条目：
+【登记表】正在追踪的活跃事件（编号 R0、R1…，含最近一次进展摘要和日期）
+【今日】今天的精选事件（编号 T0、T1…）
+找出今日事件中哪些是登记表某事件的【后续进展】：
+同一主体 + 同一条持续发展的具体事件线（同一场冲突的后续、同一起收购案的新进展、同一次发布的后续反应）。
+仅主题相似、领域相同、或只是涉及同一家公司的不同事情，都【不算】。
+类别(category)不同的禁止匹配。拿不准就不匹配。
+只输出 JSON：{"matches":[{"today":数字,"registry":数字}]}；没有匹配输出 {"matches":[]}。
+不要输出任何其他文字。"""
+
+
+def load_registry(data_dir):
+    """读 events.json；不存在或损坏时返回空登记表（冷启动）。"""
+    f = data_dir / "events.json"
+    if f.exists():
+        try:
+            reg = json.loads(f.read_text(encoding="utf-8"))
+            if isinstance(reg.get("events"), list):
+                return reg
+            log("  events.json 结构异常，重建")
+        except Exception as e:
+            log(f"  events.json 读取失败，重建: {e}")
+    return {"version": 1, "events": []}
+
+
+def match_events_llm(llm, active_events, picked):
+    """LLM 匹配今日精选与活跃事件，返回 [(today_idx, registry_idx), ...]。
+    任何异常返回 None，调用方视为"今日全部按新事件处理"。"""
+    reg_lines = []
+    for i, e in enumerate(active_events):
+        last = e["history"][-1] if e.get("history") else {}
+        reg_lines.append(f"[R{i}] ({e.get('category', '')}) {e.get('title', '')} ｜ "
+                         f"最近进展 {e.get('last_seen', '')}: {str(last.get('summary', ''))[:100]}")
+    today_lines = []
+    for j, ev in enumerate(picked):
+        today_lines.append(f"[T{j}] ({ev.get('category', '')}) {ev.get('title', '')} ｜ "
+                           f"{str(ev.get('summary', ''))[:100]}")
+    user = "【登记表】\n" + "\n".join(reg_lines) + "\n\n【今日】\n" + "\n".join(today_lines)
+    try:
+        result = llm.json_call(EVENT_MATCH_SYSTEM, user)
+        matches = result.get("matches", []) if isinstance(result, dict) else []
+        pairs, seen_today, seen_reg = [], set(), set()
+        for m in matches:
+            try:
+                t, r = int(m["today"]), int(m["registry"])
+            except Exception:
+                continue
+            if not (0 <= t < len(picked) and 0 <= r < len(active_events)):
+                continue
+            if t in seen_today or r in seen_reg:
+                continue
+            # 同类目硬校验：LLM 违规跨类匹配直接丢弃
+            if picked[t].get("category") != active_events[r].get("category"):
+                continue
+            seen_today.add(t)
+            seen_reg.add(r)
+            pairs.append((t, r))
+        return pairs
+    except Exception as e:
+        log(f"  事件匹配调用失败，今日全部按新事件处理: {e}")
+        return None
+
+
+def update_registry(registry, picked, pairs, active_events, date_str, cfg):
+    """纯函数：把今日精选写入登记表（续接或新建），归档与剪枝，
+    并回填 picked 的 event_id / day_count / history_prev。
+    pairs 为 None（LLM 失败）时全部按新事件处理。"""
+    evcfg = cfg.get("events") or {}
+    archive_days = int(evcfg.get("archive_days", 7))
+    prune_days = int(evcfg.get("prune_archived_days", 60))
+    today = datetime.strptime(date_str, "%Y-%m-%d")
+    events = registry.setdefault("events", [])
+
+    # 同日重跑幂等：先清掉本日已写入的进展；本日早前一跑新建的事件随之整个移除
+    for e in events:
+        e["history"] = [h for h in e.get("history", []) if h.get("date") != date_str]
+    events[:] = [e for e in events if e["history"]]
+    for e in events:
+        e["last_seen"] = e["history"][-1]["date"]
+
+    matched = {}
+    for t, r in (pairs or []):
+        if 0 <= t < len(picked) and 0 <= r < len(active_events):
+            tgt = active_events[r]
+            if tgt.get("history"):  # 被幂等清理移除的目标不再续接
+                matched[t] = tgt
+
+    for idx, ev in enumerate(picked):
+        entry = {"date": date_str, "title": ev.get("title", ""),
+                 "summary": ev.get("summary", ""), "news_status": ev.get("status", "")}
+        tgt = matched.get(idx)
+        if tgt is None:
+            eid = "evt-{}-{}".format(
+                date_str.replace("-", ""),
+                hashlib.sha1(str(ev.get("title", "")).encode("utf-8")).hexdigest()[:6])
+            tgt = {"event_id": eid, "title": ev.get("title", ""),
+                   "category": ev.get("category", ""), "status": "active",
+                   "pinned": False, "first_seen": date_str, "last_seen": date_str,
+                   "history": [entry]}
+            events.append(tgt)
+        else:
+            tgt["history"].append(entry)
+            tgt["last_seen"] = date_str
+            tgt["title"] = ev.get("title", tgt.get("title", ""))
+        ev["event_id"] = tgt["event_id"]
+        ev["day_count"] = len({h["date"] for h in tgt["history"]})
+        ev["history_prev"] = [h for h in tgt["history"] if h["date"] != date_str][-7:]
+
+    def days_since(d):
+        try:
+            return (today - datetime.strptime(d, "%Y-%m-%d")).days
+        except Exception:
+            return 10 ** 6
+
+    for e in events:
+        if e.get("status") == "active" and days_since(e.get("last_seen", "")) > archive_days:
+            e["status"] = "archived"
+    events[:] = [e for e in events
+                 if not (e.get("status") == "archived"
+                         and days_since(e.get("last_seen", "")) > prune_days)]
+    return registry
+
+
+def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None):
+    """编排：读登记表 -> 应用钉选 -> 组活跃匹配池 -> LLM 匹配 -> 更新 ->
+    钉选事件与"更多资讯"补匹配 -> 写回。返回登记表供输出使用。"""
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    registry = load_registry(data_dir)
+    pinned_changed = apply_pins(registry, feedback or [])
+    if pinned_changed:
+        log(f"  钉选状态更新：{pinned_changed} 个事件")
+    evcfg = cfg.get("events") or {}
+    window = int(evcfg.get("match_window_days", 14))
+    today = datetime.strptime(date_str, "%Y-%m-%d")
+
+    def days_since(d):
+        try:
+            return (today - datetime.strptime(d, "%Y-%m-%d")).days
+        except Exception:
+            return 10 ** 6
+
+    # 活跃池：active 且 last_seen 在窗口内；只含"今天之前"就有历史的事件，
+    # 排除本日早前一跑新建的条目（同日重跑时它们会被幂等清理重建）
+    active = [e for e in registry["events"]
+              if e.get("status") == "active"
+              and 0 <= days_since(e.get("last_seen", "")) <= window
+              and any(h.get("date") != date_str for h in e.get("history", []))]
+
+    pairs = match_events_llm(llm, active, picked) if (active and picked) else []
+    update_registry(registry, picked, pairs, active, date_str, cfg)
+
+    # 钉选事件今天没进精选时，尝试与"更多资讯"补匹配续接进展，
+    # 保证追踪中的事件不因分数不过线而断档
+    if secondary:
+        pinned_stale = [e for e in registry["events"]
+                        if e.get("pinned") and e.get("status") == "active"
+                        and e.get("last_seen") != date_str
+                        and any(h.get("date") != date_str for h in e.get("history", []))]
+        if pinned_stale:
+            sec_pairs = match_events_llm(llm, pinned_stale, secondary) or []
+            for t, r in sec_pairs:
+                sev, tgt = secondary[t], pinned_stale[r]
+                tgt["history"].append({"date": date_str, "title": sev.get("title", ""),
+                                       "summary": sev.get("summary") or sev.get("title", ""),
+                                       "news_status": sev.get("status", "")})
+                tgt["last_seen"] = date_str
+            if sec_pairs:
+                log(f"  钉选补匹配：{len(sec_pairs)} 个钉选事件从'更多资讯'续上进展")
+
+    (data_dir / "events.json").write_text(
+        json.dumps(registry, ensure_ascii=False, indent=1), encoding="utf-8")
+    n_cont = sum(1 for ev in picked if ev.get("day_count", 0) >= 2)
+    log(f"  事件登记表：活跃 {len(active)}，续接 {n_cont}，登记总数 {len(registry['events'])}")
+    return registry
+
+
+# ----------------------------------------------------------------
+# 5.6 偏好学习：消费 feedback.json / read_later.json
+#   - track/untrack  -> events.json 钉选
+#   - 来源质量低      -> 运行时降低该源条目可信度（不改 sources.yaml）
+#   - 其余反馈+稍后读 -> LLM 蒸馏进 interest_profile.md（明文，可手改）
+#   - 画像            -> 对当日事件打"兴趣契合分"，换算成分数乘数
+# ----------------------------------------------------------------
+
+PROFILE_MARKER_RE = re.compile(r"<!--\s*last_feedback_ts:\s*([^>]*?)\s*-->")
+PROFILE_DEFAULT = """# 兴趣画像
+<!-- last_feedback_ts: 1970-01-01T00:00:00Z -->
+
+本文件由管线自动蒸馏页面反馈生成，也可以直接手改（增删行都会保留，
+除非与后续反馈明确矛盾）。要点行以"- "开头，管线据此判断画像是否为空。
+
+## 更关注
+（暂无）
+
+## 不关注
+（暂无）
+
+## 来源印象
+（暂无）
+"""
+
+PROFILE_SYSTEM = """你维护一份个人新闻"兴趣画像"文档（markdown）。
+输入：当前画像全文 + 一批新的用户反馈（动作、条目标题、类目、理由、备注、来源）和新收藏的稍后读标题。
+任务：把新反馈蒸馏进画像，输出更新后的画像全文。
+规则：
+- 保持三个小节：## 更关注 / ## 不关注 / ## 来源印象；每节内是要点行，每行以"- "开头（一行一个偏好，≤25字）
+- 已有要点行是用户认可或手写的，除非与新反馈明确矛盾，否则原样保留
+- 归纳到主题/领域层面（如"- 航天工程细节"），不要罗列具体新闻标题
+- 同一偏好被反复印证时可在行尾标注 (xN) 表示强度
+- 全文不超过 40 行；小节为空时写"（暂无）"
+只输出画像 markdown 全文，不要解释，不要代码块包裹。"""
+
+FIT_SYSTEM = """根据用户的兴趣画像，为每条新闻事件打"兴趣契合分"0-10：
+10 = 画像明确表示高度关注的主题；5 = 画像未提及或中性；0 = 画像明确表示不关注。
+画像没提到的一律给 5，不要引申猜测。
+只输出 JSON：{"fits":[{"idx":编号,"fit":0-10}]}，不要其他文字。"""
+
+FEEDBACK_ACT_NAMES = {"not_interested": "不感兴趣", "more_like_this": "更关注类似",
+                      "low_quality_source": "来源质量低", "track": "继续追踪"}
+
+
+def load_state_list(data_dir, filename, key):
+    """读 feedback.json / read_later.json 里的列表；缺失或损坏一律返回 []。"""
+    f = data_dir / filename
+    if not f.exists():
+        return []
+    try:
+        data = json.loads(f.read_text(encoding="utf-8"))
+        lst = data.get(key)
+        return lst if isinstance(lst, list) else []
+    except Exception as e:
+        log(f"  {filename} 读取失败，忽略: {e}")
+        return []
+
+
+def source_penalties(feedback, date_str, window_days=90, step=0.1, floor=0.7):
+    """"来源质量低"反馈 -> {来源名: 可信度乘数}。
+    近 window_days 天内每个"有反馈的自然日"记一次，每次降 step，最低 floor。"""
+    today = datetime.strptime(date_str, "%Y-%m-%d")
+    strikes = {}
+    for e in feedback:
+        if e.get("action") != "low_quality_source" or not e.get("source"):
+            continue
+        day = str(e.get("ts", ""))[:10]
+        try:
+            if not (0 <= (today - datetime.strptime(day, "%Y-%m-%d")).days <= window_days):
+                continue
+        except ValueError:
+            continue
+        strikes.setdefault(str(e["source"]), set()).add(day)
+    return {s: round(max(floor, 1 - step * len(days)), 2) for s, days in strikes.items()}
+
+
+def apply_pins(registry, feedback):
+    """track/untrack 反馈 -> 登记表事件 pinned 位（按时间取每个事件最后一次动作）。"""
+    by_event = {}
+    for e in feedback or []:
+        if e.get("action") in ("track", "untrack") and e.get("event_id"):
+            by_event.setdefault(e["event_id"], []).append((str(e.get("ts", "")), e["action"]))
+    changed = 0
+    for ev in registry.get("events", []):
+        acts = by_event.get(ev.get("event_id"))
+        if not acts:
+            continue
+        want = max(acts)[1] == "track"
+        if bool(ev.get("pinned")) != want:
+            ev["pinned"] = want
+            changed += 1
+    return changed
+
+
+def profile_has_content(text):
+    return any(line.strip().startswith("- ") for line in (text or "").splitlines())
+
+
+def update_profile(llm, data_dir, feedback, read_later):
+    """把 marker 之后的新反馈蒸馏进 interest_profile.md。
+    无新反馈不调 LLM；蒸馏失败保留旧画像、不推进 marker。返回画像全文。"""
+    pf = data_dir / "interest_profile.md"
+    try:
+        text = pf.read_text(encoding="utf-8") if pf.exists() else PROFILE_DEFAULT
+    except Exception:
+        text = PROFILE_DEFAULT
+    m = PROFILE_MARKER_RE.search(text)
+    marker = m.group(1).strip() if m else "1970-01-01T00:00:00Z"
+
+    def newer(ts):
+        return isinstance(ts, str) and ts > marker
+
+    fb_new = [e for e in feedback
+              if newer(e.get("ts")) and e.get("action") in FEEDBACK_ACT_NAMES
+              and not (e.get("action") == "not_interested"
+                       and "只是今天不想看" in (e.get("reasons") or [])
+                       and not e.get("note"))]
+    rl_new = [it for it in read_later if newer(it.get("ts"))]
+    if not fb_new and not rl_new:
+        if not pf.exists():
+            pf.write_text(text, encoding="utf-8")  # 首次落盘默认画像，方便手改
+        return text
+
+    fb_lines = []
+    for e in fb_new[-80:]:
+        parts = [FEEDBACK_ACT_NAMES[e["action"]], f"[{e.get('category', '')}]",
+                 str(e.get("title", ""))[:60]]
+        if e.get("reasons"):
+            parts.append("理由:" + "/".join(str(r) for r in e["reasons"]))
+        if e.get("note"):
+            parts.append("备注:" + str(e["note"])[:80])
+        if e.get("source"):
+            parts.append("来源:" + str(e["source"]))
+        fb_lines.append(" ｜ ".join(parts))
+    rl_lines = [f"[{it.get('category', '')}] {str(it.get('title', ''))[:60]}"
+                for it in rl_new[-40:]]
+    body = PROFILE_MARKER_RE.sub("", text).strip()
+    user = ("【当前画像】\n" + body +
+            "\n\n【新反馈】\n" + ("\n".join(fb_lines) or "（无）") +
+            "\n\n【新收藏的稍后读】\n" + ("\n".join(rl_lines) or "（无）"))
+    new_marker = max([str(e.get("ts", "")) for e in fb_new] +
+                     [str(it.get("ts", "")) for it in rl_new])
+    try:
+        resp = llm.client.chat.completions.create(
+            model=llm.model, temperature=0.2,
+            messages=[{"role": "system", "content": PROFILE_SYSTEM},
+                      {"role": "user", "content": user}])
+        out = resp.choices[0].message.content.strip()
+        out = re.sub(r"^```(?:markdown)?\s*|\s*```$", "", out).strip()
+        if "## 更关注" not in out or "## 不关注" not in out:
+            raise ValueError("画像输出缺少必需小节")
+        out = PROFILE_MARKER_RE.sub("", out).strip()
+        lines = out.splitlines()
+        insert_at = 1 if lines and lines[0].startswith("#") else 0
+        lines.insert(insert_at, f"<!-- last_feedback_ts: {new_marker} -->")
+        new_text = "\n".join(lines).rstrip() + "\n"
+        pf.write_text(new_text, encoding="utf-8")
+        log(f"  画像已更新：吸收 {len(fb_new)} 条反馈、{len(rl_new)} 条稍后读")
+        return new_text
+    except Exception as e:
+        log(f"  画像蒸馏失败，保留旧画像: {e}")
+        return text
+
+
+def interest_fit(llm, profile_text, events):
+    """按画像给事件打契合分，写入 ev['interest_mult'] ∈ [0.85, 1.15]。
+    画像为空或调用失败时不写（默认 1.0）。中性 5 分恰好等于 1.0。"""
+    if not events or not profile_has_content(profile_text):
+        return
+    lines = [f"[{i}] ({CAT_NAMES.get(e.get('category', ''), e.get('category', ''))}) "
+             f"{e.get('title', '')}" for i, e in enumerate(events)]
+    user = "【兴趣画像】\n" + profile_text + "\n\n【今日事件】\n" + "\n".join(lines)
+    try:
+        result = llm.json_call(FIT_SYSTEM, user)
+        fits = result.get("fits", []) if isinstance(result, dict) else []
+        for f_ in fits:
+            try:
+                i, fit = int(f_["idx"]), float(f_["fit"])
+            except Exception:
+                continue
+            if 0 <= i < len(events):
+                fit = max(0.0, min(10.0, fit))
+                events[i]["interest_mult"] = round(0.85 + 0.03 * fit, 3)
+        n = sum(1 for e in events if e.get("interest_mult", 1.0) != 1.0)
+        log(f"  兴趣拟合：{n}/{len(events)} 个事件获得非中性乘数")
+    except Exception as e:
+        log(f"  兴趣拟合失败，保持中性: {e}")
+
+
+# ----------------------------------------------------------------
+# 5.7 深度阅读频道：独立于新闻管线的长文推荐（阈值制 0-3 篇）
+# ----------------------------------------------------------------
+
+DEEP_SYSTEM = """你为个人读者筛选"今天值得花时间深读的长文"。
+输入若干候选文章（标题+摘要+来源），可能附带读者的兴趣画像。
+给每篇打"深读价值分"0-10，标准：
+- 实质密度：有真实信息增量、数据、一手经验，而非口水/热点复读
+- 独到洞察：提供新框架、方法论或反直觉结论
+- 持久价值：一周后再读仍有价值
+显著契合兴趣画像可 +1，明确落在画像"不关注"里的 -2。宁缺毋滥，平庸的给低分。
+对每篇输出：
+{"idx": 编号, "score": 0-10, "title_zh": "中文标题（中文原题则原样保留，≤30字）",
+ "brief": "一句话讲这篇是什么（≤40字）", "why": "为什么值得花时间读（≤60字）"}
+只输出 JSON 数组，不要其他文字。"""
+
+
+def estimate_read_minutes(item, lang):
+    """按 RSS 全文长度估算阅读分钟数（中文 400 字/分，英文 220 词/分），3-60 封顶。"""
+    if lang == "zh":
+        n = item.get("content_chars") or len(re.sub(r"\s", "", item.get("desc", "")))
+        m = n / 400
+    else:
+        n = item.get("content_words") or len(item.get("desc", "").split())
+        m = n / 220
+    return max(3, min(60, int(m + 0.999)))
+
+
+def load_deep_seen(data_dir, date_str):
+    """已推荐 URL 滚动表；当日条目剔除（同日重跑幂等：重跑时重新评选）。"""
+    f = data_dir / "deep_seen.json"
+    seen = {"version": 1, "urls": {}}
+    if f.exists():
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            if isinstance(data.get("urls"), dict):
+                seen["urls"] = {u: d for u, d in data["urls"].items() if d != date_str}
+        except Exception as e:
+            log(f"  deep_seen.json 读取失败，重建: {e}")
+    return seen
+
+
+def deep_channel(llm, cfg, date_str, profile_text=""):
+    """深读频道编排。独立故障域：任何异常只 log 并返回 []，绝不影响新闻主管线。"""
+    try:
+        dcfg = cfg.get("deep") or {}
+        if not dcfg.get("enabled", False):
+            return []
+        src_cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
+        deep_sources = [s for s in (src_cfg.get("deep_sources") or [])
+                        if s.get("enabled", True)]
+        if not deep_sources:
+            return []
+        window_start = datetime.now(timezone.utc) - timedelta(
+            hours=int(dcfg.get("window_hours", 78)))
+        max_per = int(dcfg.get("max_per_source", 5))
+        candidates = []
+        for s in deep_sources:
+            src = dict(s, source_type="analysis", credibility=7)
+            fetched, _err = fetch_rss(src, window_start, max_per)
+            for it in fetched:
+                it["lang"] = s.get("lang", "en")
+            candidates += fetched
+
+        data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+        seen = load_deep_seen(data_dir, date_str)
+        candidates = [c for c in candidates if c["url"] not in seen["urls"]]
+        log(f"  深读候选：{len(candidates)} 篇（去重后）")
+        if not candidates:
+            return []
+
+        lines = [f"[{i}] ({c['source']}/{c['lang']}) {c['title']}\n    {c['desc'][:200]}"
+                 for i, c in enumerate(candidates)]
+        user = ""
+        if profile_has_content(profile_text):
+            user = "【兴趣画像】\n" + profile_text + "\n\n"
+        user += "【候选文章】\n" + "\n".join(lines)
+        result = llm.json_call(DEEP_SYSTEM, user)
+
+        scored = []
+        for r in (result if isinstance(result, list) else []):
+            try:
+                i, score = int(r["idx"]), float(r["score"])
+            except Exception:
+                continue
+            if 0 <= i < len(candidates):
+                scored.append((max(0.0, min(10.0, score)), i, r))
+        threshold = float(dcfg.get("pick_threshold", 7))
+        pick_max = int(dcfg.get("pick_max", 3))
+        scored = sorted([t for t in scored if t[0] >= threshold], key=lambda t: -t[0])
+
+        deep, used = [], set()
+        for score, i, r in scored:
+            if len(deep) >= pick_max:
+                break
+            if i in used:
+                continue
+            used.add(i)
+            c = candidates[i]
+            deep.append({
+                "id": "deep-" + hashlib.sha1(c["url"].encode("utf-8")).hexdigest()[:8],
+                "title": c["title"],
+                "title_zh": str(r.get("title_zh") or c["title"])[:40],
+                "url": c["url"],
+                "source": c["source"],
+                "lang": c["lang"],
+                "brief": str(r.get("brief", ""))[:60],
+                "why": str(r.get("why", ""))[:90],
+                "score": int(score),
+                "read_minutes": estimate_read_minutes(c, c["lang"]),
+            })
+
+        for d in deep:
+            seen["urls"][d["url"]] = date_str
+        prune = int(dcfg.get("seen_keep_days", 60))
+        today = datetime.strptime(date_str, "%Y-%m-%d")
+
+        def _keep(dt):
+            try:
+                return (today - datetime.strptime(dt, "%Y-%m-%d")).days <= prune
+            except ValueError:
+                return False
+
+        seen["urls"] = {u: dt for u, dt in seen["urls"].items() if _keep(dt)}
+        data_dir.mkdir(parents=True, exist_ok=True)
+        (data_dir / "deep_seen.json").write_text(
+            json.dumps(seen, ensure_ascii=False, indent=1), encoding="utf-8")
+        log(f"  深读推荐：{len(deep)} 篇（阈值 {threshold} 分）")
+        return deep
+    except Exception as e:
+        log(f"  深读频道失败（不影响主管线）: {e}")
+        return []
+
+
+# ----------------------------------------------------------------
 # 6. 输出
 # ----------------------------------------------------------------
 
@@ -519,7 +1047,7 @@ def event_to_item(ev, items, tier):
         sources.append({"name": it["source"], "url": it["url"],
                         "type": TYPE_NAMES[it["source_type"]]})
     primary = items[sorted_ids[0]]
-    return {
+    item = {
         "id": f"{tier}-{ids[0]}",
         "tier": tier,
         "category": ev["category"],
@@ -528,15 +1056,50 @@ def event_to_item(ev, items, tier):
         "why": ev.get("why", ""),
         "watch": ev.get("watch", ""),
         "status": ev.get("status", ""),
+        "tags": ev.get("tags", []),
         "score": ev["score"],
         "src_tier": ev.get("tier", ""),
         "source_type": TYPE_NAMES[primary["source_type"]],
         "time": primary["time"],
         "sources": sources[:5],
     }
+    # 精选恒带 event_id（前端"继续追踪"按钮需要）；
+    # 跨天延续字段（第 2 天起）才带 day_count/history，文件保持干净
+    if ev.get("event_id"):
+        item["event_id"] = ev["event_id"]
+    if ev.get("day_count", 0) >= 2:
+        item["day_count"] = ev["day_count"]
+        item["history"] = [{"date": h.get("date", ""), "summary": h.get("summary", "")}
+                           for h in reversed(ev.get("history_prev", []))]
+    return item
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg):
+def build_tracking(registry, picked, date_str):
+    """「追踪中」区数据：钉选且活跃、今天没进精选的事件。"""
+    if not registry:
+        return []
+    picked_ids = {ev.get("event_id") for ev in picked if ev.get("event_id")}
+    tracking = []
+    for e in registry.get("events", []):
+        if e.get("status") != "active" or not e.get("pinned"):
+            continue
+        if e.get("event_id") in picked_ids:
+            continue
+        hist = e.get("history", [])
+        tracking.append({
+            "event_id": e.get("event_id", ""),
+            "title": e.get("title", ""),
+            "category": e.get("category", ""),
+            "day_count": len({h.get("date") for h in hist}),
+            "last_seen": e.get("last_seen", ""),
+            "updated_today": e.get("last_seen") == date_str,
+            "history": [{"date": h.get("date", ""), "summary": h.get("summary", "")}
+                        for h in reversed(hist[-7:])],
+        })
+    return tracking
+
+
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -557,6 +1120,11 @@ def write_output(date_str, brief, picked, secondary, items, cfg):
         },
         "items": out_items,
     }
+    tracking = build_tracking(registry, picked, date_str)
+    if tracking:
+        payload["tracking"] = tracking
+    if deep:
+        payload["deep"] = deep
     js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
           f"window.NEWS_DATA[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
@@ -567,6 +1135,163 @@ def write_output(date_str, brief, picked, secondary, items, cfg):
     manifest = f"window.NEWS_MANIFEST = {json.dumps(dates, ensure_ascii=False)};\n"
     (data_dir / "manifest.js").write_text(manifest, encoding="utf-8")
     log(f"已写入 data/daily/{date_str}.js（精选 {len(picked)} + 更多 {len(secondary)}）")
+
+
+# ----------------------------------------------------------------
+# 6.2 RSS 输出：data/feed.xml（每条精选一个 item，含深读推荐）
+# ----------------------------------------------------------------
+
+def read_daily_payload(path):
+    """从本管线写出的 daily js 里剥壳取 JSON；失败返回 None。"""
+    try:
+        src = path.read_text(encoding="utf-8")
+        m = re.search(r"window\.NEWS_DATA\[[^\]]+\] = (\{.*\});", src, re.S)
+        return json.loads(m.group(1)) if m else None
+    except Exception:
+        return None
+
+
+def xml_esc(s):
+    return html.escape(str(s or ""), quote=True)
+
+
+def _cdata(s):
+    # CDATA 内唯一的禁忌是 "]]>"
+    return "<![CDATA[" + str(s or "").replace("]]>", "]]&gt;") + "]]>"
+
+
+def _rfc822(iso, fallback):
+    try:
+        return format_datetime(datetime.fromisoformat(str(iso)))
+    except Exception:
+        return fallback
+
+
+def write_feed(data_dir, date_str, cfg):
+    """生成 feed.xml。失败只 log 不中止（新闻数据已落盘）。"""
+    try:
+        feed_days = int(cfg.get("feed_days", 7))
+        site = str(cfg.get("site_url", "")).rstrip("/")
+        daily_dir = data_dir / "daily"
+        dates = sorted([p.stem for p in daily_dir.glob("*.js")], reverse=True)[:feed_days]
+        now_rfc = format_datetime(datetime.now(timezone.utc))
+        items_xml = []
+        for d in dates:
+            payload = read_daily_payload(daily_dir / f"{d}.js")
+            if not payload:
+                continue
+            day_rfc = _rfc822(payload.get("generated_at"), now_rfc)
+            for it in payload.get("items", []):
+                if it.get("tier") != "pick":
+                    continue
+                srcs = it.get("sources") or []
+                link = (srcs[0].get("url") if srcs else "") or f"{site}/news/"
+                desc = f"<p>{html.escape(it.get('summary', ''))}</p>"
+                if it.get("why"):
+                    desc += f"<p><b>为什么重要：</b>{html.escape(it['why'])}</p>"
+                if it.get("watch"):
+                    desc += f"<p><b>后续关注：</b>{html.escape(it['watch'])}</p>"
+                if srcs:
+                    desc += "<p>来源：" + "、".join(
+                        f'<a href="{html.escape(s.get("url", ""), quote=True)}">'
+                        f'{html.escape(s.get("name", ""))}</a>' for s in srcs) + "</p>"
+                cat = CAT_NAMES.get(it.get("category", ""), it.get("category", ""))
+                items_xml.append(
+                    "<item>"
+                    f"<title>{xml_esc('[' + cat + '] ' + it.get('title', ''))}</title>"
+                    f"<link>{xml_esc(link)}</link>"
+                    f"<guid isPermaLink=\"false\">{xml_esc(d + ':' + it.get('id', ''))}</guid>"
+                    f"<pubDate>{_rfc822(it.get('time'), day_rfc)}</pubDate>"
+                    f"<description>{_cdata(desc)}</description>"
+                    "</item>")
+            for dp in payload.get("deep", []):
+                desc = f"<p>{html.escape(dp.get('brief', ''))}</p>"
+                if dp.get("why"):
+                    desc += f"<p><b>为什么值得读：</b>{html.escape(dp['why'])}</p>"
+                desc += (f"<p>{html.escape(dp.get('source', ''))} · "
+                         f"约 {int(dp.get('read_minutes') or 0)} 分钟</p>")
+                items_xml.append(
+                    "<item>"
+                    f"<title>{xml_esc('【深读】' + (dp.get('title_zh') or dp.get('title', '')))}</title>"
+                    f"<link>{xml_esc(dp.get('url', ''))}</link>"
+                    f"<guid isPermaLink=\"false\">{xml_esc(d + ':' + dp.get('id', ''))}</guid>"
+                    f"<pubDate>{day_rfc}</pubDate>"
+                    f"<description>{_cdata(desc)}</description>"
+                    "</item>")
+        feed = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<rss version="2.0"><channel>'
+                "<title>每日驾驶舱 · Daily Briefing</title>"
+                f"<link>{xml_esc(site + '/news/')}</link>"
+                "<description>个人信息筛选驾驶舱：每日精选新闻与深读推荐</description>"
+                "<language>zh-cn</language>"
+                f"<lastBuildDate>{now_rfc}</lastBuildDate>"
+                + "".join(items_xml) +
+                "</channel></rss>\n")
+        (data_dir / "feed.xml").write_text(feed, encoding="utf-8")
+        log(f"  feed.xml：{len(items_xml)} 个 item（近 {len(dates)} 天）")
+    except Exception as e:
+        log(f"  feed.xml 生成失败（不影响主管线）: {e}")
+
+
+# ----------------------------------------------------------------
+# 6.3 搜索索引：data/search_index.js（紧凑数组，前端懒加载）
+# ----------------------------------------------------------------
+
+def index_rows(payload):
+    rows = []
+    d = payload.get("date", "")
+    for it in payload.get("items", []):
+        rows.append([d, it.get("id", ""), it.get("tier", ""), it.get("category", ""),
+                     it.get("title", ""), "|".join(it.get("tags") or [])])
+    for dp in payload.get("deep", []):
+        rows.append([d, dp.get("id", ""), "deep", "deep",
+                     dp.get("title_zh") or dp.get("title", ""), ""])
+    return rows
+
+
+def update_search_index(data_dir, date_str, cfg):
+    """当日条目替换写入（幂等）；索引缺失/损坏时从现存 daily 文件全量重建。"""
+    try:
+        keep_days = int(cfg.get("search_index_days", 180))
+        daily_dir = data_dir / "daily"
+        idx_file = data_dir / "search_index.js"
+        entries = []
+        if idx_file.exists():
+            try:
+                m = re.search(r"window\.NEWS_INDEX = (\[.*\]);",
+                              idx_file.read_text(encoding="utf-8"), re.S)
+                entries = json.loads(m.group(1)) if m else []
+            except Exception as e:
+                log(f"  search_index.js 读取失败，重建: {e}")
+                entries = []
+        if entries:
+            entries = [r for r in entries if r and r[0] != date_str]
+        else:
+            for d in sorted(p.stem for p in daily_dir.glob("*.js")):
+                if d == date_str:
+                    continue
+                payload = read_daily_payload(daily_dir / f"{d}.js")
+                if payload:
+                    entries += index_rows(payload)
+        payload = read_daily_payload(daily_dir / f"{date_str}.js")
+        if payload:
+            entries += index_rows(payload)
+        today = datetime.strptime(date_str, "%Y-%m-%d")
+
+        def _fresh(dt):
+            try:
+                return (today - datetime.strptime(dt, "%Y-%m-%d")).days <= keep_days
+            except ValueError:
+                return False
+
+        entries = [r for r in entries if _fresh(r[0])]
+        entries.sort(key=lambda r: r[0], reverse=True)
+        idx_file.write_text("window.NEWS_INDEX = "
+                            + json.dumps(entries, ensure_ascii=False) + ";\n",
+                            encoding="utf-8")
+        log(f"  搜索索引：{len(entries)} 条")
+    except Exception as e:
+        log(f"  搜索索引更新失败（不影响主管线）: {e}")
 
 
 # ----------------------------------------------------------------
@@ -694,6 +1419,20 @@ def main():
 
     llm = LLM(cfg["llm"])
 
+    # ---- 偏好学习输入：反馈与稍后读（缺失/损坏一律安全忽略） ----
+    _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    feedback = load_state_list(_data_dir, "feedback.json", "entries")
+    read_later = load_state_list(_data_dir, "read_later.json", "items")
+    pens = source_penalties(feedback, date_str)
+    if pens:
+        n_pen = 0
+        for it in items:
+            mult = pens.get(it["source"])
+            if mult:
+                it["credibility"] = it["credibility"] * mult
+                n_pen += 1
+        log(f"  来源降权：{pens}（影响 {n_pen} 条）")
+
     # 预筛：便宜模型先丢垃圾（未配置独立模型则复用主模型）
     pf_cfg = cfg.get("prefilter", {})
     if pf_cfg.get("enabled", False):
@@ -709,15 +1448,28 @@ def main():
     events = triage(llm, items)
     log(f"  聚成 {len(events)} 个事件")
 
+    log("偏好学习：画像蒸馏 + 兴趣拟合 ...")
+    profile = update_profile(llm, _data_dir, feedback, read_later)
+    interest_fit(llm, profile, events)
+
     picked, secondary = score_and_select(events, items, cfg)
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
-    enrich(llm, picked, items)
+    enrich(llm, picked, items, cfg)
     for ev in secondary:
         ev.setdefault("status", "")
+    log("事件登记表：跨天延续性匹配 ...")
+    registry = track_events(llm, picked, date_str, cfg,
+                            secondary=secondary, feedback=feedback)
     brief = write_brief(llm, picked)
 
-    write_output(date_str, brief, picked, secondary, items, cfg)
+    log("深读频道：长文筛选 ...")
+    deep = deep_channel(llm, cfg, date_str, profile)
+
+    write_output(date_str, brief, picked, secondary, items, cfg,
+                 registry=registry, deep=deep)
     update_source_health(fetch_stats, date_str)
+    write_feed(_data_dir, date_str, cfg)
+    update_search_index(_data_dir, date_str, cfg)
 
     # ---- 发布前校验：精选非空、输出文件存在且包含当日数据 ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"

@@ -287,3 +287,58 @@ sources:
     credibility: 5
     category: world
     enabled: false
+
+# ============================================================
+# 深度阅读长文源（独立频道，不进新闻管线）
+# 字段：id/name/url/lang(en|zh)/enabled；参数在 config.yaml 的 deep 块
+# 财经深度方向暂无可用免费 RSS（财新/晚点无 RSS、FT 全文付费墙），
+# 先复用新闻源里的华尔街见闻/MarketWatch 长文，缺口后续补。
+# ============================================================
+deep_sources:
+  # ---------- AI/LLM 深度 ----------
+  - id: simonwillison
+    name: Simon Willison
+    url: https://simonwillison.net/atom/everything/
+    lang: en
+    enabled: true
+  - id: importai
+    name: Import AI
+    url: https://importai.substack.com/feed
+    lang: en
+    enabled: true
+  - id: interconnects
+    name: Interconnects
+    url: https://www.interconnects.ai/feed
+    lang: en
+    enabled: true
+  - id: oneusefulthing
+    name: One Useful Thing
+    url: https://www.oneusefulthing.org/feed
+    lang: en
+    enabled: true
+  - id: latentspace
+    name: Latent Space
+    url: https://www.latent.space/feed
+    lang: en
+    enabled: true
+  # ---------- 科技/商业分析 ----------
+  - id: stratechery
+    name: Stratechery
+    url: https://stratechery.com/feed/
+    lang: en
+    enabled: true
+  - id: pragmaticengineer
+    name: The Pragmatic Engineer
+    url: https://blog.pragmaticengineer.com/rss/
+    lang: en
+    enabled: true
+  - id: sspai
+    name: 少数派
+    url: https://sspai.com/feed
+    lang: zh
+    enabled: true
+  - id: jiqizhixin
+    name: 机器之心
+    url: https://www.jiqizhixin.com/rss
+    lang: zh
+    enabled: true

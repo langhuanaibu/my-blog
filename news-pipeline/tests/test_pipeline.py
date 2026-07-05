@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """管线纯逻辑回归测试（不调 LLM、不联网）
 用法: python news-pipeline/tests/test_pipeline.py
-覆盖: 舆论源封顶 / 同源封顶 / 跨批次合并 / 信源健康度
+覆盖: 舆论源封顶 / 同源封顶 / 跨批次合并 / 信源健康度 / 跨天事件登记表
 """
 import json
 import os
@@ -134,6 +134,369 @@ try:
     health = json.loads((tmp / "source_health.json").read_text(encoding="utf-8"))
     check("同日重跑覆盖", health["days"]["2026-07-20"]["hn"]["error"] is True)
 finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+    if old_data_dir is None:
+        os.environ.pop("DATA_DIR", None)
+    else:
+        os.environ["DATA_DIR"] = old_data_dir
+
+# ----------------------------------------------------------------
+# 5. 跨天事件登记表（load_registry / update_registry / match 校验）
+# ----------------------------------------------------------------
+
+EV_CFG = {"events": {"match_window_days": 14, "archive_days": 7,
+                     "prune_archived_days": 60}}
+
+
+def mk_pick(title, cat, summary="s", status="发展中"):
+    return {"title": title, "category": cat, "summary": summary, "status": status}
+
+
+def mk_reg_event(eid, title, cat, dates, status="active"):
+    return {"event_id": eid, "title": title, "category": cat, "status": status,
+            "pinned": False, "first_seen": dates[0], "last_seen": dates[-1],
+            "history": [{"date": d, "title": title, "summary": f"{title}@{d}",
+                         "news_status": "发展中"} for d in dates]}
+
+
+tmp = Path(tempfile.mkdtemp(prefix="events_test_"))
+try:
+    # 冷启动：文件不存在 -> 空表；损坏 -> 重建
+    reg = dn.load_registry(tmp)
+    check("登记表冷启动为空表", reg == {"version": 1, "events": []})
+    (tmp / "events.json").write_text("{broken", encoding="utf-8")
+    check("登记表损坏时重建空表", dn.load_registry(tmp)["events"] == [])
+
+    # 全新建：无匹配 -> 每条精选建一个事件，day_count=1
+    reg = {"version": 1, "events": []}
+    picks = [mk_pick("事件甲", "world"), mk_pick("事件乙", "ai")]
+    dn.update_registry(reg, picks, [], [], "2026-07-04", EV_CFG)
+    check("新事件全部登记", len(reg["events"]) == 2)
+    check("新事件day_count=1", all(p["day_count"] == 1 for p in picks))
+    check("新事件带event_id", all(p["event_id"].startswith("evt-20260704-") for p in picks))
+    check("新事件不带history_prev", all(p["history_prev"] == [] for p in picks))
+
+    # 续接：昨日事件匹配上 -> day_count=2、last_seen 更新、history_prev 含昨日
+    reg = {"version": 1, "events": [mk_reg_event("evt-x", "事件甲", "world", ["2026-07-03"])]}
+    active = [e for e in reg["events"]]
+    picks = [mk_pick("事件甲后续", "world")]
+    dn.update_registry(reg, picks, [(0, 0)], active, "2026-07-04", EV_CFG)
+    check("续接后day_count=2", picks[0]["day_count"] == 2)
+    check("续接沿用event_id", picks[0]["event_id"] == "evt-x")
+    check("last_seen更新", reg["events"][0]["last_seen"] == "2026-07-04")
+    check("history_prev只含往日", [h["date"] for h in picks[0]["history_prev"]] == ["2026-07-03"])
+    check("登记表不新增事件", len(reg["events"]) == 1)
+
+    # 同日重跑幂等：再跑一次同日期，day_count 不涨、history 不重复
+    picks2 = [mk_pick("事件甲后续v2", "world")]
+    active2 = [e for e in reg["events"]
+               if any(h["date"] != "2026-07-04" for h in e["history"])]
+    dn.update_registry(reg, picks2, [(0, 0)], active2, "2026-07-04", EV_CFG)
+    check("同日重跑day_count不变", picks2[0]["day_count"] == 2)
+    check("同日重跑history不重复", len(reg["events"][0]["history"]) == 2)
+
+    # 同日重跑清理孤儿：本日新建的事件在重跑时被移除重建
+    reg = {"version": 1, "events": [mk_reg_event("evt-y", "事件丙", "tech", ["2026-07-04"])]}
+    picks3 = [mk_pick("事件丙", "tech")]
+    dn.update_registry(reg, picks3, [], [], "2026-07-04", EV_CFG)
+    check("重跑后本日新建事件不留孤儿", len(reg["events"]) == 1)
+    check("重跑重建day_count=1", picks3[0]["day_count"] == 1)
+
+    # 归档：last_seen 超过 archive_days 的 active 事件被归档
+    reg = {"version": 1, "events": [mk_reg_event("evt-old", "旧事件", "world", ["2026-06-25"])]}
+    dn.update_registry(reg, [], None, [], "2026-07-04", EV_CFG)
+    check("超期事件被归档", reg["events"][0]["status"] == "archived")
+
+    # 剪枝：archived 超过 prune_archived_days 的事件被删除
+    reg = {"version": 1, "events": [mk_reg_event("evt-ancient", "远古事件", "world",
+                                                 ["2026-04-01"], status="archived")]}
+    dn.update_registry(reg, [], None, [], "2026-07-04", EV_CFG)
+    check("远古归档事件被剪枝", len(reg["events"]) == 0)
+
+    # 降级：pairs=None（LLM 失败）-> 全部按新事件，不崩溃
+    reg = {"version": 1, "events": [mk_reg_event("evt-x", "事件甲", "world", ["2026-07-03"])]}
+    picks4 = [mk_pick("事件甲后续", "world")]
+    dn.update_registry(reg, picks4, None, reg["events"][:], "2026-07-04", EV_CFG)
+    check("LLM失败降级为新事件", picks4[0]["day_count"] == 1 and len(reg["events"]) == 2)
+
+    # match 结果校验：跨类目/越界/重复对被丢弃（StubLLM 直接喂违规输出）
+    class MatchStub:
+        def __init__(self, matches):
+            self._m = matches
+
+        def json_call(self, system, user):
+            return {"matches": self._m}
+
+    active = [mk_reg_event("evt-a", "A事件", "world", ["2026-07-03"]),
+              mk_reg_event("evt-b", "B事件", "ai", ["2026-07-03"])]
+    picks5 = [mk_pick("A后续", "world"), mk_pick("B后续", "tech")]
+    pairs = dn.match_events_llm(MatchStub([
+        {"today": 0, "registry": 0},   # 合法
+        {"today": 1, "registry": 1},   # 跨类目（tech vs ai）应丢弃
+        {"today": 0, "registry": 1},   # today 重复应丢弃
+        {"today": 9, "registry": 0},   # 越界应丢弃
+    ]), active, picks5)
+    check("匹配校验只留合法对", pairs == [(0, 0)])
+
+    class BoomStub:
+        def json_call(self, system, user):
+            raise RuntimeError("boom")
+
+    check("匹配调用异常返回None", dn.match_events_llm(BoomStub(), active, picks5) is None)
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+
+# ----------------------------------------------------------------
+# 6. 偏好学习（source_penalties / apply_pins / 画像 / 兴趣拟合 / 追踪区）
+# ----------------------------------------------------------------
+
+fb = [
+    {"ts": "2026-07-01T08:00:00Z", "action": "low_quality_source", "source": "某源"},
+    {"ts": "2026-07-01T09:00:00Z", "action": "low_quality_source", "source": "某源"},  # 同日只记一次
+    {"ts": "2026-07-02T08:00:00Z", "action": "low_quality_source", "source": "某源"},
+    {"ts": "2026-01-01T08:00:00Z", "action": "low_quality_source", "source": "旧源"},  # 超90天窗口
+    {"ts": "2026-07-02T08:00:00Z", "action": "not_interested", "source": "别源"},      # 非该动作
+]
+pens = dn.source_penalties(fb, "2026-07-04")
+check("来源降权按自然日计次", pens.get("某源") == 0.8)
+check("超窗口反馈不计", "旧源" not in pens)
+check("其他动作不计", "别源" not in pens)
+many = [{"ts": f"2026-06-{d:02d}T08:00:00Z", "action": "low_quality_source", "source": "s"}
+        for d in range(1, 20)]
+check("降权下限0.7", dn.source_penalties(many, "2026-07-04")["s"] == 0.7)
+
+reg = {"version": 1, "events": [
+    {"event_id": "evt-1", "pinned": False},
+    {"event_id": "evt-2", "pinned": True},
+]}
+pins = [
+    {"ts": "2026-07-01T08:00:00Z", "action": "track", "event_id": "evt-1"},
+    {"ts": "2026-07-02T08:00:00Z", "action": "untrack", "event_id": "evt-1"},
+    {"ts": "2026-07-03T08:00:00Z", "action": "track", "event_id": "evt-1"},  # 最后一次为准
+    {"ts": "2026-07-01T08:00:00Z", "action": "untrack", "event_id": "evt-2"},
+    {"ts": "2026-07-01T08:00:00Z", "action": "track", "event_id": "evt-404"},  # 不存在的事件忽略
+]
+changed = dn.apply_pins(reg, pins)
+check("track/untrack取最后一次", reg["events"][0]["pinned"] is True)
+check("untrack解除钉选", reg["events"][1]["pinned"] is False)
+check("变更计数", changed == 2)
+check("空反馈不变更", dn.apply_pins(reg, []) == 0)
+
+check("默认画像判空", dn.profile_has_content(dn.PROFILE_DEFAULT) is False)
+check("有要点行判非空", dn.profile_has_content("## 更关注\n- AI 模型价格") is True)
+
+tmp = Path(tempfile.mkdtemp(prefix="profile_test_"))
+try:
+    # 无新反馈：不调 LLM（llm=None 也不崩）、落盘默认画像
+    text = dn.update_profile(None, tmp, [], [])
+    check("无反馈时落盘默认画像", (tmp / "interest_profile.md").exists())
+    check("无反馈时返回默认画像", "## 更关注" in text)
+
+    # 反馈早于 marker：同样不调 LLM
+    (tmp / "interest_profile.md").write_text(
+        "# 兴趣画像\n<!-- last_feedback_ts: 2026-07-03T00:00:00Z -->\n\n## 更关注\n- 旧偏好\n\n## 不关注\n（暂无）\n",
+        encoding="utf-8")
+    old_fb = [{"ts": "2026-07-02T08:00:00Z", "action": "not_interested", "title": "t"}]
+    text = dn.update_profile(None, tmp, old_fb, [])
+    check("旧反馈不触发蒸馏", "- 旧偏好" in text)
+
+    # 「只是今天不想看」且无备注：不入画像
+    skip_fb = [{"ts": "2026-07-04T08:00:00Z", "action": "not_interested",
+                "reasons": ["只是今天不想看"], "title": "t"}]
+    text = dn.update_profile(None, tmp, skip_fb, [])
+    check("今天不想看不入画像", "- 旧偏好" in text)
+
+    # 蒸馏失败（llm=None 触发异常）：保留旧画像、marker 不推进
+    new_fb = [{"ts": "2026-07-04T08:00:00Z", "action": "more_like_this",
+               "title": "新话题", "category": "ai"}]
+    text = dn.update_profile(None, tmp, new_fb, [])
+    saved = (tmp / "interest_profile.md").read_text(encoding="utf-8")
+    check("蒸馏失败保留旧画像", "- 旧偏好" in text and "2026-07-03T00:00:00Z" in saved)
+
+    # 蒸馏成功：marker 推进到最新反馈 ts、内容更新
+    class ProfileStub:
+        model = "stub"
+
+        class client:
+            class chat:
+                class completions:
+                    @staticmethod
+                    def create(**kw):
+                        class R:
+                            pass
+                        r = R()
+                        msg = type("M", (), {"content": "# 兴趣画像\n\n## 更关注\n- 旧偏好\n- AI新话题\n\n## 不关注\n（暂无）\n\n## 来源印象\n（暂无）"})
+                        r.choices = [type("C", (), {"message": msg})]
+                        return r
+
+    text = dn.update_profile(ProfileStub(), tmp, new_fb, [])
+    saved = (tmp / "interest_profile.md").read_text(encoding="utf-8")
+    check("蒸馏成功更新画像", "- AI新话题" in saved)
+    check("marker推进", "2026-07-04T08:00:00Z" in saved)
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
+class FitStub:
+    def json_call(self, system, user):
+        return {"fits": [{"idx": 0, "fit": 10}, {"idx": 1, "fit": 0},
+                         {"idx": 2, "fit": 5}, {"idx": 9, "fit": 10},  # 越界忽略
+                         {"idx": "x", "fit": 3}]}                       # 脏数据忽略
+
+
+fit_events = [{"title": "a", "category": "ai"}, {"title": "b", "category": "world"},
+              {"title": "c", "category": "tech"}]
+dn.interest_fit(FitStub(), "## 更关注\n- 某主题", fit_events)
+check("拟合上限1.15", fit_events[0]["interest_mult"] == 1.15)
+check("拟合下限0.85", fit_events[1]["interest_mult"] == 0.85)
+check("中性5分=1.0", fit_events[2]["interest_mult"] == 1.0)
+
+fit_events2 = [{"title": "a", "category": "ai"}]
+dn.interest_fit(FitStub(), dn.PROFILE_DEFAULT, fit_events2)
+check("空画像不打分", "interest_mult" not in fit_events2[0])
+
+
+class FitBoom:
+    def json_call(self, system, user):
+        raise RuntimeError("boom")
+
+
+fit_events3 = [{"title": "a", "category": "ai"}]
+dn.interest_fit(FitBoom(), "## 更关注\n- 某主题", fit_events3)
+check("拟合失败保持中性", "interest_mult" not in fit_events3[0])
+
+reg = {"version": 1, "events": [
+    mk_reg_event("evt-p1", "钉选未进精选", "world", ["2026-07-02", "2026-07-03"]),
+    mk_reg_event("evt-p2", "钉选已进精选", "ai", ["2026-07-03", "2026-07-04"]),
+    mk_reg_event("evt-p3", "未钉选", "tech", ["2026-07-03"]),
+    mk_reg_event("evt-p4", "钉选但已归档", "world", ["2026-06-01"], status="archived"),
+]}
+reg["events"][0]["pinned"] = True
+reg["events"][1]["pinned"] = True
+reg["events"][3]["pinned"] = True
+tracking = dn.build_tracking(reg, [{"event_id": "evt-p2"}], "2026-07-04")
+check("追踪区只含钉选未进精选的活跃事件",
+      [t["event_id"] for t in tracking] == ["evt-p1"])
+check("追踪区day_count正确", tracking[0]["day_count"] == 2)
+check("追踪区updated_today标记", tracking[0]["updated_today"] is False)
+check("追踪区history倒序", [h["date"] for h in tracking[0]["history"]] ==
+      ["2026-07-03", "2026-07-02"])
+
+# ----------------------------------------------------------------
+# 7. 三期：深读频道 / feed.xml / 搜索索引
+# ----------------------------------------------------------------
+
+check("阅读时长-中文", dn.estimate_read_minutes({"content_chars": 4000, "content_words": 0}, "zh") == 10)
+check("阅读时长-英文", dn.estimate_read_minutes({"content_chars": 0, "content_words": 2200}, "en") == 10)
+check("阅读时长下限3", dn.estimate_read_minutes({"content_chars": 100}, "zh") == 3)
+check("阅读时长上限60", dn.estimate_read_minutes({"content_words": 999999}, "en") == 60)
+
+tmp = Path(tempfile.mkdtemp(prefix="phase3_test_"))
+old_data_dir = os.environ.get("DATA_DIR")
+os.environ["DATA_DIR"] = str(tmp)
+orig_fetch_rss = dn.fetch_rss
+try:
+    # --- deep_seen 冷启动与同日剔除 ---
+    seen = dn.load_deep_seen(tmp, "2026-07-05")
+    check("deep_seen冷启动", seen == {"version": 1, "urls": {}})
+    (tmp / "deep_seen.json").write_text(json.dumps(
+        {"version": 1, "urls": {"https://a.com/1": "2026-07-04",
+                                "https://a.com/2": "2026-07-05"}}), encoding="utf-8")
+    seen = dn.load_deep_seen(tmp, "2026-07-05")
+    check("deep_seen剔除当日(重跑幂等)", list(seen["urls"]) == ["https://a.com/1"])
+
+    # --- deep_channel：monkeypatch fetch_rss，离线跑选择逻辑 ---
+    fake_articles = [
+        {"title": "Deep A", "url": "https://a.com/1", "desc": "d", "time": "2026-07-05T00:00:00+00:00",
+         "source": "SrcX", "source_id": "x", "source_type": "analysis", "tier": "T2",
+         "credibility": 7, "content_chars": 0, "content_words": 2200},   # 已推荐过 -> 应被去重
+        {"title": "Deep B & <best>", "url": "https://a.com/3", "desc": "d", "time": "2026-07-05T00:00:00+00:00",
+         "source": "SrcX", "source_id": "x", "source_type": "analysis", "tier": "T2",
+         "credibility": 7, "content_chars": 0, "content_words": 4400},
+        {"title": "Deep C", "url": "https://a.com/4", "desc": "d", "time": "2026-07-05T00:00:00+00:00",
+         "source": "SrcX", "source_id": "x", "source_type": "analysis", "tier": "T2",
+         "credibility": 7, "content_chars": 0, "content_words": 440},
+    ]
+    dn.fetch_rss = lambda src, ws, mx: (list(fake_articles) if src["id"] == "simonwillison" else [], False)
+
+    class DeepStub:
+        def json_call(self, system, user):
+            # 去重后候选只剩 B(0) C(1)：B 过线，C 不过线
+            return [{"idx": 0, "score": 9, "title_zh": "深读B", "brief": "b", "why": "w"},
+                    {"idx": 1, "score": 4, "title_zh": "深读C", "brief": "b", "why": "w"}]
+
+    deep = dn.deep_channel(DeepStub(), {"deep": {"enabled": True, "pick_threshold": 7,
+                                                 "pick_max": 3, "seen_keep_days": 60}},
+                           "2026-07-05")
+    check("deep已推荐URL被去重且阈值过滤", [d["url"] for d in deep] == ["https://a.com/3"])
+    check("deep字段完整", deep[0]["title_zh"] == "深读B" and deep[0]["read_minutes"] == 20
+          and deep[0]["id"].startswith("deep-"))
+    seen = json.loads((tmp / "deep_seen.json").read_text(encoding="utf-8"))
+    check("deep推荐写回seen", seen["urls"].get("https://a.com/3") == "2026-07-05")
+
+    class DeepBoom:
+        def json_call(self, system, user):
+            raise RuntimeError("boom")
+
+    check("deep LLM失败返回空", dn.deep_channel(DeepBoom(), {"deep": {"enabled": True}},
+                                                "2026-07-05") == [])
+    check("deep禁用返回空", dn.deep_channel(DeepStub(), {"deep": {"enabled": False}},
+                                            "2026-07-05") == [])
+
+    # --- write_feed ---
+    daily = tmp / "daily"
+    daily.mkdir(parents=True, exist_ok=True)
+
+    def fake_daily(date, items, deep_items=None):
+        payload = {"date": date, "generated_at": f"{date}T05:00:00+00:00",
+                   "brief": "b", "stats": {}, "items": items}
+        if deep_items:
+            payload["deep"] = deep_items
+        js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
+              f'window.NEWS_DATA["{date}"] = ' + json.dumps(payload, ensure_ascii=False) + ";\n")
+        (daily / f"{date}.js").write_text(js, encoding="utf-8")
+
+    pick = {"id": "pick-1", "tier": "pick", "category": "tech",
+            "title": "A&B <公司> 收购", "summary": "s", "why": "w", "watch": "",
+            "time": "2026-07-05T01:00:00+00:00",
+            "sources": [{"name": "S&P", "url": "https://s.com/a?x=1&y=2"}]}
+    more = {"id": "more-9", "tier": "more", "category": "tech", "title": "m",
+            "summary": "", "time": "", "sources": []}
+    fake_daily("2026-07-05", [pick, more],
+               [{"id": "deep-abc", "title": "T", "title_zh": "深读题", "url": "https://d.com/1",
+                 "source": "SrcX", "lang": "en", "brief": "b", "why": "w", "read_minutes": 12}])
+    fake_daily("2026-06-01", [dict(pick, id="pick-old")])  # 超出 feed 窗口(7天)的旧文件
+
+    dn.write_feed(tmp, "2026-07-05", {"feed_days": 7, "site_url": "https://aoiblog.top"})
+    feed = (tmp / "feed.xml").read_text(encoding="utf-8")
+    check("feed含精选item", "2026-07-05:pick-1" in feed)
+    check("feed排除more", "more-9" not in feed)
+    check("feed含深读item", "【深读】深读题" in feed and "2026-07-05:deep-abc" in feed)
+    check("feed标题转义", "A&amp;B &lt;公司&gt; 收购" in feed)
+    check("feed链接转义", "https://s.com/a?x=1&amp;y=2" in feed)
+    check("feed窗口截断", "pick-old" in feed)  # 6-01 仍在最近7个文件内（只有2个文件）
+    import xml.dom.minidom
+    xml.dom.minidom.parseString(feed)
+    check("feed是合法XML", True)
+
+    # --- update_search_index ---
+    cfg3 = {"search_index_days": 180}
+    dn.update_search_index(tmp, "2026-07-05", cfg3)
+    idx = json.loads((tmp / "search_index.js").read_text(encoding="utf-8")
+                     .split(" = ", 1)[1].rstrip().rstrip(";"))
+    n1 = len(idx)
+    check("索引冷启动重建含双日", {r[0] for r in idx} == {"2026-07-05", "2026-06-01"})
+    check("索引含deep行", any(r[2] == "deep" for r in idx))
+    dn.update_search_index(tmp, "2026-07-05", cfg3)
+    idx2 = json.loads((tmp / "search_index.js").read_text(encoding="utf-8")
+                      .split(" = ", 1)[1].rstrip().rstrip(";"))
+    check("索引同日重跑幂等", len(idx2) == n1)
+    dn.update_search_index(tmp, "2026-07-05", {"search_index_days": 10})
+    idx3 = json.loads((tmp / "search_index.js").read_text(encoding="utf-8")
+                      .split(" = ", 1)[1].rstrip().rstrip(";"))
+    check("索引按天数剪枝", {r[0] for r in idx3} == {"2026-07-05"})
+finally:
+    dn.fetch_rss = orig_fetch_rss
     shutil.rmtree(tmp, ignore_errors=True)
     if old_data_dir is None:
         os.environ.pop("DATA_DIR", None)

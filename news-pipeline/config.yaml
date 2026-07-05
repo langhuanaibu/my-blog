@@ -73,6 +73,59 @@ interest_weights:
 # 每类在精选中的最低保底条数（有内容的前提下）
 min_per_category: 2
 
+# ---------- 细粒度主题标签（受控词表） ----------
+# 阶段B 让 LLM 从这个词表里给每条精选选 1-2 个标签（不许自创），
+# 前端按标签过滤；词表也是后续兴趣画像的稳定统计维度。改词表不用改代码。
+topic_tags:
+  - 模型发布
+  - 产品发布
+  - 开源
+  - 研究论文
+  - 芯片算力
+  - 融资并购
+  - 财报
+  - 监管政策
+  - 诉讼纠纷
+  - 安全隐私
+  - 人事变动
+  - 地缘冲突
+  - 外交
+  - 选举政治
+  - 能源
+  - 宏观经济
+  - 市场行情
+  - 加密货币
+  - 航天
+  - 汽车出行
+  - 医疗健康
+  - 气候环境
+  - 灾害事故
+  - 劳动就业
+
+# ---------- 深度阅读频道 ----------
+# 独立于新闻管线：抓 sources.yaml 的 deep_sources，LLM 打"深读价值分"，
+# 阈值制 0-3 篇/天（宁缺毋滥），推荐写入 daily js 的 deep 字段。
+deep:
+  enabled: true
+  window_hours: 78      # newsletter 多为周更，窗口放宽到 3 天
+  max_per_source: 5
+  pick_threshold: 7     # 深读价值分（0-10）过线才推
+  pick_max: 3
+  seen_keep_days: 60    # 已推荐 URL 记录（data/deep_seen.json）保留天数
+
+# ---------- RSS 输出 / 搜索索引 ----------
+site_url: https://aoiblog.top   # feed 的 channel link 用
+feed_days: 7                    # feed.xml 收录最近 N 天精选
+search_index_days: 180          # search_index.js 保留天数
+
+# ---------- 跨天事件登记表 ----------
+# 管线在精加工后把今日精选与 data/events.json 里的活跃事件匹配，
+# 连续出现 >=2 天的事件在页面上带「第N天」徽标和历史进展。
+events:
+  match_window_days: 14   # 活跃匹配池：last_seen 距今 <=14 天的事件才参与匹配
+  archive_days: 7         # 连续 7 天无新进展 -> 归档（不再匹配，复燃按新事件）
+  prune_archived_days: 60 # 归档超 60 天从文件中删除，防止无限增长
+
 # ---------- 发布到博客 ----------
 # 云端 CI：数据由 DATA_DIR 环境变量直接写入仓库的 source/news/data/，
 # 此处 blog_dir 留空即跳过同步逻辑；commit + push 由 workflow 负责。
