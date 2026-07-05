@@ -176,6 +176,13 @@ try:
     check("新事件带event_id", all(p["event_id"].startswith("evt-20260704-") for p in picks))
     check("新事件不带history_prev", all(p["history_prev"] == [] for p in picks))
 
+    # 同日同标题的两条精选 -> event_id 必须不同（哈希掺入首条原始条目索引）
+    reg = {"version": 1, "events": []}
+    dup_picks = [dict(mk_pick("同名事件", "world"), ids=[3]),
+                 dict(mk_pick("同名事件", "world"), ids=[9])]
+    dn.update_registry(reg, dup_picks, [], [], "2026-07-04", EV_CFG)
+    check("同日同标题event_id不撞", dup_picks[0]["event_id"] != dup_picks[1]["event_id"])
+
     # 续接：昨日事件匹配上 -> day_count=2、last_seen 更新、history_prev 含昨日
     reg = {"version": 1, "events": [mk_reg_event("evt-x", "事件甲", "world", ["2026-07-03"])]}
     active = [e for e in reg["events"]]
@@ -287,6 +294,11 @@ check("有要点行判非空", dn.profile_has_content("## 更关注\n- AI 模型
 
 tmp = Path(tempfile.mkdtemp(prefix="profile_test_"))
 try:
+    # 目录不存在时自动创建（本地 fresh clone 首跑不崩）
+    missing = tmp / "not_yet" / "data"
+    dn.update_profile(None, missing, [], [])
+    check("画像落盘自动建目录", (missing / "interest_profile.md").exists())
+
     # 无新反馈：不调 LLM（llm=None 也不崩）、落盘默认画像
     text = dn.update_profile(None, tmp, [], [])
     check("无反馈时落盘默认画像", (tmp / "interest_profile.md").exists())

@@ -619,9 +619,11 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg):
                  "summary": ev.get("summary", ""), "news_status": ev.get("status", "")}
         tgt = matched.get(idx)
         if tgt is None:
+            # 哈希掺入首条原始条目索引（当天唯一），防同日同标题撞出重复 event_id
+            seed = f"{ev.get('title', '')}|{(ev.get('ids') or [idx])[0]}"
             eid = "evt-{}-{}".format(
                 date_str.replace("-", ""),
-                hashlib.sha1(str(ev.get("title", "")).encode("utf-8")).hexdigest()[:6])
+                hashlib.sha1(seed.encode("utf-8")).hexdigest()[:6])
             tgt = {"event_id": eid, "title": ev.get("title", ""),
                    "category": ev.get("category", ""), "status": "active",
                    "pinned": False, "first_seen": date_str, "last_seen": date_str,
@@ -806,6 +808,7 @@ def profile_has_content(text):
 def update_profile(llm, data_dir, feedback, read_later):
     """把 marker 之后的新反馈蒸馏进 interest_profile.md。
     无新反馈不调 LLM；蒸馏失败保留旧画像、不推进 marker。返回画像全文。"""
+    data_dir.mkdir(parents=True, exist_ok=True)  # 本函数早于 main 里其他 mkdir 执行
     pf = data_dir / "interest_profile.md"
     try:
         text = pf.read_text(encoding="utf-8") if pf.exists() else PROFILE_DEFAULT

@@ -215,6 +215,28 @@ const LS = {
 };
 function itemKey(id){return state.date+":"+id;}
 
+// 过期清理：hidden/rl 键形如 "YYYY-MM-DD:id"，tracked 键形如 "evt-YYYYMMDD-xxx"，
+// 分别保留 30/60 天，防 localStorage 无限累积
+function pruneLocal(){
+  const cut=k=>{const d=new Date();d.setDate(d.getDate()-k);return d.toISOString().slice(0,10);};
+  const c30=cut(30), c60=cut(60).replace(/-/g,"");
+  for(const key of ["news_hidden","news_rl"]){
+    const m=LS.get(key);
+    let dirty=false;
+    for(const k of Object.keys(m)){
+      if((k.slice(0,10)||"")<c30){delete m[k];dirty=true;}
+    }
+    if(dirty) LS.set(key,m);
+  }
+  const t=LS.get("news_tracked");
+  let dirty=false;
+  for(const k of Object.keys(t)){
+    const d=(k.match(/^evt-(\d{8})-/)||[])[1];
+    if(d&&d<c60){delete t[k];dirty=true;}
+  }
+  if(dirty) LS.set("news_tracked",t);
+}
+
 async function postState(type,payload){
   const r=await fetch("/api/newsState",{method:"POST",
     headers:{"Content-Type":"application/json",Authorization:"Bearer "+TOKEN},
@@ -383,13 +405,16 @@ function fbTrack(id){
     .catch(e=>toast("同步失败："+e.message,true));
 }
 
-function trkUntrack(eventId,title){
+function trkUntrack(eventId){
+  // 标题从当日数据按 event_id 查，不经 onclick 属性传自由文本（防注入/断引号）
+  const d=window.NEWS_DATA[state.date]||{};
+  const t=(d.tracking||[]).find(x=>x.event_id===eventId)||{};
   const lt=LS.get("news_tracked");
   lt[eventId]=false;
   LS.set("news_tracked",lt);
   render();
-  postState("feedback",{date:state.date,item_id:eventId,title:title||"",category:"",
-    action:"untrack",event_id:eventId})
+  postState("feedback",{date:state.date,item_id:eventId,title:t.title||"",
+    category:t.category||"",action:"untrack",event_id:eventId})
     .then(()=>toast("已取消追踪，明日生效"))
     .catch(e=>toast("同步失败："+e.message,true));
 }
@@ -510,7 +535,7 @@ function render(){
         <span class="tag cat-${esc(t.category)}">${CAT[t.category]||esc(t.category)}</span>
         <b>${esc(t.title)}</b>
         <span class="trk-upd">${t.updated_today?"今日有新进展":"今日无新进展 · 最后 "+esc(t.last_seen)}</span>
-        ${TOKEN?`<span class="act" onclick="event.stopPropagation();trkUntrack('${esc(t.event_id)}','${esc(t.title)}')">取消追踪</span>`:""}
+        ${TOKEN?`<span class="act" onclick="event.stopPropagation();trkUntrack('${esc(t.event_id)}')">取消追踪</span>`:""}
       </div>
       <div class="trk-hist">${(t.history||[]).map(hh=>`<div><span class="eh-d">${esc(hh.date)}</span>${esc(hh.summary)}</div>`).join("")}</div>
     </div>`).join("");
@@ -692,6 +717,7 @@ function gotoDay(dt){
 }
 
 (function init(){
+  pruneLocal();
   if(TOKEN){
     const drawer=document.createElement("div");
     drawer.id="rlDrawer";drawer.className="drawer";
