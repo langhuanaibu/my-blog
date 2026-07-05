@@ -17,7 +17,7 @@
 | ├── `/source/about` | 关于页面 | 存放 `index.md`。 |
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
-| ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 由管线产出，不手工编辑。 |
+| ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 主要由管线和后台 API 产出，不手工编辑；唯一可人工维护的是 `source/news/data/interest_profile.md` 中的兴趣画像要点。 |
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs` 等一次性或维护脚本。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
@@ -71,5 +71,8 @@
 **场景 5：我要调整每日日报评分、阈值或分类偏好**
 👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
 
-**场景 6：我要记录一个 Vercel 部署相关的深坑经验**
+**场景 6：我要人工修正每日日报兴趣画像**
+👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feedback.json`、`read_later.json`、`feed.xml` 或 `search_index.js`。
+
+**场景 7：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。

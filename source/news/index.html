@@ -5,34 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>每日驾驶舱 · Daily Briefing</title>
 <link rel="alternate" type="application/rss+xml" title="每日驾驶舱" href="data/feed.xml">
+<script>
+/* 亮暗跟随博客：读 Fluid 的 localStorage 键，未设置则跟随系统 */
+(function(){
+  var KEY="Fluid_Color_Scheme";
+  function apply(){
+    var v=null;
+    try{v=localStorage.getItem(KEY);}catch(e){}
+    if(v!=="light"&&v!=="dark")
+      v=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";
+    document.documentElement.dataset.theme=v;
+  }
+  apply();
+  window.addEventListener("storage",function(e){if(e.key===KEY)apply();});
+  if(window.matchMedia){
+    var mq=matchMedia("(prefers-color-scheme: dark)");
+    if(mq.addEventListener) mq.addEventListener("change",apply);
+  }
+})();
+</script>
 <style>
 :root{
-  --bg:#0d1117; --bg2:#161b22; --card:#1c2129; --card-h:#222834;
-  --border:#2d333d; --text:#e6e9ef; --text2:#9aa4b2; --text3:#6b7686;
-  --accent:#4f8ef7; --accent2:#6ea8ff;
-  --ai:#a78bfa; --tech:#38bdf8; --finance:#fbbf24; --society:#fb7185; --world:#34d399;
-  --ok:#3fb950; --dev:#4f8ef7; --dispute:#f0883e; --rumor:#f85149;
+  --bg:#ead8c2; --bg-soft:#f5ebdc; --bg2:rgba(255,249,239,.92);
+  --card:rgba(255,249,239,.94); --card-h:#fff8ec;
+  --border:rgba(76,48,28,.14); --border2:rgba(76,48,28,.26);
+  --text:#342418; --text2:#735d49; --text3:#9c8368; --heading:#21150e;
+  --accent:#9b6237; --accent2:#6f3d20; --accent-soft:rgba(155,98,55,.12);
+  --shadow:0 14px 32px rgba(60,38,22,.08);
+  --shadow2:0 24px 58px rgba(60,38,22,.16);
+  --ok:#2e6b34; --ok-bg:rgba(46,107,52,.12);
+  --dev:#2f5f8f; --dev-bg:rgba(47,95,143,.12);
+  --dispute:#a85417; --dispute-bg:rgba(168,84,23,.12);
+  --rumor:#ab3226; --rumor-bg:rgba(171,50,38,.12);
+  --glow1:rgba(149,91,48,.18); --glow2:rgba(255,238,211,.34);
+  --texture:rgba(111,61,32,.7); --texture2:rgba(111,61,32,.55); --texture-op:.14;
+}
+[data-theme="dark"]{
+  --bg:#1d1712; --bg-soft:#2a2119; --bg2:rgba(25,19,15,.92);
+  --card:rgba(35,28,22,.94); --card-h:#2d231b;
+  --border:rgba(244,207,167,.12); --border2:rgba(244,207,167,.24);
+  --text:#f0dfcb; --text2:#d0b99f; --text3:#a38d75; --heading:#fff7ec;
+  --accent:#e0ad78; --accent2:#f3c796; --accent-soft:rgba(224,173,120,.14);
+  --shadow:0 14px 32px rgba(0,0,0,.35);
+  --shadow2:0 24px 58px rgba(0,0,0,.48);
+  --ok:#86c98e; --ok-bg:rgba(134,201,142,.14);
+  --dev:#8fb7e8; --dev-bg:rgba(143,183,232,.14);
+  --dispute:#e8a860; --dispute-bg:rgba(232,168,96,.14);
+  --rumor:#e78b82; --rumor-bg:rgba(231,139,130,.14);
+  --glow1:rgba(155,98,55,.2); --glow2:rgba(224,173,120,.12);
+  --texture:rgba(224,173,120,.55); --texture2:rgba(224,173,120,.42); --texture-op:.31;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+body{
+  background:
+    radial-gradient(circle at 0% 0%,var(--glow1),transparent 32%),
+    radial-gradient(circle at 100% 0%,var(--glow2),transparent 24%),
+    linear-gradient(180deg,var(--bg-soft),var(--bg)) var(--bg);
+  background-attachment:fixed;
+  color:var(--text);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.6}
+/* 博客同款格纹纸纹理 */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:var(--texture-op);
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 23px,var(--texture) 23px,var(--texture) 24px),
+    repeating-linear-gradient(90deg,transparent,transparent 23px,var(--texture2) 23px,var(--texture2) 24px);
+  -webkit-mask-image:linear-gradient(90deg,black,transparent 45%,transparent 55%,black);
+  mask-image:linear-gradient(90deg,black,transparent 45%,transparent 55%,black);
+}
 a{color:var(--accent2);text-decoration:none}
 a:hover{text-decoration:underline}
 
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px;position:relative;z-index:1}
 
 /* ---------- header ---------- */
-header{border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:10}
+header{border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:10;
+  backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px)}
 .hbar{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.logo{font-size:19px;font-weight:700;letter-spacing:.5px}
+.logo{font-size:19px;font-weight:700;letter-spacing:.5px;color:var(--heading)}
 .logo span{color:var(--accent)}
 .datenav{display:flex;align-items:center;gap:6px;margin-left:auto}
-.datenav button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:13px}
-.datenav button:hover:not(:disabled){background:var(--card-h);border-color:var(--accent)}
+.datenav button{background:var(--card-h);border:1px solid var(--border2);color:var(--text);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:13px}
+.datenav button:hover:not(:disabled){border-color:var(--accent);color:var(--accent2)}
 .datenav button:disabled{opacity:.35;cursor:default}
-.datenav select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:13px;cursor:pointer}
+.datenav select{background:var(--card-h);border:1px solid var(--border2);color:var(--text);padding:5px 8px;border-radius:6px;font-size:13px;cursor:pointer}
 
 /* ---------- brief ---------- */
-.brief{margin:22px 0 6px;padding:16px 18px;background:linear-gradient(135deg,#1a2233,#161b22);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px}
+.brief{margin:22px 0 6px;padding:16px 18px;background:var(--card-h);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;box-shadow:var(--shadow)}
 .brief .bt{font-size:12px;color:var(--accent2);font-weight:600;letter-spacing:1px;margin-bottom:6px}
 .brief p{color:var(--text);font-size:14.5px}
 .meta-line{color:var(--text3);font-size:12.5px;margin:10px 2px 0}
@@ -40,51 +98,49 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 
 /* ---------- filter tabs ---------- */
 .tabs{display:flex;gap:8px;margin:20px 0 4px;flex-wrap:wrap}
-.tab{padding:6px 15px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text2);cursor:pointer;font-size:13px;transition:.15s}
+.tab{padding:6px 15px;border-radius:20px;border:1px solid var(--border2);background:var(--card);color:var(--text2);cursor:pointer;font-size:13px;transition:.15s}
 .tab:hover{border-color:var(--accent)}
-.tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.tab.on{background:var(--accent);border-color:var(--accent);color:var(--card-h);font-weight:600}
 .tab .n{opacity:.7;font-size:11.5px;margin-left:3px}
 .tabs.sub{margin:10px 0 0}
 .tab.sub{padding:3px 11px;font-size:12px;border-radius:14px}
 
 /* ---------- section ---------- */
-.sec-title{margin:26px 0 14px;font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
-.sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
+.sec-title{margin:26px 0 14px;font-size:15.5px;font-weight:700;letter-spacing:1px;color:var(--heading);display:flex;align-items:center;gap:10px}
+.sec-title::before{content:"";width:16px;height:3px;border-radius:2px;background:var(--accent)}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--border2)}
 
 /* ---------- pick cards ---------- */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:860px){.grid{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:9px;transition:.15s}
-.card:hover{background:var(--card-h);border-color:#3a4250}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 18px 14px;display:flex;flex-direction:column;gap:9px;transition:.15s;box-shadow:var(--shadow)}
+.card:hover{background:var(--card-h);border-color:var(--border2)}
 .card-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.score{font-weight:800;font-size:15px;min-width:40px;text-align:center;padding:2px 8px;border-radius:6px;background:#0d1117}
-.score.hi{color:#ffd166;box-shadow:inset 0 0 0 1px #6b5618}
-.score.mid{color:#7ee787;box-shadow:inset 0 0 0 1px #2b5a35}
-.score.lo{color:var(--text2);box-shadow:inset 0 0 0 1px var(--border)}
+.score{font-weight:800;font-size:15px;min-width:40px;text-align:center;padding:2px 8px;border-radius:6px;background:transparent}
+.score.hi{background:var(--accent);color:var(--card-h)}
+.score.mid{color:var(--accent2);box-shadow:inset 0 0 0 1px var(--accent)}
+.score.lo{color:var(--text3);box-shadow:inset 0 0 0 1px var(--border2)}
 .tag{font-size:11.5px;padding:2px 9px;border-radius:10px;font-weight:600}
-.tag.cat-ai{background:#2b2440;color:var(--ai)}
-.tag.cat-tech{background:#12303f;color:var(--tech)}
-.tag.cat-finance{background:#3a2e10;color:var(--finance)}
-.tag.cat-society{background:#3d1d26;color:var(--society)}
-.tag.cat-world{background:#123529;color:var(--world)}
-.tag.st-已确认{background:#12351c;color:var(--ok)}
-.tag.st-发展中{background:#14283f;color:var(--dev)}
-.tag.st-有争议{background:#3a2510;color:var(--dispute)}
-.tag.st-仅传言{background:#3d1417;color:var(--rumor)}
+.tag.cat-ai,.tag.cat-tech,.tag.cat-finance,.tag.cat-society,.tag.cat-world{
+  background:transparent;border:1px solid var(--border2);color:var(--text2);font-weight:500}
+.tag.st-已确认{background:var(--ok-bg);color:var(--ok)}
+.tag.st-发展中{background:var(--dev-bg);color:var(--dev)}
+.tag.st-有争议{background:var(--dispute-bg);color:var(--dispute)}
+.tag.st-仅传言{background:var(--rumor-bg);color:var(--rumor)}
 .tag.stype{background:transparent;border:1px solid var(--border);color:var(--text3);font-weight:400}
-.tag.topic{background:transparent;border:1px dashed var(--border);color:var(--text2);font-weight:400}
-.tag.day{background:#3a2a10;color:#ffd166;cursor:pointer;user-select:none}
-.tag.day:hover{background:#4a3614}
-.ev-history{display:none;font-size:12.5px;color:var(--text2);border-left:2px solid #6b5618;padding-left:10px}
+.tag.topic{background:transparent;border:1px dashed var(--border2);color:var(--text2);font-weight:400}
+.tag.day{background:var(--accent-soft);color:var(--accent2);cursor:pointer;user-select:none}
+.tag.day:hover{color:var(--accent)}
+.ev-history{display:none;font-size:12.5px;color:var(--text2);border-left:2px solid var(--accent);padding-left:10px}
 .ev-history.open{display:block}
 .ev-history .eh-d{color:var(--text3);margin-right:6px}
-.card h3{font-size:15.5px;line-height:1.45;font-weight:700}
+.card h3{font-size:15.5px;line-height:1.45;font-weight:700;color:var(--heading)}
 .card .sum{color:var(--text);font-size:13.5px}
-.kv{font-size:13px;color:var(--text2);padding-left:10px;border-left:2px solid var(--border)}
+.kv{font-size:13px;color:var(--text2);padding-left:10px;border-left:2px solid var(--border2)}
 .kv b{color:var(--text2);font-weight:600}
-.kv.why{border-left-color:#6b5618}
-.kv.watch{border-left-color:#2d4a6b}
-.srcs{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border);font-size:12px}
+.kv.why{border-left-color:var(--accent)}
+.kv.watch{border-left-color:var(--border2)}
+.srcs{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border2);font-size:12px}
 .srcs a{color:var(--text2)}
 .srcs a:hover{color:var(--accent2)}
 .srcs .stp{color:var(--text3);font-size:11px}
@@ -114,7 +170,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .chip.on,.chip:hover{border-color:var(--accent);color:var(--accent2)}
 .fb-note{width:100%;margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 8px;font-size:12.5px;min-height:44px;resize:vertical;font-family:inherit}
 .fb-btns{margin-top:8px;display:flex;gap:8px}
-.fb-go{background:var(--accent);border:none;color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
+.fb-go{background:var(--accent);border:none;color:var(--card-h);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
 .fb-cancel{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12.5px}
 .hidden-bar{margin-top:10px;font-size:12.5px;color:var(--text3)}
 .hidden-bar a{cursor:pointer}
@@ -122,17 +178,17 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .hidden-row .rt{flex:1}
 .hidden-row a{cursor:pointer}
 /* ---------- 追踪中 ---------- */
-.trk{background:var(--card);border:1px solid var(--border);border-left:3px solid #6b5618;border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.trk{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow)}
 .trk-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;cursor:pointer}
 .trk-top b{font-size:13.5px}
 .trk-upd{font-size:12px;color:var(--text3);margin-left:auto}
-.trk-hist{display:none;margin-top:8px;font-size:12.5px;color:var(--text2);border-left:2px solid #6b5618;padding-left:10px}
+.trk-hist{display:none;margin-top:8px;font-size:12.5px;color:var(--text2);border-left:2px solid var(--accent);padding-left:10px}
 .trk.open .trk-hist{display:block}
 /* ---------- 搜索 ---------- */
 .searchbox{position:relative}
 .searchbox input{background:var(--card);border:1px solid var(--border);color:var(--text);padding:5px 11px;border-radius:6px;font-size:13px;width:190px}
 .searchbox input:focus{outline:none;border-color:var(--accent)}
-.search-res{display:none;position:absolute;top:115%;left:0;width:min(440px,90vw);max-height:60vh;overflow-y:auto;background:var(--bg2);border:1px solid var(--border);border-radius:8px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.search-res{display:none;position:absolute;top:115%;left:0;width:min(440px,90vw);max-height:60vh;overflow-y:auto;background:var(--card-h);border:1px solid var(--border2);border-radius:8px;z-index:40;box-shadow:var(--shadow2)}
 .search-res.open{display:block}
 .sr{padding:8px 12px;font-size:12.5px;cursor:pointer;border-bottom:1px solid var(--border);color:var(--text)}
 .sr:last-child{border-bottom:none}
@@ -142,16 +198,16 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .sr.none{color:var(--text3);cursor:default}
 .card.hl,.row.hl,.deep.hl{outline:2px solid var(--accent)}
 /* ---------- 深度阅读 ---------- */
-.deep{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--ai);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px}
+.deep{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
 .deep-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .deep-t{font-weight:700;font-size:14.5px;color:var(--text)}
-.tag.mins{background:#241d3d;color:var(--ai)}
+.tag.mins{background:var(--accent-soft);color:var(--accent2)}
 /* ---------- 周视图 ---------- */
 .wk-day{margin-bottom:16px}
 .wk-date{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--accent2);cursor:pointer}
 .wk-date:hover{text-decoration:underline}
 /* ---------- 稍后读抽屉 ---------- */
-.drawer{position:fixed;top:0;right:-400px;width:min(380px,92vw);height:100%;background:var(--bg2);border-left:1px solid var(--border);z-index:50;transition:right .2s;padding:16px 18px;overflow-y:auto}
+.drawer{position:fixed;top:0;right:-400px;width:min(380px,92vw);height:100%;background:var(--card-h);border-left:1px solid var(--border2);z-index:50;transition:right .2s;padding:16px 18px;overflow-y:auto;box-shadow:var(--shadow2)}
 .drawer.open{right:0}
 .rl-head{font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;font-size:15px}
 .rl-close{cursor:pointer;color:var(--text3)}
@@ -161,7 +217,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .rl-ops{margin-top:4px;display:flex;gap:12px;font-size:12px}
 .rl-ops span{cursor:pointer;color:var(--text3)}
 .rl-ops span:hover{color:var(--accent2)}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--accent);color:var(--text);padding:8px 18px;border-radius:8px;z-index:60;font-size:13px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-h);border:1px solid var(--accent);color:var(--text);padding:8px 18px;border-radius:8px;z-index:60;font-size:13px;box-shadow:var(--shadow)}
 .toast.err{border-color:var(--rumor)}
 
 .empty{color:var(--text3);text-align:center;padding:60px 0;font-size:14px}
@@ -220,7 +276,7 @@ function itemKey(id){return state.date+":"+id;}
 function pruneLocal(){
   const cut=k=>{const d=new Date();d.setDate(d.getDate()-k);return d.toISOString().slice(0,10);};
   const c30=cut(30), c60=cut(60).replace(/-/g,"");
-  for(const key of ["news_hidden","news_rl"]){
+  for(const key of ["news_hidden","news_rl","news_like"]){
     const m=LS.get(key);
     let dirty=false;
     for(const k of Object.keys(m)){
@@ -325,10 +381,11 @@ function toggleHist(el){
 function actionRow(it){
   if(!TOKEN||it.tier!=="pick") return "";
   const rl=LS.get("news_rl")[itemKey(it.id)];
+  const liked=LS.get("news_like")[itemKey(it.id)];
   const tracked=LS.get("news_tracked")[it.event_id]===true;
   return `<div class="acts">
-    <span class="act ${rl?"done":""}" onclick="rlAdd(this,'${esc(it.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span>
-    <span class="act" onclick="fbLike(this,'${esc(it.id)}')">👍 更多类似</span>
+    <span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,'${esc(it.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span>
+    <span class="act ${liked?"done":""}" title="${liked?"再点一次撤销这条反馈":"让明天的排序更偏向类似内容"}" onclick="fbLike(this,'${esc(it.id)}')">${liked?"👍 已记录":"👍 更多类似"}</span>
     ${it.event_id?`<span class="act ${tracked?"done":""}" onclick="fbTrack('${esc(it.id)}')">${tracked?"📌 追踪中":"📌 追踪"}</span>`:""}
     <span class="act" onclick="fbPanel(this,'${esc(it.id)}','src')">🚫 来源</span>
     <span class="act" onclick="fbPanel(this,'${esc(it.id)}','ni')">✕ 不感兴趣</span>
@@ -375,7 +432,21 @@ function fbNiSubmit(el,id){
 
 function fbLike(el,id){
   const it=state.itemsById[id]||{};
+  const key=itemKey(id);
+  const lk=LS.get("news_like");
+  if(lk[key]){
+    // 再点一次 = 删除式撤销：从 feedback.json 删掉那条记录
+    delete lk[key];LS.set("news_like",lk);
+    el.classList.remove("done");el.textContent="👍 更多类似";
+    el.title="让明天的排序更偏向类似内容";
+    postState("feedback",{...fbBase(it),action:"more_like_this",op:"remove"})
+      .then(()=>toast("已撤销：更多类似"))
+      .catch(e=>toast("撤销同步失败（本地已撤销）："+e.message,true));
+    return;
+  }
+  lk[key]=1;LS.set("news_like",lk);
   el.classList.add("done");el.textContent="👍 已记录";
+  el.title="再点一次撤销这条反馈";
   postState("feedback",{...fbBase(it),action:"more_like_this"})
     .then(()=>toast("已记录：更多类似内容"))
     .catch(e=>toast("同步失败："+e.message,true));
@@ -419,16 +490,26 @@ function trkUntrack(eventId){
     .catch(e=>toast("同步失败："+e.message,true));
 }
 
-function rlAdd(el,id){
+function rlToggle(el,id){
   const it=state.itemsById[id]||{};
   const key=itemKey(id);
   const rl=LS.get("news_rl");
-  if(rl[key]) return;
+  if(rl[key]){
+    // 再点一次 = 移出稍后读，与抽屉里的「移除」同一条路
+    delete rl[key];LS.set("news_rl",rl);
+    el.classList.remove("done");el.textContent="⏳ 稍后读";
+    el.title="加入稍后读";
+    postState("read_later",{date:state.date,item_id:id,op:"remove"})
+      .then(()=>toast("已移出稍后读"))
+      .catch(e=>toast("同步失败（本地已移除）："+e.message,true));
+    return;
+  }
   // 深读条目 url 直接在条目上；新闻条目取首来源链接
   const url=it.url||((it.sources||[])[0]||{}).url||"";
   if(!/^https?:\/\//i.test(url)){toast("该条目没有可收藏的链接",true);return;}
   rl[key]=1;LS.set("news_rl",rl);
   el.classList.add("done");el.textContent="✓ 已收";
+  el.title="再点一次移出稍后读";
   postState("read_later",{date:state.date,item_id:id,title:it.title_zh||it.title||"",
     category:it.category||"deep",url})
     .then(()=>toast("已加入稍后读"))
@@ -495,7 +576,7 @@ function render(){
     ).join("")+"</div>";
   }
 
-  h+=`<div class="sec-title">🎯 每日精选</div>`;
+  h+=`<div class="sec-title">每日精选</div>`;
   h+=picks.length?`<div class="grid">${picks.map(card).join("")}</div>`:'<div class="empty">该分类下今天没有精选</div>';
 
   if(hiddenPicks.length){
@@ -508,7 +589,7 @@ function render(){
   // 深度阅读：管线深读频道推荐（0-3 篇，阈值制）
   const deep=(d.deep||[]);
   if(deep.length){
-    h+=`<div class="sec-title">📖 深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
+    h+=`<div class="sec-title">深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
     h+=deep.map(dp=>{
       const rl=LS.get("news_rl")[itemKey(dp.id)];
       return `<div class="deep" data-id="${esc(dp.id)}">
@@ -521,14 +602,14 @@ function render(){
       ${dp.brief?`<div class="sum">${esc(dp.brief)}</div>`:""}
       ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
       ${dp.lang==="en"&&dp.title!==dp.title_zh?`<div class="kv"><b>原题</b> · ${esc(dp.title||"")}</div>`:""}
-      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" onclick="rlAdd(this,'${esc(dp.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
+      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,'${esc(dp.id)}')">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
     </div>`;}).join("");
   }
 
   // 追踪中：钉选且今天没进精选的事件（数据来自管线 payload.tracking）
   const trk=(d.tracking||[]).filter(t=>state.cat==="all"||t.category===state.cat);
   if(trk.length){
-    h+=`<div class="sec-title">📌 追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
+    h+=`<div class="sec-title">追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
     h+=trk.map(t=>`<div class="trk">
       <div class="trk-top" onclick="toggleTrk(this)">
         <span class="tag day">📌 第${+t.day_count||1}天</span>
@@ -542,7 +623,7 @@ function render(){
   }
 
   if(mores.length){
-    h+=`<div class="sec-title">📚 更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
+    h+=`<div class="sec-title">更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
     if(state.moreOpen){
       h+=`<div class="more-list">${mores.map(row).join("")}</div>`;
       h+=`<button class="toggle-more" onclick="toggleMore()">收起 ▲</button>`;
@@ -668,7 +749,7 @@ async function renderWeek(){
   if(!dates.length){app.innerHTML='<div class="empty">还没有数据</div>';return;}
   app.innerHTML='<div class="empty">加载本周数据…</div>';
   await loadDates(dates);
-  let h=`<div class="sec-title">🗓 本周概览 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(dates[dates.length-1])} ~ ${esc(dates[0])} · 每日 Top3</span></div>`;
+  let h=`<div class="sec-title">本周概览 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(dates[dates.length-1])} ~ ${esc(dates[0])} · 每日 Top3</span></div>`;
   for(const dt of dates){
     const d=window.NEWS_DATA[dt];
     if(!d) continue;
@@ -686,7 +767,7 @@ async function renderWeek(){
         return ds.size>=2&&[...ds].some(x=>win.has(x));
       });
       if(evs.length){
-        h+=`<div class="sec-title">🧵 本周事件线 <span style="font-size:12px;color:var(--text3);font-weight:400">(${evs.length} 条跨天事件)</span></div>`;
+        h+=`<div class="sec-title">本周事件线 <span style="font-size:12px;color:var(--text3);font-weight:400">(${evs.length} 条跨天事件)</span></div>`;
         h+=evs.map(e=>{
           const days=new Set((e.history||[]).map(x=>x.date)).size;
           const hist=(e.history||[]).slice(-7).reverse();

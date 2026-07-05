@@ -63,6 +63,11 @@ function validateEntry(type, payload) {
       throw createHttpError(400, `payload.action must be one of: ${FEEDBACK_ACTIONS.join(', ')}`);
     }
     entry.action = payload.action;
+    if (payload.op === 'remove') {
+      // 撤销：删掉最后一条同 date+item_id+action 的反馈，当作没点过
+      entry.op = 'remove';
+      return entry;
+    }
     entry.reasons = (Array.isArray(payload.reasons) ? payload.reasons : [])
       .slice(0, 5)
       .map((r) => clip(r, 50));
@@ -105,6 +110,23 @@ function appendEntry(state, type, entry, now) {
     return { state: { ...state, [key]: [...list, { ts: now, ...added }].slice(-MAX_ENTRIES) }, deduped: false };
   }
 
+  // 反馈撤销（feedback 专用；read_later 的 remove 在上面自己的分支里处理）：
+  // 删掉最后一条同 (item_id, date, action) 的记录。匹配到 action 级，不看 reasons/source——
+  // 目前只有 more_like_this 用它，每个 item+date 至多一条，精确无误。若将来给
+  // low_quality_source / not_interested 也加撤销，需把匹配键细化到具体来源/理由。
+  if (entry.op === 'remove') {
+    let idx = -1;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const it = list[i];
+      if (it.item_id === entry.item_id && it.date === entry.date && it.action === entry.action) {
+        idx = i;
+        break;
+      }
+    }
+    if (idx === -1) return { state, deduped: true };
+    return { state: { ...state, [key]: list.filter((_, i) => i !== idx) }, deduped: false };
+  }
+
   const next = { ...state, [key]: [...list, { ts: now, ...entry }].slice(-MAX_ENTRIES) };
   return { state: next, deduped: false };
 }
@@ -135,7 +157,7 @@ async function writeEntry(type, entry, now) {
       await putTextFile(
         STATE_FILES[type],
         JSON.stringify(next, null, 1) + '\n',
-        `news: append ${type} (${entry.date})`,
+        `news: ${entry.op === 'remove' ? 'remove' : 'append'} ${type} (${entry.date})`,
         sha
       );
     }
