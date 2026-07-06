@@ -84,12 +84,27 @@ def parse_time(entry):
     return None
 
 
+def http_get(url, timeout=20, retries=2, backoff=1.5):
+    """带指数退避的 GET；全部尝试失败才抛。retries 指额外重试次数。
+    治 AIHOT 连接重置这类偶发失败——单次 requests.get 一挂整源归零。"""
+    last = None
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.get(url, headers={"User-Agent": UA}, timeout=timeout)
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            last = e
+            if attempt < retries:
+                time.sleep(backoff * (attempt + 1))
+    raise last
+
+
 def fetch_rss(src, window_start, max_items):
     """返回 (items, fetch_error)。fetch_error=True 表示抓取本身失败，
     与"源正常但窗口内无新文章"（items 为空、error=False）区分开。"""
     try:
-        resp = requests.get(src["url"], headers={"User-Agent": UA}, timeout=20)
-        resp.raise_for_status()
+        resp = http_get(src["url"])
         feed = feedparser.parse(resp.content)
     except Exception as e:
         log(f"  ✗ {src['name']}: 抓取失败 ({e})")
@@ -140,12 +155,14 @@ AIHOT_TAG_HINT = {
 
 
 def fetch_aihot(src, window_start, max_items):
-    """AI HOT 公开 API 适配器（精选池）。返回 (items, fetch_error)"""
+    """AI HOT 公开 API 适配器（精选池）。返回 (items, fetch_error)。
+    AIHOT 是最对味的中文 AI 源、已精选噪音低，是 AI 深度的独木——放宽单源取量
+    （不受全局 max_per_source 压制），让它多供给。"""
+    cap = max(max_items, 40)
     since = window_start.strftime("%Y-%m-%dT%H:%M:%SZ")
-    url = f"{src['url']}?mode=selected&since={since}&take={min(max_items * 2, 100)}"
+    url = f"{src['url']}?mode=selected&since={since}&take={min(cap * 2, 100)}"
     try:
-        resp = requests.get(url, headers={"User-Agent": UA}, timeout=20)
-        resp.raise_for_status()
+        resp = http_get(url)
         data = resp.json()
     except Exception as e:
         log(f"  ✗ {src['name']}: 抓取失败 ({e})")
@@ -172,7 +189,7 @@ def fetch_aihot(src, window_start, max_items):
             "credibility": src["credibility"],
             "tag_hint": AIHOT_TAG_HINT.get(it.get("category") or ""),
         })
-    return [x for x in items if x["title"] and x["url"]][:max_items], False
+    return [x for x in items if x["title"] and x["url"]][:cap], False
 
 
 def fetch_all(sources, cfg):

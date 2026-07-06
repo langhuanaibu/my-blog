@@ -72,6 +72,18 @@ sources:
     category: ai
     enabled: true
 
+  # 逐篇 AI 新闻站（实用/产品/硬件向，每篇一事件——能被聚类去重与跨源核验，
+  # 不选摘要型 newsletter：那种"每期一条"在事件管线里会变成一坨速览拆不开）
+  - id: thedecoder
+    name: The Decoder
+    type: rss
+    url: https://the-decoder.com/feed/
+    source_type: analysis
+    tier: "T1.5"
+    credibility: 7
+    category: ai
+    enabled: true
+
   # ---------- 开发者平台官方一手源 ----------
   - id: github-blog
     name: GitHub Blog
@@ -165,6 +177,10 @@ sources:
     enabled: true
 
   # ---------- 财经 ----------
+  # 注意：云端 GitHub Actions 抓取此源常失败（本地 curl 正常，疑似 FT 对云端 IP
+  # 限流/封锁）。已加 http_get 重试兜底救偶发；若 source_health 持续 3 天告警，
+  # 说明是硬封锁、重试无解，手动改 enabled:false。中文财经"分析深度"暂无免费、
+  # 云端可达的等价替代，留作已知缺口。
   - id: ftcn
     name: FT中文网
     type: rss

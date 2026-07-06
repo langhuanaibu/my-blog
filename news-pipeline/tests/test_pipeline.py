@@ -700,6 +700,37 @@ try:
     (dtmp / "daily").mkdir(parents=True, exist_ok=True)
     dn.write_weekly(_FakeLLM(), "2026-07-13", wcfg, dtmp)
     check("周综述降级：无 daily 不产文件", not (dtmp / "weekly").exists())
+
+    # ---- http_get 重试兜底（stub requests.get + time.sleep，不联网）----
+    class _Resp:
+        def raise_for_status(self):
+            pass
+    calls = {"n": 0}
+    orig_get, orig_sleep = dn.requests.get, dn.time.sleep
+    dn.time.sleep = lambda *a, **k: None
+    try:
+        def _flaky(url, **kw):
+            calls["n"] += 1
+            if calls["n"] < 3:
+                raise IOError("reset")
+            return _Resp()
+        dn.requests.get = _flaky
+        r = dn.http_get("http://x", retries=2)
+        check("http_get 前两次失败后成功返回", isinstance(r, _Resp) and calls["n"] == 3)
+
+        calls["n"] = 0
+        def _down(url, **kw):
+            calls["n"] += 1
+            raise IOError("down")
+        dn.requests.get = _down
+        raised = False
+        try:
+            dn.http_get("http://x", retries=2)
+        except IOError:
+            raised = True
+        check("http_get 始终失败则抛且共尝试 retries+1 次", raised and calls["n"] == 3)
+    finally:
+        dn.requests.get, dn.time.sleep = orig_get, orig_sleep
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
