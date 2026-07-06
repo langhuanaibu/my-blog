@@ -28,6 +28,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T05:57:36.651Z",
    "mastered": false
+  },
+  {
+   "word": "snag",
+   "lemma": "snag",
+   "phonetic": "/snæɡ/",
+   "pos": "n.",
+   "sense_zh": "小问题，障碍",
+   "example_en": "Nvidia's next-gen AI rack system delayed to 2028 on manufacturing snags, SemiAnalysis says.",
+   "item_id": "pick-46",
+   "item_title": "英伟达下一代AI机架系统因制造问题推迟至2028年",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:25.663Z",
+   "mastered": false
   }
  ],
  "pending": []
