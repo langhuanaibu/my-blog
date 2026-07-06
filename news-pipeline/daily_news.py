@@ -1469,8 +1469,33 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
 
 
 # ----------------------------------------------------------------
-# 6.2 RSS 输出：data/feed.xml（每条精选一个 item，含深读推荐）
+# 6.1.8 每周综述：趋势连线 + 待验证回收（长期判断力沉淀）
+#   每周一由主管线额外合成上周综述，链式读上周综述 + 本周 daily + events.json。
+#   失败只记日志、不阻断每日产出（与深读频道同等地位）。
 # ----------------------------------------------------------------
+
+WEEKLY_DIRECTIONS = {"新增", "推进", "反转", "停滞"}
+WEEKLY_STATUS = {"兑现", "部分兑现", "未兑现", "反转"}
+
+WEEKLY_SYSTEM = """你是资深主编，为个人读者写"每周综述"，帮他把一周的信息流沉淀成判断。
+用户会给你：可能有【上周综述】、本周的【精选与关注点】(每条带日期/类目/关注信号)、
+本周【跨天事件线】(同一事件多天的进展)。若给了【读者兴趣画像】，综述要向读者关注的领域倾斜。
+产出三部分：
+- threads: 3-5 条本周演进主线，把相关事件连成线，说清"这周往哪走"。每条：
+    title(≤12字主线名) / one_liner(≤50字这周整体走向) /
+    direction(只能是 新增|推进|反转|停滞，相对上周或本周内的态势) / detail(≤80字关键进展与机制)
+- watch_recap: 回收"待验证"。结合【上周综述】提出的主线/关注点，对照本周事实，逐条说它兑现没：
+    prior(上周关注的点，≤40字) / status(只能是 兑现|部分兑现|未兑现|反转) / note(≤50字现在怎样了)
+    没有【上周综述】就给空数组；不要编造上周没提过的点。
+- outlook: 2-3 条下周值得盯的信号(每条≤40字)。
+只输出 JSON：{"threads":[...],"watch_recap":[...],"outlook":[...]}。不要其他文字。"""
+
+
+def iso_week_key(d):
+    """datetime/date -> 'YYYY-Www'（ISO 周，与前端命名一致）。"""
+    y, w, _ = d.isocalendar()
+    return f"{y}-W{w:02d}"
+
 
 def read_daily_payload(path):
     """从本管线写出的 daily js 里剥壳取 JSON；失败返回 None。"""
@@ -1481,6 +1506,148 @@ def read_daily_payload(path):
     except Exception:
         return None
 
+
+def read_weekly_payload(path):
+    """从周综述 js 里剥壳取 JSON；失败返回 None。"""
+    try:
+        src = path.read_text(encoding="utf-8")
+        m = re.search(r"window\.WEEKLY_DATA\[[^\]]+\] = (\{.*\});", src, re.S)
+        return json.loads(m.group(1)) if m else None
+    except Exception:
+        return None
+
+
+def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
+    """合成上周综述，写 data/weekly/<YYYY-Www>.js + manifest.js。宁缺毋滥、失败不抛。"""
+    wcfg = cfg.get("weekly") or {}
+    lookback = int(wcfg.get("lookback_days", 7))
+    keep = int(wcfg.get("keep_weeks", 26))
+    today = datetime.strptime(date_str, "%Y-%m-%d")
+    target_day = today - timedelta(days=1)          # 周一跑 -> 目标是上周
+    week_key = iso_week_key(target_day)
+
+    # 本周素材：回看窗口内的 daily 精选与其 watch
+    daily_dir = data_dir / "daily"
+    days = []
+    for k in range(1, lookback + 1):
+        p = daily_dir / f"{(today - timedelta(days=k)).strftime('%Y-%m-%d')}.js"
+        payload = read_daily_payload(p)
+        if payload:
+            days.append(payload)
+    if not days:
+        log("  周综述：回看窗口无 daily 数据，跳过")
+        return
+    pick_lines = []
+    for dp in days:
+        for it in dp.get("items", []):
+            if it.get("tier") != "pick":
+                continue
+            w = it.get("watch", "")
+            pick_lines.append(
+                f"[{dp.get('date', '')}|{CAT_NAMES.get(it.get('category', ''), it.get('category', ''))}] "
+                f"{it.get('title', '')}：{it.get('summary', '')}"
+                + (f" ｜关注:{w}" if w else ""))
+
+    # 跨天事件线：events.json 里本周窗口内、≥2 天的活跃事件
+    ev_lines = []
+    win = {dp.get("date") for dp in days}
+    try:
+        reg = data_dir / "events.json"
+        registry = json.loads(reg.read_text(encoding="utf-8")) if reg.exists() else {}
+        for e in registry.get("events", []):
+            hist = e.get("history", [])
+            ds = {h.get("date") for h in hist}
+            if len(ds) >= 2 and (ds & win):
+                seq = " → ".join(f"{h.get('date', '')}:{h.get('summary', '')}"
+                                 for h in hist[-4:])
+                ev_lines.append(
+                    f"[{CAT_NAMES.get(e.get('category', ''), e.get('category', ''))}] "
+                    f"{e.get('title', '')}｜{seq}")
+    except Exception:
+        pass
+
+    # 链式：读上周综述
+    prev_key = iso_week_key(target_day - timedelta(days=7))
+    prev = read_weekly_payload(data_dir / "weekly" / f"{prev_key}.js")
+    prev_block = ""
+    if prev:
+        pt = "；".join((t.get("title", "") + ":" + t.get("one_liner", ""))
+                      for t in prev.get("threads", []))
+        pw = "；".join(o for o in prev.get("outlook", []))
+        prev_block = f"【上周综述·主线】{pt}\n【上周综述·下周关注】{pw}\n\n"
+
+    prof_block = ("【读者兴趣画像】\n" + profile_text.strip() + "\n\n"
+                  if profile_has_content(profile_text) else "")
+    user = (prof_block + prev_block
+            + "【本周精选与关注点】\n" + "\n".join(pick_lines[:80])
+            + "\n\n【本周跨天事件线】\n" + ("\n".join(ev_lines) or "（无）"))
+
+    result = llm.json_call(WEEKLY_SYSTEM, user)
+    if not isinstance(result, dict):
+        log("  周综述：LLM 输出异常，跳过")
+        return
+
+    def _clip(s, n):
+        return str(s or "")[:n]
+
+    threads = []
+    for t in (result.get("threads") or [])[:5]:
+        if not isinstance(t, dict):
+            continue
+        threads.append({
+            "title": _clip(t.get("title"), 12),
+            "one_liner": _clip(t.get("one_liner"), 50),
+            "direction": t.get("direction") if t.get("direction") in WEEKLY_DIRECTIONS else "推进",
+            "detail": _clip(t.get("detail"), 80),
+        })
+    recap = []
+    for r in (result.get("watch_recap") or [])[:6]:
+        if not isinstance(r, dict):
+            continue
+        recap.append({
+            "prior": _clip(r.get("prior"), 40),
+            "status": r.get("status") if r.get("status") in WEEKLY_STATUS else "未兑现",
+            "note": _clip(r.get("note"), 50),
+        })
+    outlook = [_clip(o, 40) for o in (result.get("outlook") or [])[:3] if str(o or "").strip()]
+    if not threads and not recap:
+        log("  周综述：无有效内容，跳过写文件")
+        return
+
+    payload = {
+        "week": week_key,
+        "range": {"start": days[-1].get("date", ""), "end": days[0].get("date", "")},
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "threads": threads,
+        "watch_recap": recap,
+        "outlook": outlook,
+    }
+    wdir = data_dir / "weekly"
+    wdir.mkdir(parents=True, exist_ok=True)
+    js = ("window.WEEKLY_DATA = window.WEEKLY_DATA || {};\n"
+          f"window.WEEKLY_DATA[{json.dumps(week_key)}] = "
+          f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
+    (wdir / f"{week_key}.js").write_text(js, encoding="utf-8")
+
+    weeks = sorted([p.stem for p in wdir.glob("*.js") if p.stem != "manifest"],
+                   reverse=True)
+    for old in weeks[keep:]:
+        try:
+            (wdir / f"{old}.js").unlink()
+        except Exception:
+            pass
+    weeks = weeks[:keep]
+    (wdir / "manifest.js").write_text(
+        f"window.WEEKLY_MANIFEST = {json.dumps(weeks, ensure_ascii=False)};\n",
+        encoding="utf-8")
+    log(f"  周综述已写入 data/weekly/{week_key}.js（主线 {len(threads)} · 回收 {len(recap)}）")
+
+
+# ----------------------------------------------------------------
+# 6.2 RSS 输出：data/feed.xml（每条精选一个 item，含深读推荐）
+#   注：daily/weekly 剥壳解析器 read_daily_payload/read_weekly_payload 见上方周综述节，
+#   feed 生成复用 read_daily_payload。
+# ----------------------------------------------------------------
 
 def xml_esc(s):
     return html.escape(str(s or ""), quote=True)
@@ -1801,6 +1968,16 @@ def main():
                  registry=registry, deep=deep, themes=themes)
     log("英语单词本：挑词 + 补全手动词 ...")
     build_vocab(llm, picked, items, date_str, cfg)
+
+    # 每周综述：仅在配置的 weekday（默认周一）额外合成上周综述；失败不阻断每日产出
+    wk = cfg.get("weekly") or {}
+    if wk.get("enabled") and datetime.now().weekday() == wk.get("run_weekday", 0):
+        log("周综述：趋势连线 + 待验证回收 ...")
+        try:
+            write_weekly(llm, date_str, cfg, _data_dir, profile)
+        except Exception as e:
+            log(f"  周综述失败（不影响每日产出）: {e}")
+
     update_source_health(fetch_stats, date_str)
     write_feed(_data_dir, date_str, cfg)
     update_search_index(_data_dir, date_str, cfg)

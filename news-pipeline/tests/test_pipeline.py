@@ -666,6 +666,40 @@ try:
     m = _re.search(r"window\.VOCAB_DATA\[[^\]]+\] = (\{.*\});", payload_src, _re.S)
     check("单词候选文件是可解析壳", m is not None
           and json.loads(m.group(1))["words"][0]["word"] == "Tariff")
+
+    # ---- 周综述：write_weekly 落盘 + 剥壳 + 链式键 + 降级 ----
+    class _FakeLLM:
+        def json_call(self, system, user):
+            self.last_user = user
+            return {"threads": [{"title": "T", "one_liner": "o",
+                                 "direction": "推进", "detail": "d"}],
+                    "watch_recap": [{"prior": "p", "status": "未兑现", "note": "n"}],
+                    "outlook": ["x"]}
+    wtmp = tmp / "wk"
+    (wtmp / "daily").mkdir(parents=True, exist_ok=True)
+    for k in range(6, 13):
+        ds = f"2026-07-{k:02d}"
+        p = {"date": ds, "items": [{"id": "pick-0", "tier": "pick", "category": "ai",
+                                    "title": "x", "summary": "s", "watch": "w"}]}
+        (wtmp / "daily" / f"{ds}.js").write_text(
+            f'window.NEWS_DATA["{ds}"] = {json.dumps(p, ensure_ascii=False)};\n',
+            encoding="utf-8")
+    wcfg = {"weekly": {"enabled": True, "lookback_days": 7, "keep_weeks": 26}}
+    fake = _FakeLLM()
+    dn.write_weekly(fake, "2026-07-13", wcfg, wtmp)   # 目标上周 = 含 7/06..7/12
+    wkey = dn.iso_week_key(dn.datetime(2026, 7, 12))
+    check("周综述键为 ISO 周", wkey == "2026-W28")
+    check("周综述输入含精选与watch", "关注:w" in fake.last_user)
+    wpl = dn.read_weekly_payload(wtmp / "weekly" / f"{wkey}.js")
+    check("周综述落盘可剥壳", wpl is not None and wpl["week"] == wkey
+          and len(wpl["threads"]) == 1 and len(wpl["watch_recap"]) == 1)
+    check("周综述 manifest 含本周",
+          (wtmp / "weekly" / "manifest.js").exists()
+          and wkey in (wtmp / "weekly" / "manifest.js").read_text(encoding="utf-8"))
+    dtmp = tmp / "wk_empty"
+    (dtmp / "daily").mkdir(parents=True, exist_ok=True)
+    dn.write_weekly(_FakeLLM(), "2026-07-13", wcfg, dtmp)
+    check("周综述降级：无 daily 不产文件", not (dtmp / "weekly").exists())
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 

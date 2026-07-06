@@ -219,6 +219,25 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .wk-day{margin-bottom:16px}
 .wk-date{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--accent2);cursor:pointer}
 .wk-date:hover{text-decoration:underline}
+/* 周综述 */
+.wk-syn{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 15px;margin-bottom:10px;box-shadow:var(--shadow)}
+.wk-thread{padding:8px 0;border-bottom:1px solid var(--border)}
+.wk-thread:last-child{border-bottom:none}
+.wk-thread b{font-size:14px;color:var(--text)}
+.wk-thread .tl{font-size:13px;color:var(--text);margin:2px 0}
+.wk-thread .dt{font-size:12.5px;color:var(--text2)}
+.wk-sub{font-weight:700;font-size:13px;color:var(--heading);margin:12px 0 6px}
+.wk-recap{font-size:13px;color:var(--text);padding:5px 0;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.wk-recap .note{color:var(--text2);font-size:12.5px}
+.wk-outlook{font-size:12.5px;color:var(--text2);line-height:1.7;padding-left:9px;border-left:2px solid var(--accent)}
+.tag.dir-新增{background:var(--accent-soft);color:var(--accent2)}
+.tag.dir-推进{background:var(--dev-bg);color:var(--dev)}
+.tag.dir-反转{background:var(--rumor-bg);color:var(--rumor)}
+.tag.dir-停滞{background:var(--card-h);color:var(--text3)}
+.tag.rc-兑现{background:var(--accent-soft);color:var(--accent2)}
+.tag.rc-部分兑现{background:var(--dispute-bg);color:var(--dispute)}
+.tag.rc-未兑现{background:var(--card-h);color:var(--text3)}
+.tag.rc-反转{background:var(--rumor-bg);color:var(--rumor)}
 /* ---------- 稍后读抽屉 ---------- */
 .drawer{position:fixed;top:0;right:-400px;width:min(380px,92vw);height:100%;background:var(--card-h);border-left:1px solid var(--border2);z-index:50;transition:right .2s;padding:16px 18px;overflow-y:auto;box-shadow:var(--shadow2)}
 .drawer.open{right:0}
@@ -984,6 +1003,38 @@ function loadDates(dates){
     document.head.appendChild(s);
   })));
 }
+function loadWkScript(src){
+  return new Promise(res=>{
+    const s=document.createElement("script");
+    s.src=src; s.onload=()=>res(true); s.onerror=()=>res(false);
+    document.head.appendChild(s);
+  });
+}
+async function loadWeekly(){
+  // 取最新一周综述（即"上周综述"）；无 manifest / 无数据一律静默返回 null
+  if(!window.WEEKLY_MANIFEST) await loadWkScript("data/weekly/manifest.js");
+  const wk=(window.WEEKLY_MANIFEST||[])[0];
+  if(!wk) return null;
+  if(!(window.WEEKLY_DATA&&window.WEEKLY_DATA[wk])) await loadWkScript("data/weekly/"+wk+".js");
+  return (window.WEEKLY_DATA||{})[wk]||null;
+}
+function renderWeekly(syn){
+  if(!syn) return "";
+  let h=`<div class="sec-title">上周综述 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(syn.week||"")}${syn.range?` · ${esc(syn.range.start)} ~ ${esc(syn.range.end)}`:""}</span></div><div class="wk-syn">`;
+  for(const t of (syn.threads||[])){
+    h+=`<div class="wk-thread"><div><span class="tag dir-${esc(t.direction||"推进")}">${esc(t.direction||"")}</span> <b>${esc(t.title||"")}</b></div>${t.one_liner?`<div class="tl">${esc(t.one_liner)}</div>`:""}${t.detail?`<div class="dt">${esc(t.detail)}</div>`:""}</div>`;
+  }
+  if((syn.watch_recap||[]).length){
+    h+=`<div class="wk-sub">🎯 待验证回收</div>`;
+    for(const r of syn.watch_recap){
+      h+=`<div class="wk-recap"><span class="tag rc-${esc(r.status||"未兑现")}">${esc(r.status||"")}</span><span>${esc(r.prior||"")}</span>${r.note?`<span class="note">— ${esc(r.note)}</span>`:""}</div>`;
+    }
+  }
+  if((syn.outlook||[]).length){
+    h+=`<div class="wk-sub">🔭 下周关注</div><div class="wk-outlook">${syn.outlook.map(o=>esc(o)).join("<br>")}</div>`;
+  }
+  return h+`</div>`;
+}
 function toggleView(){
   state.view=state.view==="week"?"day":"week";
   document.getElementById("viewBtn").textContent=state.view==="week"?"📅 日视图":"🗓 周视图";
@@ -996,7 +1047,10 @@ async function renderWeek(){
   if(!dates.length){app.innerHTML='<div class="empty">还没有数据</div>';return;}
   app.innerHTML='<div class="empty">加载本周数据…</div>';
   await loadDates(dates);
-  let h=`<div class="sec-title">本周概览 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(dates[dates.length-1])} ~ ${esc(dates[0])} · 每日 Top3</span></div>`;
+  // 顶部：上周综述（趋势连线 + 待验证回收）；无数据时静默降级为原周视图
+  let synHtml="";
+  try{ synHtml=renderWeekly(await loadWeekly()); }catch(e){}
+  let h=synHtml+`<div class="sec-title">本周概览 <span style="font-size:12px;color:var(--text3);font-weight:400">${esc(dates[dates.length-1])} ~ ${esc(dates[0])} · 每日 Top3</span></div>`;
   for(const dt of dates){
     const d=window.NEWS_DATA[dt];
     if(!d) continue;

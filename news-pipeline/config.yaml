@@ -139,6 +139,16 @@ events:
   archive_days: 7         # 连续 7 天无新进展 -> 归档（不再匹配，复燃按新事件）
   prune_archived_days: 60 # 归档超 60 天从文件中删除，防止无限增长
 
+# ---------- 每周综述（长期判断力沉淀） ----------
+# 每周一由主管线额外合成一份"上周综述"：把本周事件连成演进主线，并回收上周综述
+# 提出的关注点（兑现/未兑现）。链式——读上周综述 + 本周 daily + events.json。
+# 失败只记日志、不阻断每日产出。写 data/weekly/<YYYY-Www>.js（前端周视图顶部渲染）。
+weekly:
+  enabled: true
+  run_weekday: 0      # 0=周一：每周一 07:00 汇总"上周一~周日"（Python weekday()，周一为 0）
+  lookback_days: 7    # 读回最近 N 天 daily 文件作为本周素材
+  keep_weeks: 26      # data/weekly/ 保留最近 N 周，防无限增长
+
 # ---------- 发布到博客 ----------
 # 云端 CI：数据由 DATA_DIR 环境变量直接写入仓库的 source/news/data/，
 # 此处 blog_dir 留空即跳过同步逻辑；commit + push 由 workflow 负责。
