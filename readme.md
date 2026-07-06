@@ -9,7 +9,7 @@
 - 内容源：`source/_posts/*.md`
 - 静态资源：`source/images/`
 - 自定义脚本：`source/js/`
-- Vercel API：`api/`
+- Vercel API：`api/`（在线后台与日报个人状态写回）
 - 在线后台：`/admin/`
 - 构建输出：`dist/`
 - 部署平台：Vercel
@@ -26,7 +26,7 @@ source/js/              自定义前端脚本
 source/css/             自定义前端样式
 source/admin/           在线后台页面
 source/_data/           分类封面等站点数据
-api/                    Vercel Serverless API
+api/                    Vercel Serverless API（后台、日报反馈和单词本写回）
 source/about/           关于页面
 source/friends/         友情链接页面
 source/guestbook/       留言板页面

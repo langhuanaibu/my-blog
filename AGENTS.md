@@ -6,7 +6,7 @@
 
 - 这是一个 Hexo + Fluid + Vercel 静态博客项目。
 - 文章 Markdown 位于 `source/_posts/`。
-- Vercel API 路由位于 `api/`，用于在线后台的发布和设置功能。
+- Vercel API 路由位于 `api/`，用于在线后台的发布、设置，以及日报反馈/稍后读/单词本写回功能。
 - 在线后台页面位于 `source/admin/index.html`。
 - 每日日报静态页位于 `source/news/`，数据由 `news-pipeline/` 生成。
 - 历史重构记录放在 `docs/archive/`。
@@ -28,7 +28,7 @@
 - `source/admin/` 存放在线后台页面。
 - `source/news/` 存放每日日报静态页面和生成数据，`source/news/data/` 是线上数据目录。
 - `source/about/`、`source/friends/`、`source/guestbook/` 存放独立页面的 Markdown 源文件。
-- `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `adminArticles.js`。
+- `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `adminArticles.js`、`newsState.js`、`vocab.js`。
 - `tools/` 存放迁移和维护工具脚本。
 - `news-pipeline/` 存放每日日报生成管线。改信源优先改 `sources.yaml`，改评分和阈值优先改 `config.yaml`。
 

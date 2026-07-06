@@ -17,8 +17,8 @@
 | ├── `/source/about` | 关于页面 | 存放 `index.md`。 |
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
-| ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 主要由管线和后台 API 产出，不手工编辑；唯一可人工维护的是 `source/news/data/interest_profile.md` 中的兴趣画像要点。 |
-| **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。非接口逻辑不要放进这里。 |
+| ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 主要由管线和页面 API 产出；可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
+| **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、稍后读、单词本写回接口；非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs` 等一次性或维护脚本。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
 | **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如 `daily-news.yml`。 |
@@ -43,7 +43,7 @@
 ### 2.3 后端接口文件 (camelCase)
 - **规则**：小驼峰命名法，清晰表达接口意图。
 - **适用范围**：`/api/` 目录下的 Serverless 函数。
-- **示例**：`adminArticles.js`、`adminSettings.js`、`adminUpload.js`。
+- **示例**：`adminArticles.js`、`adminSettings.js`、`adminUpload.js`、`newsState.js`、`vocab.js`。
 - **特殊约定**：内部共享的工具模块，使用下划线前缀以区分对外接口，如 `_github.js`。
 
 ### 2.4 文档与配置文件
@@ -62,8 +62,8 @@
 **场景 2：我要上传一张说明图，并在文章中引用**
 👉 **动作**：将图片放入 `/source/images/`，命名为 `xxx-architecture.png`，确保名字有语义。文章中引用路径为 `/images/xxx-architecture.png`。
 
-**场景 3：我要给后台增加一个"获取网站摘要"的后端功能**
-👉 **动作**：在 `/api/` 下创建 `getSiteSummary.js`，使用驼峰命名。
+**场景 3：我要给后台或日报页增加一个写回功能**
+👉 **动作**：在 `/api/` 下创建职责明确的小驼峰文件，例如 `adminSummary.js` 或 `newsState.js`；一个文件只处理一类接口职责。
 
 **场景 4：我要调整每日日报新闻源**
 👉 **动作**：修改 `news-pipeline/sources.yaml`；不要直接编辑 `source/news/data/` 下的生成数据。
@@ -72,7 +72,10 @@
 👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
 
 **场景 6：我要人工修正每日日报兴趣画像**
-👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feedback.json`、`read_later.json`、`vocab/*.js`、`vocab-book.json`、`feed.xml` 或 `search_index.js`（后两类分别由管线和 `api/` 接口产出）。
+👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`vocab/*.js`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。
 
-**场景 7：我要记录一个 Vercel 部署相关的深坑经验**
+**场景 7：我要维护日报反馈、稍后读或单词本**
+👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json` / `read_later.json`，由 `api/vocab.js` 写 `vocab-book.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。
+
+**场景 8：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。

@@ -4,7 +4,7 @@
 
 ## 1. 架构定位与修改边界
 - **当前架构**：Hexo + Fluid 静态博客，部署于 Vercel，内容源为 `source/_posts/*.md`。
-- **API 层**：`api/` 下的 Vercel Serverless 接口仍保留，用于在线后台的发布和设置功能。
+- **API 层**：`api/` 下的 Vercel Serverless 接口仍保留，用于在线后台的发布、设置，以及日报反馈/稍后读/单词本写回功能。
 - **核心原则**：渐进式迭代，保持线上稳定。
 - **严格边界**：仅在要求的特定作用域内修改。禁止擅自重构接口、大改后台逻辑、修改已有文章内容。
 - 旧 Astro 前台、Vercel API 和静态后台（`public/admin.html`）不再作为运行入口。历史记录见 `docs/archive/`。
@@ -18,7 +18,7 @@
 - **`source/admin/`**：在线后台页面 `index.html`。
 - **`source/news/`**：每日日报静态页面和生成数据，`source/news/data/` 为线上数据目录。
 - **`source/about/`, `source/friends/`, `source/guestbook/`**：独立页面的 Markdown 源文件。
-- **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`）。
+- **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`、`newsState.js`、`vocab.js`）。
 - **`tools/`**：迁移和维护工具脚本。
 - **`news-pipeline/`**：每日新闻日报生成管线（Python），由 GitHub Actions 每日运行，数据写入 `source/news/data/`。本目录是唯一真源（原 `D:\每日新闻网站` 已退役）。
 - **`docs/archive/`**：存放历史重构文档归档。
