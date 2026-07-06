@@ -42,6 +42,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:25.663Z",
    "mastered": false
+  },
+  {
+   "word": "cadence",
+   "lemma": "cadence",
+   "phonetic": "/ˈkeɪdəns/",
+   "pos": "n.",
+   "sense_zh": "节奏，步调",
+   "example_en": "The reported delay adds to concerns that Nvidia's breakneck annual release cadence is colliding with manufacturing limits.",
+   "item_id": "pick-46",
+   "item_title": "英伟达下一代AI机架系统因制造问题推迟至2028年",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:26.048Z",
+   "mastered": false
   }
  ],
  "pending": []
