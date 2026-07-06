@@ -70,6 +70,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:27.405Z",
    "mastered": false
+  },
+  {
+   "word": "bottleneck",
+   "lemma": "bottleneck",
+   "phonetic": "/ˈbɒtəlnek/",
+   "pos": "n.",
+   "sense_zh": "瓶颈，制约因素",
+   "example_en": "数据采集正在取代硬件成为人形机器人产业化的核心制约，而灵巧手的技术成熟度则直接决定商业化落地的时间表。",
+   "item_id": "pick-171",
+   "item_title": "野村：数据是人形机器人产业化关键瓶颈",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:31.458Z",
+   "mastered": false
   }
  ],
  "pending": []
