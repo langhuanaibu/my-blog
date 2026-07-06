@@ -1,0 +1,260 @@
+{
+ "version": 1,
+ "events": [
+  {
+   "event_id": "evt-20260706-66b51b",
+   "title": "伊朗前最高领袖哈梅内伊葬礼举行，其子缺席",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "伊朗前最高领袖哈梅内伊葬礼举行，其子缺席",
+     "summary": "伊朗前最高领袖哈梅内伊葬礼在德黑兰举行，其子穆杰塔巴自父亲遇袭后未公开露面，民众高呼反美以口号。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-82272d",
+   "title": "超强台风巴维登陆关岛，风速达290公里/小时",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "超强台风巴维登陆关岛，风速达290公里/小时",
+     "summary": "超强台风巴维以290公里/小时风速登陆关岛及北马里亚纳群岛，带来灾难性风和洪水。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-116cb7",
+   "title": "中国地下教会牧师金明日获释并抵达美国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "中国地下教会牧师金明日获释并抵达美国",
+     "summary": "北京锡安教会牧师金明日被拘禁八个月后获释，已抵达洛杉矶，此前特朗普曾向中方提出请求。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-44fbd4",
+   "title": "法国极右翼领袖勒庞上诉判决影响2027大选",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "法国极右翼领袖勒庞上诉判决影响2027大选",
+     "summary": "法国极右翼国民联盟领袖勒庞等待上诉判决，结果将决定她能否参加2027年总统选举。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-69967c",
+   "title": "施纪贤辞职后接受BBC专访称决定极其个人",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "施纪贤辞职后接受BBC专访称决定极其个人",
+     "summary": "即将卸任的首相施纪贤在辞职后首次接受BBC专访，称接受政治生涯结束非常艰难。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-56dfa2",
+   "title": "美国250周年庆典因雷暴雨延迟，特朗普演讲",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "美国250周年庆典因雷暴雨延迟，特朗普演讲",
+     "summary": "美国250周年庆典因雷暴雨延迟，特朗普发表演讲，强调反共、持枪权等政治主题。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-b4cbf7",
+   "title": "达美飞机芝加哥降落时被烟花击中",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "达美飞机芝加哥降落时被烟花击中",
+     "summary": "达美航空一架载有52名乘客和6名机组人员的飞机在芝加哥降落时被烟花击中，无人受伤。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-029713",
+   "title": "美国创纪录热浪致至少25人死亡",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "美国创纪录热浪致至少25人死亡",
+     "summary": "美国超过20个州气温超100华氏度，热浪已致至少25人死亡，热穹顶笼罩东部。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-2200a4",
+   "title": "FBI世界杯期间查获600多架无人机",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "FBI世界杯期间查获600多架无人机",
+     "summary": "FBI在美国11个世界杯主办城市禁飞区查获超600架无人机，自赛事开始以来持续行动。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-1bbf88",
+   "title": "全面无障碍交通可提振英国经济1760亿英镑",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "全面无障碍交通可提振英国经济1760亿英镑",
+     "summary": "报告称投资英国公共交通无障碍化可释放280万残疾劳动力，提振经济1760亿英镑。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-fae869",
+   "title": "英国移动网络覆盖逊于所有欧盟和G7国家",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "英国移动网络覆盖逊于所有欧盟和G7国家",
+     "summary": "Which?分析显示英国移动网络性能全球第57位，下载速度第70位，但资费较低。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-985b59",
+   "title": "OPEC+再次增产尽管油价下跌",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "OPEC+再次增产尽管油价下跌",
+     "summary": "OPEC+同意小幅增产，但象征意义大于实际，因美伊和平协议未达成。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-1e2d72",
+   "title": "澳大利亚超级基金重新投资煤炭引发净零承诺质疑",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "澳大利亚超级基金重新投资煤炭引发净零承诺质疑",
+     "summary": "澳大利亚最大养老基金AustralianSuper在2020年抛售Whitehaven煤炭股后，于2026年成为该矿商最大单一投资者。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-7ad191",
+   "title": "Anthropic Claude Design反向工程提示词开源",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "Anthropic Claude Design反向工程提示词开源",
+     "summary": "Anthropic的Claude Design系统提示词在GitHub以MIT许可证开源，包含20章提示词和14项技能，新增自主决策条款。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-29d4da",
+   "title": "LlamaIndex发布法律知识库参考应用legal-kb",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "LlamaIndex发布法律知识库参考应用legal-kb",
+     "summary": "LlamaIndex发布legal-kb，基于Index v2的法律文档知识库参考应用，采用Retrieval Harness模式，提供四种文件系统工具。",
+     "news_status": "已确认"
+    }
+   ]
+  }
+ ]
+}
