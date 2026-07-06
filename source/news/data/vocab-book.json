@@ -126,6 +126,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T15:40:17.384Z",
    "mastered": false
+  },
+  {
+   "word": "interceptor",
+   "lemma": "interceptor",
+   "phonetic": "/ˌɪntərˈseptər/",
+   "pos": "n.",
+   "sense_zh": "拦截导弹；拦截器",
+   "example_en": "Ukraine warns of interceptor missile shortage as 22 killed in Kyiv region.",
+   "item_id": "pick-74",
+   "item_title": "俄大规模空袭基辅致22死，乌警告拦截导弹短缺",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T15:40:18.497Z",
+   "mastered": false
   }
  ],
  "pending": []
