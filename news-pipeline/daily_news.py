@@ -244,14 +244,18 @@ class LLM:
 # ----------------------------------------------------------------
 
 PREFILTER_SYSTEM = """你是新闻信息流的第一道过滤器。用户给你一批带编号的条目标题。
-找出应该【丢弃】的编号：广告软文、纯营销、促销、招聘、体育赛果、娱乐八卦、
-菜谱/生活贴士、纯情绪帖、以及明显不属于（AI/互联网科技/财经/社会事件/国际时事）任何一类的内容。
-拿不准的一律保留。只输出 JSON：{"drop": [编号列表]}，没有可丢的输出 {"drop": []}。"""
+输出两类编号：
+- drop（丢弃）：广告软文、纯营销、促销、招聘、菜谱/生活贴士、纯情绪帖、
+  以及明显不属于（AI/互联网科技/财经/社会事件/国际时事）任何一类的内容。拿不准一律不丢。
+- soft（软边角料）：本身是真实新闻、但对建立长期判断价值低的轻资讯——
+  体育赛事结果/花絮、明星八卦与私生活、猎奇轶闻、纯日抛型热点。
+  这类不丢弃（仍可留作长尾），只是打个标记。拿不准算不算边角料的，倾向不标。
+只输出 JSON：{"drop": [编号...], "soft": [编号...]}，无对应项输出空数组。"""
 
 
 def prefilter(llm, items):
     batch_size = 80
-    drop = set()
+    drop, soft = set(), set()
     for bi in range(0, len(items), batch_size):
         batch = items[bi:bi + batch_size]
         lines = [f"[{bi + j}] ({it['source']}) {it['title']}"
@@ -261,10 +265,17 @@ def prefilter(llm, items):
             for i in result.get("drop", []):
                 if isinstance(i, int) and bi <= i < bi + len(batch):
                     drop.add(i)
+            for i in result.get("soft", []):
+                if isinstance(i, int) and bi <= i < bi + len(batch):
+                    soft.add(i)
         except Exception as e:
             log(f"  预筛批次失败，该批全部保留: {e}")
+    for i in soft:
+        if i not in drop:
+            items[i]["soft"] = True   # 标记随 item 传递到事件层，用于长尾过滤
     kept = [it for i, it in enumerate(items) if i not in drop]
-    log(f"预筛：丢弃 {len(drop)} 条，保留 {len(kept)} 条")
+    n_soft = sum(1 for it in kept if it.get("soft"))
+    log(f"预筛：丢弃 {len(drop)} 条，保留 {len(kept)} 条（其中软边角料 {n_soft} 条）")
     return kept
 
 
@@ -443,7 +454,14 @@ def score_and_select(events, items, cfg):
     over = sum(1 for e in picked if e["score"] >= threshold)
     log(f"  阈值 {threshold} 分：过线 {len(eligible)} 个事件，精选 {len(picked)} 条（其中过线 {over}）")
 
-    remaining = [e for e in events if e not in picked]
+    # 长尾过滤：整条事件的来源都被预筛标为软边角料时，不进"更多资讯"
+    # （精选不受影响——上面已选完；软事件即便分高也只是被挡在长尾外）
+    for ev in events:
+        ev["soft"] = bool(ev["ids"]) and all(items[i].get("soft") for i in ev["ids"])
+    remaining = [e for e in events if e not in picked and not e.get("soft")]
+    n_soft = sum(1 for e in events if e.get("soft") and e not in picked)
+    if n_soft:
+        log(f"  长尾过滤：{n_soft} 个软边角料事件挡在更多资讯外")
     secondary = remaining[:cfg["secondary_count"]]
     return picked, secondary
 
@@ -454,10 +472,13 @@ def score_and_select(events, items, cfg):
 
 ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾驶舱"加工精选新闻。
 用户给你若干事件，每个事件附带一条或多条原始报道（标题+简介+来源）。
+若给出了【读者兴趣画像】，请据此写 significance；没有画像则 significance 输出空字符串。
 对每个事件输出：
 - title: 精炼中文标题（≤30字，信息完整，不标题党）
 - summary: 一句话事实摘要（≤70字，只说发生了什么，含关键数字）
 - why: 为什么重要（≤80字，说清影响面和利害关系）
+- context: 背景与机制（≤60字，交代来龙去脉或它反映的运行逻辑，帮读者理解为什么会这样，没有可写就留空）
+- significance: 对我的意义（≤50字，结合读者兴趣画像，说这条对读者的学习/项目/就业/判断有什么具体参考；与读者无关就留空）
 - watch: 后续关注点（≤60字，接下来看什么信号/节点）
 - status: 事件状态，只能是这四个之一：
     已确认（官方发布或多个独立可信来源证实）
@@ -468,14 +489,17 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
     {tag_list}
 
 只输出 JSON 数组，每个元素：
-{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "watch": "...", "status": "...", "tags": ["..."]}}
+{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "significance": "...", "watch": "...", "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
 
 
-def enrich(llm, picked, items, cfg):
+def enrich(llm, picked, items, cfg, profile_text=""):
     tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
     tag_set = set(tag_vocab)
     system = ENRICH_SYSTEM.format(tag_list="、".join(tag_vocab) if tag_vocab else "（词表为空，tags 输出空数组）")
+    prof_block = ""
+    if profile_has_content(profile_text):
+        prof_block = "【读者兴趣画像】\n" + profile_text.strip() + "\n\n"
     batch_size = 6
     for bi in range(0, len(picked), batch_size):
         batch = picked[bi:bi + batch_size]
@@ -488,7 +512,7 @@ def enrich(llm, picked, items, cfg):
                             f"{it['title']}：{it['desc'][:200]}")
             blocks.append(f"事件[{bi + j}] {ev['title']}\n" + "\n".join(srcs))
         log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
-        result = llm.json_call(system, "\n\n".join(blocks))
+        result = llm.json_call(system, prof_block + "【今日事件】\n" + "\n\n".join(blocks))
         for r in result:
             k = r.get("idx")
             if not isinstance(k, int) or not (0 <= k < len(picked)):
@@ -497,6 +521,8 @@ def enrich(llm, picked, items, cfg):
             ev["title"] = r.get("title", ev["title"])
             ev["summary"] = r.get("summary", "")
             ev["why"] = r.get("why", "")
+            ev["context"] = str(r.get("context", ""))[:80]
+            ev["significance"] = str(r.get("significance", ""))[:70]
             ev["watch"] = r.get("watch", "")
             ev["status"] = r.get("status") if r.get("status") in STATUS_SET else "发展中"
             raw_tags = r.get("tags") or []
@@ -506,21 +532,54 @@ def enrich(llm, picked, items, cfg):
     return picked
 
 
-BRIEF_SYSTEM = """你是新闻主编。根据今天的精选新闻标题列表，写一段 2-3 句的中文"今日导语"，
-点出今天最值得注意的 2-3 条主线。只输出导语文字本身，不要任何格式。"""
+BRIEF_SYSTEM = """你是新闻主编。用户给你今天的条目列表（每条带 id、类目、标题、可能有要点）。
+你的任务是替读者"拼主线"：把相关的条目归拢成今天的 2-3 条主线，让读者一眼看懂今天的世界在发生什么。
+输出 JSON：
+{"synthesis": "一句话总纲，≤60字，概括今天整体格局",
+ "themes": [{"title": "主线名，≤12字", "one_liner": "这条主线的一句综合，≤50字",
+             "member_ids": ["属于这条主线的条目 id，2个及以上"]}]}
+规则：
+- themes 最多 3 条，宁缺毋滥；每条主线必须有 ≥2 个成员 id（单个孤立事件不算主线，除非是压倒性头条可破例给 1 个）。
+- member_ids 只能从用户给出的 id 里选，禁止自造 id；一条可以跨类目（如极端天气可同时含国际和社会的条目）。
+- 今天若确实没有能归拢的主线，themes 给空数组，synthesis 照常写。
+只输出 JSON，不要其他文字。"""
 
 
-def write_brief(llm, picked):
-    lines = [f"- [{CAT_NAMES[e['category']]}] {e['title']}" for e in picked]
+def write_brief(llm, picked, secondary=None):
+    """产出结构化今日主线：返回 (synthesis, themes)。
+    themes 里的 member_ids 用最终输出 id（pick-N/more-N），与 event_to_item 保持一致。"""
+    entries = ([("pick", e) for e in picked] +
+               [("more", e) for e in (secondary or [])])
+    id_of = {}
+    lines = []
+    for tier, e in entries:
+        _id = f"{tier}-{e['ids'][0]}"
+        id_of[_id] = e
+        extra = f" — {e.get('why', '')}" if e.get("why") else ""
+        lines.append(f"[{_id}] ({CAT_NAMES.get(e['category'], e['category'])}) {e['title']}{extra}")
+    valid = set(id_of)
     try:
-        resp = llm.client.chat.completions.create(
-            model=llm.model, temperature=0.4,
-            messages=[{"role": "system", "content": BRIEF_SYSTEM},
-                      {"role": "user", "content": "\n".join(lines)}])
-        return resp.choices[0].message.content.strip()
+        result = llm.json_call(BRIEF_SYSTEM, "\n".join(lines))
+        synthesis = str(result.get("synthesis", "")).strip()[:80] if isinstance(result, dict) else ""
+        themes = []
+        for t in (result.get("themes", []) if isinstance(result, dict) else []):
+            if not isinstance(t, dict):
+                continue
+            members = [m for m in (t.get("member_ids") or []) if m in valid]
+            members = list(dict.fromkeys(members))   # 去重保序
+            if not members:
+                continue
+            themes.append({
+                "title": str(t.get("title", "")).strip()[:14],
+                "one_liner": str(t.get("one_liner", "")).strip()[:60],
+                "member_ids": members[:8],
+            })
+            if len(themes) >= 3:
+                break
+        return synthesis, themes
     except Exception as e:
-        log(f"  导语生成失败: {e}")
-        return ""
+        log(f"  导语/主线生成失败: {e}")
+        return "", []
 
 
 # ----------------------------------------------------------------
@@ -872,11 +931,13 @@ def update_profile(llm, data_dir, feedback, read_later):
         return text
 
 
-def interest_fit(llm, profile_text, events):
-    """按画像给事件打契合分，写入 ev['interest_mult'] ∈ [0.85, 1.15]。
+def interest_fit(llm, profile_text, events, span=0.30):
+    """按画像给事件打契合分，写入 ev['interest_mult'] ∈ [1-span, 1+span]。
+    span 由 config 的 scoring.fit_span 控制（默认 0.30，即 ±30%）。
     画像为空或调用失败时不写（默认 1.0）。中性 5 分恰好等于 1.0。"""
     if not events or not profile_has_content(profile_text):
         return
+    span = max(0.0, min(0.6, float(span)))
     lines = [f"[{i}] ({CAT_NAMES.get(e.get('category', ''), e.get('category', ''))}) "
              f"{e.get('title', '')}" for i, e in enumerate(events)]
     user = "【兴趣画像】\n" + profile_text + "\n\n【今日事件】\n" + "\n".join(lines)
@@ -890,7 +951,7 @@ def interest_fit(llm, profile_text, events):
                 continue
             if 0 <= i < len(events):
                 fit = max(0.0, min(10.0, fit))
-                events[i]["interest_mult"] = round(0.85 + 0.03 * fit, 3)
+                events[i]["interest_mult"] = round(1.0 + (fit - 5.0) / 5.0 * span, 3)
         n = sum(1 for e in events if e.get("interest_mult", 1.0) != 1.0)
         log(f"  兴趣拟合：{n}/{len(events)} 个事件获得非中性乘数")
     except Exception as e:
@@ -1060,6 +1121,8 @@ def event_to_item(ev, items, tier):
         "watch": ev.get("watch", ""),
         "status": ev.get("status", ""),
         "tags": ev.get("tags", []),
+        **({"context": ev["context"]} if ev.get("context") else {}),
+        **({"significance": ev["significance"]} if ev.get("significance") else {}),
         "score": ev["score"],
         "src_tier": ev.get("tier", ""),
         "source_type": TYPE_NAMES[primary["source_type"]],
@@ -1345,7 +1408,7 @@ def build_vocab(llm, picked, items, date_str, cfg):
     log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None):
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -1366,6 +1429,8 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
         },
         "items": out_items,
     }
+    if themes:
+        payload["themes"] = themes
     tracking = build_tracking(registry, picked, date_str)
     if tracking:
         payload["tracking"] = tracking
@@ -1696,23 +1761,24 @@ def main():
 
     log("偏好学习：画像蒸馏 + 兴趣拟合 ...")
     profile = update_profile(llm, _data_dir, feedback, read_later)
-    interest_fit(llm, profile, events)
+    interest_fit(llm, profile, events,
+                 span=cfg.get("scoring", {}).get("fit_span", 0.30))
 
     picked, secondary = score_and_select(events, items, cfg)
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
-    enrich(llm, picked, items, cfg)
+    enrich(llm, picked, items, cfg, profile)
     for ev in secondary:
         ev.setdefault("status", "")
     log("事件登记表：跨天延续性匹配 ...")
     registry = track_events(llm, picked, date_str, cfg,
                             secondary=secondary, feedback=feedback)
-    brief = write_brief(llm, picked)
+    brief, themes = write_brief(llm, picked, secondary)
 
     log("深读频道：长文筛选 ...")
     deep = deep_channel(llm, cfg, date_str, profile)
 
     write_output(date_str, brief, picked, secondary, items, cfg,
-                 registry=registry, deep=deep)
+                 registry=registry, deep=deep, themes=themes)
     log("英语单词本：挑词 + 补全手动词 ...")
     build_vocab(llm, picked, items, date_str, cfg)
     update_source_health(fetch_stats, date_str)

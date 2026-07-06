@@ -71,6 +71,24 @@ picked_low, _ = dn.score_and_select(events_low, items,
                                     dict(cfg, pick_min=2, min_per_category=0))
 check("pick_min补位跳过opinion_only", all(not e.get("opinion_only") for e in picked_low))
 
+# 长尾软边角料过滤：整条事件来源都被预筛标 soft -> 不进更多资讯（精选不受影响）
+soft_items = [
+    {"source_id": "hn", "source_type": "fact", "tier": "T1.5", "credibility": 7, "soft": True},  # 0
+    {"source_id": "verge", "source_type": "fact", "tier": "T1.5", "credibility": 7},              # 1
+]
+soft_events = [
+    {"ids": [0], "category": "society", "dims": {d: 5.0 for d in dn.DIMS}, "title": "soft only"},
+    {"ids": [1], "category": "society", "dims": {d: 5.0 for d in dn.DIMS}, "title": "normal"},
+]
+_, sec_s = dn.score_and_select(soft_events, soft_items,
+                               dict(cfg, pick_threshold=99, pick_min=0, min_per_category=0))
+soft_ev = next(e for e in soft_events if e["title"] == "soft only")
+norm_ev = next(e for e in soft_events if e["title"] == "normal")
+check("软边角料事件被标 soft", soft_ev["soft"] is True)
+check("非软事件不标 soft", norm_ev["soft"] is False)
+check("软边角料不进更多资讯", soft_ev not in sec_s)
+check("非软事件进更多资讯", norm_ev in sec_s)
+
 # ----------------------------------------------------------------
 # 2. 同源封顶（cap_same_source）
 # ----------------------------------------------------------------
@@ -359,9 +377,46 @@ class FitStub:
 fit_events = [{"title": "a", "category": "ai"}, {"title": "b", "category": "world"},
               {"title": "c", "category": "tech"}]
 dn.interest_fit(FitStub(), "## 更关注\n- 某主题", fit_events)
-check("拟合上限1.15", fit_events[0]["interest_mult"] == 1.15)
-check("拟合下限0.85", fit_events[1]["interest_mult"] == 0.85)
+check("拟合上限(默认span0.30)=1.30", fit_events[0]["interest_mult"] == 1.30)
+check("拟合下限(默认span0.30)=0.70", fit_events[1]["interest_mult"] == 0.70)
 check("中性5分=1.0", fit_events[2]["interest_mult"] == 1.0)
+
+# span 可调：传 0.15 时回到旧的 ±0.15 幅度
+fit_events_span = [{"title": "a", "category": "ai"}, {"title": "b", "category": "world"}]
+dn.interest_fit(FitStub(), "## 更关注\n- 某主题", fit_events_span, span=0.15)
+check("span=0.15上限1.15", fit_events_span[0]["interest_mult"] == 1.15)
+check("span=0.15下限0.85", fit_events_span[1]["interest_mult"] == 0.85)
+
+
+# ---- write_brief 结构化主线：成员 id 校验 / 跨 tier / 上限 3 / 失败降级 ----
+class BriefStub:
+    def json_call(self, system, user):
+        return {"synthesis": "今日总纲", "themes": [
+            {"title": "极端天气", "one_liner": "多地灾害",
+             "member_ids": ["pick-10", "more-20", "bogus-x"]},   # bogus 过滤
+            {"title": "空主线", "one_liner": "无成员", "member_ids": ["bogus-y"]},  # 无合法成员->丢
+            {"title": "T2", "one_liner": "x", "member_ids": ["pick-11", "pick-10"]},
+            {"title": "T3", "one_liner": "x", "member_ids": ["more-20", "pick-11"]},
+            {"title": "T4超额", "one_liner": "x", "member_ids": ["pick-10"]},       # 超3条->截断
+        ]}
+
+
+brief_picked = [{"ids": [10], "category": "world", "title": "台风", "why": "w"},
+                {"ids": [11], "category": "society", "title": "热浪", "why": "w"}]
+brief_secondary = [{"ids": [20], "category": "world", "title": "野火"}]
+synth, themes = dn.write_brief(BriefStub(), brief_picked, brief_secondary)
+check("主线synthesis正常", synth == "今日总纲")
+check("主线最多3条", len(themes) == 3)
+check("非法id被过滤且跨tier", themes[0]["member_ids"] == ["pick-10", "more-20"])
+check("无合法成员的主线被丢弃", all(t["title"] != "空主线" for t in themes))
+
+
+class BriefBoom:
+    def json_call(self, system, user):
+        raise RuntimeError("boom")
+
+
+check("主线生成失败降级为空", dn.write_brief(BriefBoom(), brief_picked, brief_secondary) == ("", []))
 
 fit_events2 = [{"title": "a", "category": "ai"}]
 dn.interest_fit(FitStub(), dn.PROFILE_DEFAULT, fit_events2)

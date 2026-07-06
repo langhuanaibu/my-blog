@@ -96,6 +96,17 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .meta-line{color:var(--text3);font-size:12.5px;margin:10px 2px 0}
 .meta-line b{color:var(--text2);font-weight:600}
 
+/* ---------- 今日主线 ---------- */
+.mainlines{margin:14px 0 6px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)}
+.ml-h{font-size:12px;color:var(--accent2);font-weight:700;letter-spacing:1px;margin-bottom:10px}
+.ml-item{padding:8px 0;border-top:1px dashed var(--border)}
+.ml-item:first-of-type{border-top:none;padding-top:0}
+.ml-t{font-size:14px;font-weight:700;color:var(--heading)}
+.ml-o{font-size:13px;color:var(--text2);margin:3px 0 6px}
+.ml-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ml-chip{font-size:12px;padding:2px 10px;border-radius:12px;border:1px solid var(--border2);color:var(--text2);cursor:pointer;background:var(--card);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-chip:hover{border-color:var(--accent);color:var(--accent2)}
+
 /* ---------- filter tabs ---------- */
 .tabs{display:flex;gap:8px;margin:20px 0 4px;flex-wrap:wrap}
 .tab{padding:6px 15px;border-radius:20px;border:1px solid var(--border2);background:var(--card);color:var(--text2);cursor:pointer;font-size:13px;transition:.15s}
@@ -139,6 +150,8 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .kv{font-size:13px;color:var(--text2);padding-left:10px;border-left:2px solid var(--border2)}
 .kv b{color:var(--text2);font-weight:600}
 .kv.why{border-left-color:var(--accent)}
+.kv.ctx{border-left-color:var(--dev)}
+.kv.sig{border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 6px 6px 0;padding:4px 10px}
 .kv.watch{border-left-color:var(--border2)}
 .srcs{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border2);font-size:12px}
 .srcs a{color:var(--text2)}
@@ -407,6 +420,8 @@ function card(it){
     <div class="sum">${esc(it.summary)}</div>
     ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
+    ${it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:""}
+    ${it.significance?`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`:""}
     ${it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""}
     <div class="srcs">${srcLinks(it)}</div>
     ${actionRow(it)}
@@ -603,6 +618,20 @@ function render(){
 
   let h="";
   if(d.brief) h+=`<div class="brief"><div class="bt">今日导语 · ${esc(d.date)}</div><p>${esc(d.brief)}</p></div>`;
+  // 今日主线：管线把相关条目拼成 2-3 条主线，点成员跳到对应卡（旧数据无 themes 自动跳过）
+  const themes=Array.isArray(d.themes)?d.themes:[];
+  if(themes.length){
+    h+=`<div class="mainlines"><div class="ml-h">🧭 今日主线</div>`+themes.map(t=>{
+      const chips=(t.member_ids||[]).map(id=>{
+        const it=state.itemsById[id];
+        if(!it) return "";
+        return `<span class="ml-chip" onclick="jumpToItem('${esc(id)}')" title="跳到这条">${esc(it.title)}</span>`;
+      }).join("");
+      return `<div class="ml-item"><div class="ml-t">${esc(t.title)}</div>`
+        +(t.one_liner?`<div class="ml-o">${esc(t.one_liner)}</div>`:"")
+        +(chips?`<div class="ml-chips">${chips}</div>`:"")+`</div>`;
+    }).join("")+`</div>`;
+  }
   const st=d.stats||{};
   h+=`<div class="meta-line">扫描 <b>${st.sources_count||"?"}</b> 个来源 / <b>${st.raw_count||"?"}</b> 条原始资讯 → 精选 <b>${st.pick_count||picks.length}</b> 条 · 预计阅读 <b>15 分钟</b> · 生成于 ${d.generated_at?fmtTime(d.generated_at):""}</div>`;
 
@@ -698,6 +727,15 @@ function render(){
 
 function setCat(c){state.cat=c;state.tag=null;render();}
 function setTag(t){state.tag=(state.tag===t?null:t);render();}
+// 从「今日主线」跳到成员卡：清掉筛选保证目标可见，more 成员先展开长尾，复用高亮机制
+function jumpToItem(id){
+  const it=state.itemsById[id];
+  if(!it) return;
+  state.cat="all"; state.tag=null;
+  if(it.tier==="more") state.moreOpen=true;
+  state.pendingHighlight=id;
+  render();
+}
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
 function toggleVocabDay(){state.vocabOpen=!state.vocabOpen;render();}
 

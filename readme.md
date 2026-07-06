@@ -137,10 +137,12 @@ GITHUB_BRANCH=main
 
 ### 数据管线
 
-- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、事件追踪、深读推荐、RSS 和搜索索引。
+- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、今日主线、事件追踪、深读推荐、RSS 和搜索索引。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在精选阈值之下，只能进"更多资讯"；有事实源或分析源交叉佐证后才解除限制。
 - 精选采用阈值制，不硬凑固定条数；同时保留类目保底、上限、同源封顶和受控主题标签。主题标签只允许来自 `config.yaml` 的 `topic_tags`，词表外标签会被丢弃。
+- 兴趣画像影响排序：`interest_profile.md` 非空时，管线对每个事件打"兴趣契合分"换算成分数乘数，幅度由 `config.yaml` 的 `scoring.fit_span` 控制（默认 ±0.30，画像明确不关注的事件被压低、更关注的被抬高）。
+- 长尾去噪：预筛除丢弃硬垃圾外，还会给"软边角料"（体育赛果、明星八卦、猎奇轶闻、日抛热点）打标；整条来源都是软标记的事件不进"更多资讯"（不影响精选）。"更多资讯"条数由 `secondary_count` 控制（默认 8，真·漏网提醒）。
 
 ### 自动运行与本地运行
 
@@ -153,12 +155,12 @@ GITHUB_BRANCH=main
 
 `source/news/data/` 是线上数据目录，大多数文件由管线或后台 API 创建，不应手工改写，除非下方明确允许。
 
-- `daily/YYYY-MM-DD.js`：每日页面数据。
+- `daily/YYYY-MM-DD.js`：每日页面数据。`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）；每条精选还带 `context`（背景与机制）和 `significance`（对我的意义，结合兴趣画像生成）。旧数据无这些字段时前端自动跳过。
 - `manifest.js`：日报日期清单。
 - `source_health.json`：信源健康度，滚动保留 14 天，区分"抓取失败"与"窗口内无新文章"；某源连续 3 天抓取失败时在 Actions 输出 warning。
 - `events.json`：跨天事件登记表。管线把今日精选与近 14 天活跃事件做延续性匹配；连续出现 2 天及以上的事件会在页面显示跨天徽标。7 天无新进展自动归档，归档超 60 天删除；文件缺失或损坏时冷启动重建。
 - `feedback.json` / `read_later.json`：由 `api/newsState.js` 写入，分别保存反馈和稍后读状态，各封顶 1000 条。稍后读按 `item_id + date` 去重。反馈支持删除式撤销：payload 带 `op: "remove"` 时删除最后一条同 `date + item_id + action` 的记录（页面「更多类似」再点一次即撤销）；管线当晚已蒸馏进画像的部分不回滚，需手改 `interest_profile.md`。
-- `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行，但偏好要写成以 `- ` 开头的要点。
+- `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行（也可一次性手写丰富的种子画像），但偏好要写成以 `- ` 开头的要点。画像既影响精选排序（兴趣契合分），也用于生成每条精选的"对我的意义"。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
 - `vocab/YYYY-MM-DD.js`：每日英语单词候选。管线从当天精选的英文标题+RSS 摘要里挑 6-10 个高价值词（`config.yaml` 的 `vocab.daily_min/max`），前端按日懒加载，无 manifest。
 - `vocab-book.json`：个人单词本真源，由 `api/vocab.js` 写入。`words` 为已收藏/已补全的完整卡（含 `mastered` 掌握位、`source: auto|manual`），`pending` 为手动加的裸词。管线次日读它做全量词元去重、并把 `pending` 补全成完整卡移入 `words`。
@@ -168,6 +170,7 @@ GITHUB_BRANCH=main
 ### 页面能力
 
 - 页面视觉与博客羊皮纸主题统一，亮/暗跟随博客：初始化读 Fluid 写入的 `localStorage["Fluid_Color_Scheme"]` 决定亮暗，未设置则跟随系统。耦合点：博客若更换主题或改这个存储键，日报页暗色会静默失效。
+- 导语下方是「今日主线」块：把相关条目拼成 2-3 条主线，点主线成员标签会跳到对应精选卡或展开「更多资讯」并高亮（复用搜索的高亮机制）。精选卡在「为什么重要」之外还展示「背景与机制」和「对我的意义」。
 - 页面持有后台 token（`localStorage["aoiblog_admin_token"]`，与 `/admin/` 共用）时，精选卡片显示反馈操作；普通访客看到的仍是纯阅读页。
 - 反馈包括不感兴趣、更多类似、来源质量低、追踪/取消追踪。来源质量低会在后续管线运行中按近 90 天反馈自然日机械降权，不修改 `sources.yaml`。
 - 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录。
