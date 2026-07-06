@@ -1,5 +1,20 @@
 {
  "version": 1,
- "words": [],
+ "words": [
+  {
+   "word": "verdict",
+   "lemma": "verdict",
+   "phonetic": "/ˈvɜːrdɪkt/",
+   "pos": "n.",
+   "sense_zh": "裁决，判决",
+   "example_en": "Marine Le Pen appeal verdict: Why this moment matters for France.",
+   "item_id": "pick-36",
+   "item_title": "法国极右翼领导人勒庞上诉判决影响2027年总统选举",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T05:57:25.624Z",
+   "mastered": false
+  }
+ ],
  "pending": []
 }
