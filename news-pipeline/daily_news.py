@@ -1102,6 +1102,249 @@ def build_tracking(registry, picked, date_str):
     return tracking
 
 
+# ----------------------------------------------------------------
+# 6.1.5 英语单词本：从精选英文原文挑高价值词 + 补全手动加的裸词
+#   数据流与 feedback/read_later 一致：用户在页面收藏/加词 -> api/vocab.js
+#   写回 vocab-book.json；管线次日读它做全量去重、并把 pending 裸词补全成完整卡。
+#   每日候选写 data/vocab/<date>.js（前端按日懒加载，无需 manifest）。
+# ----------------------------------------------------------------
+
+VOCAB_BOOK_FILE = "vocab-book.json"
+
+VOCAB_SYSTEM = """你是英语词汇教练，为中文母语的英语学习者从今日英文新闻里挑"高价值单词"。
+用户给你若干条今日精选新闻的英文标题与英文摘要（附中文事件标题和条目编号 [k]）。
+请挑出 {n_min}-{n_max} 个最值得积累的高价值单词/短语，标准：
+- 兼收两类：①通用进阶词汇（CEFR B2-C1，可迁移到写作/考试，如 scrutiny、resilience、unprecedented）
+  ②时事高频术语（如 sanctions、tariff、ceasefire、inflation）
+- 按"对中文母语学习者的学习价值"综合权衡，宁缺毋滥
+排除：专有名词、地名、人名、机构名、太基础的词（四级以下）、以及只在该新闻里出现、迁移价值低的生僻词。
+用户会给出【已收录、请跳过】的词元清单，清单里的词一律不要再挑。
+对每个词输出一张精炼卡：
+- word: 原词的词元 lemma（动词还原原形、名词还原单数、去掉时态/复数）
+- phonetic: 音标（带斜杠，如 /ˈskruːtɪni/）
+- pos: 词性缩写（n. / v. / adj. / adv. / phrase 等）
+- sense_zh: 该新闻语境下的中文释义（≤20字，只给这个语境的义项）
+- example_en: 一句包含该词的英文例句，优先直接取自给定的新闻标题/摘要原文
+- item_id: 该词来自哪条新闻的编号（就是用户给的 [k] 里的 k，整数）
+只输出 JSON 数组，每个元素：
+{{"word":"...","phonetic":"...","pos":"...","sense_zh":"...","example_en":"...","item_id":k}}
+不要输出任何其他文字。"""
+
+VOCAB_ENRICH_SYSTEM = """你是英语词汇教练。用户给你若干英文单词/短语（可能带一句来源语境）。
+为每个词生成精炼卡，供中文母语学习者积累：
+- word: 词元原形
+- phonetic: 音标（带斜杠）
+- pos: 词性缩写（n. / v. / adj. / adv. / phrase 等）
+- sense_zh: 最常用的中文释义（≤20字；若给了语境则取该语境义）
+- example_en: 一句自然的英文例句（若给了来源语境句可直接采用）
+按输入顺序输出 JSON 数组，每个元素：
+{"word":"...","phonetic":"...","pos":"...","sense_zh":"...","example_en":"..."}
+不要输出其他文字。"""
+
+
+def normalize_word(w):
+    """词元归一：小写、只留字母（run/Running/ran 各自的表面形按输入，去噪即可）。"""
+    return re.sub(r"[^a-z]", "", str(w or "").strip().lower())
+
+
+def load_vocab_book(data_dir):
+    """读 vocab-book.json；缺失/损坏一律返回空册（结构补齐）。"""
+    f = data_dir / VOCAB_BOOK_FILE
+    if not f.exists():
+        return {"version": 1, "words": [], "pending": []}
+    try:
+        data = json.loads(f.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            raise ValueError("not a dict")
+        data.setdefault("version", 1)
+        if not isinstance(data.get("words"), list):
+            data["words"] = []
+        if not isinstance(data.get("pending"), list):
+            data["pending"] = []
+        return data
+    except Exception as e:
+        log(f"  {VOCAB_BOOK_FILE} 读取失败，重建空册: {e}")
+        return {"version": 1, "words": [], "pending": []}
+
+
+def collect_seen_lemmas(data_dir, book, skip_date=None):
+    """已出现过的词元集合：单词本 words+pending ∪ 历史 vocab/<date>.js。
+    skip_date 对应的当日文件不计入——同日重跑时才能重新生成、而非把自己去空。"""
+    seen = set()
+    for w in book.get("words", []):
+        seen.add(w.get("lemma") or normalize_word(w.get("word")))
+    for p in book.get("pending", []):
+        seen.add(p.get("lemma") or normalize_word(p.get("word")))
+    vdir = data_dir / "vocab"
+    if vdir.exists():
+        for p in sorted(vdir.glob("*.js")):
+            if skip_date and p.stem == skip_date:
+                continue
+            try:
+                src = p.read_text(encoding="utf-8")
+                m = re.search(r"window\.VOCAB_DATA\[[^\]]+\] = (\{.*\});", src, re.S)
+                if not m:
+                    continue
+                payload = json.loads(m.group(1))
+                for w in payload.get("words", []):
+                    seen.add(w.get("lemma") or normalize_word(w.get("word")))
+            except Exception:
+                continue
+    seen.discard("")
+    return seen
+
+
+def extract_vocab(llm, picked, items, seen_lemmas, cfg):
+    """从精选事件的英文标题+摘要挑高价值词，返回精炼卡列表（已按 seen_lemmas 去重）。"""
+    vcfg = cfg.get("vocab") or {}
+    n_min = int(vcfg.get("daily_min", 6))
+    n_max = int(vcfg.get("daily_max", 10))
+    if not picked:
+        return []
+    blocks = []
+    idx_to_meta = {}
+    for k, ev in enumerate(picked):
+        ids = ev.get("ids") or []
+        if not ids:
+            continue
+        # 主源排序与 event_to_item 一致：事实源优先、可信度高优先
+        sorted_ids = sorted(ids, key=lambda i: (
+            items[i]["source_type"] != "fact", -items[i]["credibility"]))
+        en_parts = []
+        for i in sorted_ids[:2]:
+            it = items[i]
+            en_parts.append(f"{it['title']}. {it.get('desc', '')[:300]}")
+        en_text = " ".join(en_parts).strip()
+        if not en_text:
+            continue
+        idx_to_meta[k] = {"item_id": f"pick-{ids[0]}", "item_title": ev.get("title", ""),
+                          "category": ev.get("category", "")}
+        blocks.append(f"[{k}]（{ev.get('title', '')}）\n{en_text}")
+    if not blocks:
+        return []
+    skip_hint = ""
+    if seen_lemmas:
+        skip_hint = "\n\n【已收录、请跳过这些词元】\n" + ", ".join(sorted(seen_lemmas)[:200])
+    system = VOCAB_SYSTEM.format(n_min=n_min, n_max=n_max)
+    try:
+        result = llm.json_call(system, "\n\n".join(blocks) + skip_hint)
+    except Exception as e:
+        log(f"  单词本挑词失败，今日跳过: {e}")
+        return []
+    cards = []
+    used = set()
+    for r in (result if isinstance(result, list) else []):
+        word = str(r.get("word", "")).strip()
+        lemma = normalize_word(word)
+        if not lemma or lemma in seen_lemmas or lemma in used:
+            continue
+        k = r.get("item_id")
+        meta = idx_to_meta.get(k) if isinstance(k, int) else None
+        if meta is None:   # LLM 漏填或填错编号：退化到第一条精选，避免丢词
+            meta = next(iter(idx_to_meta.values()),
+                        {"item_id": "", "item_title": "", "category": ""})
+        used.add(lemma)
+        cards.append({
+            "word": word,
+            "lemma": lemma,
+            "phonetic": str(r.get("phonetic", "")).strip(),
+            "pos": str(r.get("pos", "")).strip(),
+            "sense_zh": str(r.get("sense_zh", "")).strip()[:40],
+            "example_en": str(r.get("example_en", "")).strip()[:400],
+            "item_id": meta["item_id"],
+            "item_title": meta["item_title"],
+            "category": meta["category"],
+        })
+        if len(cards) >= n_max:
+            break
+    return cards
+
+
+def enrich_pending(llm, book):
+    """把 vocab-book.json 的 pending 裸词补全成完整卡并移入 words。返回补全条数；
+    LLM 失败则原样保留 pending 下次再试。"""
+    pending = book.get("pending") or []
+    if not pending:
+        return 0
+    existing = {w.get("lemma") or normalize_word(w.get("word"))
+                for w in book.get("words", [])}
+    lines, valid = [], []
+    for p in pending:
+        word = str(p.get("word", "")).strip()
+        if not word:
+            continue
+        ctx = str(p.get("context", "")).strip()
+        lines.append(f"[{len(valid)}] {word}" + (f"  语境: {ctx}" if ctx else ""))
+        valid.append(p)
+    if not valid:
+        book["pending"] = []
+        return 0
+    try:
+        result = llm.json_call(VOCAB_ENRICH_SYSTEM, "\n".join(lines))
+    except Exception as e:
+        log(f"  手动词补全失败，保留 pending 下次再试: {e}")
+        return 0
+    result = result if isinstance(result, list) else []
+    now = datetime.now(timezone.utc).isoformat()
+    n = 0
+    for i, p in enumerate(valid):
+        r = result[i] if i < len(result) else {}
+        word = str(r.get("word") or p.get("word") or "").strip()
+        lemma = normalize_word(word)
+        if not lemma or lemma in existing:
+            continue
+        existing.add(lemma)
+        book.setdefault("words", []).append({
+            "word": word,
+            "lemma": lemma,
+            "phonetic": str(r.get("phonetic", "")).strip(),
+            "pos": str(r.get("pos", "")).strip(),
+            "sense_zh": str(r.get("sense_zh", "")).strip()[:40],
+            "example_en": str(r.get("example_en", "")).strip()[:400],
+            "item_id": p.get("item_id", ""),
+            "item_title": p.get("item_title", ""),
+            "date": p.get("date", ""),
+            "source": "manual",
+            "collected_ts": now,
+            "mastered": False,
+        })
+        n += 1
+    book["pending"] = []   # 处理过的都清空：成功的入册，无效/重复的丢弃
+    return n
+
+
+def write_vocab(date_str, cards, data_dir):
+    vdir = data_dir / "vocab"
+    vdir.mkdir(parents=True, exist_ok=True)
+    payload = {"date": date_str,
+               "generated_at": datetime.now(timezone.utc).isoformat(),
+               "words": cards}
+    js = ("window.VOCAB_DATA = window.VOCAB_DATA || {};\n"
+          f"window.VOCAB_DATA[{json.dumps(date_str)}] = "
+          f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
+    (vdir / f"{date_str}.js").write_text(js, encoding="utf-8")
+
+
+def build_vocab(llm, picked, items, date_str, cfg):
+    """单词本编排：补全手动裸词 -> 全量去重 -> 挑今日候选 -> 落盘。"""
+    vcfg = cfg.get("vocab") or {}
+    if not vcfg.get("enabled", True):
+        return
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    book = load_vocab_book(data_dir)
+    had_pending = bool(book.get("pending"))
+    n_enriched = enrich_pending(llm, book)          # 先补全，纳入去重集
+    seen = collect_seen_lemmas(data_dir, book, skip_date=date_str)
+    cards = extract_vocab(llm, picked, items, seen, cfg)
+    if cards:                                        # 空结果不落盘，避免覆盖前次好数据 / 产出空文件
+        write_vocab(date_str, cards, data_dir)
+    if had_pending or not (data_dir / VOCAB_BOOK_FILE).exists():
+        (data_dir / VOCAB_BOOK_FILE).write_text(
+            json.dumps(book, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
+
+
 def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
@@ -1470,6 +1713,8 @@ def main():
 
     write_output(date_str, brief, picked, secondary, items, cfg,
                  registry=registry, deep=deep)
+    log("英语单词本：挑词 + 补全手动词 ...")
+    build_vocab(llm, picked, items, date_str, cfg)
     update_source_health(fetch_stats, date_str)
     write_feed(_data_dir, date_str, cfg)
     update_search_index(_data_dir, date_str, cfg)

@@ -102,6 +102,14 @@ topic_tags:
   - 灾害事故
   - 劳动就业
 
+# ---------- 英语单词本 ----------
+# 每天从精选新闻的英文标题+摘要里挑高价值单词，写 data/vocab/<date>.js（前端按日懒加载）。
+# 用户收藏/手动加词写回 data/vocab-book.json，管线次日读它做全量去重 + 补全手动裸词。
+vocab:
+  enabled: true
+  daily_min: 6    # 每天至少挑几个（够挑的前提下）
+  daily_max: 10   # 每天最多挑几个
+
 # ---------- 深度阅读频道 ----------
 # 独立于新闻管线：抓 sources.yaml 的 deep_sources，LLM 打"深读价值分"，
 # 阈值制 0-3 篇/天（宁缺毋滥），推荐写入 daily js 的 deep 字段。

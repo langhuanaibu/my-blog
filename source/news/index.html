@@ -220,6 +220,35 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-h);border:1px solid var(--accent);color:var(--text);padding:8px 18px;border-radius:8px;z-index:60;font-size:13px;box-shadow:var(--shadow)}
 .toast.err{border-color:var(--rumor)}
 
+/* ---------- 英语单词本 ---------- */
+.vocab-sec{margin-top:8px}
+.vocab-fold{cursor:pointer;user-select:none}
+.vocab-fold .vf-i{color:var(--text3);font-weight:400;font-size:12px;transition:.15s}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:860px){.vgrid{grid-template-columns:1fr}}
+.vcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--shadow)}
+.vcard:hover{background:var(--card-h)}
+.vcard.mastered{opacity:.6}
+.vhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.vword{font-size:18px;font-weight:800;color:var(--heading);letter-spacing:.3px}
+.vph{font-size:13px;color:var(--accent2);font-family:"Segoe UI",sans-serif}
+.vpos{font-size:12px;color:var(--text3);font-style:italic}
+.vsense{font-size:14px;color:var(--text)}
+.vex{font-size:12.5px;color:var(--text2);line-height:1.5;padding-left:9px;border-left:2px solid var(--accent);font-style:italic}
+.vmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--text3);margin-top:1px}
+.vsrc{border:1px solid var(--border2);border-radius:9px;padding:1px 7px}
+.vsrc.manual{color:var(--dev);border-color:var(--dev)}
+.vacts{display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px dashed var(--border);margin-top:2px}
+/* 单词本视图控件 */
+.vbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0 4px}
+.vadd{display:flex;gap:8px;flex:1;min-width:220px}
+.vadd input{flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 11px;border-radius:6px;font-size:13px}
+.vadd input:focus{outline:none;border-color:var(--accent)}
+.vadd button{background:var(--accent);border:none;color:var(--card-h);padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px}
+.vsearch{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 11px;border-radius:6px;font-size:13px;width:180px}
+.vsearch:focus{outline:none;border-color:var(--accent)}
+.vpending{background:var(--card);border:1px dashed var(--border2);border-radius:8px;padding:9px 13px;font-size:12.5px;color:var(--text2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.vpending b{color:var(--dev)}
 .empty{color:var(--text3);text-align:center;padding:60px 0;font-size:14px}
 footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-height:2}
 .legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
@@ -260,7 +289,9 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
 const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
-               itemsById:{}, view:"day", pendingHighlight:null};
+               itemsById:{}, view:"day", pendingHighlight:null, vocabOpen:true};
+// 单词本视图的本地状态（book 缓存 + 筛选），仅本人可见
+const vocab = {book:null, q:"", filter:"all", src:"all"};
 
 /* ---------- 用户状态：与在线后台共用 token，仅本人可见操作按钮 ---------- */
 const TOKEN = localStorage.getItem("aoiblog_admin_token") || "";
@@ -331,12 +362,23 @@ function fmtTime(iso){
   return (d.getMonth()+1)+"/"+d.getDate()+" "+hm;
 }
 
+// 按需懒加载当日单词候选 data/vocab/<date>.js；缺失记为 null（已尝试）避免重复请求
+function ensureVocab(date,cb){
+  if(!window.VOCAB_DATA) window.VOCAB_DATA={};
+  if(window.VOCAB_DATA[date]!==undefined) return cb();
+  const s=document.createElement("script");
+  s.src="data/vocab/"+date+".js";
+  s.onload=cb;
+  s.onerror=()=>{window.VOCAB_DATA[date]=null;cb();};
+  document.head.appendChild(s);
+}
 function loadDate(date){
   state.date=date; state.moreOpen=false; state.tag=null;
-  if(window.NEWS_DATA && window.NEWS_DATA[date]) return render();
+  const done=()=>ensureVocab(date,render);
+  if(window.NEWS_DATA && window.NEWS_DATA[date]) return done();
   const s=document.createElement("script");
   s.src="data/daily/"+date+".js";
-  s.onload=render;
+  s.onload=done;
   s.onerror=()=>{document.getElementById("app").innerHTML='<div class="empty">这一天没有数据（data/daily/'+esc(date)+'.js 不存在）</div>';};
   document.head.appendChild(s);
 }
@@ -632,6 +674,15 @@ function render(){
       if(mores.length>5) h+=`<button class="toggle-more" onclick="toggleMore()">展开全部 ${mores.length} 条 ▼</button>`;
     }
   }
+  // 今日单词：管线从精选英文原文挑的高价值词（候选对所有访客可见，收藏按钮仅本人）
+  const vd=(window.VOCAB_DATA||{})[state.date];
+  const vwords=vd&&Array.isArray(vd.words)?vd.words:[];
+  if(vwords.length){
+    const open=state.vocabOpen;
+    h+=`<div class="sec-title vocab-sec vocab-fold" onclick="toggleVocabDay()">📖 今日单词 <span class="vf-i">(${vwords.length} 个高价值词 · 点击${open?"收起":"展开"})</span></div>`;
+    if(open) h+=`<div class="vgrid">${vwords.map(w=>vocabDayCard(w)).join("")}</div>`;
+  }
+
   app.innerHTML=h;
   updateNav();
   if(state.pendingHighlight){
@@ -648,6 +699,163 @@ function render(){
 function setCat(c){state.cat=c;state.tag=null;render();}
 function setTag(t){state.tag=(state.tag===t?null:t);render();}
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
+function toggleVocabDay(){state.vocabOpen=!state.vocabOpen;render();}
+
+/* ---------- 英语单词本 ---------- */
+async function getVocab(){
+  const r=await fetch("/api/vocab",{headers:{Authorization:"Bearer "+TOKEN}});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
+  return j.data;
+}
+async function vocabOp(op,payload){
+  const r=await fetch("/api/vocab",{method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:"Bearer "+TOKEN},
+    body:JSON.stringify({op,payload})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
+  return j.data;
+}
+
+// 今日单词候选卡（日报语境区）。收藏状态本地乐观缓存，键为词元
+function vocabDayCard(w){
+  const lm=w.lemma||String(w.word||"").toLowerCase().replace(/[^a-z]/g,"");
+  const got=LS.get("vocab_collected")[lm];
+  const btn=TOKEN?`<div class="vacts"><span class="act ${got?"done":""}" onclick="vocabCollect(this,'${esc(lm)}')">${got?"✓ 已收藏":"➕ 收藏到单词本"}</span></div>`:"";
+  return `<div class="vcard" data-lm="${esc(lm)}">
+    <div class="vhead"><span class="vword">${esc(w.word)}</span>
+      ${w.phonetic?`<span class="vph">${esc(w.phonetic)}</span>`:""}
+      ${w.pos?`<span class="vpos">${esc(w.pos)}</span>`:""}</div>
+    ${w.sense_zh?`<div class="vsense">${esc(w.sense_zh)}</div>`:""}
+    ${w.example_en?`<div class="vex">${esc(w.example_en)}</div>`:""}
+    ${w.item_title?`<div class="vmeta"><span>📰 ${esc(w.item_title)}</span></div>`:""}
+    ${btn}</div>`;
+}
+function vocabCollect(el,lm){
+  const vd=(window.VOCAB_DATA||{})[state.date]||{};
+  const w=(vd.words||[]).find(x=>(x.lemma||String(x.word||"").toLowerCase().replace(/[^a-z]/g,""))===lm);
+  if(!w) return;
+  const col=LS.get("vocab_collected");
+  if(col[lm]){toast("已在单词本里");return;}
+  col[lm]=1;LS.set("vocab_collected",col);
+  el.classList.add("done");el.textContent="✓ 已收藏";
+  vocabOp("collect",{word:w.word,lemma:w.lemma,phonetic:w.phonetic,pos:w.pos,
+    sense_zh:w.sense_zh,example_en:w.example_en,item_id:w.item_id,
+    item_title:w.item_title,date:state.date})
+    .then(()=>toast("已收藏到单词本"))
+    .catch(e=>{col[lm]=undefined;delete col[lm];LS.set("vocab_collected",col);
+      el.classList.remove("done");el.textContent="➕ 收藏到单词本";
+      toast("收藏失败："+e.message,true);});
+}
+
+function updateVocabBtn(){
+  const b=document.getElementById("vocabBtn");
+  if(b) b.textContent=state.view==="vocab"?"📅 日视图":"📖 单词本";
+}
+function toggleVocab(){
+  if(state.view==="vocab"){state.view="day";updateVocabBtn();loadDate(state.date||(window.NEWS_MANIFEST||[])[0]);return;}
+  state.view="vocab";
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateVocabBtn();
+  renderVocab();
+}
+async function renderVocab(refetch){
+  const app=document.getElementById("app");
+  updateNav();
+  if(refetch!==false&&!vocab.book){
+    app.innerHTML='<div class="empty">加载单词本…</div>';
+    try{vocab.book=await getVocab();}
+    catch(e){app.innerHTML='<div class="empty">加载失败：'+esc(e.message)+"</div>";return;}
+  }
+  if(state.view!=="vocab") return;   // 加载期间用户已切走
+  const book=vocab.book||{words:[],pending:[]};
+  const words=(book.words||[]).slice().reverse();
+  const pend=book.pending||[];
+  const q=vocab.q.trim().toLowerCase();
+  const filtered=words.filter(w=>{
+    if(vocab.filter==="mastered"&&!w.mastered) return false;
+    if(vocab.filter==="learning"&&w.mastered) return false;
+    if(vocab.src!=="all"&&(w.source||"auto")!==vocab.src) return false;
+    if(q){const hay=((w.word||"")+" "+(w.sense_zh||"")+" "+(w.example_en||"")).toLowerCase();
+      if(!hay.includes(q)) return false;}
+    return true;
+  });
+  const total=words.length, mastered=words.filter(w=>w.mastered).length;
+  const chip=(k,v,label)=>`<span class="tab sub ${vocab[k]===v?"on":""}" onclick="vocabSetFilter('${k}','${v}')">${label}</span>`;
+  let h=`<div class="sec-title">📖 我的单词本 <span style="font-size:12px;color:var(--text3);font-weight:400">(共 ${total} 词 · 已掌握 ${mastered})</span></div>`;
+  h+=`<div class="vbar">
+    <input class="vsearch" id="vSearch" placeholder="🔍 搜索单词/释义" value="${esc(vocab.q)}" autocomplete="off">
+    <div class="tabs sub" style="margin:0">
+      ${chip("filter","all","全部")}${chip("filter","learning","未掌握")}${chip("filter","mastered","已掌握")}
+    </div>
+    <div class="tabs sub" style="margin:0">
+      ${chip("src","all","不限来源")}${chip("src","auto","自动挑")}${chip("src","manual","手动加")}
+    </div>
+    <div class="vadd">
+      <input id="vAddInput" placeholder="手动加词：输入英文单词，明日补全音标释义" autocomplete="off">
+      <button onclick="vocabAdd()">加入</button>
+    </div>
+  </div>`;
+  if(pend.length){
+    h+=`<div class="vpending"><b>补全中 ${pend.length} 个</b> · 手动加的词会在管线次日运行时补齐音标释义：`
+      +pend.map(p=>esc(p.word)).join("、")+"</div>";
+  }
+  h+=filtered.length?`<div class="vgrid">${filtered.map(vocabBookCard).join("")}</div>`
+    :'<div class="empty">'+(total?"没有匹配的单词":"单词本还是空的——去日报的「今日单词」区收藏，或在上面手动加词")+"</div>";
+  app.innerHTML=h;
+  const si=document.getElementById("vSearch");
+  if(si){si.oninput=()=>{vocab.q=si.value;renderVocab(false);};
+    // 保持焦点与光标（重渲染后）
+    si.focus();si.setSelectionRange(si.value.length,si.value.length);}
+  const ai=document.getElementById("vAddInput");
+  if(ai) ai.onkeydown=e=>{if(e.key==="Enter") vocabAdd();};
+}
+function vocabBookCard(w){
+  const lm=w.lemma||String(w.word||"").toLowerCase().replace(/[^a-z]/g,"");
+  return `<div class="vcard ${w.mastered?"mastered":""}" data-lm="${esc(lm)}">
+    <div class="vhead"><span class="vword">${esc(w.word)}</span>
+      ${w.phonetic?`<span class="vph">${esc(w.phonetic)}</span>`:""}
+      ${w.pos?`<span class="vpos">${esc(w.pos)}</span>`:""}</div>
+    ${w.sense_zh?`<div class="vsense">${esc(w.sense_zh)}</div>`:""}
+    ${w.example_en?`<div class="vex">${esc(w.example_en)}</div>`:""}
+    <div class="vmeta">
+      <span class="vsrc ${w.source==="manual"?"manual":""}">${w.source==="manual"?"手动":"自动"}</span>
+      ${w.date?`<span>${esc(w.date)}</span>`:""}
+      ${w.item_title?`<span>📰 ${esc(w.item_title)}</span>`:""}
+    </div>
+    <div class="vacts">
+      <span class="act ${w.mastered?"done":""}" onclick="vocabMaster('${esc(lm)}',${w.mastered?"false":"true"})">${w.mastered?"✓ 已掌握":"◎ 标为已掌握"}</span>
+      <span class="act" onclick="vocabRemove('${esc(lm)}')">✕ 移除</span>
+    </div></div>`;
+}
+function vocabSetFilter(k,v){vocab[k]=v;renderVocab(false);}
+function vocabAdd(){
+  const ai=document.getElementById("vAddInput");
+  const word=(ai.value||"").trim();
+  if(!word){toast("请输入单词",true);return;}
+  if(!/[a-zA-Z]/.test(word)){toast("请输入英文单词",true);return;}
+  ai.value="";
+  vocabOp("add",{word})
+    .then(d=>{if(d.changed){vocab.book=null;toast("已加入，明日补全音标释义");renderVocab();}
+      else toast("这个词已经在单词本里了");})
+    .catch(e=>toast("加入失败："+e.message,true));
+}
+function vocabMaster(lm,want){
+  vocabOp(want?"master":"unmaster",{word:lm})
+    .then(()=>{const w=(vocab.book.words||[]).find(x=>(x.lemma||"")===lm||String(x.word||"").toLowerCase().replace(/[^a-z]/g,"")===lm);
+      if(w) w.mastered=want;renderVocab(false);
+      toast(want?"已标为掌握":"已取消掌握");})
+    .catch(e=>toast("操作失败："+e.message,true));
+}
+function vocabRemove(lm){
+  vocabOp("remove",{word:lm})
+    .then(()=>{if(vocab.book){vocab.book.words=(vocab.book.words||[]).filter(x=>(x.lemma||String(x.word||"").toLowerCase().replace(/[^a-z]/g,""))!==lm);
+      vocab.book.pending=(vocab.book.pending||[]).filter(p=>(p.lemma||String(p.word||"").toLowerCase().replace(/[^a-z]/g,""))!==lm);}
+      // 同步清掉本地收藏标记，便于重新收藏
+      const col=LS.get("vocab_collected");if(col[lm]){delete col[lm];LS.set("vocab_collected",col);}
+      renderVocab(false);toast("已移除");})
+    .catch(e=>toast("移除失败："+e.message,true));
+}
 
 /* ---------- 稍后读抽屉 ---------- */
 function openRl(){
@@ -683,11 +891,11 @@ function rlOp(id,date,op){
 
 function updateNav(){
   const M=window.NEWS_MANIFEST||[];
-  const week=state.view==="week";
+  const locked=state.view!=="day";   // 周视图 / 单词本视图都锁住日期导航
   const i=M.indexOf(state.date);
-  document.getElementById("prevBtn").disabled=week||(i>=M.length-1);
-  document.getElementById("nextBtn").disabled=week||(i<=0);
-  document.getElementById("dateSel").disabled=week;
+  document.getElementById("prevBtn").disabled=locked||(i>=M.length-1);
+  document.getElementById("nextBtn").disabled=locked||(i<=0);
+  document.getElementById("dateSel").disabled=locked;
 }
 
 /* ---------- 站内搜索（懒加载 search_index.js） ---------- */
@@ -741,6 +949,7 @@ function loadDates(dates){
 function toggleView(){
   state.view=state.view==="week"?"day":"week";
   document.getElementById("viewBtn").textContent=state.view==="week"?"📅 日视图":"🗓 周视图";
+  updateVocabBtn();   // 从单词本视图切过来时把按钮标签复位
   if(state.view==="week") renderWeek(); else render();
 }
 async function renderWeek(){
@@ -808,6 +1017,11 @@ function gotoDay(dt){
     btn.onclick=openRl;
     const nav=document.querySelector(".datenav");
     nav.insertBefore(btn,nav.firstChild);
+    const vbtn=document.createElement("button");
+    vbtn.id="vocabBtn";
+    vbtn.textContent="📖 单词本";
+    vbtn.onclick=toggleVocab;
+    nav.insertBefore(vbtn,nav.firstChild);
   }
   const si=document.getElementById("searchInput");
   si.addEventListener("focus",()=>ensureIndex(doSearch));

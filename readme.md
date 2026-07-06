@@ -160,6 +160,8 @@ GITHUB_BRANCH=main
 - `feedback.json` / `read_later.json`：由 `api/newsState.js` 写入，分别保存反馈和稍后读状态，各封顶 1000 条。稍后读按 `item_id + date` 去重。反馈支持删除式撤销：payload 带 `op: "remove"` 时删除最后一条同 `date + item_id + action` 的记录（页面「更多类似」再点一次即撤销）；管线当晚已蒸馏进画像的部分不回滚，需手改 `interest_profile.md`。
 - `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行，但偏好要写成以 `- ` 开头的要点。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
+- `vocab/YYYY-MM-DD.js`：每日英语单词候选。管线从当天精选的英文标题+RSS 摘要里挑 6-10 个高价值词（`config.yaml` 的 `vocab.daily_min/max`），前端按日懒加载，无 manifest。
+- `vocab-book.json`：个人单词本真源，由 `api/vocab.js` 写入。`words` 为已收藏/已补全的完整卡（含 `mastered` 掌握位、`source: auto|manual`），`pending` 为手动加的裸词。管线次日读它做全量词元去重、并把 `pending` 补全成完整卡移入 `words`。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。
 - `search_index.js`：站内搜索紧凑索引，缺失时可由管线从历史 daily 文件重建。
 
@@ -172,6 +174,7 @@ GITHUB_BRANCH=main
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
 - 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`。深读失败只丢当天深读推荐，不影响新闻日报产出。
 - 周视图为纯前端聚合：加载 7 天窗口数据，展示每日 Top3 和跨天事件线。
+- 英语单词本：管线每天从精选英文原文挑高价值词（通用进阶词 B2-C1 + 时事术语兼收，排除专有名词/基础词）。日报底部「今日单词」区展示候选，候选对所有访客可见；持 token 者可一键收藏进单词本。顶栏「单词本」入口（仅 token 可见）切到复习视图：搜索、按掌握/来源筛选、标已掌握、移除，并可手动加词（存为 `pending` 裸词，管线次日补全音标释义）。收藏词的 `item_id` 形如 `pick-N`，与当日精选卡一致。
 
 ### 验证与移除
 

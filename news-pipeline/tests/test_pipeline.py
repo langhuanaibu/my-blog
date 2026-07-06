@@ -515,6 +515,105 @@ finally:
     else:
         os.environ["DATA_DIR"] = old_data_dir
 
+# ----------------------------------------------------------------
+# 8. 英语单词本（normalize / 去重 / 挑词 / 手动词补全）
+# ----------------------------------------------------------------
+
+check("词元归一去噪", dn.normalize_word("  Running! ") == "running")
+check("词元归一空串", dn.normalize_word("2026") == "")
+
+vocab_cfg = {"vocab": {"daily_min": 6, "daily_max": 10}}
+v_items = [
+    {"title": "Sanctions imposed on exports", "desc": "unprecedented scrutiny",
+     "source_type": "fact", "credibility": 9},
+    {"title": "Ceasefire talks resume", "desc": "resilience amid tension",
+     "source_type": "fact", "credibility": 8},
+]
+v_picked = [{"ids": [0], "title": "中文A", "category": "world"},
+            {"ids": [1], "title": "中文B", "category": "ai"}]
+
+
+class VocabStub:
+    def json_call(self, system, user):
+        return [
+            {"word": "Scrutiny", "phonetic": "/ˈskruːtɪni/", "pos": "n.",
+             "sense_zh": "审查", "example_en": "E1", "item_id": 0},
+            {"word": "scrutiny", "phonetic": "", "pos": "n.",           # 同词元重复 -> 丢
+             "sense_zh": "审查", "example_en": "E1b", "item_id": 0},
+            {"word": "resilience", "phonetic": "", "pos": "n.",         # 已收录 -> 丢
+             "sense_zh": "韧性", "example_en": "E2", "item_id": 1},
+            {"word": "ceasefire", "phonetic": "/ˈsiːsfaɪə/", "pos": "n.",
+             "sense_zh": "停火", "example_en": "E3", "item_id": 1},
+            {"word": "", "item_id": 0},                                 # 空词 -> 丢
+        ]
+
+
+cards = dn.extract_vocab(VocabStub(), v_picked, v_items, {"resilience"}, vocab_cfg)
+lemmas = [c["lemma"] for c in cards]
+check("挑词按词元去重+跳过已收录", lemmas == ["scrutiny", "ceasefire"])
+check("挑词回链 item_id 对应精选", cards[0]["item_id"] == "pick-0" and cards[1]["item_id"] == "pick-1")
+check("挑词保留原词面", cards[0]["word"] == "Scrutiny")
+check("挑词带语境标题", cards[1]["item_title"] == "中文B")
+
+
+class VocabEnrichStub:
+    def json_call(self, system, user):
+        return [
+            {"word": "scrutiny", "phonetic": "/ˈskruːtɪni/", "pos": "n.",
+             "sense_zh": "审查", "example_en": "E"},
+            {"word": "run", "phonetic": "/rʌn/", "pos": "v.",
+             "sense_zh": "运行", "example_en": "E"},
+        ]
+
+
+book_e = {"version": 1, "words": [{"word": "run", "lemma": "run"}],
+          "pending": [{"word": "scrutiny", "date": "2026-07-06", "item_id": "pick-3"},
+                      {"word": "run"}]}      # 与已有词重复 -> 补全时丢
+n_enriched = dn.enrich_pending(VocabEnrichStub(), book_e)
+check("手动词补全数量(去重后)", n_enriched == 1)
+check("补全后 pending 清空", book_e["pending"] == [])
+new_word = next((w for w in book_e["words"] if w["lemma"] == "scrutiny"), None)
+check("补全词入册且标 manual", new_word is not None and new_word["source"] == "manual")
+check("补全词保留来源回链", new_word["item_id"] == "pick-3")
+check("补全空 pending 返回0", dn.enrich_pending(VocabEnrichStub(), {"words": [], "pending": []}) == 0)
+
+
+class VocabBoom:
+    def json_call(self, system, user):
+        raise RuntimeError("boom")
+
+
+book_boom = {"version": 1, "words": [], "pending": [{"word": "keep"}]}
+check("补全 LLM 失败保留 pending", dn.enrich_pending(VocabBoom(), book_boom) == 0
+      and book_boom["pending"] == [{"word": "keep"}])
+check("挑词 LLM 失败返回空", dn.extract_vocab(VocabBoom(), v_picked, v_items, set(), vocab_cfg) == [])
+
+tmp = Path(tempfile.mkdtemp(prefix="vocab_test_"))
+try:
+    check("单词本冷启动为空册",
+          dn.load_vocab_book(tmp) == {"version": 1, "words": [], "pending": []})
+    (tmp / dn.VOCAB_BOOK_FILE).write_text("{broken", encoding="utf-8")
+    check("单词本损坏重建空册", dn.load_vocab_book(tmp)["words"] == [])
+
+    # 全量去重集：历史 vocab/<date>.js ∪ 单词本 words+pending
+    vdir = tmp / "vocab"
+    vdir.mkdir(parents=True, exist_ok=True)
+    dn.write_vocab("2026-07-05", [{"word": "Tariff", "lemma": "tariff"}], tmp)
+    book_seen = {"words": [{"word": "scrutiny", "lemma": "scrutiny"}],
+                 "pending": [{"word": "ceasefire"}]}
+    seen = dn.collect_seen_lemmas(tmp, book_seen)
+    check("去重集含历史挑词", "tariff" in seen)
+    check("去重集含单词本词与pending", "scrutiny" in seen and "ceasefire" in seen)
+
+    # write_vocab 落盘可被前端壳解析
+    payload_src = (vdir / "2026-07-05.js").read_text(encoding="utf-8")
+    import re as _re
+    m = _re.search(r"window\.VOCAB_DATA\[[^\]]+\] = (\{.*\});", payload_src, _re.S)
+    check("单词候选文件是可解析壳", m is not None
+          and json.loads(m.group(1))["words"][0]["word"] == "Tariff")
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")
 sys.exit(1 if failures else 0)

@@ -72,7 +72,7 @@
 👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
 
 **场景 6：我要人工修正每日日报兴趣画像**
-👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feedback.json`、`read_later.json`、`feed.xml` 或 `search_index.js`。
+👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feedback.json`、`read_later.json`、`vocab/*.js`、`vocab-book.json`、`feed.xml` 或 `search_index.js`（后两类分别由管线和 `api/` 接口产出）。
 
 **场景 7：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。
