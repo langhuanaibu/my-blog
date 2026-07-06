@@ -71,7 +71,7 @@ function setRootScalar(source, key, value) {
   if (!pattern.test(source)) {
     throw createHttpError(400, `Missing config key: ${key}`);
   }
-  return source.replace(pattern, line);
+  return source.replace(pattern, () => line);
 }
 
 function setAboutScalar(source, key, value) {
@@ -79,7 +79,7 @@ function setAboutScalar(source, key, value) {
   if (!pattern.test(source)) {
     throw createHttpError(400, `Missing about key: ${key}`);
   }
-  return source.replace(pattern, `$1${yamlString(value)}`);
+  return source.replace(pattern, (_, prefix) => prefix + yamlString(value));
 }
 
 function setSlogan(source, value) {
@@ -87,7 +87,7 @@ function setSlogan(source, value) {
   if (!pattern.test(source)) {
     throw createHttpError(400, 'Missing index slogan text');
   }
-  return source.replace(pattern, `$1${yamlString(value)}`);
+  return source.replace(pattern, (_, prefix) => prefix + yamlString(value));
 }
 
 function setFooter(source, value) {
@@ -95,7 +95,7 @@ function setFooter(source, value) {
   if (!pattern.test(source)) {
     throw createHttpError(400, 'Missing footer content');
   }
-  return source.replace(pattern, `$1${yamlInlineHtml(value)}`);
+  return source.replace(pattern, (_, prefix) => prefix + yamlInlineHtml(value));
 }
 
 function setNav(source, nav) {
@@ -106,7 +106,7 @@ function setNav(source, nav) {
     if (!pattern.test(next)) {
       throw createHttpError(400, `Missing nav item: ${key}`);
     }
-    next = next.replace(pattern, `$1${yamlString(nav[key])}`);
+    next = next.replace(pattern, (_, prefix) => prefix + yamlString(nav[key]));
   }
   return next;
 }
