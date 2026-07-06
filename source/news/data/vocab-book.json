@@ -182,6 +182,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T15:40:25.926Z",
    "mastered": false
+  },
+  {
+   "word": "ballistic",
+   "lemma": "ballistic",
+   "phonetic": "/bəˈlɪstɪk/",
+   "pos": "adj.",
+   "sense_zh": "弹道的；弹道导弹的",
+   "example_en": "China tests submarine-launched ballistic missile in Pacific, angering neighbors.",
+   "item_id": "pick-145",
+   "item_title": "中国在太平洋试射潜射弹道导弹引邻国关切",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T15:40:27.781Z",
+   "mastered": false
   }
  ],
  "pending": []
