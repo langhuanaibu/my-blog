@@ -2,7 +2,24 @@
  "version": 1,
  "events": [
   {
-   "event_id": "evt-20260706-6b3305",
+   "event_id": "evt-20260706-b4f850",
+   "title": "英伟达下一代AI机架系统因制造问题推迟至2028年",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "英伟达下一代AI机架系统因制造问题推迟至2028年",
+     "summary": "SemiAnalysis爆料称，英伟达Kyber NVL144机架因PCB中板制造困难，延迟超12个月至2028年，NVL72x2背靠背架构也被取消。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-9e70a2",
    "title": "伊朗前最高领袖哈梅内伊葬礼在德黑兰举行",
    "category": "world",
    "status": "active",
@@ -13,82 +30,14 @@
     {
      "date": "2026-07-06",
      "title": "伊朗前最高领袖哈梅内伊葬礼在德黑兰举行",
-     "summary": "伊朗前最高领袖哈梅内伊葬礼在德黑兰举行，数十万民众参加，新领袖缺席。",
+     "summary": "伊朗为前最高领袖哈梅内伊举行葬礼，数百万人参加，新领袖穆杰塔巴·哈梅内伊未公开露面，葬礼上出现刺杀特朗普的口号。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-06074c",
-   "title": "法国极右翼领导人勒庞上诉判决影响2027年总统选举",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "法国极右翼领导人勒庞上诉判决影响2027年总统选举",
-     "summary": "法国极右翼领导人勒庞上诉判决结果将决定其能否参加2027年总统选举。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-a63e7e",
-   "title": "俄罗斯空袭基辅致9人死亡",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "俄罗斯空袭基辅致9人死亡",
-     "summary": "俄罗斯导弹和无人机袭击基辅，造成至少9人死亡，救援工作仍在进行。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-4be389",
-   "title": "委内瑞拉地震中女孩被困废墟32小时后获救",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "委内瑞拉地震中女孩被困废墟32小时后获救",
-     "summary": "委内瑞拉6月24日双地震中，一名女孩被困32小时后获救，政府救灾能力受质疑。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-b95b08",
-   "title": "中国在太平洋进行远程导弹试验澳大利亚事先知情",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "中国在太平洋进行远程导弹试验澳大利亚事先知情",
-     "summary": "中国在太平洋进行远程导弹试验，澳大利亚称事先获通知，中方批评澳情报机构。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-5eb1d6",
-   "title": "英伟达Kyber NVL144机架系统因制造问题延迟至2028年",
+   "event_id": "evt-20260706-0ad2a8",
+   "title": "宝马部署Figure 03人形机器人扩大生产作业",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -97,49 +46,15 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "英伟达Kyber NVL144机架系统因制造问题延迟至2028年",
-     "summary": "英伟达下一代AI机架系统Kyber NVL144因PCB制造问题延迟超12个月至2028年。",
-     "news_status": "仅传言"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-4012ec",
-   "title": "SK海力士启动约280亿美元美股上市",
-   "category": "finance",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "SK海力士启动约280亿美元美股上市",
-     "summary": "SK海力士启动约280亿美元美股上市，预计7月10日纳斯达克挂牌，有望成史上第二大IPO。",
+     "title": "宝马部署Figure 03人形机器人扩大生产作业",
+     "summary": "宝马在美国南卡罗来纳州工厂部署Figure 03人形机器人，承担物料搬运、零部件运输等作业，这是继Figure 02后的升级合作。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-f92ad0",
-   "title": "达美航空航班降落时被烟花击中",
-   "category": "society",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "达美航空航班降落时被烟花击中",
-     "summary": "达美航空一航班在芝加哥中途机场降落时被烟花击中，机上52名乘客和6名机组人员无人受伤。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-0aab36",
-   "title": "越南在美国压力下打击假冒奢侈品黑市",
+   "event_id": "evt-20260706-f4181f",
+   "title": "俄罗斯一周内第二次袭击基辅致至少10人死亡",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -148,33 +63,16 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "越南在美国压力下打击假冒奢侈品黑市",
-     "summary": "特朗普政府施压越南根除仿冒品产业，越南开始打击假冒奢侈品黑市，但当地社会看法不一。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-a08dc6",
-   "title": "中国地下教会牧师金明日获释",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "中国地下教会牧师金明日获释",
-     "summary": "中国地下教会牧师金明日被拘禁八个月后获释并送抵洛杉矶，中美元首交流或为关键因素。",
+     "title": "俄罗斯一周内第二次袭击基辅致至少10人死亡",
+     "summary": "俄罗斯导弹和无人机袭击基辅，造成至少10人死亡、46人受伤，包括5名儿童，发生在北约峰会前夕。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-4109f5",
-   "title": "超级台风巴维袭击关岛及太平洋岛屿",
-   "category": "world",
+   "event_id": "evt-20260706-b8bd95",
+   "title": "Synthetic Sciences发布开源AI科研工作台OpenScience",
+   "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
@@ -182,32 +80,49 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "超级台风巴维袭击关岛及太平洋岛屿",
-     "summary": "超级台风巴维以近290公里/小时风速登陆罗塔岛，给关岛及北马里亚纳群岛带来强风和洪水威胁。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-d5d823",
-   "title": "美国举行250周年庆典特朗普称黄金时代序幕",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "美国举行250周年庆典特朗普称黄金时代序幕",
-     "summary": "美国举行250周年庆典，特朗普因雷暴雨延迟后演讲，称仅黄金时代序幕，重申反共等政治主题。",
+     "title": "Synthetic Sciences发布开源AI科研工作台OpenScience",
+     "summary": "Synthetic Sciences发布开源（Apache 2.0）AI科研工作台OpenScience，覆盖ML、生物、物理、化学，支持切换多种模型，内置250余项技能。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-ac05cb",
-   "title": "欧盟快速通过加密通信扫描法规",
+   "event_id": "evt-20260706-e90c79",
+   "title": "美团LongCat-2.0完全开源",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "美团LongCat-2.0完全开源",
+     "summary": "美团开源LongCat-2.0（MIT许可），1.6T参数MoE模型，支持1M token上下文，华为昇腾等国产芯片已适配推理。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-d040db",
+   "title": "清华系具身智能公司星动纪元再获10亿元融资",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "清华系具身智能公司星动纪元再获10亿元融资",
+     "summary": "具身智能公司星动纪元完成新一轮10亿元融资，2026年累计融资近50亿元，估值已超百亿。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-5ca7c2",
+   "title": "Hugging Face发布Kernels重大更新",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -216,16 +131,16 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "欧盟快速通过加密通信扫描法规",
-     "summary": "欧盟理事会通过书面程序快速通过Chat Control 2.0法规，强制扫描加密通信，填补法律漏洞。",
+     "title": "Hugging Face发布Kernels重大更新",
+     "summary": "Hugging Face发布Kernels重大更新，具体功能细节待进一步披露。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-800538",
-   "title": "依托咪酯毒品在东亚青少年中蔓延",
-   "category": "society",
+   "event_id": "evt-20260706-df0ba0",
+   "title": "SK海力士启动约280亿美元美股上市计划",
+   "category": "finance",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
@@ -233,16 +148,118 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "依托咪酯毒品在东亚青少年中蔓延",
-     "summary": "东亚青少年吸食含依托咪酯的电子烟后出现僵尸状态，已致至少数十人死亡。",
+     "title": "SK海力士启动约280亿美元美股上市计划",
+     "summary": "SK海力士启动约280亿美元美股上市，将于7月10日在纳斯达克挂牌，有望成为史上第二大IPO。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-86a3c1",
-   "title": "美国创纪录热浪致至少25人死亡",
+   "event_id": "evt-20260706-227f0a",
+   "title": "Anthropic开源Claude Design反向工程提示词",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "Anthropic开源Claude Design反向工程提示词",
+     "summary": "Anthropic旗下Claude Design的反向工程系统提示词在GitHub以MIT许可证开源，含20章提示词和14项技能。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-5a4b26",
+   "title": "超强台风巴威登陆太平洋美属岛屿",
    "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "超强台风巴威登陆太平洋美属岛屿",
+     "summary": "超强台风巴威以时速290公里风力登陆美属罗塔岛，阵风达350公里，预计将趋近台湾。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-8c0dd1",
+   "title": "委内瑞拉地震致多人伤亡并引发人道危机",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "委内瑞拉地震致多人伤亡并引发人道危机",
+     "summary": "委内瑞拉6月两次地震致多人伤亡，一名女孩被困32小时后获救，数千灾民暂居体育场。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-529e4e",
+   "title": "野村：数据是人形机器人产业化关键瓶颈",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "野村：数据是人形机器人产业化关键瓶颈",
+     "summary": "野村证券报告指出，数据采集取代硬件成为人形机器人规模化部署的核心制约，灵巧手技术决定商业化时间表。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-69e03e",
+   "title": "中国在南太平洋试射远程导弹，澳谴责",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "中国在南太平洋试射远程导弹，澳谴责",
+     "summary": "中国在南太平洋进行远程导弹试验，澳大利亚政府确认收到通知并谴责此举破坏地区稳定。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-9d9aa7",
+   "title": "中国海警扩大台湾以东海域执法巡查",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "中国海警扩大台湾以东海域执法巡查",
+     "summary": "中国海警局宣布在台湾以东的西太平洋水域进行执法巡查，进一步向台湾施压并演练封锁。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-42dfa9",
+   "title": "美国创纪录热浪致至少25人死亡",
+   "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
@@ -251,14 +268,14 @@
     {
      "date": "2026-07-06",
      "title": "美国创纪录热浪致至少25人死亡",
-     "summary": "美国东部热浪持续，超20州气温超100华氏度，至少25人死亡。",
+     "summary": "美国超过20个州气温超100华氏度，热穹顶笼罩东部，至少25人因高温死亡。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-b72cd0",
-   "title": "中国扩大海上执法巡查向台湾施压",
+   "event_id": "evt-20260706-54c15f",
+   "title": "勒庞上诉判决将决定2027法国大选资格",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -267,32 +284,15 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "中国扩大海上执法巡查向台湾施压",
-     "summary": "中国海警宣布在台湾以东西太平洋水域进行执法巡查，挑战台湾海域控制。",
+     "title": "勒庞上诉判决将决定2027法国大选资格",
+     "summary": "法国极右翼领导人勒庞等待上诉判决，结果将决定其能否参加2027年总统选举。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-c53f63",
-   "title": "中国民族团结法引发广泛批评",
-   "category": "society",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "中国民族团结法引发广泛批评",
-     "summary": "中国《民族团结进步促进法》生效后，被指削弱少数民族权利，引发国内外批评。",
-     "news_status": "有争议"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-658178",
-   "title": "澳航天局确认海滩太空球来源",
+   "event_id": "evt-20260706-4fd05c",
+   "title": "伊朗新政权与前任截然不同",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -301,83 +301,15 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "澳航天局确认海滩太空球来源",
-     "summary": "澳大利亚航天局确认昆士兰海滩神秘太空球为外国火箭再入大气层碎片。",
-     "news_status": "已确认"
+     "title": "伊朗新政权与前任截然不同",
+     "summary": "BBC分析指出伊朗新领导层在政策、外交等方面与前任存在显著差异，反映权力更迭。",
+     "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-7afa17",
-   "title": "塞拉利昂渔民指控中国拖网渔船非法捕捞",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "塞拉利昂渔民指控中国拖网渔船非法捕捞",
-     "summary": "塞拉利昂渔民指责中国大型拖网渔船非法捕捞，耗尽当地渔业资源。",
-     "news_status": "有争议"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-b15042",
-   "title": "英国首相施纪贤辞职后接受BBC专访",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "英国首相施纪贤辞职后接受BBC专访",
-     "summary": "施纪贤宣布辞职后接受BBC专访，称决定“极其个人”，承认政治生涯结束艰难。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-ce5b85",
-   "title": "报告称全面无障碍公共交通可提振英国经济1760亿英镑",
-   "category": "society",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "报告称全面无障碍公共交通可提振英国经济1760亿英镑",
-     "summary": "报告指出，投资无障碍公共交通可释放280万残疾人劳动力，提振经济1760亿英镑。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-56c9fc",
-   "title": "OPEC+在油价下跌中再次提高产量",
-   "category": "finance",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
-   "history": [
-    {
-     "date": "2026-07-06",
-     "title": "OPEC+在油价下跌中再次提高产量",
-     "summary": "OPEC+七国同意每日增产18.8万桶，尽管原油价格持续下跌。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260706-22f9ab",
-   "title": "扎克伯格称Meta正在建设千兆瓦级AI集群",
+   "event_id": "evt-20260706-b2f268",
+   "title": "通义发布实时语音识别模型，支持30种语言16种方言",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -386,15 +318,83 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "扎克伯格称Meta正在建设千兆瓦级AI集群",
-     "summary": "扎克伯格表示Meta正在建设首个千兆瓦以上AI集群，投入数千亿美元。",
+     "title": "通义发布实时语音识别模型，支持30种语言16种方言",
+     "summary": "通义实验室发布Fun-ASR-Realtime模型，单模型覆盖30种语言及16种方言，方言语义准确率达87.8%，首字延迟百毫秒级。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-14ff09",
+   "title": "腾讯AI产品WorkBuddy和微信AI上线，叙事逆转",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "腾讯AI产品WorkBuddy和微信AI上线，叙事逆转",
+     "summary": "腾讯AI产品WorkBuddy被频繁讨论，微信AI助手“小微”启动内测，券商研报关注，此前马化腾曾称腾讯AI“船漏水”。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260706-353076",
-   "title": "亚马逊将停止接受Mechanical Turk新客户",
+   "event_id": "evt-20260706-251de8",
+   "title": "Comcast以16亿英镑收购ITV广播业务，打造英国最大广播商",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "Comcast以16亿英镑收购ITV广播业务，打造英国最大广播商",
+     "summary": "美国Comcast旗下天空电视台宣布以16亿英镑收购ITV广播业务，包括免费电视频道和流媒体平台，将成英国最大商业广播商。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-012856",
+   "title": "伊朗在哈梅内伊葬礼期间加强霍尔木兹海峡控制",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "伊朗在哈梅内伊葬礼期间加强霍尔木兹海峡控制",
+     "summary": "伊朗在哈梅内伊葬礼期间加强对霍尔木兹海峡控制，IRGC警告迫使船只掉头，并用古兰经经文向海湾代表团传递信息。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-65a077",
+   "title": "依托咪酯毒品在东亚青少年中蔓延，引发危机",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-06",
+   "last_seen": "2026-07-06",
+   "history": [
+    {
+     "date": "2026-07-06",
+     "title": "依托咪酯毒品在东亚青少年中蔓延，引发危机",
+     "summary": "东亚青少年吸食含依托咪酯的电子烟后出现“僵尸”状态，已导致至少数十人死亡，多起车祸。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260706-e19645",
+   "title": "Meta高管因削减内容审核被质疑引发反犹内容激增",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -403,9 +403,9 @@
    "history": [
     {
      "date": "2026-07-06",
-     "title": "亚马逊将停止接受Mechanical Turk新客户",
-     "summary": "亚马逊宣布停止接受Mechanical Turk平台新客户，可能终结该服务。",
-     "news_status": "已确认"
+     "title": "Meta高管因削减内容审核被质疑引发反犹内容激增",
+     "summary": "Meta高管因削减内容审核被质询，皇家委员会称此举可能释放更多反犹内容，过度执行对社区构成风险。",
+     "news_status": "发展中"
     }
    ]
   }

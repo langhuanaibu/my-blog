@@ -1,4 +1,7 @@
 {
  "version": 1,
- "urls": {}
+ "urls": {
+  "https://simonwillison.net/2026/Jul/4/better-models-worse-tools/#atom-everything": "2026-07-06",
+  "https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/#atom-everything": "2026-07-06"
+ }
 }
