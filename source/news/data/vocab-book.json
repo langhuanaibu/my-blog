@@ -1,0 +1,34 @@
+{
+ "version": 1,
+ "words": [
+  {
+   "word": "verdict",
+   "lemma": "verdict",
+   "phonetic": "/ˈvɜːrdɪkt/",
+   "pos": "n.",
+   "sense_zh": "裁决，判决",
+   "example_en": "Marine Le Pen appeal verdict: Why this moment matters for France.",
+   "item_id": "pick-36",
+   "item_title": "法国极右翼领导人勒庞上诉判决影响2027年总统选举",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T05:57:25.624Z",
+   "mastered": false
+  },
+  {
+   "word": "crack down",
+   "lemma": "crackdown",
+   "phonetic": "/kræk daʊn/",
+   "pos": "phrase",
+   "sense_zh": "打击，镇压",
+   "example_en": "A global hub for fake luxury goods, Vietnam cracks down on its black market.",
+   "item_id": "pick-38",
+   "item_title": "越南在美国压力下打击假冒奢侈品黑市",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T05:57:36.651Z",
+   "mastered": false
+  }
+ ],
+ "pending": []
+}
