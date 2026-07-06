@@ -112,6 +112,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:41.030Z",
    "mastered": false
+  },
+  {
+   "word": "scrutiny",
+   "lemma": "scrutiny",
+   "phonetic": "/ˈskruːtɪni/",
+   "pos": "n.",
+   "sense_zh": "严密审查；监督",
+   "example_en": "U.S. social media giant Meta is facing an onslaught of regulatory scrutiny in India.",
+   "item_id": "pick-213",
+   "item_title": "Meta被曝让外包伪装未成年人诱导竞品AI聊敏感话题",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T15:40:17.384Z",
+   "mastered": false
   }
  ],
  "pending": []
