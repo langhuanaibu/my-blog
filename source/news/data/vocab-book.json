@@ -98,6 +98,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:38.208Z",
    "mastered": false
+  },
+  {
+   "word": "scorch",
+   "lemma": "scorch",
+   "phonetic": "/skɔːrtʃ/",
+   "pos": "v.",
+   "sense_zh": "炙烤，烧焦",
+   "example_en": "At least 25 people die in US as record heatwave scorches swaths of country.",
+   "item_id": "pick-129",
+   "item_title": "美国创纪录热浪致至少25人死亡",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:41.030Z",
+   "mastered": false
   }
  ],
  "pending": []
