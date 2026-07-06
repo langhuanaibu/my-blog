@@ -84,6 +84,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:31.458Z",
    "mastered": false
+  },
+  {
+   "word": "destabilise",
+   "lemma": "destabilise",
+   "phonetic": "/diːˈsteɪbəlaɪz/",
+   "pos": "v.",
+   "sense_zh": "使不稳定，破坏稳定",
+   "example_en": "China tests long-range missile in South Pacific in move Australia condemns as ‘destabilising to region’.",
+   "item_id": "pick-111",
+   "item_title": "中国在南太平洋试射远程导弹，澳谴责",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:38.208Z",
+   "mastered": false
   }
  ],
  "pending": []
