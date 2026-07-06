@@ -213,96 +213,108 @@
     "count": 0,
     "error": false
    },
-   "huggingface": {
-    "count": 1,
-    "error": false
-   },
    "mit-tr": {
-    "count": 0,
+    "count": 2,
     "error": false
    },
-   "hn": {
-    "count": 20,
-    "error": false
-   },
-   "cloudflare": {
-    "count": 0,
+   "huggingface": {
+    "count": 3,
     "error": false
    },
    "deepmind": {
     "count": 0,
     "error": false
    },
-   "verge": {
-    "count": 8,
-    "error": false
-   },
    "techcrunch": {
-    "count": 7,
+    "count": 11,
     "error": false
    },
-   "ars": {
-    "count": 2,
+   "hn": {
+    "count": 18,
     "error": false
    },
-   "ftcn": {
-    "count": 0,
-    "error": true
-   },
-   "marketwatch": {
-    "count": 6,
+   "verge": {
+    "count": 10,
     "error": false
    },
    "openai": {
     "count": 0,
     "error": false
    },
+   "ars": {
+    "count": 4,
+    "error": false
+   },
    "cnbc": {
-    "count": 13,
+    "count": 18,
+    "error": false
+   },
+   "marketwatch": {
+    "count": 10,
+    "error": false
+   },
+   "thedecoder": {
+    "count": 6,
     "error": false
    },
    "bbc-world": {
-    "count": 17,
+    "count": 18,
     "error": false
    },
    "bbc-cn": {
-    "count": 8,
+    "count": 5,
+    "error": false
+   },
+   "guardian": {
+    "count": 18,
     "error": false
    },
    "aljazeera": {
-    "count": 25,
+    "count": 18,
     "error": false
    },
    "npr": {
     "count": 10,
     "error": false
    },
-   "guardian": {
-    "count": 25,
+   "nyt-cn": {
+    "count": 8,
     "error": false
    },
-   "nyt-cn": {
-    "count": 7,
+   "wscn": {
+    "count": 18,
+    "error": false
+   },
+   "thepaper": {
+    "count": 18,
     "error": false
    },
    "atlantic": {
-    "count": 6,
+    "count": 10,
     "error": false
    },
-   "aihot": {
-    "count": 11,
+   "36kr": {
+    "count": 18,
     "error": false
    },
    "vercel": {
     "count": 0,
     "error": false
    },
-   "wscn": {
-    "count": 25,
+   "aihot": {
+    "count": 15,
     "error": false
    },
-   "36kr": {
-    "count": 25,
+   "cloudflare": {
+    "count": 1,
+    "error": false
+   },
+   "ftcn": {
+    "count": 0,
+    "error": true
+   },
+   "sciencenet": {
+    "count": 15,
     "error": false
    }
   }

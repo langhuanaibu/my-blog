@@ -1,7 +1,8 @@
 {
  "version": 1,
  "urls": {
-  "https://simonwillison.net/2026/Jul/4/better-models-worse-tools/#atom-everything": "2026-07-06",
-  "https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/#atom-everything": "2026-07-06"
+  "https://simonwillison.net/2026/Jul/5/sqlite-utils-fable/#atom-everything": "2026-07-06",
+  "https://simonwillison.net/2026/Jul/4/building-a-world-map-with-only-500-bytes/#atom-everything": "2026-07-06",
+  "https://simonwillison.net/2026/Jul/6/sqlite-utils/#atom-everything": "2026-07-06"
  }
 }

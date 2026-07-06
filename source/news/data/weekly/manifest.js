@@ -1,0 +1,1 @@
+window.WEEKLY_MANIFEST = ["2026-W27"];
