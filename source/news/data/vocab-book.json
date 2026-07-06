@@ -56,6 +56,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T07:11:26.048Z",
    "mastered": false
+  },
+  {
+   "word": "assassinate",
+   "lemma": "assassinate",
+   "phonetic": "/əˈsæsɪneɪt/",
+   "pos": "v.",
+   "sense_zh": "暗杀，刺杀",
+   "example_en": "A millions strong crowd assembled on Monday to take part in the funeral procession of Iran’s assassinated supreme leader.",
+   "item_id": "pick-64",
+   "item_title": "伊朗前最高领袖哈梅内伊葬礼在德黑兰举行",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T07:11:27.405Z",
+   "mastered": false
   }
  ],
  "pending": []
