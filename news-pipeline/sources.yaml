@@ -277,6 +277,38 @@ sources:
     category: mixed
     enabled: true
 
+  # ---------- 高校 / 青年 / 教育（RSSHub 公共实例，T2：门槛更高、噪音靠管线压） ----------
+  # 这类中文源无官方 RSS，走公共 RSSHub 实例转 RSS。公共实例会限流/临时挂，
+  # 已验活、可互换的备用实例前缀（拉不到就把 url 换成另一个）：
+  #   https://rsshub.rssforever.com   https://hub.slarker.me   https://rsshub.ktachibana.party
+  # 接入后看 source_health.json，连续为空/失败的直接停用换实例或换源。
+  - id: sciencenet
+    name: 科学网博客
+    type: rss
+    url: https://rsshub.rssforever.com/sciencenet/blog
+    source_type: analysis
+    tier: "T2"
+    credibility: 5
+    category: society
+    enabled: true
+
+  - id: thepaper
+    name: 澎湃新闻·热门
+    type: rss
+    url: https://hub.slarker.me/thepaper/featured
+    source_type: fact
+    tier: "T2"
+    credibility: 6
+    category: society
+    enabled: true
+
+  # 二期候选（本轮未接，原因逐条记录，避免以后重复踩坑）：
+  #  - 中国青年报(cyol) / 芥末堆(jiemodui)：公共 RSSHub 无可用路由（实测 503）
+  #  - 三联生活周刊 / 澎湃「思想市场」频道：nodeList/channel 路由在公共实例已下线（503）
+  #  - 青塔 / 软科 / 募格学术 / 青年志Youthology / BIE别的：均为微信公众号，公共 RSSHub
+  #    微信路由需付费/自建中继（wewe-rss / wechat2rss）才通——与「不加基础设施」冲突，需二次拍板
+  #  - 知乎日报(zhihu/daily)：可用但偏生活/情感/娱乐，与「不关注：娱乐八卦/纯观点」冲突，暂不默认开
+
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
     name: Reddit r/worldnews

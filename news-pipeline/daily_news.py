@@ -129,6 +129,16 @@ def fetch_rss(src, window_start, max_items):
     return items[:max_items], False
 
 
+# AI HOT 分类 → 主题标签提示：enrich 阶段优先采纳，保证论文/技巧观点不被大类淹没。
+# 值必须在 config.yaml 的 topic_tags 词表里，否则会被过滤掉。
+AIHOT_TAG_HINT = {
+    "ai-models": "模型发布",
+    "ai-products": "产品发布",
+    "paper": "研究论文",
+    "tip": "技巧观点",
+}
+
+
 def fetch_aihot(src, window_start, max_items):
     """AI HOT 公开 API 适配器（精选池）。返回 (items, fetch_error)"""
     since = window_start.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -160,6 +170,7 @@ def fetch_aihot(src, window_start, max_items):
             "source_type": stype,
             "tier": tier,
             "credibility": src["credibility"],
+            "tag_hint": AIHOT_TAG_HINT.get(it.get("category") or ""),
         })
     return [x for x in items if x["title"] and x["url"]][:max_items], False
 
@@ -510,7 +521,11 @@ def enrich(llm, picked, items, cfg, profile_text=""):
                 it = items[i]
                 srcs.append(f"  - [{it['source']}|{TYPE_NAMES[it['source_type']]}] "
                             f"{it['title']}：{it['desc'][:200]}")
-            blocks.append(f"事件[{bi + j}] {ev['title']}\n" + "\n".join(srcs))
+            hints = list(dict.fromkeys(items[i].get("tag_hint") for i in ev["ids"]
+                                       if items[i].get("tag_hint") in tag_set))
+            hint_line = ("\n  （来源分类提示，若贴切请优先选为标签："
+                         + "、".join(hints) + "）") if hints else ""
+            blocks.append(f"事件[{bi + j}] {ev['title']}\n" + "\n".join(srcs) + hint_line)
         log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
         result = llm.json_call(system, prof_block + "【今日事件】\n" + "\n\n".join(blocks))
         for r in result:
@@ -528,7 +543,12 @@ def enrich(llm, picked, items, cfg, profile_text=""):
             raw_tags = r.get("tags") or []
             if not isinstance(raw_tags, list):
                 raw_tags = []
-            ev["tags"] = [t for t in raw_tags if t in tag_set][:2]
+            tags = [t for t in raw_tags if t in tag_set]
+            # 兜底：AI HOT 携带的分类提示（研究论文/技巧观点等）优先入选，防止被淹没
+            for h in (items[i].get("tag_hint") for i in ev["ids"]):
+                if h in tag_set and h not in tags:
+                    tags.insert(0, h)
+            ev["tags"] = tags[:2]
     return picked
 
 
