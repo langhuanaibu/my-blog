@@ -168,6 +168,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T15:40:23.168Z",
    "mastered": false
+  },
+  {
+   "word": "patrol",
+   "lemma": "patrol",
+   "phonetic": "/pəˈtrəʊl/",
+   "pos": "n./v.",
+   "sense_zh": "巡逻；巡查",
+   "example_en": "China's coast guard will conduct 'law enforcement patrols' in the western Pacific waters east of Taiwan.",
+   "item_id": "pick-140",
+   "item_title": "中国海警扩大执法巡查至台湾以东太平洋水域",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T15:40:25.926Z",
+   "mastered": false
   }
  ],
  "pending": []
