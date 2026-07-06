@@ -731,6 +731,64 @@ try:
         check("http_get 始终失败则抛且共尝试 retries+1 次", raised and calls["n"] == 3)
     finally:
         dn.requests.get, dn.time.sleep = orig_get, orig_sleep
+
+    # ---- 画像"学习参考系"段：切分 + 熬过蒸馏（stub LLM 返回丢掉参考系段的结果）----
+    rest, blk = dn.split_section(
+        "# t\n\n## 学习参考系\n- 补 TS 类型系统\n- 练数据结构\n\n## 更关注\n- a\n", "学习参考系")
+    check("split_section 切出学习参考系段", "- 补 TS 类型系统" in blk and "- 练数据结构" in blk
+          and "## 学习参考系" in blk and "学习参考系" not in rest and "## 更关注" in rest)
+
+    class _Msg:
+        def __init__(self, c):
+            self.message = type("M", (), {"content": c})()
+    class _Comp:
+        def __init__(self, o):
+            self._o = o
+        def create(self, **kw):
+            return type("R", (), {"choices": [_Msg(self._o)]})()
+    class _ProfLLM:
+        def __init__(self, o):
+            self.model = "x"
+            self.client = type("C", (), {
+                "chat": type("H", (), {"completions": _Comp(o)})()})()
+
+    ptmp = tmp / "prof"
+    ptmp.mkdir(parents=True, exist_ok=True)
+    (ptmp / "interest_profile.md").write_text(
+        "# 兴趣画像\n<!-- last_feedback_ts: 2020-01-01T00:00:00Z -->\n\n导语\n\n"
+        "## 学习参考系\n- 长期补系统设计\n- 优先补 TypeScript 类型系统\n\n"
+        "## 更关注\n- 旧偏好\n\n## 不关注\n- 旧\n\n## 来源印象\n- 旧\n",
+        encoding="utf-8")
+    # LLM 蒸馏结果"丢掉了"参考系段（模拟全文重写会冲掉手写段）
+    clobber = "# 兴趣画像\n\n## 更关注\n- 新AI\n\n## 不关注\n- 标题党\n\n## 来源印象\n- 官方\n"
+    fb = [{"ts": "2026-07-01T00:00:00Z", "action": "more_like_this",
+           "category": "ai", "title": "x"}]
+    out_text = dn.update_profile(_ProfLLM(clobber), ptmp, fb, [])
+    disk = (ptmp / "interest_profile.md").read_text(encoding="utf-8")
+    check("学习参考系熬过蒸馏（落盘仍在且原样）",
+          "## 学习参考系" in disk and "- 长期补系统设计" in disk
+          and "- 优先补 TypeScript 类型系统" in disk and disk == out_text)
+    check("蒸馏吸收了新兴趣且推进 marker",
+          "- 新AI" in disk and "2026-07-01T00:00:00Z" in disk)
+    check("学习参考系只出现一次（无重复）", disk.count("## 学习参考系") == 1)
+
+    # 兼容旧画像：旧的"我的处境"不会被蒸馏冲掉，也不会重复插入。
+    (ptmp / "interest_profile.md").write_text(
+        "# 兴趣画像\n<!-- last_feedback_ts: 2020-01-01T00:00:00Z -->\n\n"
+        "## 我的处境\n- 在学 TypeScript\n- 在做日报系统\n\n"
+        "## 更关注\n- 旧\n\n## 不关注\n- 旧\n\n## 来源印象\n- 旧\n", encoding="utf-8")
+    old_out = dn.update_profile(_ProfLLM(clobber), ptmp, fb, [])
+    check("旧处境段兼容保留且不重复",
+          "## 我的处境" in old_out and "- 在学 TypeScript" in old_out
+          and old_out.count("## 我的处境") == 1 and old_out.count("## 学习参考系") == 0)
+
+    # 无参考系/处境段时不报错、正常蒸馏
+    (ptmp / "interest_profile.md").write_text(
+        "# 兴趣画像\n<!-- last_feedback_ts: 2020-01-01T00:00:00Z -->\n\n"
+        "## 更关注\n- 旧\n\n## 不关注\n- 旧\n\n## 来源印象\n- 旧\n", encoding="utf-8")
+    out2 = dn.update_profile(_ProfLLM(clobber), ptmp, fb, [])
+    check("无参考系/处境段蒸馏不报错",
+          "## 更关注" in out2 and "学习参考系" not in out2 and "我的处境" not in out2)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
