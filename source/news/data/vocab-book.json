@@ -154,6 +154,20 @@
    "source": "auto",
    "collected_ts": "2026-07-06T15:40:19.947Z",
    "mastered": false
+  },
+  {
+   "word": "agentic",
+   "lemma": "agentic",
+   "phonetic": "/eɪˈdʒentɪk/",
+   "pos": "adj.",
+   "sense_zh": "具有自主代理能力的",
+   "example_en": "JADEPUFFER is the first agentic ransomware operation and it exposes old security sins at machine speed.",
+   "item_id": "pick-69",
+   "item_title": "首个AI代理勒索软件JADEPUFFER利用大模型自动攻击",
+   "date": "2026-07-06",
+   "source": "auto",
+   "collected_ts": "2026-07-06T15:40:23.168Z",
+   "mastered": false
   }
  ],
  "pending": []
