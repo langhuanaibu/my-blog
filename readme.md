@@ -137,8 +137,8 @@ GITHUB_BRANCH=main
 
 ### 数据管线
 
-- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、今日主线、事件追踪、深读推荐、RSS 和搜索索引。
-- 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
+- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、精选长叙述（`detail`，供中文预览页）、今日主线、事件追踪、深读推荐、RSS 和搜索索引。
+- 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
 - 高校/青年/教育类中文源（科学网、澎湃等）无官方 RSS，走**公共 RSSHub 实例**转 RSS（`sources.yaml` 里已注明可互换的备用实例）。公共实例会限流/临时挂，`source_health.json` 连续为空就换实例前缀或换源。微信公众号类源（青塔/软科/募格等）需付费或自建微信转 RSS 中继才能接，已登记为二期候选，本轮未接。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在精选阈值之下，只能进"更多资讯"；有事实源或分析源交叉佐证后才解除限制。
 - 抓取健壮性：`fetch_rss`/`fetch_aihot` 统一走 `http_get`（指数退避重试），治 AIHOT 连接重置这类偶发失败——单次请求一挂整源归零。`max_per_source` 默认 18（削减 world/舆论刷屏源的 triage 噪音）；AIHOT 是 AI 深度独木、已精选噪音低，在 `fetch_aihot` 内单独放宽取量、不受该值压制。AI 一手供给以逐篇新闻站（The Decoder 等）为主，不用摘要型 newsletter（每期一条不适配事件聚类）。`ftcn` 从云端 Actions 常被限流失败（本地正常），靠重试救偶发，持续告警则手动停用。
