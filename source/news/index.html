@@ -157,6 +157,21 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .srcs a{color:var(--text2)}
 .srcs a:hover{color:var(--accent2)}
 .srcs .stp{color:var(--text3);font-size:11px}
+/* 中文预览页（pick 详情，页内路由） */
+.readmore{display:inline-block;margin-top:2px;font-size:12.5px;color:var(--accent2);cursor:pointer;font-weight:600}
+.readmore:hover{text-decoration:underline}
+.card h3.clk{cursor:pointer}
+.card h3.clk:hover{color:var(--accent2)}
+.detail-wrap{max-width:760px;margin:0 auto}
+.dback{display:inline-block;margin-bottom:14px;font-size:13px;color:var(--text2);cursor:pointer}
+.dback:hover{color:var(--accent2)}
+.detail-title{font-size:24px;line-height:1.4;font-weight:800;color:var(--heading);margin:8px 0 10px}
+.detail-lede{font-size:15px;color:var(--text2);line-height:1.7;padding:10px 14px;background:var(--accent-soft);border-radius:8px;margin-bottom:18px}
+.detail-body{font-size:15.5px;line-height:1.9;color:var(--text)}
+.detail-body p{margin:0 0 15px}
+.detail-fallback-note{font-size:12.5px;color:var(--text3);margin:6px 0 12px}
+.detail-kv{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+.detail-sec-t{margin:22px 0 12px;font-size:14px;font-weight:700;color:var(--heading);letter-spacing:.5px}
 .time{color:var(--text3);font-size:11.5px;margin-left:auto}
 
 /* ---------- more list ---------- */
@@ -258,6 +273,8 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .vocab-fold .vf-i{color:var(--text3);font-weight:400;font-size:12px;transition:.15s}
 .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:860px){.vgrid{grid-template-columns:1fr}}
+.vdate-h{margin:22px 0 10px;font-size:14px;font-weight:700;color:var(--heading);display:flex;align-items:center;gap:8px}
+.vdate-h .vdate-n{font-size:12px;font-weight:400;color:var(--text3)}
 .vcard{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--shadow)}
 .vcard:hover{background:var(--card-h)}
 .vcard.mastered{opacity:.6}
@@ -321,7 +338,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
 const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
-               itemsById:{}, view:"day", pendingHighlight:null, vocabOpen:true};
+               itemsById:{}, view:"day", pendingHighlight:null, vocabOpen:true, detailId:null};
 // 单词本视图的本地状态（book 缓存 + 筛选），仅本人可见
 const vocab = {book:null, q:"", filter:"all", src:"all"};
 
@@ -405,9 +422,10 @@ function ensureVocab(date,cb){
   s.onerror=()=>{window.VOCAB_DATA[date]=null;cb();};
   document.head.appendChild(s);
 }
-function loadDate(date){
+function loadDate(date,after){
   state.date=date; state.moreOpen=false; state.tag=null;
-  const done=()=>ensureVocab(date,render);
+  const cb=after||render;
+  const done=()=>ensureVocab(date,cb);
   if(window.NEWS_DATA && window.NEWS_DATA[date]) return done();
   const s=document.createElement("script");
   s.src="data/daily/"+date+".js";
@@ -436,8 +454,9 @@ function card(it){
       <span class="tag stype">${esc(it.source_type||"")}</span>
       <span class="time">${fmtTime(it.time)}</span>
     </div>
-    <h3>${esc(it.title)}</h3>
+    <h3 class="clk" onclick="openDetail(${jsArg(it.id)})" title="查看中文预览页">${esc(it.title)}</h3>
     <div class="sum">${esc(it.summary)}</div>
+    ${it.detail?`<a class="readmore" onclick="openDetail(${jsArg(it.id)})">读全文 →</a>`:""}
     ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
     ${it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:""}
@@ -759,6 +778,86 @@ function jumpToItem(id){
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
 function toggleVocabDay(){state.vocabOpen=!state.vocabOpen;render();}
 
+/* ---------- 中文预览页（pick 详情，页内路由 ?date=&item=） ---------- */
+// 从当前已渲染的卡片进入：数据已加载，直接渲染 + pushState 让 URL 可分享/可回退
+function openDetail(id){
+  const date=state.date;
+  if(!date) return;
+  history.pushState({v:"detail",date,item:id},"","?date="+encodeURIComponent(date)+"&item="+encodeURIComponent(id));
+  window.scrollTo(0,0);
+  renderDetail(date,id);
+}
+// URL/popstate 驱动：数据可能未加载，先 load 再渲染详情
+function showDetail(date,id){ loadDate(date,()=>renderDetail(date,id)); }
+// 返回当日：用 replaceState 落到当日 URL 并渲染，避免 direct-URL 进入时 back 退出站点
+function backToDay(){
+  const date=state.date;
+  history.replaceState({v:"day",date},"","?date="+encodeURIComponent(date));
+  gotoDay(date);
+}
+function renderDetail(date,id){
+  state.view="detail"; state.date=date; state.detailId=id;
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateVocabBtn();
+  const app=document.getElementById("app");
+  const d=window.NEWS_DATA&&window.NEWS_DATA[date];
+  const it=d&&(d.items||[]).find(x=>x.id===id);
+  if(!it){
+    app.innerHTML='<div class="empty">找不到这条内容（可能数据未加载）<br><br><a class="dback" onclick="backToDay()">← 返回 '+esc(date)+' 当日</a></div>';
+    updateNav();return;
+  }
+  const dayN=+it.day_count||0;
+  const hist=(it.history||[]).map(h=>
+    `<div><span class="eh-d">${esc(h.date)}</span>${esc(h.summary)}</div>`).join("");
+  const vd=(window.VOCAB_DATA||{})[date];
+  const relWords=vd&&Array.isArray(vd.words)?vd.words.filter(w=>w.item_id===id):[];
+  // 正文：优先 detail 长叙述（按空行分段）；历史条目无 detail 时降级为短字段
+  const body=it.detail
+    ? esc(it.detail).split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join("")
+    : `<p>${esc(it.summary||"")}</p><div class="detail-fallback-note">这条是较早的日报，暂无完整长文，以下为要点。</div>`;
+  let h='<div class="detail-wrap">';
+  h+=`<a class="dback" onclick="backToDay()">← 返回 ${esc(date)} 当日</a>`;
+  h+=`<div class="card-top">
+      <span class="score ${scoreCls(it.score)}">${it.score}</span>
+      <span class="tag cat-${it.category}">${CAT[it.category]||it.category}</span>
+      ${it.status?`<span class="tag st-${esc(it.status)}">${esc(it.status)}</span>`:""}
+      ${dayN>=2?`<span class="tag day">📌 第${dayN}天</span>`:""}
+      ${(it.tags||[]).map(t=>`<span class="tag topic">${esc(t)}</span>`).join("")}
+      <span class="tag stype">${esc(it.source_type||"")}</span>
+      <span class="time">${fmtTime(it.time)}</span>
+    </div>`;
+  h+=`<h1 class="detail-title">${esc(it.title)}</h1>`;
+  if(it.summary) h+=`<div class="detail-lede">${esc(it.summary)}</div>`;
+  h+=`<div class="detail-body">${body}</div>`;
+  if(dayN>=2&&hist) h+=`<div class="ev-history open"><b>此前进展</b>${hist}</div>`;
+  const kv=[];
+  if(it.why) kv.push(`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`);
+  if(it.context) kv.push(`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`);
+  if(it.significance) kv.push(`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`);
+  if(it.watch) kv.push(`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`);
+  if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
+  h+=`<div class="detail-sec-t">来源</div><div class="srcs">${srcLinks(it)}</div>`;
+  if(relWords.length){
+    h+=`<div class="detail-sec-t">📖 本条相关单词 (${relWords.length})</div>`;
+    h+=`<div class="vgrid">${relWords.map(vocabDayCard).join("")}</div>`;
+  }
+  h+="</div>";
+  app.innerHTML=h;
+  updateNav();
+}
+// 读当前 URL 决定渲染当日还是详情（供 popstate / 初始化调用）
+function routeFromUrl(){
+  const p=new URLSearchParams(location.search);
+  const qd=p.get("date"), qi=p.get("item");
+  const M=window.NEWS_MANIFEST||[];
+  const dt=(qd&&M.indexOf(qd)>=0)?qd:(state.date||M[0]);
+  if(!dt) return;
+  const sel=document.getElementById("dateSel");
+  if(sel&&[...sel.options].some(o=>o.value===dt)) sel.value=dt;
+  if(qi) showDetail(dt,qi);
+  else gotoDay(dt);
+}
+
 /* ---------- 英语单词本 ---------- */
 async function getVocab(){
   const r=await fetch("/api/vocab",{headers:{Authorization:"Bearer "+TOKEN}});
@@ -858,8 +957,24 @@ async function renderVocab(refetch){
     h+=`<div class="vpending"><b>补全中 ${pend.length} 个</b> · 手动加的词会在管线次日运行时补齐音标释义：`
       +pend.map(p=>esc(p.word)).join("、")+"</div>";
   }
-  h+=filtered.length?`<div class="vgrid">${filtered.map(vocabBookCard).join("")}</div>`
-    :'<div class="empty">'+(total?"没有匹配的单词":"单词本还是空的——去日报的「今日单词」区收藏，或在上面手动加词")+"</div>";
+  if(!filtered.length){
+    h+='<div class="empty">'+(total?"没有匹配的单词":"单词本还是空的——去日报的「今日单词」区收藏，或在上面手动加词")+"</div>";
+  }else{
+    // 按新闻日期 date 分组，日期降序；无 date 的归入"未标注日期"垫底。组内保持现有顺序（新收藏在前）
+    const NOD="__nodate__", groups={}, order=[];
+    for(const w of filtered){
+      const k=w.date||NOD;
+      if(!groups[k]){groups[k]=[];order.push(k);}
+      groups[k].push(w);
+    }
+    const keys=order.slice().sort((a,b)=>a===NOD?1:b===NOD?-1:(a<b?1:a>b?-1:0));
+    h+=keys.map(k=>{
+      const arr=groups[k];
+      const label=k===NOD?"未标注日期":esc(k);
+      return `<div class="vdate-h">${label}<span class="vdate-n">${arr.length} 词</span></div>`
+        +`<div class="vgrid">${arr.map(vocabBookCard).join("")}</div>`;
+    }).join("");
+  }
   app.innerHTML=h;
   const si=document.getElementById("vSearch");
   if(si){si.oninput=()=>{vocab.q=si.value;renderVocab(false);};
@@ -1130,7 +1245,16 @@ function gotoDay(dt){
   sel.onchange=()=>loadDate(sel.value);
   document.getElementById("prevBtn").onclick=()=>{const i=M.indexOf(state.date);if(i<M.length-1){sel.value=M[i+1];loadDate(M[i+1]);}};
   document.getElementById("nextBtn").onclick=()=>{const i=M.indexOf(state.date);if(i>0){sel.value=M[i-1];loadDate(M[i-1]);}};
-  loadDate(M[0]);
+  window.addEventListener("popstate",routeFromUrl);
+  // 初始路由：?date=&item= 直达详情/当日；否则默认最新一天
+  const qp=new URLSearchParams(location.search);
+  const qd=qp.get("date"), qi=qp.get("item");
+  if(qd&&M.indexOf(qd)>=0){
+    sel.value=qd;
+    if(qi) showDetail(qd,qi); else loadDate(qd);
+  }else{
+    loadDate(M[0]);
+  }
 })();
 </script>
 </body>

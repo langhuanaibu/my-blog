@@ -508,7 +508,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - context: 背景与机制（≤60字，交代来龙去脉或它反映的运行逻辑，帮读者理解为什么会这样，没有可写就留空）
 - significance: 对我的意义（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），给一个学习路线导向的具体参考：该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势。要具体到能立刻行动，禁止"值得关注""可以了解一下"这类空话；与读者学习参考系无可操作关联就留空（宁空毋凑）
 - watch: 后续关注点（≤60字，接下来看什么信号/节点）
-- status: 事件状态，只能是这四个之一：
+{detail_field}- status: 事件状态，只能是这四个之一：
     已确认（官方发布或多个独立可信来源证实）
     发展中（事件仍在进行，信息还在更新）
     有争议（各方说法明显冲突）
@@ -517,14 +517,25 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
     {tag_list}
 
 只输出 JSON 数组，每个元素：
-{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "significance": "...", "watch": "...", "status": "...", "tags": ["..."]}}
+{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "significance": "...", "watch": "..."{detail_json}, "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
 
 
 def enrich(llm, picked, items, cfg, profile_text=""):
     tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
     tag_set = set(tag_vocab)
-    system = ENRICH_SYSTEM.format(tag_list="、".join(tag_vocab) if tag_vocab else "（词表为空，tags 输出空数组）")
+    dcfg = cfg.get("detail") or {}
+    detail_on = dcfg.get("enabled", True)
+    detail_chars = int(dcfg.get("max_chars", 600) or 600)
+    detail_field = (
+        f"- detail: 中文长叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
+        "按\"背景→具体发生了什么→为什么重要→接下来看什么\"讲清整件事，让没读过原文的人也能看懂；"
+        "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；素材不足就写多少算多少，宁短毋凑）\n"
+    ) if detail_on else ""
+    detail_json = ', "detail": "..."' if detail_on else ""
+    system = ENRICH_SYSTEM.format(
+        tag_list="、".join(tag_vocab) if tag_vocab else "（词表为空，tags 输出空数组）",
+        detail_field=detail_field, detail_json=detail_json)
     prof_block = ""
     if profile_has_content(profile_text):
         prof_block = "【读者兴趣画像】\n" + profile_text.strip() + "\n\n"
@@ -556,6 +567,8 @@ def enrich(llm, picked, items, cfg, profile_text=""):
             ev["context"] = str(r.get("context", ""))[:80]
             ev["significance"] = str(r.get("significance", ""))[:70]
             ev["watch"] = r.get("watch", "")
+            if detail_on:
+                ev["detail"] = str(r.get("detail", "")).strip()[:detail_chars + 200]
             ev["status"] = r.get("status") if r.get("status") in STATUS_SET else "发展中"
             raw_tags = r.get("tags") or []
             if not isinstance(raw_tags, list):
@@ -1194,6 +1207,7 @@ def event_to_item(ev, items, tier):
         "tags": ev.get("tags", []),
         **({"context": ev["context"]} if ev.get("context") else {}),
         **({"significance": ev["significance"]} if ev.get("significance") else {}),
+        **({"detail": ev["detail"]} if ev.get("detail") else {}),
         "score": ev["score"],
         "src_tier": ev.get("tier", ""),
         "source_type": TYPE_NAMES[primary["source_type"]],
