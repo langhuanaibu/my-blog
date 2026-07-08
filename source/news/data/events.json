@@ -37,18 +37,24 @@
   },
   {
    "event_id": "evt-20260706-b4191e",
-   "title": "俄大规模空袭基辅致22死，乌警告拦截导弹短缺",
+   "title": "美国空袭伊朗回应霍尔木兹海峡油轮遇袭",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-08",
    "history": [
     {
      "date": "2026-07-06",
      "title": "俄大规模空袭基辅致22死，乌警告拦截导弹短缺",
      "summary": "俄罗斯向基辅发射68枚导弹和351架无人机，造成22人死亡。乌克兰总统泽连斯基警告拦截导弹严重短缺，呼吁北约做出“强有力决定”。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-08",
+     "title": "美国空袭伊朗回应霍尔木兹海峡油轮遇袭",
+     "summary": "美军对伊朗发动空袭，称旨在施加“沉重代价”；伊朗警告将采取“果断措施”回应。此前卡塔尔、沙特油轮在霍尔木兹海峡遇袭。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -241,17 +247,23 @@
   },
   {
    "event_id": "evt-20260706-a043de",
-   "title": "中国在太平洋试射潜射弹道导弹引邻国关切",
+   "title": "中国试射潜射导弹，美澳质疑核扩军",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-08",
    "history": [
     {
      "date": "2026-07-06",
      "title": "中国在太平洋试射潜射弹道导弹引邻国关切",
      "summary": "中国从核潜艇发射潜射弹道导弹落入预定海域，新西兰、澳大利亚和日本表示关切。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-08",
+     "title": "中国试射潜射导弹，美澳质疑核扩军",
+     "summary": "中国在太平洋试射潜射战略导弹，美国质疑其可携带核弹头、暗扩核武库；澳大利亚斥责此举为挑衅。",
      "news_status": "已确认"
     }
    ]
@@ -405,6 +417,380 @@
      "date": "2026-07-06",
      "title": "特朗普政府改变美国公民配偶移民政策",
      "summary": "特朗普政府调整移民政策，美国公民配偶不再享有传统特殊地位，移民律师确认政策已变。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-27e9c4",
+   "title": "美国撤销伊朗石油许可并发动军事打击",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美国撤销伊朗石油许可并发动军事打击",
+     "summary": "美国财政部撤销6月21日授予的伊朗石油销售许可，随后美军对伊朗发动空袭，回应霍尔木兹海峡油轮遇袭事件。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-9dcacb",
+   "title": "特朗普在北约峰会重申夺取格陵兰岛威胁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "特朗普在北约峰会重申夺取格陵兰岛威胁",
+     "summary": "特朗普在北约峰会上再次要求美国夺取格陵兰岛，并威胁可能撤出驻欧美军，同时批评盟友在伊朗冲突中支持不足。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-7de6ca",
+   "title": "Meta发布Muse AI图像生成模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Meta发布Muse AI图像生成模型",
+     "summary": "Meta发布全新AI图像生成模型Muse Image，集成至Meta AI、Instagram、WhatsApp，未来向广告主开放用于生成营销素材。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-a7247d",
+   "title": "亚马逊拟发行至少250亿美元债券加码AI投资",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "亚马逊拟发行至少250亿美元债券加码AI投资",
+     "summary": "亚马逊计划发行至少250亿美元债券，期限3至40年，用于偿还债务、并购及一般公司用途，重点加码AI基础设施投资。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-10abc6",
+   "title": "DeepSeek计划自研AI芯片以减少外部依赖",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "DeepSeek计划自研AI芯片以减少外部依赖",
+     "summary": "DeepSeek正自研AI芯片，旨在降低对英伟达和华为的依赖，以应对美国出口管制。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-f021f5",
+   "title": "微软用自研MAI模型替换OpenAI和Anthropic模型降本",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "微软用自研MAI模型替换OpenAI和Anthropic模型降本",
+     "summary": "微软在Excel和Outlook中开始用自研MAI模型替代OpenAI和Anthropic模型，每周处理数万条AI任务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-f517ee",
+   "title": "俄罗斯导弹一周内第三次袭击乌克兰首都基辅",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "俄罗斯导弹一周内第三次袭击乌克兰首都基辅",
+     "summary": "俄罗斯导弹袭击基辅，引发两区火灾，这是本周第三次袭击。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-db1981",
+   "title": "特朗普阴影笼罩北约重新武装欧洲的挑战",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "特朗普阴影笼罩北约重新武装欧洲的挑战",
+     "summary": "特朗普言论影响北约团结，北约面临重新武装欧洲的挑战。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-a1561c",
+   "title": "Anthropic将Claude Cowork扩展至移动端和网页",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Anthropic将Claude Cowork扩展至移动端和网页",
+     "summary": "Anthropic的Claude Cowork AI平台首次扩展至移动端和网页，先向Max订阅用户开放。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-6cc084",
+   "title": "法律AI初创公司Norm Ai获1.2亿美元融资估值12亿美元",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "法律AI初创公司Norm Ai获1.2亿美元融资估值12亿美元",
+     "summary": "法律AI初创Norm Ai完成1.2亿美元C轮融资，估值达12亿美元，由Khosla Ventures领投。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-70a9ca",
+   "title": "中国电动车供应链优势或助机器人出租车全球扩张",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "中国电动车供应链优势或助机器人出租车全球扩张",
+     "summary": "中国自动驾驶企业利用国内电动车供应链成本优势，在全球机器人出租车市场与美国企业展开竞争。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-e643c3",
+   "title": "Discord AI审核漏洞误封8000余用户",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Discord AI审核漏洞误封8000余用户",
+     "summary": "Discord确认其AI安全系统因bug自5月起误封超8000个账号，误将网格图等无害图片识别为违规内容。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-26b975",
+   "title": "美国首批自主地面战斗车辆在乌克兰实战部署",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美国首批自主地面战斗车辆在乌克兰实战部署",
+     "summary": "Forterra公司已向乌克兰冲突地区部署超100辆无人驾驶ATV，用于后勤运输等任务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-29b7df",
+   "title": "Hugging Face联合SkyPilot推出零出站存储跨云AI方案",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Hugging Face联合SkyPilot推出零出站存储跨云AI方案",
+     "summary": "Hugging Face与SkyPilot合作，允许用户在任意云上运行AI工作负载，数据直接存储在Hugging Face，避免云厂商出站流量费。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-bfe3f4",
+   "title": "法国法院维持勒庞定罪但缩短参选禁令，勒庞宣布竞选2027",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "法国法院维持勒庞定罪但缩短参选禁令，勒庞宣布竞选2027",
+     "summary": "法国上诉法院维持勒庞挪用欧盟资金定罪，但将参选禁令缩短至已服满的15个月，勒庞随即宣布参加2027年总统大选。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-46fb92",
+   "title": "Vercel收购开源身份验证库Better Auth",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Vercel收购开源身份验证库Better Auth",
+     "summary": "Vercel收购开源TypeScript身份验证库Better Auth，其周npm下载量超470万，拥有850+贡献者。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-d5efb3",
+   "title": "美AI公司指责中国非法蒸馏技术",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美AI公司指责中国非法蒸馏技术",
+     "summary": "美国AI公司称中国竞争对手以“非法、系统化且工业级规模”窃取其AI能力，蒸馏技术引发担忧。",
+     "news_status": "有争议"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-3ecf39",
+   "title": "卡塔尔LNG货轮在霍尔木兹海峡遭袭",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "卡塔尔LNG货轮在霍尔木兹海峡遭袭",
+     "summary": "一艘卡塔尔LNG运输船在霍尔木兹海峡遭导弹袭击起火，布伦特原油与欧洲天然气价格小幅上涨。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-f32051",
+   "title": "AI芯片需求推动三星利润暴增1800%",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "AI芯片需求推动三星利润暴增1800%",
+     "summary": "三星电子预计季度利润暴增1800%，分析师称或为“史上最佳季度之一”，但股价因不及预期下跌逾8%。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-feac9f",
+   "title": "查理·柯克枪击案听证会公布新视频",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "查理·柯克枪击案听证会公布新视频",
+     "summary": "查理·柯克枪击案听证会公布新视频，显示嫌疑人泰勒·罗宾逊在停车场和屋顶行走，将决定是否受审。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-3a46d9",
+   "title": "台风美莎克致广西水库溃坝湖北龙卷风11死",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "台风美莎克致广西水库溃坝湖北龙卷风11死",
+     "summary": "台风“美莎克”侵袭中国南方，广西南宁水库溃坝淹没村镇，湖北龙卷风造成11人死亡。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-e472fa",
+   "title": "SpaceX加入纳斯达克100指数引讨论",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "SpaceX加入纳斯达克100指数引讨论",
+     "summary": "SpaceX在IPO后跳过三个月常规等待期直接加入纳斯达克100指数，引发指数编制规则讨论。",
      "news_status": "已确认"
     }
    ]
