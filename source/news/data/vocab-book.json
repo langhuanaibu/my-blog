@@ -198,5 +198,15 @@
    "mastered": false
   }
  ],
- "pending": []
+ "pending": [
+  {
+   "word": "unwarranted",
+   "lemma": "unwarranted",
+   "date": "",
+   "item_id": "",
+   "item_title": "",
+   "context": "",
+   "ts": "2026-07-08T08:35:28.557Z"
+  }
+ ]
 }
