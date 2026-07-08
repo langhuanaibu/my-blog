@@ -37,7 +37,7 @@
   },
   {
    "event_id": "evt-20260706-b4191e",
-   "title": "美国空袭伊朗回应霍尔木兹海峡油轮遇袭",
+   "title": "美国对伊朗发动空袭并撤销制裁豁免令",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -52,9 +52,9 @@
     },
     {
      "date": "2026-07-08",
-     "title": "美国空袭伊朗回应霍尔木兹海峡油轮遇袭",
-     "summary": "美军对伊朗发动空袭，称旨在施加“沉重代价”；伊朗警告将采取“果断措施”回应。此前卡塔尔、沙特油轮在霍尔木兹海峡遇袭。",
-     "news_status": "发展中"
+     "title": "美国对伊朗发动空袭并撤销制裁豁免令",
+     "summary": "美国中央司令部对伊朗发动“强有力的打击”，回应其对霍尔木兹海峡商船的袭击，并撤销制裁豁免令。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -247,7 +247,7 @@
   },
   {
    "event_id": "evt-20260706-a043de",
-   "title": "中国试射潜射导弹，美澳质疑核扩军",
+   "title": "中国向太平洋发射远程弹道导弹引发分析",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -262,8 +262,8 @@
     },
     {
      "date": "2026-07-08",
-     "title": "中国试射潜射导弹，美澳质疑核扩军",
-     "summary": "中国在太平洋试射潜射战略导弹，美国质疑其可携带核弹头、暗扩核武库；澳大利亚斥责此举为挑衅。",
+     "title": "中国向太平洋发射远程弹道导弹引发分析",
+     "summary": "中国向太平洋发射远程弹道导弹，落入所罗门群岛附近海域，分析认为旨在展示水下核能力并摆脱测试顾虑。",
      "news_status": "已确认"
     }
    ]
@@ -422,42 +422,8 @@
    ]
   },
   {
-   "event_id": "evt-20260708-27e9c4",
-   "title": "美国撤销伊朗石油许可并发动军事打击",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "美国撤销伊朗石油许可并发动军事打击",
-     "summary": "美国财政部撤销6月21日授予的伊朗石油销售许可，随后美军对伊朗发动空袭，回应霍尔木兹海峡油轮遇袭事件。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-9dcacb",
-   "title": "特朗普在北约峰会重申夺取格陵兰岛威胁",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "特朗普在北约峰会重申夺取格陵兰岛威胁",
-     "summary": "特朗普在北约峰会上再次要求美国夺取格陵兰岛，并威胁可能撤出驻欧美军，同时批评盟友在伊朗冲突中支持不足。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-7de6ca",
-   "title": "Meta发布Muse AI图像生成模型",
+   "event_id": "evt-20260708-0fcda1",
+   "title": "OpenAI GPT-5.6 Sol周四发布，禁令解除",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -466,32 +432,15 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "Meta发布Muse AI图像生成模型",
-     "summary": "Meta发布全新AI图像生成模型Muse Image，集成至Meta AI、Instagram、WhatsApp，未来向广告主开放用于生成营销素材。",
+     "title": "OpenAI GPT-5.6 Sol周四发布，禁令解除",
+     "summary": "OpenAI旗舰模型GPT-5.6 Sol将于周四发布，此前因美国政府禁令推迟，经额外测试后解禁。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-a7247d",
-   "title": "亚马逊拟发行至少250亿美元债券加码AI投资",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "亚马逊拟发行至少250亿美元债券加码AI投资",
-     "summary": "亚马逊计划发行至少250亿美元债券，期限3至40年，用于偿还债务、并购及一般公司用途，重点加码AI基础设施投资。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-10abc6",
-   "title": "DeepSeek计划自研AI芯片以减少外部依赖",
+   "event_id": "evt-20260708-44f08d",
+   "title": "Meta发布Muse Image和Muse Video媒体生成模型",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -500,32 +449,15 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "DeepSeek计划自研AI芯片以减少外部依赖",
-     "summary": "DeepSeek正自研AI芯片，旨在降低对英伟达和华为的依赖，以应对美国出口管制。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-f021f5",
-   "title": "微软用自研MAI模型替换OpenAI和Anthropic模型降本",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "微软用自研MAI模型替换OpenAI和Anthropic模型降本",
-     "summary": "微软在Excel和Outlook中开始用自研MAI模型替代OpenAI和Anthropic模型，每周处理数万条AI任务。",
+     "title": "Meta发布Muse Image和Muse Video媒体生成模型",
+     "summary": "Meta Superintelligence Labs发布首个媒体生成模型Muse Image和Muse Video，可精确指令、编辑、利用社交上下文。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-f517ee",
-   "title": "俄罗斯导弹一周内第三次袭击乌克兰首都基辅",
+   "event_id": "evt-20260708-edf7d0",
+   "title": "北约盟国宣布370亿英镑新导弹项目",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -534,15 +466,15 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "俄罗斯导弹一周内第三次袭击乌克兰首都基辅",
-     "summary": "俄罗斯导弹袭击基辅，引发两区火灾，这是本周第三次袭击。",
-     "news_status": "发展中"
+     "title": "北约盟国宣布370亿英镑新导弹项目",
+     "summary": "北约盟国在安卡拉峰会上宣布一项价值370亿英镑的新导弹项目，英国首相斯塔默将召集约十几位领导人讨论。",
+     "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-db1981",
-   "title": "特朗普阴影笼罩北约重新武装欧洲的挑战",
+   "event_id": "evt-20260708-cc3bc8",
+   "title": "特朗普称美伊谅解备忘录“已终结”",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -551,186 +483,16 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "特朗普阴影笼罩北约重新武装欧洲的挑战",
-     "summary": "特朗普言论影响北约团结，北约面临重新武装欧洲的挑战。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-a1561c",
-   "title": "Anthropic将Claude Cowork扩展至移动端和网页",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "Anthropic将Claude Cowork扩展至移动端和网页",
-     "summary": "Anthropic的Claude Cowork AI平台首次扩展至移动端和网页，先向Max订阅用户开放。",
+     "title": "特朗普称美伊谅解备忘录“已终结”",
+     "summary": "美国总统特朗普在北约峰会上表示，他认为美伊谅解备忘录“已终结”，指责伊朗人是“人渣”。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-6cc084",
-   "title": "法律AI初创公司Norm Ai获1.2亿美元融资估值12亿美元",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "法律AI初创公司Norm Ai获1.2亿美元融资估值12亿美元",
-     "summary": "法律AI初创Norm Ai完成1.2亿美元C轮融资，估值达12亿美元，由Khosla Ventures领投。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-70a9ca",
-   "title": "中国电动车供应链优势或助机器人出租车全球扩张",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "中国电动车供应链优势或助机器人出租车全球扩张",
-     "summary": "中国自动驾驶企业利用国内电动车供应链成本优势，在全球机器人出租车市场与美国企业展开竞争。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-e643c3",
-   "title": "Discord AI审核漏洞误封8000余用户",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "Discord AI审核漏洞误封8000余用户",
-     "summary": "Discord确认其AI安全系统因bug自5月起误封超8000个账号，误将网格图等无害图片识别为违规内容。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-26b975",
-   "title": "美国首批自主地面战斗车辆在乌克兰实战部署",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "美国首批自主地面战斗车辆在乌克兰实战部署",
-     "summary": "Forterra公司已向乌克兰冲突地区部署超100辆无人驾驶ATV，用于后勤运输等任务。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-29b7df",
-   "title": "Hugging Face联合SkyPilot推出零出站存储跨云AI方案",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "Hugging Face联合SkyPilot推出零出站存储跨云AI方案",
-     "summary": "Hugging Face与SkyPilot合作，允许用户在任意云上运行AI工作负载，数据直接存储在Hugging Face，避免云厂商出站流量费。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-bfe3f4",
-   "title": "法国法院维持勒庞定罪但缩短参选禁令，勒庞宣布竞选2027",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "法国法院维持勒庞定罪但缩短参选禁令，勒庞宣布竞选2027",
-     "summary": "法国上诉法院维持勒庞挪用欧盟资金定罪，但将参选禁令缩短至已服满的15个月，勒庞随即宣布参加2027年总统大选。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-46fb92",
-   "title": "Vercel收购开源身份验证库Better Auth",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "Vercel收购开源身份验证库Better Auth",
-     "summary": "Vercel收购开源TypeScript身份验证库Better Auth，其周npm下载量超470万，拥有850+贡献者。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-d5efb3",
-   "title": "美AI公司指责中国非法蒸馏技术",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "美AI公司指责中国非法蒸馏技术",
-     "summary": "美国AI公司称中国竞争对手以“非法、系统化且工业级规模”窃取其AI能力，蒸馏技术引发担忧。",
-     "news_status": "有争议"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-3ecf39",
-   "title": "卡塔尔LNG货轮在霍尔木兹海峡遭袭",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "卡塔尔LNG货轮在霍尔木兹海峡遭袭",
-     "summary": "一艘卡塔尔LNG运输船在霍尔木兹海峡遭导弹袭击起火，布伦特原油与欧洲天然气价格小幅上涨。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-f32051",
+   "event_id": "evt-20260708-14d1db",
    "title": "AI芯片需求推动三星利润暴增1800%",
-   "category": "finance",
+   "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
@@ -739,15 +501,15 @@
     {
      "date": "2026-07-08",
      "title": "AI芯片需求推动三星利润暴增1800%",
-     "summary": "三星电子预计季度利润暴增1800%，分析师称或为“史上最佳季度之一”，但股价因不及预期下跌逾8%。",
+     "summary": "受AI芯片需求飙升推动，三星电子预估利润暴增1800%，分析师称其为“史上最佳季度表现之一”。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-feac9f",
-   "title": "查理·柯克枪击案听证会公布新视频",
-   "category": "society",
+   "event_id": "evt-20260708-5e9959",
+   "title": "GitHub AI代理提示注入漏洞可泄露私有仓库",
+   "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
@@ -755,16 +517,33 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "查理·柯克枪击案听证会公布新视频",
-     "summary": "查理·柯克枪击案听证会公布新视频，显示嫌疑人泰勒·罗宾逊在停车场和屋顶行走，将决定是否受审。",
+     "title": "GitHub AI代理提示注入漏洞可泄露私有仓库",
+     "summary": "Noma Labs发现GitLost漏洞，攻击者可在公共仓库创建恶意Issue，诱使AI代理读取并泄露同一组织的私有仓库内容。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-c65919",
+   "title": "Anthropic将Claude Cowork AI代理扩展至移动端和网页",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Anthropic将Claude Cowork AI代理扩展至移动端和网页",
+     "summary": "Claude Cowork AI代理从桌面端扩展至移动端和网页，支持跨设备同步和后台运行，超90%使用场景为非软件开发的知识工作。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-3a46d9",
-   "title": "台风美莎克致广西水库溃坝湖北龙卷风11死",
-   "category": "society",
+   "event_id": "evt-20260708-ffef6d",
+   "title": "DeepSeek正在自研AI芯片以减少对外依赖",
+   "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
@@ -772,15 +551,185 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "台风美莎克致广西水库溃坝湖北龙卷风11死",
-     "summary": "台风“美莎克”侵袭中国南方，广西南宁水库溃坝淹没村镇，湖北龙卷风造成11人死亡。",
+     "title": "DeepSeek正在自研AI芯片以减少对外依赖",
+     "summary": "DeepSeek正自研AI芯片，旨在减少对Nvidia和华为的依赖，以应对美国出口管制。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-9b1ea6",
+   "title": "HalluSquatting攻击可组装AI僵尸网络",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "HalluSquatting攻击可组装AI僵尸网络",
+     "summary": "研究人员提出HalluSquatting攻击，利用9款流行AI工具的提示注入漏洞，可组装大规模僵尸网络执行DDoS攻击。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260708-e472fa",
-   "title": "SpaceX加入纳斯达克100指数引讨论",
+   "event_id": "evt-20260708-68cdd9",
+   "title": "美国首批自主地面车辆在乌克兰参战",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美国首批自主地面车辆在乌克兰参战",
+     "summary": "Forterra向乌克兰部署超100辆Lancer自主地面车辆，执行物资运输和伤员撤离任务，已行驶2500英里。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-664323",
+   "title": "AI推理成本暴跌，数据系统面临变革",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "AI推理成本暴跌，数据系统面临变革",
+     "summary": "BAIR报告显示，GPT-4级AI推理成本从2023年初每百万token约30美元降至不到1美元，部分低于0.10美元，年降幅中位数约50倍。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-a544fb",
+   "title": "美最高法院裁定特朗普出生公民权行政令无效",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美最高法院裁定特朗普出生公民权行政令无效",
+     "summary": "美国最高法院裁定特朗普以行政命令终结出生公民权无效，焦点转向孕妇入境审查是否更严。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-bf1fe9",
+   "title": "同方威视遭欧盟调查，或引发中欧贸易战",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "同方威视遭欧盟调查，或引发中欧贸易战",
+     "summary": "欧盟调查中国安检设备公司同方威视是否因政府支持获得不公平竞争优势，可能影响中欧贸易关系。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-88b871",
+   "title": "微软用自研模型替代OpenAI和Anthropic降本",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "微软用自研模型替代OpenAI和Anthropic降本",
+     "summary": "微软在Excel、Outlook等产品中用自研MAI模型替代OpenAI和Anthropic模型，每周处理数万查询以削减AI成本。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-892fb0",
+   "title": "特朗普称与伊朗停火结束，油价飙升6%",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "特朗普称与伊朗停火结束，油价飙升6%",
+     "summary": "特朗普表示与伊朗的停火已结束，不再与其打交道，国际油价随之飙升6%。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-e7d5de",
+   "title": "特朗普要求切断美国与西班牙所有贸易",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "特朗普要求切断美国与西班牙所有贸易",
+     "summary": "特朗普在北约峰会上要求财政部长切断美国与西班牙所有贸易，批评西班牙是北约内“糟糕盟友”。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-18ceca",
+   "title": "GitHub发布Q1创新图：全球开源协作加速",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "GitHub发布Q1创新图：全球开源协作加速",
+     "summary": "GitHub发布2026年Q1创新图数据，显示全球开发者社区增长创历史新高，跨经济体协作达到新水平。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-00012d",
+   "title": "美最高法院允许得州执行应用商店法律",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "美最高法院允许得州执行应用商店法律",
+     "summary": "美国最高法院允许得克萨斯州执行一项针对应用商店的法律，该法律被大型科技公司称为“审查制度”。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-4f5ee5",
+   "title": "AI芯片公司SambaNova估值110亿美元融资10亿",
    "category": "finance",
    "status": "active",
    "pinned": false,
@@ -789,8 +738,59 @@
    "history": [
     {
      "date": "2026-07-08",
-     "title": "SpaceX加入纳斯达克100指数引讨论",
-     "summary": "SpaceX在IPO后跳过三个月常规等待期直接加入纳斯达克100指数，引发指数编制规则讨论。",
+     "title": "AI芯片公司SambaNova估值110亿美元融资10亿",
+     "summary": "AI芯片初创公司SambaNova以110亿美元估值完成10亿美元融资，距上一轮仅5个月。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-2d0b03",
+   "title": "韩国股市跌入技术性熊市，监管紧急开会",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "韩国股市跌入技术性熊市，监管紧急开会",
+     "summary": "韩国KOSPI指数从高点下跌20%进入技术性熊市，监管层紧急会议警告半导体板块过度集中风险。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-33e3b4",
+   "title": "Virgin Media因阻止用户取消合同被罚2800万英镑",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "Virgin Media因阻止用户取消合同被罚2800万英镑",
+     "summary": "英国电信监管机构Ofcom对Virgin Media处以2800万英镑罚款，因其故意阻止用户取消合同。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260708-130bba",
+   "title": "起底“静默代扣”灰色产业链",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-08",
+   "last_seen": "2026-07-08",
+   "history": [
+    {
+     "date": "2026-07-08",
+     "title": "起底“静默代扣”灰色产业链",
+     "summary": "记者调查发现，用户扫码支付时被诱导绑定银行卡，随后在无密码验证情况下被多次扣款。",
      "news_status": "已确认"
     }
    ]

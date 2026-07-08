@@ -196,26 +196,35 @@
    "source": "auto",
    "collected_ts": "2026-07-06T15:40:27.781Z",
    "mastered": false
-  }
- ],
- "pending": [
+  },
   {
    "word": "unwarranted",
    "lemma": "unwarranted",
-   "date": "",
+   "phonetic": "/ʌnˈwɒrəntɪd/",
+   "pos": "adj.",
+   "sense_zh": "无根据的；不必要的",
+   "example_en": "The criticism was completely unwarranted and unfair.",
    "item_id": "",
    "item_title": "",
-   "context": "",
-   "ts": "2026-07-08T08:35:28.557Z"
+   "date": "",
+   "source": "manual",
+   "collected_ts": "2026-07-08T09:24:16.984743+00:00",
+   "mastered": false
   },
   {
    "word": "vessel",
    "lemma": "vessel",
-   "date": "",
+   "phonetic": "/ˈvesl/",
+   "pos": "n.",
+   "sense_zh": "容器；船只；血管",
+   "example_en": "The ship was a large vessel carrying cargo across the ocean.",
    "item_id": "",
    "item_title": "",
-   "context": "",
-   "ts": "2026-07-08T08:39:00.035Z"
+   "date": "",
+   "source": "manual",
+   "collected_ts": "2026-07-08T09:24:16.984743+00:00",
+   "mastered": false
   }
- ]
+ ],
+ "pending": []
 }
