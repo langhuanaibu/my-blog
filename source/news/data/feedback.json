@@ -40,6 +40,17 @@
    "action": "more_like_this",
    "reasons": [],
    "note": ""
+  },
+  {
+   "ts": "2026-07-08T09:08:23.862Z",
+   "date": "2026-07-08",
+   "item_id": "pick-204",
+   "title": "美AI公司指责中国非法蒸馏技术",
+   "category": "ai",
+   "action": "not_interested",
+   "reasons": [],
+   "note": "这个事情是6月10号发生的，但是7月7号才报道出来，这个事情没有时效性",
+   "event_id": "evt-20260708-d5efb3"
   }
  ]
 }
