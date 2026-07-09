@@ -37,7 +37,7 @@
   },
   {
    "event_id": "evt-20260706-b4191e",
-   "title": "美军连续打击伊朗，特朗普威胁后降温",
+   "title": "美军对伊朗发动新一轮打击，特朗普称不想谈判",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -58,8 +58,8 @@
     },
     {
      "date": "2026-07-09",
-     "title": "美军连续打击伊朗，特朗普威胁后降温",
-     "summary": "美军连续两日对伊朗发动打击，回应商船遇袭；特朗普发出开火威胁后又称局势将很快平息。",
+     "title": "美军对伊朗发动新一轮打击，特朗普称不想谈判",
+     "summary": "美军对伊朗军事基础设施和小型船只发动数十次打击，特朗普称不想与德黑兰接触，至少三艘国际船舶被击中，伊朗城市停电。",
      "news_status": "发展中"
     }
    ]
@@ -83,17 +83,23 @@
   },
   {
    "event_id": "evt-20260706-89ee6d",
-   "title": "伊朗最高领袖哈梅内伊葬礼在德黑兰举行，数百万人参加",
+   "title": "哈梅内伊灵柩在伊拉克圣地巡游，中国派代表出席葬礼",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-06",
      "title": "伊朗最高领袖哈梅内伊葬礼在德黑兰举行，数百万人参加",
      "summary": "伊朗为在美以空袭中身亡的最高领袖哈梅内伊举行葬礼，数百万人涌上德黑兰街头。分析称伊朗可能进入“后哈梅内伊时代”变革期。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "哈梅内伊灵柩在伊拉克圣地巡游，中国派代表出席葬礼",
+     "summary": "伊朗最高领袖哈梅内伊灵柩在伊拉克纳杰夫和卡尔巴拉什叶派圣地巡游，数百万民众参加葬礼。中国派全国人大副委员长何维出席。",
      "news_status": "已确认"
     }
    ]
@@ -185,17 +191,23 @@
   },
   {
    "event_id": "evt-20260706-65010c",
-   "title": "Xbox宣布裁员20%涉及3200人并剥离五家工作室",
+   "title": "微软Xbox大规模重组：裁员3200人并调整游戏项目",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-06",
      "title": "Xbox宣布裁员20%涉及3200人并剥离五家工作室",
      "summary": "微软Xbox裁员约3200人（占20%），剥离五家工作室，同时商业销售部门裁撤约3200人。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "微软Xbox大规模重组：裁员3200人并调整游戏项目",
+     "summary": "微软Xbox部门进行重大重组，将裁员3200人，并调整旗下工作室项目，如让Obsidian转向开发《辐射》系列。",
      "news_status": "已确认"
     }
    ]
@@ -434,18 +446,12 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-09",
+   "last_seen": "2026-07-08",
    "history": [
     {
      "date": "2026-07-08",
      "title": "OpenAI GPT-5.6 Sol周四发布，禁令解除",
      "summary": "OpenAI旗舰模型GPT-5.6 Sol将于周四发布，此前因美国政府禁令推迟，经额外测试后解禁。",
-     "news_status": "已确认"
-    },
-    {
-     "date": "2026-07-09",
-     "title": "OpenAI获准全面部署GPT-5.6，AI审批制松动",
-     "summary": "美国监管批准OpenAI全面部署GPT-5.6，此前仅限合作伙伴使用，前沿AI逐案审批机制首次松动。",
      "news_status": "已确认"
     }
    ]
@@ -474,30 +480,42 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-08",
      "title": "北约盟国宣布370亿英镑新导弹项目",
      "summary": "北约盟国在安卡拉峰会上宣布一项价值370亿英镑的新导弹项目，英国首相斯塔默将召集约十几位领导人讨论。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "北约盟国宣布370亿英镑新导弹项目",
+     "summary": "英国首相斯塔默召集约12国领导人在安卡拉讨论，北约盟国宣布370亿英镑新导弹项目。",
+     "news_status": "发展中"
     }
    ]
   },
   {
    "event_id": "evt-20260708-cc3bc8",
-   "title": "特朗普称美伊谅解备忘录“已终结”",
+   "title": "霍尔木兹海峡重回冲突状态，能源市场动荡",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-08",
      "title": "特朗普称美伊谅解备忘录“已终结”",
      "summary": "美国总统特朗普在北约峰会上表示，他认为美伊谅解备忘录“已终结”，指责伊朗人是“人渣”。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "霍尔木兹海峡重回冲突状态，能源市场动荡",
+     "summary": "霍尔木兹海峡重回全面冲突状态，油价飙升，IMF下调2026年全球经济增长预期至3%，称伊朗战争冲击能源市场。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -576,18 +594,12 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-09",
+   "last_seen": "2026-07-08",
    "history": [
     {
      "date": "2026-07-08",
      "title": "HalluSquatting攻击可组装AI僵尸网络",
      "summary": "研究人员提出HalluSquatting攻击，利用9款流行AI工具的提示注入漏洞，可组装大规模僵尸网络执行DDoS攻击。",
-     "news_status": "已确认"
-    },
-    {
-     "date": "2026-07-09",
-     "title": "黑客利用9种AI工具组装大规模僵尸网络",
-     "summary": "研究人员发现一种名为“HalluSquatting”的攻击方法，利用9种流行AI工具（如ChatGPT）的幻觉特性，自动生成并部署僵尸网络代码。",
      "news_status": "已确认"
     }
    ]
@@ -650,12 +662,18 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-08",
      "title": "同方威视遭欧盟调查，或引发中欧贸易战",
      "summary": "欧盟调查中国安检设备公司同方威视是否因政府支持获得不公平竞争优势，可能影响中欧贸易关系。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "同方威视遭欧盟调查，或引发中欧贸易战",
+     "summary": "欧盟调查中国安检设备公司同方威视是否因政府补贴获得不公平竞争优势。该公司曾由胡锦涛之子领导，事件可能影响中欧贸易关系。",
      "news_status": "发展中"
     }
    ]
@@ -679,18 +697,24 @@
   },
   {
    "event_id": "evt-20260708-892fb0",
-   "title": "特朗普称与伊朗停火结束，油价飙升6%",
+   "title": "美伊紧张局势升级推动油价大幅上涨",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-09",
    "history": [
     {
      "date": "2026-07-08",
      "title": "特朗普称与伊朗停火结束，油价飙升6%",
      "summary": "特朗普表示与伊朗的停火已结束，不再与其打交道，国际油价随之飙升6%。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-09",
+     "title": "美伊紧张局势升级推动油价大幅上涨",
+     "summary": "美国对伊朗发动新打击，特朗普威胁轰炸并重启海军封锁，油价单日涨超4%至两周高位。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -814,8 +838,25 @@
    ]
   },
   {
-   "event_id": "evt-20260709-d79427",
-   "title": "OpenAI发布GPT-Live语音模型，对话更自然",
+   "event_id": "evt-20260709-f1b66f",
+   "title": "特朗普称将授权海外生产爱国者导弹供乌克兰使用",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "特朗普称将授权海外生产爱国者导弹供乌克兰使用",
+     "summary": "特朗普在北约峰会上宣布，将发放许可允许在海外生产“爱国者”防空系统供乌克兰使用，标志美国对乌安全援助政策重大转向。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-bfc0e2",
+   "title": "OpenAI发布实时语音模型GPT-Live，可同声传译",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -824,15 +865,15 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "OpenAI发布GPT-Live语音模型，对话更自然",
-     "summary": "OpenAI发布GPT-Live语音模型，支持同时听说、打断和实时翻译，ChatGPT语音模式升级。",
+     "title": "OpenAI发布实时语音模型GPT-Live，可同声传译",
+     "summary": "OpenAI推出GPT-Live语音模型，支持同时听和说，能进行同声传译，对话更接近真人交流。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-64b92f",
-   "title": "OpenAI分析揭示SWE-Bench Pro编码基准问题",
+   "event_id": "evt-20260709-671c8b",
+   "title": "SpaceXAI发布Grok 4.5，主打低成本高效能",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -841,14 +882,14 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "OpenAI分析揭示SWE-Bench Pro编码基准问题",
-     "summary": "OpenAI分析发现SWE-Bench Pro编码基准存在可靠性问题，影响AI模型编码能力评估准确性。",
+     "title": "SpaceXAI发布Grok 4.5，主打低成本高效能",
+     "summary": "xAI发布Grok 4.5模型，在编码基准测试中落后于Fable 5和GPT-5.5，但推理成本低4.2倍，每百万输入token仅2美元。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-dd12ab",
+   "event_id": "evt-20260709-0717b4",
    "title": "OpenAI公布政府与国家安全合作原则",
    "category": "ai",
    "status": "active",
@@ -859,48 +900,14 @@
     {
      "date": "2026-07-09",
      "title": "OpenAI公布政府与国家安全合作原则",
-     "summary": "OpenAI发布政府与国家安全合作原则，强调负责任AI使用、民主问责和公共安全。",
+     "summary": "OpenAI发布与政府和国家安全合作的原则，强调负责任AI使用、民主问责和公共安全。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-0e0b9a",
-   "title": "Vercel Agent扩展至生产环境监控与调查",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "Vercel Agent扩展至生产环境监控与调查",
-     "summary": "Vercel Agent从代码审查和告警处理扩展至生产环境，可调查问题、回答查询。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-2c1a65",
-   "title": "中国实施信访新规，学者称旨在减少进京上访",
-   "category": "society",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "中国实施信访新规，学者称旨在减少进京上访",
-     "summary": "中国实施信访新规，学者分析称主要增加行政限制以减少赴京上访者，但难以解决实际问题。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-931657",
-   "title": "xAI发布Grok 4.5，主打低成本高效能",
+   "event_id": "evt-20260709-f84cda",
+   "title": "OpenAI分析揭示SWE-Bench Pro编码基准可靠性问题",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -909,66 +916,15 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "xAI发布Grok 4.5，主打低成本高效能",
-     "summary": "xAI发布Grok 4.5模型，马斯克称其为“Opus级模型”；在编码基准上落后于Fable 5和GPT-5.5，但推理成本极低。",
+     "title": "OpenAI分析揭示SWE-Bench Pro编码基准可靠性问题",
+     "summary": "OpenAI发布分析报告，指出流行编码基准SWE-Bench Pro存在可靠性问题，影响AI模型评估准确性。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-467860",
-   "title": "JetBrains IDE集成Codex代理与智能体增强",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "JetBrains IDE集成Codex代理与智能体增强",
-     "summary": "JetBrains IDE更新，将Codex作为新的代理提供商（公开预览），并扩展自定义编辑器支持Hooks和MCP服务器管理。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-277df0",
-   "title": "谷歌为Linux内核漏洞支付25万美元赏金",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "谷歌为Linux内核漏洞支付25万美元赏金",
-     "summary": "谷歌向发现Linux内核漏洞的研究者支付25万美元，该漏洞允许非特权用户从虚拟机逃逸并获得root权限。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-b55760",
-   "title": "GitHub Copilot实现Pages零DNS配置",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "GitHub Copilot实现Pages零DNS配置",
-     "summary": "GitHub Copilot新功能支持从空仓库到自定义域名HTTPS部署，全程约14分钟，无需手动编辑DNS记录。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-19f086",
-   "title": "美国银行向OpenAI提供5.2亿美元信贷",
+   "event_id": "evt-20260709-aaf246",
+   "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -977,134 +933,15 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "美国银行向OpenAI提供5.2亿美元信贷",
-     "summary": "美国银行向OpenAI提供5.2亿美元信贷额度，此前曾拒绝放贷；OpenAI可用信贷总额突破50亿美元，正筹备IPO。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-45f87f",
-   "title": "SpaceX AI与Cursor联合发布Grok 4.5，瞄准法律金融场景",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "SpaceX AI与Cursor联合发布Grok 4.5，瞄准法律金融场景",
-     "summary": "SpaceX AI与Cursor合作发布Grok 4.5模型，专为法律、金融、软件工程等长周期任务设计，旨在缩小与Anthropic和OpenAI的差距。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-82d708",
-   "title": "GitHub推出跨仓库文档自动化工作流",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "GitHub推出跨仓库文档自动化工作流",
-     "summary": "GitHub发布Agentic Workflows功能，可自动将产品变更转化为经专家审核的文档PR，缩短发布与文档之间的时间差。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-3261a4",
-   "title": "npm v12正式发布，默认启用安装时安全功能",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "npm v12正式发布，默认启用安装时安全功能",
-     "summary": "npm v12正式发布并标记为latest，默认启用安装时安全功能，并开始弃用GAT bypass2fa。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-8554df",
-   "title": "Vercel Flags SDK评估速度提升10倍",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "Vercel Flags SDK评估速度提升10倍",
-     "summary": "Vercel发布Flags SDK更新，批量评估多个特性标志的速度提升约10倍，通过减少微任务队列开销和创建更少的Promise实现。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-ae5021",
-   "title": "Meta测试全天候AI眼镜原型，持续记录用户生活",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "Meta测试全天候AI眼镜原型，持续记录用户生活",
-     "summary": "Meta正在测试一款名为“超级感知”的AI眼镜原型，可全天候通过摄像头和麦克风记录用户生活。",
+     "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
+     "summary": "OpenAI的GPT-5.6模型因美国政府要求额外测试而延迟，现定于周四发布，但缺乏正式审批标准。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-8b9892",
-   "title": "Hugging Face发布智能体数据相关博客",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "Hugging Face发布智能体数据相关博客",
-     "summary": "Hugging Face发布两篇博客，分别探讨智能体数据管理和原生速度vLLM transformers建模后端。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-e389d9",
-   "title": "Grok 4.5 上线 Vercel AI Gateway",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "Grok 4.5 上线 Vercel AI Gateway",
-     "summary": "SpaceXAI 的 Grok 4.5 模型现已在 Vercel AI Gateway 上可用，支持文本和图像输入，专为编程、知识工作和STEM领域设计，提供低、中、高三种推理级别。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-16129e",
-   "title": "常春藤教授因怀疑AI作弊安排线下考试致分数下降50%",
+   "event_id": "evt-20260709-578936",
+   "title": "中国实施信访新规，学者指旨在减少进京上访",
    "category": "society",
    "status": "active",
    "pinned": false,
@@ -1113,15 +950,134 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "常春藤教授因怀疑AI作弊安排线下考试致分数下降50%",
-     "summary": "一位常春藤大学教授怀疑学生使用AI作弊，将期末考试改为线下闭卷形式，结果全班平均分下降约50%。",
+     "title": "中国实施信访新规，学者指旨在减少进京上访",
+     "summary": "中国实施信访新规，学者分析认为新规主要增加行政限制，旨在减少赴京上访者，但难以根本解决问题。",
      "news_status": "已确认"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-ba0b3d",
-   "title": "以色列空袭加沙致5人死亡，美伊冲突升级",
+   "event_id": "evt-20260709-02213f",
+   "title": "Cloudflare研究团队推出全球共识服务Meerkat",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "Cloudflare研究团队推出全球共识服务Meerkat",
+     "summary": "Cloudflare Research推出实验性全球共识服务Meerkat，采用新QuePaxa算法，旨在构建强一致容错键值存储。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-872556",
+   "title": "美国保险巨头遭网络攻击致数百万驾照号码泄露",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "美国保险巨头遭网络攻击致数百万驾照号码泄露",
+     "summary": "针对美国一家保险巨头的网络攻击导致数百万驾照号码泄露，是2026年已知最大规模的驾照数据泄露事件。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-40c11a",
+   "title": "特朗普多项法律挑战受挫：需支付赔偿并移除姓名",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "特朗普多项法律挑战受挫：需支付赔偿并移除姓名",
+     "summary": "特朗普上诉失败，需支付E. Jean Carroll 500万美元诽谤赔偿；同时，其要求保留肯尼迪中心名称的上诉也被驳回。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-8e1d6d",
+   "title": "GitHub发布内部源安全公告与跨仓库文档自动化功能",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "GitHub发布内部源安全公告与跨仓库文档自动化功能",
+     "summary": "GitHub Advanced Security企业用户可发布内部安全公告；GitHub Agentic Workflows可自动将代码变更转化为文档PR。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-975ab6",
+   "title": "谷歌为Linux虚拟机逃逸漏洞支付25万美元赏金",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "谷歌为Linux虚拟机逃逸漏洞支付25万美元赏金",
+     "summary": "谷歌向发现两个Linux内核高危漏洞的研究人员支付了25万美元赏金，这些漏洞可使虚拟机中的非特权用户获得宿主机root权限。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-e149e3",
+   "title": "世界杯决赛推动谷歌搜索创每秒查询量历史纪录",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "世界杯决赛推动谷歌搜索创每秒查询量历史纪录",
+     "summary": "在梅西和阿根廷队的人气推动下，世界杯决赛期间谷歌搜索达到了每秒查询量的历史新高。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-0fa159",
+   "title": "孟加拉国山体滑坡致女子学校8人死亡",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "孟加拉国山体滑坡致女子学校8人死亡",
+     "summary": "孟加拉国东南部因季风暴雨引发山体滑坡，一所罗兴亚难民营女子学校被埋，至少7名学生和1名教师遇难。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-df8d8b",
+   "title": "俄罗斯燃料短缺加剧，普京面临战争策略抉择",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -1130,15 +1086,15 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "以色列空袭加沙致5人死亡，美伊冲突升级",
-     "summary": "以色列空袭加沙造成5人死亡，包括儿童；同时美国对伊朗发动新打击，特朗普威胁轰炸伊朗，油价上涨超4%。",
+     "title": "俄罗斯燃料短缺加剧，普京面临战争策略抉择",
+     "summary": "俄罗斯国内燃料短缺问题加剧，连莫斯科也无法保证供应。经济压力可能迫使普京在乌克兰战争上做出谈判或升级的抉择。",
      "news_status": "发展中"
     }
    ]
   },
   {
-   "event_id": "evt-20260709-e97345",
-   "title": "AI初创Lovable估值或翻倍至132亿美元",
+   "event_id": "evt-20260709-e64dc9",
+   "title": "美联储会议纪要显示官员对利率方向存在分歧",
    "category": "finance",
    "status": "active",
    "pinned": false,
@@ -1147,26 +1103,26 @@
    "history": [
     {
      "date": "2026-07-09",
-     "title": "AI初创Lovable估值或翻倍至132亿美元",
-     "summary": "AI初创公司Lovable据悉正在进行3亿美元融资谈判，由Menlo Ventures领投，估值可能翻倍至132亿美元。",
-     "news_status": "发展中"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-4cfc45",
-   "title": "美国股市因伊朗打击和利率担忧下跌",
-   "category": "finance",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "美国股市因伊朗打击和利率担忧下跌",
-     "summary": "美国股市周三下跌，道琼斯指数跌1.09%（约500点），因美国继续打击伊朗且利率可能上升，油价上涨超4%。",
+     "title": "美联储会议纪要显示官员对利率方向存在分歧",
+     "summary": "美联储6月会议纪要显示，官员们对利率走向存在分歧，但普遍认为短期内无加息紧迫性，通胀是决定未来行动的关键。",
      "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260709-8593fb",
+   "title": "蓝色起源首次寻求私募融资100亿美元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-09",
+   "last_seen": "2026-07-09",
+   "history": [
+    {
+     "date": "2026-07-09",
+     "title": "蓝色起源首次寻求私募融资100亿美元",
+     "summary": "蓝色起源计划首次通过私募融资100亿美元，公司估值达1300亿美元。此举旨在为与SpaceX竞争提供资金。",
+     "news_status": "仅传言"
     }
    ]
   }
