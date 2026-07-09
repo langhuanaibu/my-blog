@@ -1070,9 +1070,10 @@ def estimate_read_minutes(item, lang):
     return max(3, min(60, int(m + 0.999)))
 
 
-def load_deep_seen(data_dir, date_str):
-    """已推荐 URL 滚动表；当日条目剔除（同日重跑幂等：重跑时重新评选）。"""
-    f = data_dir / "deep_seen.json"
+def load_deep_seen(data_dir, date_str, filename="deep_seen.json"):
+    """已推荐 URL 滚动表；当日条目剔除（同日重跑幂等：重跑时重新评选）。
+    filename 可切换到 papers_seen.json 等，供其他独立频道共用同一去重逻辑。"""
+    f = data_dir / filename
     seen = {"version": 1, "urls": {}}
     if f.exists():
         try:
@@ -1173,6 +1174,149 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         return deep
     except Exception as e:
         log(f"  深读频道失败（不影响主管线）: {e}")
+        return []
+
+
+# ----------------------------------------------------------------
+# 5.1 今日论文频道（Hugging Face Daily Papers）
+#   独立于新闻管线：抓 HF 每日社区精选论文，LLM 按读者学习坐标挑 3-4 篇，
+#   产出"该读什么/该补什么概念"。论文不是新闻——不进精选评分、自成一块。
+#   与深读频道同为独立故障域：任何异常只 log 并返回 []。
+# ----------------------------------------------------------------
+
+HF_PAPERS_API = "https://huggingface.co/api/daily_papers"
+
+PAPERS_SYSTEM = """你为一位**前端/全栈开发者**从每天的 arXiv 热门论文里挑"值得他花时间读的"。
+读者不是研究员，学习坐标是：前端/全栈工程、AI 工具应用、数据与自动化管线、计算机基础。
+他要的是：该补什么概念、能不能用得上、有没有可跑的代码/工具，而非纯理论推导。
+输入若干候选论文（标题+摘要+点赞数+是否带开源代码），可能附带读者兴趣画像。
+给每篇打"该读价值分"0-10，标准：
+- 可落地：方法/工具能迁移到工程或学习实践，带开源代码/项目页的加分
+- 认知增量：讲清一个值得掌握的概念、框架或反直觉结论，能转成学习路线
+- 贴合坐标：越靠近读者学习方向越高；纯数学/理论且离工程很远的压低
+社区点赞高只是线索、不是理由，平庸或过于窄众的仍给低分。宁缺毋滥。
+对每篇输出：
+{"idx": 编号, "score": 0-10, "title_zh": "中文标题（≤30字）",
+ "brief": "一句话这篇做了什么（≤40字）",
+ "why": "为什么值得读：该补什么概念/能不能用上（≤60字）"}
+只输出 JSON 数组，不要其他文字。"""
+
+
+def fetch_hf_papers(date_str, days=2):
+    """抓 HF Daily Papers（社区精选 + 点赞）。合并 date_str 及往前 days-1 天，
+    按 arxiv id 去重，返回规范化候选 list。抓取失败该日跳过、不抛（独立故障域）。"""
+    base = datetime.strptime(date_str, "%Y-%m-%d")
+    merged = {}
+    for d in range(max(1, days)):
+        day = (base - timedelta(days=d)).strftime("%Y-%m-%d")
+        try:
+            resp = http_get(f"{HF_PAPERS_API}?date={day}", timeout=25)
+            data = resp.json()
+        except Exception as e:
+            log(f"  HF Papers {day} 抓取失败: {e}")
+            continue
+        if not isinstance(data, list):
+            continue
+        for it in data:
+            p = it.get("paper") or {}
+            aid = p.get("id")
+            if not aid or aid in merged:
+                continue
+            title = (it.get("title") or p.get("title") or "").strip()
+            if not title:
+                continue
+            merged[aid] = {
+                "title": title,
+                "url": f"https://huggingface.co/papers/{aid}",
+                "arxiv_id": aid,
+                "summary": (p.get("ai_summary") or it.get("summary")
+                            or p.get("summary") or "").strip(),
+                "upvotes": int(p.get("upvotes") or 0),
+                "comments": int(it.get("numComments") or 0),
+                "has_code": bool(p.get("githubRepo")),
+            }
+    return list(merged.values())
+
+
+def papers_channel(llm, cfg, date_str, profile_text=""):
+    """今日论文频道编排。独立故障域：任何异常只 log 并返回 []，绝不影响主管线。"""
+    try:
+        pcfg = cfg.get("papers") or {}
+        if not pcfg.get("enabled", False):
+            return []
+        candidates = fetch_hf_papers(date_str, days=int(pcfg.get("lookback_days", 2)))
+        data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+        seen = load_deep_seen(data_dir, date_str, "papers_seen.json")
+        candidates = [c for c in candidates if c["url"] not in seen["urls"]]
+        # 点赞预排序 + 截断，控 token（候选本就是社区精选，40+ 篇取头部足够）
+        candidates.sort(key=lambda c: (-c["upvotes"], -c["comments"]))
+        candidates = candidates[:int(pcfg.get("max_candidates", 30))]
+        log(f"  论文候选：{len(candidates)} 篇（去重 + 预排序后）")
+        if not candidates:
+            return []
+
+        lines = []
+        for i, c in enumerate(candidates):
+            code = "，带开源代码" if c["has_code"] else ""
+            lines.append(f"[{i}] (👍{c['upvotes']}{code}) {c['title']}\n    {c['summary'][:220]}")
+        user = ""
+        if profile_has_content(profile_text):
+            user = "【兴趣画像】\n" + profile_text + "\n\n"
+        user += "【候选论文】\n" + "\n".join(lines)
+        result = llm.json_call(PAPERS_SYSTEM, user)
+
+        scored = []
+        for r in (result if isinstance(result, list) else []):
+            try:
+                i, score = int(r["idx"]), float(r["score"])
+            except Exception:
+                continue
+            if 0 <= i < len(candidates):
+                scored.append((max(0.0, min(10.0, score)), i, r))
+        threshold = float(pcfg.get("pick_threshold", 7))
+        pick_max = int(pcfg.get("pick_max", 4))
+        scored = sorted([t for t in scored if t[0] >= threshold], key=lambda t: -t[0])
+
+        papers, used = [], set()
+        for score, i, r in scored:
+            if len(papers) >= pick_max:
+                break
+            if i in used:
+                continue
+            used.add(i)
+            c = candidates[i]
+            papers.append({
+                "id": "paper-" + c["arxiv_id"],
+                "title": c["title"],
+                "title_zh": str(r.get("title_zh") or c["title"])[:40],
+                "url": c["url"],
+                "arxiv_id": c["arxiv_id"],
+                "brief": str(r.get("brief", ""))[:60],
+                "why": str(r.get("why", ""))[:90],
+                "score": int(score),
+                "upvotes": c["upvotes"],
+                "has_code": c["has_code"],
+            })
+
+        for p in papers:
+            seen["urls"][p["url"]] = date_str
+        prune = int(pcfg.get("seen_keep_days", 45))
+        today = datetime.strptime(date_str, "%Y-%m-%d")
+
+        def _keep(dt):
+            try:
+                return (today - datetime.strptime(dt, "%Y-%m-%d")).days <= prune
+            except ValueError:
+                return False
+
+        seen["urls"] = {u: dt for u, dt in seen["urls"].items() if _keep(dt)}
+        data_dir.mkdir(parents=True, exist_ok=True)
+        (data_dir / "papers_seen.json").write_text(
+            json.dumps(seen, ensure_ascii=False, indent=1), encoding="utf-8")
+        log(f"  今日论文：{len(papers)} 篇（阈值 {threshold} 分）")
+        return papers
+    except Exception as e:
+        log(f"  今日论文频道失败（不影响主管线）: {e}")
         return []
 
 
@@ -1493,7 +1637,7 @@ def build_vocab(llm, picked, items, date_str, cfg):
     log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None):
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -1521,6 +1665,8 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
         payload["tracking"] = tracking
     if deep:
         payload["deep"] = deep
+    if papers:
+        payload["papers"] = papers
     js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
           f"window.NEWS_DATA[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
@@ -1939,6 +2085,33 @@ def publish_to_blog(cfg, date_str):
 
 
 # ----------------------------------------------------------------
+# 自建 RSSHub 占位符解析
+# ----------------------------------------------------------------
+
+def resolve_rsshub_sources(sources):
+    """把 sources.yaml 里的 {rsshub} 占位符替换成自建实例地址并追加访问密钥。
+    base/key 从环境变量 RSSHUB_BASE / RSSHUB_KEY 读取——公开仓库不落地址与密钥。
+    未配置 RSSHUB_BASE 时，带占位符的源自动跳过，不影响其余源。"""
+    base = os.environ.get("RSSHUB_BASE", "").strip().rstrip("/")
+    key = os.environ.get("RSSHUB_KEY", "").strip()
+    out = []
+    for s in sources:
+        url = s.get("url", "")
+        if "{rsshub}" not in url:
+            out.append(s)
+            continue
+        if not base:
+            log(f"  ⚠ 跳过 {s['name']}：未配置 RSSHUB_BASE 环境变量（自建 RSSHub 源）")
+            continue
+        resolved = url.replace("{rsshub}", base)
+        if key:
+            sep = "&" if "?" in resolved else "?"
+            resolved = f"{resolved}{sep}key={key}"
+        out.append({**s, "url": resolved})
+    return out
+
+
+# ----------------------------------------------------------------
 # main
 # ----------------------------------------------------------------
 
@@ -1962,6 +2135,7 @@ def main():
 
     src_cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
     sources = [s for s in src_cfg["sources"] if s.get("enabled", True)]
+    sources = resolve_rsshub_sources(sources)
     date_str = args.date or datetime.now().strftime("%Y-%m-%d")
 
     items, fetch_stats = fetch_all(sources, cfg)
@@ -2029,8 +2203,11 @@ def main():
     log("深读频道：长文筛选 ...")
     deep = deep_channel(llm, cfg, date_str, profile)
 
+    log("今日论文：HF Daily Papers 筛选 ...")
+    papers = papers_channel(llm, cfg, date_str, profile)
+
     write_output(date_str, brief, picked, secondary, items, cfg,
-                 registry=registry, deep=deep, themes=themes)
+                 registry=registry, deep=deep, themes=themes, papers=papers)
     log("英语单词本：挑词 + 补全手动词 ...")
     build_vocab(llm, picked, items, date_str, cfg)
 

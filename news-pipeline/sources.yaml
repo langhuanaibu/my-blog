@@ -293,15 +293,15 @@ sources:
     category: mixed
     enabled: true
 
-  # ---------- 高校 / 青年 / 教育（RSSHub 公共实例，T2：门槛更高、噪音靠管线压） ----------
-  # 这类中文源无官方 RSS，走公共 RSSHub 实例转 RSS。公共实例会限流/临时挂，
-  # 已验活、可互换的备用实例前缀（拉不到就把 url 换成另一个）：
-  #   https://rsshub.rssforever.com   https://hub.slarker.me   https://rsshub.ktachibana.party
-  # 接入后看 source_health.json，连续为空/失败的直接停用换实例或换源。
+  # ---------- 高校 / 青年 / 教育（自建 RSSHub，T2：门槛更高、噪音靠管线压） ----------
+  # 这类中文源无官方 RSS，走自建 RSSHub 实例转 RSS。url 用占位符 {rsshub}/路由，
+  # 运行时由环境变量 RSSHUB_BASE + RSSHUB_KEY 拼真 URL（地址/密钥不落公开仓库）。
+  # 未配置 RSSHUB_BASE 时这些源自动跳过。接入后看 source_health.json，
+  # 连续为空/失败的先在浏览器直接访问该路由排查（实例挂 / 路由被目标站反爬）。
   - id: sciencenet
     name: 科学网博客
     type: rss
-    url: https://rsshub.rssforever.com/sciencenet/blog
+    url: "{rsshub}/sciencenet/blog"
     source_type: analysis
     tier: "T2"
     credibility: 5
@@ -311,19 +311,24 @@ sources:
   - id: thepaper
     name: 澎湃新闻·热门
     type: rss
-    url: https://hub.slarker.me/thepaper/featured
+    url: "{rsshub}/thepaper/featured"
     source_type: fact
     tier: "T2"
     credibility: 6
     category: society
     enabled: true
 
-  # 二期候选（本轮未接，原因逐条记录，避免以后重复踩坑）：
-  #  - 中国青年报(cyol) / 芥末堆(jiemodui)：公共 RSSHub 无可用路由（实测 503）
-  #  - 三联生活周刊 / 澎湃「思想市场」频道：nodeList/channel 路由在公共实例已下线（503）
-  #  - 青塔 / 软科 / 募格学术 / 青年志Youthology / BIE别的：均为微信公众号，公共 RSSHub
-  #    微信路由需付费/自建中继（wewe-rss / wechat2rss）才通——与「不加基础设施」冲突，需二次拍板
-  #  - 知乎日报(zhihu/daily)：可用但偏生活/情感/娱乐，与「不关注：娱乐八卦/纯观点」冲突，暂不默认开
+  # 二期候选（青年教育/就业源，卡在自建实例缺路由，逐条记录避免重复踩坑）：
+  #  实测自建 RSSHub（Vercel 实例，2026-07-09）：能取到 huxiu/moment、36kr/hot-list、
+  #  v2ex/topics/hot、juejin/category/frontend、guokr/scientific、zhihu/daily 等；但青年
+  #  教育最对口的 cyol(中青报)/jiemian(界面) 及 github/trending 报 NotFoundError——路由
+  #  未在该实例注册（疑 Vercel 函数体积超限丢路由 + --experimental-require-module 加载失败）。
+  #  - 中国青年报(cyol) / 界面(jiemian)：自建 Vercel 实例路由未注册（503 NotFoundError），
+  #    待 RSSHub 改 Docker 部署（全量路由）后重接。
+  #  - 青塔 / 软科 / 募格学术 / 青年志Youthology / BIE别的：均为微信公众号，需自建微信转 RSS
+  #    中继（wewe-rss / wechat2rss）才通——需二次拍板。
+  #  - zhihu/daily：可取，但偏生活/情感/娱乐，与「不关注：娱乐八卦/纯观点」冲突，暂不开。
+  #  - v2ex/juejin：可取但噪音大（生活/水帖多），是否接由「榨信号」阶段再评估。
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews

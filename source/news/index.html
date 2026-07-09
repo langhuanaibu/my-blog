@@ -230,6 +230,9 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .deep-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .deep-t{font-weight:700;font-size:14.5px;color:var(--text)}
 .tag.mins{background:var(--accent-soft);color:var(--accent2)}
+/* 今日论文：复用 .deep 卡片，换左边框色与代码标签以示区分 */
+.deep.paper{border-left-color:#8b5cf6}
+.tag.code{background:rgba(139,92,246,.14);color:#8b5cf6}
 /* ---------- 周视图 ---------- */
 .wk-day{margin-bottom:16px}
 .wk-date{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--accent2);cursor:pointer}
@@ -642,6 +645,7 @@ function render(){
   state.itemsById={};
   for(const it of items) state.itemsById[it.id]=it;
   for(const dp of (d.deep||[])) state.itemsById[dp.id]=dp;
+  for(const pp of (d.papers||[])) state.itemsById[pp.id]=pp;
   const HID=LS.get("news_hidden");
   const flt=it=>state.cat==="all"||it.category===state.cat;
   const pickPool=items.filter(i=>i.tier==="pick"&&flt(i)&&!HID[itemKey(i.id)]);
@@ -713,6 +717,26 @@ function render(){
       ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
       ${dp.lang==="en"&&dp.title!==dp.title_zh?`<div class="kv"><b>原题</b> · ${esc(dp.title||"")}</div>`:""}
       ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(dp.id)})">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
+    </div>`;}).join("");
+  }
+
+  // 今日论文：HF Daily Papers 社区精选（0-4 篇，阈值制，按学习坐标筛）
+  const papers=(d.papers||[]);
+  if(papers.length){
+    h+=`<div class="sec-title">今日论文 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${papers.length} 篇值得读的 arXiv 热门)</span></div>`;
+    h+=papers.map(pp=>{
+      const rl=LS.get("news_rl")[itemKey(pp.id)];
+      return `<div class="deep paper" data-id="${esc(pp.id)}">
+      <div class="deep-top">
+        <span class="tag mins">👍 ${+pp.upvotes||0}</span>
+        ${pp.has_code?'<span class="tag code">&lt;/&gt; 代码</span>':""}
+        <span class="tag stype">arXiv</span>
+        <a class="deep-t" href="${esc(safeUrl(pp.url))}" target="_blank" rel="noopener">${esc(pp.title_zh||pp.title||"")}</a>
+      </div>
+      ${pp.brief?`<div class="sum">${esc(pp.brief)}</div>`:""}
+      ${pp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(pp.why)}</div>`:""}
+      ${pp.title&&pp.title!==pp.title_zh?`<div class="kv"><b>原题</b> · ${esc(pp.title||"")}</div>`:""}
+      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(pp.id)})">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
     </div>`;}).join("");
   }
 

@@ -10,12 +10,13 @@ db.json
 source/preview-effects.html
 
 # 新闻管线本地运行产物（云端 CI 由 DATA_DIR 直接写 source/news/data/）
-news-pipeline/__pycache__/
+__pycache__/
+.pytest_cache/
 news-pipeline/data/
 news-pipeline/run_log.txt
 
 # 密钥与本地环境变量（红线：密钥绝不进仓库）
 .env*
 
-# 本地工具配置（Claude Code 机器级设置，不进仓库）
-.claude/settings.local.json
+# 本地工具配置（Claude Code 机器级设置/计划/预览配置，不进仓库）
+.claude/

@@ -510,6 +510,50 @@ try:
     check("deep禁用返回空", dn.deep_channel(DeepStub(), {"deep": {"enabled": False}},
                                             "2026-07-05") == [])
 
+    # --- papers_channel：monkeypatch fetch_hf_papers，离线跑选择逻辑 ---
+    # 预置 papers_seen：.../1 记为往日(非当日) -> 应被去重；当日重跑幂等由 load 剔除同日
+    (tmp / "papers_seen.json").write_text(json.dumps(
+        {"version": 1, "urls": {"https://huggingface.co/papers/1": "2026-07-04"}}),
+        encoding="utf-8")
+    fake_papers = [
+        {"title": "Paper Seen", "url": "https://huggingface.co/papers/1", "arxiv_id": "1",
+         "summary": "s", "upvotes": 100, "comments": 2, "has_code": True},   # 已推荐 -> 去重
+        {"title": "Paper B <best>", "url": "https://huggingface.co/papers/3", "arxiv_id": "3",
+         "summary": "s", "upvotes": 80, "comments": 1, "has_code": True},
+        {"title": "Paper C", "url": "https://huggingface.co/papers/4", "arxiv_id": "4",
+         "summary": "s", "upvotes": 50, "comments": 0, "has_code": False},
+    ]
+    orig_fetch_papers = dn.fetch_hf_papers
+    dn.fetch_hf_papers = lambda date_str, days=2: list(fake_papers)
+
+    class PapersStub:
+        def json_call(self, system, user):
+            # 去重+点赞排序后候选：B(idx0,👍80) C(idx1,👍50)；B 过线、C 不过线
+            return [{"idx": 0, "score": 9, "title_zh": "论文B", "brief": "b", "why": "w"},
+                    {"idx": 1, "score": 4, "title_zh": "论文C", "brief": "b", "why": "w"}]
+
+    try:
+        pcfg = {"papers": {"enabled": True, "lookback_days": 2, "max_candidates": 30,
+                           "pick_threshold": 7, "pick_max": 4, "seen_keep_days": 45}}
+        papers = dn.papers_channel(PapersStub(), pcfg, "2026-07-05")
+        check("papers已推荐URL被去重且阈值过滤",
+              [p["url"] for p in papers] == ["https://huggingface.co/papers/3"])
+        check("papers字段完整", papers[0]["title_zh"] == "论文B" and papers[0]["upvotes"] == 80
+              and papers[0]["has_code"] is True and papers[0]["id"] == "paper-3")
+        pseen = json.loads((tmp / "papers_seen.json").read_text(encoding="utf-8"))
+        check("papers推荐写回seen", pseen["urls"].get("https://huggingface.co/papers/3") == "2026-07-05")
+
+        class PapersBoom:
+            def json_call(self, system, user):
+                raise RuntimeError("boom")
+
+        check("papers LLM失败返回空",
+              dn.papers_channel(PapersBoom(), pcfg, "2026-07-05") == [])
+        check("papers禁用返回空",
+              dn.papers_channel(PapersStub(), {"papers": {"enabled": False}}, "2026-07-05") == [])
+    finally:
+        dn.fetch_hf_papers = orig_fetch_papers
+
     # --- write_feed ---
     daily = tmp / "daily"
     daily.mkdir(parents=True, exist_ok=True)
@@ -791,6 +835,43 @@ try:
           "## 更关注" in out2 and "学习参考系" not in out2 and "我的处境" not in out2)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
+
+# ----------------------------------------------------------------
+# 自建 RSSHub 占位符解析（resolve_rsshub_sources）
+# ----------------------------------------------------------------
+
+_rh_src = [
+    {"id": "sciencenet", "name": "科学网", "url": "{rsshub}/sciencenet/blog"},
+    {"id": "thepaper", "name": "澎湃", "url": "{rsshub}/thepaper/featured?limit=20"},
+    {"id": "openai", "name": "OpenAI", "url": "https://openai.com/news/rss.xml"},
+]
+_rh_env = {"RSSHUB_BASE": os.environ.get("RSSHUB_BASE"), "RSSHUB_KEY": os.environ.get("RSSHUB_KEY")}
+try:
+    os.environ["RSSHUB_BASE"] = "https://ex.vercel.app/"   # 结尾斜杠应被去掉
+    os.environ["RSSHUB_KEY"] = "SECRET"
+    out = dn.resolve_rsshub_sources(_rh_src)
+    by = {s["id"]: s["url"] for s in out}
+    check("占位符替换并追加 key（? 分隔）",
+          by.get("sciencenet") == "https://ex.vercel.app/sciencenet/blog?key=SECRET")
+    check("已带 query 的路由用 & 追加 key",
+          by.get("thepaper") == "https://ex.vercel.app/thepaper/featured?limit=20&key=SECRET")
+    check("非 rsshub 源原样保留", by.get("openai") == "https://openai.com/news/rss.xml")
+
+    os.environ.pop("RSSHUB_KEY")
+    out_nokey = {s["id"]: s["url"] for s in dn.resolve_rsshub_sources(_rh_src)}
+    check("无 key 时不追加 ?key",
+          out_nokey.get("sciencenet") == "https://ex.vercel.app/sciencenet/blog")
+
+    os.environ.pop("RSSHUB_BASE")
+    out_nobase = {s["id"] for s in dn.resolve_rsshub_sources(_rh_src)}
+    check("未配置 base 时占位符源被跳过、其余保留",
+          out_nobase == {"openai"})
+finally:
+    for k, v in _rh_env.items():
+        if v is None:
+            os.environ.pop(k, None)
+        else:
+            os.environ[k] = v
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")

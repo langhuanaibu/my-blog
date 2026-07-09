@@ -137,9 +137,9 @@ GITHUB_BRANCH=main
 
 ### 数据管线
 
-- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、精选长叙述（`detail`，供中文预览页）、今日主线、事件追踪、深读推荐、RSS 和搜索索引。
+- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、精选长叙述（`detail`，供中文预览页）、今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、RSS 和搜索索引。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
-- 高校/青年/教育类中文源（科学网、澎湃等）无官方 RSS，走**公共 RSSHub 实例**转 RSS（`sources.yaml` 里已注明可互换的备用实例）。公共实例会限流/临时挂，`source_health.json` 连续为空就换实例前缀或换源。微信公众号类源（青塔/软科/募格等）需付费或自建微信转 RSS 中继才能接，已登记为二期候选，本轮未接。
+- 高校/青年/教育类中文源（科学网、澎湃等）无官方 RSS，走**自建 RSSHub 实例**（部署在 Vercel）转 RSS。`sources.yaml` 里这类源的 `url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE`（实例地址）+ `RSSHUB_KEY`（实例 `ACCESS_KEY`）拼真 URL 并追加 `?key=`——地址与密钥都不落公开仓库（`resolve_rsshub_sources`）。未配置 `RSSHUB_BASE` 时这些源自动跳过、不影响其余源。某源连续为空/失败时，先在浏览器直接访问该路由排查（实例挂 / 路由被目标站反爬）。微信公众号类源（青塔/软科/募格等）需付费或自建微信转 RSS 中继才能接，已登记为二期候选，本轮未接。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在精选阈值之下，只能进"更多资讯"；有事实源或分析源交叉佐证后才解除限制。
 - 抓取健壮性：`fetch_rss`/`fetch_aihot` 统一走 `http_get`（指数退避重试），治 AIHOT 连接重置这类偶发失败——单次请求一挂整源归零。`max_per_source` 默认 18（削减 world/舆论刷屏源的 triage 噪音）；AIHOT 是 AI 深度独木、已精选噪音低，在 `fetch_aihot` 内单独放宽取量、不受该值压制。AI 一手供给以逐篇新闻站（The Decoder 等）为主，不用摘要型 newsletter（每期一条不适配事件聚类）。`ftcn` 从云端 Actions 常被限流失败（本地正常），靠重试救偶发，持续告警则手动停用。
 - 精选采用阈值制，不硬凑固定条数；同时保留类目保底、上限、同源封顶和受控主题标签。主题标签只允许来自 `config.yaml` 的 `topic_tags`，词表外标签会被丢弃。
@@ -151,8 +151,8 @@ GITHUB_BRANCH=main
 ### 自动运行与本地运行
 
 - GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
-- API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
-- 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `DATA_DIR` 指向 `source/news/data`。
+- API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。自建 RSSHub 源另需两个 Secret：`RSSHUB_BASE`、`RSSHUB_KEY`（未配置则相关源自动跳过，管线不崩）。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
+- 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`。需要抓自建 RSSHub 源时再设 `RSSHUB_BASE` 和 `RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `DATA_DIR` 指向 `source/news/data`。
 - 排查信源抓取时先跑 `python daily_news.py --dry-run`，只抓取、不调 LLM。
 
 ### 线上数据产物
@@ -166,6 +166,7 @@ GITHUB_BRANCH=main
 - `feedback.json` / `read_later.json`：由 `api/newsState.js` 写入，分别保存反馈和稍后读状态，各封顶 1000 条。稍后读按 `item_id + date` 去重。反馈支持删除式撤销：payload 带 `op: "remove"` 时删除最后一条同 `date + item_id + action` 的记录（页面「更多类似」再点一次即撤销）；管线当晚已蒸馏进画像的部分不回滚，需手改 `interest_profile.md`。
 - `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行（也可一次性手写丰富的种子画像），但偏好要写成以 `- ` 开头的要点。画像既影响精选排序（兴趣契合分），也用于生成每条精选的"对我的意义"。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
+- `papers_seen.json`：今日论文（HF Daily Papers）推荐去重记录，按 `config.yaml` 的 `papers.seen_keep_days` 保留。
 - `vocab/YYYY-MM-DD.js`：每日英语单词候选。管线从当天精选的英文标题+RSS 摘要里挑 6-10 个高价值词（`config.yaml` 的 `vocab.daily_min/max`），前端按日懒加载，无 manifest。
 - `vocab-book.json`：个人单词本真源，由 `api/vocab.js` 写入。`words` 为已收藏/已补全的完整卡（含 `mastered` 掌握位、`source: auto|manual`），`pending` 为手动加的裸词。管线次日读它做全量词元去重、并把 `pending` 补全成完整卡移入 `words`。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。
@@ -181,6 +182,7 @@ GITHUB_BRANCH=main
 - 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录。
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
 - 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`。深读失败只丢当天深读推荐，不影响新闻日报产出。
+- 今日论文频道同样独立于新闻主管线：抓 **Hugging Face Daily Papers**（社区精选 + 点赞，公开接口无需 key），LLM 按 `interest_profile.md` 的学习坐标（前端/全栈/AI 应用/自动化）从当天几十篇里挑 3-4 篇，产出中文标题、"该读什么/该补什么概念"，带点赞数与"是否有开源代码"标记。写进 daily js 的 `papers` 字段，前端日视图「今日论文」板块渲染（紫色左边框区别于深读）。论文不是新闻——不进精选评分、不占五类名额。参数在 `config.yaml` 的 `papers` 段（`enabled`/`lookback_days`/`max_candidates`/`pick_threshold`/`pick_max`/`seen_keep_days`），失败只记日志、不阻断每日产出。
 - 周视图顶部展示「上周综述」（若有）：**趋势连线 + 待验证回收**——把一周事件连成 3-5 条演进主线（带 新增/推进/反转/停滞），并链式回收上周综述提出的关注点（兑现/未兑现/反转），帮读者长期积累判断。下方仍是纯前端聚合的每日 Top3 与跨天事件线。
 - 周综述由主管线在 **`config.yaml` 的 `weekly.run_weekday`（默认周一）** 额外合成：链式读「上周综述 + 本周 daily 文件 + events.json」，写 `data/weekly/<YYYY-Www>.js` + `manifest.js`。**失败只记日志、不阻断每日产出，也不进发布校验**（与深读频道同等地位）；未生成时前端静默降级为原周视图。不新增 workflow，沿用已获批的 `daily-news.yml` 自动 commit（同一 `source/news/data/` 路径）。
 - 英语单词本：管线每天从精选英文原文挑高价值词（通用进阶词 B2-C1 + 时事术语兼收，排除专有名词/基础词）。日报底部「今日单词」区展示候选，候选对所有访客可见；持 token 者可一键收藏进单词本。顶栏「单词本」入口（仅 token 可见）切到复习视图：单词**按新闻日期 `date` 分组**（每组一个"日期 · N 词"标题，日期降序，无 `date` 的归入"未标注日期"垫底），可搜索、按掌握/来源筛选、标已掌握、移除，并可手动加词（存为 `pending` 裸词，管线次日补全音标释义）。收藏词的 `item_id` 形如 `pick-N`，与当日精选卡一致。

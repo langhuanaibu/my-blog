@@ -26,6 +26,14 @@ prefilter:
   api_key: ""
   model: ""
 
+# ---------- 自建 RSSHub 实例 ----------
+# 中文网源（科学网/澎湃/热榜等无官方 RSS）经自建 RSSHub 转 RSS。
+# sources.yaml 里写占位符 {rsshub}/路由，运行时由这两个环境变量拼真 URL：
+#   RSSHUB_BASE  自建实例地址，如 https://xxx.vercel.app（结尾斜杠会自动去掉）
+#   RSSHUB_KEY   实例 ACCESS_KEY（拼成 ?key=...；公开仓库不写死，走 Secret / 本地 env）
+# 地址与密钥都不写在本文件里——仅用环境变量注入（沿用 LLM_API_KEY 模式）。
+# 未配置 RSSHUB_BASE 时，带 {rsshub} 的源自动跳过、不影响其余源。
+
 # 抓取时间窗口（小时）：只保留最近 N 小时内发布的内容
 window_hours: 26
 
@@ -136,6 +144,19 @@ deep:
   pick_threshold: 7     # 深读价值分（0-10）过线才推
   pick_max: 3
   seen_keep_days: 60    # 已推荐 URL 记录（data/deep_seen.json）保留天数
+
+# ---------- 今日论文频道（Hugging Face Daily Papers） ----------
+# 独立于新闻管线：抓 HF 每日社区精选论文（自带点赞/是否带代码），LLM 按读者
+# 学习坐标（前端/全栈/AI应用/自动化）挑 3-4 篇，产出"该读什么/该补什么概念"。
+# 论文不是新闻——不进精选评分、自成一块。写 daily js 的 papers 字段。
+# 无需 API key（HF 公开接口）；独立故障域，失败只记日志、不阻断每日产出。
+papers:
+  enabled: true
+  lookback_days: 2      # 合并今天+往前 N-1 天的每日精选（HF 当天页面早晨可能偏稀）
+  max_candidates: 30    # 按点赞预排序后送 LLM 的候选上限（控 token）
+  pick_threshold: 7     # 该读价值分（0-10）过线才推
+  pick_max: 4           # 每天最多推几篇
+  seen_keep_days: 45    # 已推荐记录（data/papers_seen.json）保留天数
 
 # ---------- RSS 输出 / 搜索索引 ----------
 site_url: https://aoiblog.top   # feed 的 channel link 用

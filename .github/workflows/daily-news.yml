@@ -2,6 +2,7 @@
 #
 # - cron 为 UTC 时间，23:00 UTC = 北京 07:00（GitHub 高峰期可能延迟 15-60 分钟）
 # - 需要仓库 Secret: LLM_API_KEY（Settings -> Secrets and variables -> Actions）
+#   自建 RSSHub 源需再加两个 Secret: RSSHUB_BASE（实例地址）、RSSHUB_KEY（ACCESS_KEY）
 # - 手动补跑：Actions 页面选本 workflow -> Run workflow
 # - 本 workflow 是 CLAUDE.md「严禁自动 push」规则的唯一例外，
 #   仅允许提交 source/news/data/ 路径，脚本内置数据校验，校验失败则不提交。
@@ -40,6 +41,8 @@ jobs:
       - name: Generate daily briefing
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          RSSHUB_BASE: ${{ secrets.RSSHUB_BASE }}
+          RSSHUB_KEY: ${{ secrets.RSSHUB_KEY }}
           DATA_DIR: ${{ github.workspace }}/source/news/data
         run: python news-pipeline/daily_news.py
 
