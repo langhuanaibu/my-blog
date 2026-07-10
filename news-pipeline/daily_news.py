@@ -601,6 +601,34 @@ def score_and_select(events, items, cfg):
             if e not in picked:
                 picked.append(e)
     picked = sorted(picked, key=lambda e: e["score"], reverse=True)[:pick_max]
+
+    # 单类精选上限（config max_per_category；2026-07-11 翻案仅对 ai 启用）：
+    # 该类只留最高分 N 条，超限的高分事件降级——events 按分排序，它们会
+    # 自然落到"更多资讯"头部，不丢失。腾出的位置从线下补齐到保底条数。
+    max_per_cat = cfg.get("max_per_category") or {}
+    if max_per_cat:
+        kept, counts = [], {}
+        for e in picked:
+            cat = e["category"]
+            counts[cat] = counts.get(cat, 0) + 1
+            cap = max_per_cat.get(cat)
+            if cap is not None and counts[cat] > int(cap):
+                continue
+            kept.append(e)
+        if len(kept) < len(picked):
+            log(f"  单类上限：{len(picked) - len(kept)} 条超限事件降级到更多资讯")
+            picked = kept
+            if len(picked) < pick_min:
+                for e in backfill:
+                    if len(picked) >= pick_min:
+                        break
+                    cap = max_per_cat.get(e["category"])
+                    n_cat = sum(1 for p in picked if p["category"] == e["category"])
+                    if e in picked or (cap is not None and n_cat >= int(cap)):
+                        continue
+                    picked.append(e)
+                picked = sorted(picked, key=lambda e: e["score"], reverse=True)
+
     over = sum(1 for e in picked if e["score"] >= threshold)
     log(f"  阈值 {threshold} 分：过线 {len(eligible)} 个事件，精选 {len(picked)} 条（其中过线 {over}）")
 
@@ -1216,6 +1244,8 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         src_cfg = yaml.safe_load((ROOT / "sources.yaml").read_text(encoding="utf-8"))
         deep_sources = [s for s in (src_cfg.get("deep_sources") or [])
                         if s.get("enabled", True)]
+        # deep 源同样支持 {rsshub} 占位符（未配 RSSHUB_BASE 时自动跳过该源）
+        deep_sources = resolve_rsshub_sources(deep_sources)
         if not deep_sources:
             return []
         window_start = datetime.now(timezone.utc) - timedelta(

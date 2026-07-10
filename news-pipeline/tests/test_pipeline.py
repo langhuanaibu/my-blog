@@ -1094,6 +1094,60 @@ finally:
     else:
         os.environ["DATA_DIR"] = old_data_dir
 
+# ----------------------------------------------------------------
+# 单类精选上限（max_per_category，2026-07-11 仅 ai 启用）
+# ----------------------------------------------------------------
+
+_cap_items = [mk_item("openai", "fact", "T1", 9) for _ in range(8)]
+_cap_dims_hi = {d: 10.0 for d in dn.DIMS}
+
+
+def _mk_cap_events():
+    evs = [{"ids": [i], "category": "ai", "dims": dict(_cap_dims_hi),
+            "title": f"ai-{i}"} for i in range(5)]
+    evs.append({"ids": [5], "category": "world", "dims": dict(_cap_dims_hi),
+                "title": "world-0"})
+    return evs
+
+
+_cap_cfg = {
+    "pick_threshold": 68, "pick_min": 1, "pick_max": 24,
+    "secondary_count": 25, "min_per_category": 0,
+    "interest_weights": {}, "scoring": {},
+    "max_per_category": {"ai": 3},
+}
+_cap_events = _mk_cap_events()
+_cap_picked, _cap_sec = dn.score_and_select(_cap_events, _cap_items, _cap_cfg)
+_n_ai = sum(1 for e in _cap_picked if e["category"] == "ai")
+check("ai 过线 5 条只留 3 条", _n_ai == 3)
+check("无上限类不受影响", any(e["category"] == "world" for e in _cap_picked))
+_cap_over = [e for e in _cap_events if e["category"] == "ai" and e not in _cap_picked]
+check("超限 ai 事件降级进更多资讯", all(e in _cap_sec for e in _cap_over))
+
+# ai 不足上限时不硬凑
+_few_events = [{"ids": [0], "category": "ai", "dims": dict(_cap_dims_hi), "title": "ai-solo"}]
+_few_picked, _ = dn.score_and_select(_few_events, _cap_items, dict(_cap_cfg))
+check("ai 不足上限时原样保留", sum(1 for e in _few_picked if e["category"] == "ai") == 1)
+
+# 未配置 max_per_category 时行为与现状一致
+_nocap_events = _mk_cap_events()
+_nocap_picked, _ = dn.score_and_select(_nocap_events, _cap_items,
+                                       {k: v for k, v in _cap_cfg.items() if k != "max_per_category"})
+check("未配置上限时 ai 全数进精选",
+      sum(1 for e in _nocap_picked if e["category"] == "ai") == 5)
+
+# 上限腾位后从线下补齐 pick_min（补入者也须尊重上限）
+_bf_items = [mk_item("openai", "fact", "T1", 9) for _ in range(5)] + \
+            [mk_item("verge", "fact", "T1.5", 7) for _ in range(5)]
+_bf_events = [{"ids": [i], "category": "ai", "dims": dict(_cap_dims_hi),
+               "title": f"ai-{i}"} for i in range(5)]
+_bf_events += [{"ids": [5 + i], "category": "tech", "dims": {d: 1.0 for d in dn.DIMS},
+                "title": f"tech-low-{i}"} for i in range(3)]
+_bf_picked, _ = dn.score_and_select(_bf_events, _bf_items,
+                                    dict(_cap_cfg, pick_min=5))
+check("腾位后从线下补齐保底",
+      len(_bf_picked) == 5 and sum(1 for e in _bf_picked if e["category"] == "ai") == 3)
+
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")
 sys.exit(1 if failures else 0)

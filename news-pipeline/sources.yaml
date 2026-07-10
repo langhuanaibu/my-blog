@@ -51,6 +51,19 @@ sources:
     category: ai
     enabled: true
 
+  # Anthropic 官方无 RSS，走自建 RSSHub 的 anthropic/news 路由（2026-07-11 补，
+  # 动机：aihot 源 6 天挂 2 天，Anthropic 信号此前只能经 aihot 二手到达）。
+  # 与 ftcn 同批 3 天 source_health 验收。
+  - id: anthropic
+    name: Anthropic News
+    type: rss
+    url: "{rsshub}/anthropic/news"
+    source_type: fact
+    tier: "T1"
+    credibility: 9
+    category: ai
+    enabled: true
+
   # ---------- AI ----------
   - id: aihot
     name: AI HOT 精选
@@ -177,14 +190,15 @@ sources:
     enabled: true
 
   # ---------- 财经 ----------
-  # 注意：云端 GitHub Actions 抓取此源常失败（本地 curl 正常，疑似 FT 对云端 IP
-  # 限流/封锁）。已加 http_get 重试兜底救偶发；若 source_health 持续 3 天告警，
-  # 说明是硬封锁、重试无解，手动改 enabled:false。中文财经"分析深度"暂无免费、
-  # 云端可达的等价替代，留作已知缺口。
+  # 2026-07-11 实证：feed 本身活着（本机直连 200），连续 6 天 error 的死因是
+  # GitHub Actions 出口 IP 被 FT 封锁。改走自建 RSSHub 中转换出口 IP
+  # （直连 /rss/news 等价于 RSSHub 的 /ftchinese/simplified/news 路由）。
+  # 验收：3 天内 source_health 仍持续失败 = FT 连 Vercel IP 也封，改 enabled:false
+  # 彻底收口（中文财经深度分析缺口已确认无免费等价替代）。
   - id: ftcn
     name: FT中文网
     type: rss
-    url: https://www.ftchinese.com/rss/news
+    url: "{rsshub}/ftchinese/simplified/news"
     source_type: analysis
     tier: "T1"
     credibility: 9
@@ -352,6 +366,20 @@ sources:
   #  - X/推特：不自建。AI 类 X 信号经 AIHOT 精选二手接入（fetch_aihot，其中 ~22% 为 X 条目）。
   #  - 虎嗅快讯/36氪热榜：可取但与已有 36氪主 feed 高度重复、快讯体裁噪音大，不接。
   #  - v2ex/juejin：可取但生活帖/水帖多，不接；「榨信号」阶段若缺程序员处境信号再议。
+  #
+  # ---------- 第三轮定案追加（2026-07-11 盘问，防重议） ----------
+  #  - AI 板块角色翻案：日报 AI 精选每日上限 3 条（config max_per_category），
+  #    定位=头条提醒器；AI 深度阅读用户直接看 AIHOT 网站本体。07-10 否决的
+  #    「单类精选上限」仅对 ai 类定向翻案，其余类不设上限。
+  #  - ftcn：改走 RSSHub 中转（死因=GH Actions 出口 IP，feed 本身活着），3 天验收。
+  #  - Anthropic：news 进主管线、engineering 进深读（RSSHub anthropic 路由）。
+  #  - techcrunch/ars 维持全量 feed：AIHOT 的"窄 feed"原则只对垂直站成立，
+  #    本日报 tech 域就是要全量科技新闻，AI 子集已经 aihot 二手到达，不换不加。
+  #  - world 四联 wire（bbc-world/guardian/aljazeera/npr）保持：跨源重叠是
+  #    evidence 分的燃料不是噪音，不砍。
+  #  - 二次元：正式从盲区清单划掉，不再评估。B站热搜舆情侧漏够用；
+  #    垂直资讯源均为公众号（已判死路径）。
+  #  - zaobao/yicai/经济观察报：无公开 RSS（2026-07-11 探测 404），不再追。
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
@@ -413,6 +441,12 @@ deep_sources:
   - id: latentspace
     name: Latent Space
     url: https://www.latent.space/feed
+    lang: en
+    enabled: true
+  # Anthropic 工程博客（官方无 RSS，走自建 RSSHub；deep 源同样支持 {rsshub} 占位符）
+  - id: anthropic-eng
+    name: Anthropic Engineering
+    url: "{rsshub}/anthropic/engineering"
     lang: en
     enabled: true
   # ---------- 科技/商业分析 ----------
