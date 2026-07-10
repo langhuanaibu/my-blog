@@ -4,10 +4,10 @@
 
 ## 1. 架构定位与修改边界
 - **当前架构**：Hexo + Fluid 静态博客，部署于 Vercel，内容源为 `source/_posts/*.md`。
-- **API 层**：`api/` 下的 Vercel Serverless 接口仍保留，用于在线后台的发布、设置，以及日报反馈/稍后读/单词本写回功能。
+- **API 层**：`api/` 下的 Vercel Serverless 接口用于在线后台发布与设置，以及日报反馈/稍后读写回；单词本接口仅为停用功能保留。
 - **核心原则**：渐进式迭代，保持线上稳定。
 - **严格边界**：仅在要求的特定作用域内修改。禁止擅自重构接口、大改后台逻辑、修改已有文章内容。
-- 旧 Astro 前台、Vercel API 和静态后台（`public/admin.html`）不再作为运行入口。历史记录见 `docs/archive/`。
+- 旧 Astro 前台、旧 MongoDB API 和静态后台（`public/admin.html`）不再作为运行入口。当前 Vercel API 位于 `api/`，历史记录见 `docs/archive/`。
 
 ## 2. 目录与命名规范
 根目录严禁堆放临时文件，仅限全局配置和规范文档（如 `readme.md`, `AGENTS.md`, `CLAUDE.md`）。
@@ -18,10 +18,10 @@
 - **`source/admin/`**：在线后台页面 `index.html`。
 - **`source/news/`**：每日日报静态页面和生成数据，`source/news/data/` 为线上数据目录。
 - **`source/about/`, `source/friends/`, `source/guestbook/`**：独立页面的 Markdown 源文件。
-- **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`、`newsState.js`、`vocab.js`）。
+- **`api/` (Vercel接口)**：纯业务接口，一文件一职责，小驼峰命名（如 `adminArticles.js`、`newsState.js`）；`vocab.js` 是停用单词本的保留接口。
 - **`tools/`**：迁移和维护工具脚本。
-- **`news-pipeline/`**：每日新闻日报生成管线（Python），由 GitHub Actions 每日运行，数据写入 `source/news/data/`。本目录是唯一真源（原 `D:\每日新闻网站` 已退役）。
-- **`docs/archive/`**：存放历史重构文档归档。
+- **`news-pipeline/`**：每日新闻日报生成管线（Python），由 GitHub Actions 每日运行，数据写入 `source/news/data/`；本目录是唯一真源。
+- **`docs/`**：维护规范与项目文档；`archive/` 只存仍有兼容、迁移或排障价值的历史记录。完成的计划和一次性报告不长期保留。
 
 ## 3. 交互设计与工作流
 - **体验至上**：为目标设计，系统承担复杂性（能推断不让用户填），反馈要引导下一步。
@@ -32,5 +32,6 @@
 - **改完必验**：修改后必须执行 `npm run build` 或 `npm run dev`，确保页面正常、`/admin/` 兼容、API连通。无验证不交工。
 - **清理收尾**：验证结束后必须检查工作区，确认没有遗留测试文件、临时文件或临时调试代码。
 - **文档同步**：架构变动、运行方式变动或有复用价值的踩坑经验，必须更新至 `readme.md`。
+- **文档收口**：功能落地后把现行事实并入 `readme.md`，删除已完成计划和一次性报告。
 - **Git操作**：Commit message 用简明英文。**严禁自动 `git push`**（仅用于跨设备同步，需等待用户明确指令）。
   - **唯一例外**：GitHub Actions 的 `daily-news.yml` 每日自动 commit + push，且仅限 `source/news/data/` 路径。管线脚本内置数据校验（精选非空、文件完整），校验失败即中止、不提交。此例外经用户明确批准（2026-07-04），不得扩大到其他路径。

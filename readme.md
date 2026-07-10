@@ -9,7 +9,7 @@
 - 内容源：`source/_posts/*.md`
 - 静态资源：`source/images/`
 - 自定义脚本：`source/js/`
-- Vercel API：`api/`（在线后台与日报个人状态写回）
+- Vercel API：`api/`（在线后台、日报反馈与稍后读写回；停用的单词本接口仍保留）
 - 在线后台：`/admin/`
 - 构建输出：`dist/`
 - 部署平台：Vercel
@@ -26,14 +26,15 @@ source/js/              自定义前端脚本
 source/css/             自定义前端样式
 source/admin/           在线后台页面
 source/_data/           分类封面等站点数据
-api/                    Vercel Serverless API（后台、日报反馈和单词本写回）
+api/                    Vercel Serverless API（后台与日报个人状态写回）
 source/about/           关于页面
 source/friends/         友情链接页面
 source/guestbook/       留言板页面
 source/news/            每日新闻日报页（静态，数据由 news-pipeline 生成）
 news-pipeline/          新闻日报生成管线（GitHub Actions 每日运行）
 tools/                  迁移和维护工具
-docs/archive/           历史架构与迁移记录
+docs/                   维护规范与必要的历史记录
+docs/archive/           历史架构与迁移记录（非当前运行说明）
 _config.yml             Hexo 主配置
 _config.fluid.yml       Fluid 主题配置
 ```
@@ -117,9 +118,16 @@ GITHUB_BRANCH=main
 3. 在 front matter 中填写 `title`、`date`、`categories`、`index_img`。
 4. 运行 `npm run build` 验证。
 
+## 文档维护
+
+- 当前架构、运行方式、环境变量和日报能力以本文件为准。
+- `AGENTS.md` / `CLAUDE.md` 约束 AI 修改边界；`docs/workspace_conventions.md` 说明文件分类和命名。
+- 完成的实施计划和一次性分析报告不长期保留；有复用价值的结论应并入本文件或对应维护文档。
+- `docs/archive/` 只保留仍有兼容、迁移或排障价值的历史记录，阅读时以文件日期为边界。
+
 ## 迁移说明
 
-本项目曾使用 `Astro + Vercel Serverless API + MongoDB + public/admin.html` 架构。
+本项目曾使用 `Astro + MongoDB API + public/admin.html` 架构。
 
 2026-06-18 起迁移为 Hexo 静态博客：
 
@@ -127,7 +135,7 @@ GITHUB_BRANCH=main
 - 后台草稿未迁移。
 - 旧 `/articles.html#article_id` 链接由 `source/articles.html` 兼容跳转到新文章地址。
 - Twikoo 评论使用每篇文章的旧 `article_id` 作为 path，尽量保留旧评论关联。
-- 旧 Astro 前台、Vercel API 和静态后台不再作为运行入口保留。
+- 旧 Astro 前台、旧 MongoDB API 和静态后台不再作为运行入口保留；当前 `api/` 是后来建设的在线后台与日报状态接口。
 
 详细决策见 `docs/archive/2026-06-18-hexo-fluid-migration.md`。
 
@@ -152,7 +160,7 @@ GITHUB_BRANCH=main
 
 - GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。自建 RSSHub 源另需两个 Secret：`RSSHUB_BASE`、`RSSHUB_KEY`（未配置则相关源自动跳过，管线不崩）。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
-- 本地手动补跑：`cd news-pipeline && pip install -r requirements.txt && set LLM_API_KEY=你的key && python daily_news.py`。需要抓自建 RSSHub 源时再设 `RSSHUB_BASE` 和 `RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `DATA_DIR` 指向 `source/news/data`。
+- 本地手动补跑（PowerShell）：先进入 `news-pipeline/` 并运行 `pip install -r requirements.txt`，再用 `$env:LLM_API_KEY="你的key"` 注入密钥并执行 `python daily_news.py`。需要抓自建 RSSHub 源时再设置 `$env:RSSHUB_BASE` 和 `$env:RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `$env:DATA_DIR` 指向 `source/news/data`。
 - 排查信源抓取时先跑 `python daily_news.py --dry-run`，只抓取、不调 LLM。
 
 ### 线上数据产物
@@ -175,7 +183,7 @@ GITHUB_BRANCH=main
 ### 页面能力
 
 - 顶部主导航为四 Tab（AIHOT 式板块划分）：**精选**、**全部动态**、**日报**（默认落地 Tab，日期控件与日/周切换仅在此显示）、**主题**。搜索全局可用；稍后读入口（仅 token）不随 Tab 隐藏。跨天条目统一用 `日期:id` 复合引用键，反馈/稍后读按条目所属日期记账，避免日内 `pick-N` 编号跨天碰撞。
-- 日报体验细节：导语卡底部有「今日新事件 N · 延续事件 N」增量行（按精选的 `day_count` 统计）；「追踪中」区紧跟精选之后、先于深读（钉选事件是主动关注的）；日期下拉里打开过的日期带 ✓（localStorage 记 90 天）；滚动超一屏后右下角浮现「↑ 顶部」。精选卡的 为什么重要/背景与机制/对我的意义/后续关注 四段**默认全部直出**（2026-07-10 曾试过折叠为"展开解读"，用户否决回滚：每天通读场景折叠只是多一次点击）。
+- 日报体验细节：导语卡底部有「今日新事件 N · 延续事件 N」增量行（按精选的 `day_count` 统计）；「追踪中」区紧跟精选之后、先于深读（钉选事件是主动关注的）；日期下拉里打开过的日期带 ✓（localStorage 记 90 天）；滚动超一屏后右下角浮现「↑ 顶部」。精选卡的 为什么重要/背景与机制/对我的意义/后续关注 四段默认全部直出，避免每日通读时增加额外点击。
 - 精选 Tab：单列时间轴（左侧竖线 + 圆点 + 精确 HH:MM），按天分组、今天默认展开、历史日折叠（点日期头开合）、每批 5 天加载更早。顶部「🔥 当前热点」榜取近 3 天精选按「独立信源数 × 时间衰减（半衰期 36h）」排 Top 6（候选需 ≥2 独立源或 ≥90 分，不足 2 条整榜隐藏），点击展开对应天并滚动高亮。页内检索框基于 180 天搜索索引（标题+标签）全历史匹配，命中懒加载成完整卡片流，支持 `tag:标签名` 精确过滤（主题页小类的跳转入口）。
 - 全部动态 Tab：分类 tabs + 评分过滤——回填评分的日子默认只显示 `score >= min_score` 的条目（行首带分数徽标），尾行提示已隐藏条数，可切换「显示全部（含低分/未评分）」；未回填评分的日子（如首日补种档）整日全显并在日期头标注。
 - 主题 Tab：页顶保留跨天事件线三组（📌 追踪中 / 🔥 进行中 / 🗄 已归档）；下方「题材地图」按六大题材域（模型与产品/研究与前沿/资本与市场/政策与治理/国际与地缘/社会与生活，前端常量 `TOPIC_GROUPS`，未分组新标签自动归入「其他」）陈列受控标签小类卡，各带 180 天精选条数，点击跳到精选 Tab 的 `tag:` 检索流。
@@ -192,8 +200,6 @@ GITHUB_BRANCH=main
 - 周视图顶部展示「上周综述」（若有）：**趋势连线 + 待验证回收**——把一周事件连成 3-5 条演进主线（带 新增/推进/反转/停滞），并链式回收上周综述提出的关注点（兑现/未兑现/反转），帮读者长期积累判断。下方仍是纯前端聚合的每日 Top3 与跨天事件线。
 - 主题视图（顶栏「🧵 主题」，所有访客可见，URL `/news/?view=topics` 可直达分享）：把 `events.json` 跨天事件登记册提成一等入口，分三组——📌 追踪中（钉选且活跃，默认展开）、🔥 进行中（活跃且 ≥2 天）、🗄 已归档（≥2 天）；单日未钉选事件不展示（还没长成"主题"）。卡片可展开近 14 天进展，点历史日期直接跳到那天的日报（URL 会同步清理成 `?date=`）。持 token 者卡片上可 追踪/取消追踪，复用现有 track 反馈链路（写 `feedback.json`，管线次日消费），无新后端。
 - 周综述由主管线在 **`config.yaml` 的 `weekly.run_weekday`（默认周一）** 额外合成：链式读「上周综述 + 本周 daily 文件 + events.json」，写 `data/weekly/<YYYY-Www>.js` + `manifest.js`。**失败只记日志、不阻断每日产出，也不进发布校验**（与深读频道同等地位）；未生成时前端静默降级为原周视图。不新增 workflow，沿用已获批的 `daily-news.yml` 自动 commit（同一 `source/news/data/` 路径）。
-- 英语单词本：**已于 2026-07-10 停用**（见上方数据产物一节）。
-
 ### 验证与移除
 
 - 回归测试：`python news-pipeline/tests/test_pipeline.py`。该测试不调 LLM、不联网；改评分、聚类、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑。

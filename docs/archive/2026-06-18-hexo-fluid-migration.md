@@ -1,5 +1,7 @@
 # Hexo + Fluid 迁移记录
 
+> 历史快照：本文记录 2026-06-18 的迁移过程，不描述当前全部功能。当前运行状态以根目录 `readme.md` 为准。
+
 ## 背景
 
 旧博客采用 `Astro + Vercel Serverless API + MongoDB + public/admin.html`：
@@ -21,7 +23,7 @@
 - 文章 URL 使用日期加标题 slug。
 - 保留 `/articles.html#article_id` 兼容跳转页。
 - Twikoo 评论沿用旧 `article_id` 作为 path。
-- 旧后台不作为新站功能保留。
+- 当时的 `public/admin.html` 旧后台不作为新站功能保留；当前 `/admin/` 是迁移后重新建设的后台。
 
 ## 迁移方式
 
@@ -39,7 +41,7 @@
 - `npm run dev` 改为 `hexo server`。
 - `npm run build` 改为 `hexo clean && hexo generate`。
 - 构建输出目录为 `dist/`。
-- 旧 `api/`、`src/`、`public/admin.html` 不再参与运行。
+- 当时的 MongoDB API、Astro `src/` 和 `public/admin.html` 不再参与运行；当前仓库的 `api/` 是迁移后重新建设的 Vercel 接口。
 
 ## 注意事项
 

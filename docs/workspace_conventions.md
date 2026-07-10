@@ -18,10 +18,11 @@
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
 | ├── `/source/news` | 每日日报静态页 | 存放 `/news/` 页面和生成数据。`data/` 主要由管线和页面 API 产出；可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
-| **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、稍后读、单词本写回接口；非接口逻辑不要放进这里。 |
+| **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、稍后读写回接口；`vocab.js` 仅为停用功能保留，非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs` 等一次性或维护脚本。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
 | **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如 `daily-news.yml`。 |
+| **`/docs`** | 项目维护文档 | 根层存现行维护规范；`archive/` 只存仍有兼容、迁移或排障价值的历史记录。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
 
 ---
 
@@ -72,10 +73,10 @@
 👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
 
 **场景 6：我要人工修正每日日报兴趣画像**
-👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`vocab/*.js`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。
+👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。`vocab/*.js` 是已停用单词本的历史数据，也不要手工维护。
 
-**场景 7：我要维护日报反馈、稍后读或单词本**
-👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json` / `read_later.json`，由 `api/vocab.js` 写 `vocab-book.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。
+**场景 7：我要维护日报反馈或稍后读**
+👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json` / `read_later.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。单词本已停用，`api/vocab.js` 与 `vocab-book.json` 仅为恢复能力保留。
 
 **场景 8：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。
