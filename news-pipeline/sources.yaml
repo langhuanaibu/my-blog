@@ -179,6 +179,19 @@ sources:
     category: tech
     enabled: true
 
+  # 2026-07-11 第四轮补入：中文产品/硬件/消费科技（与 36氪的创投生态位互补）。
+  # 实证：其内容此前借道 AIHOT 二手 6 次进精选，直订得全量一手。与 AIHOT 二手
+  # 条目的重复由抓取层 URL 去重天然处理（fetch_aihot 条目 url 即原文地址）。
+  - id: ithome
+    name: IT之家
+    type: rss
+    url: https://www.ithome.com/rss
+    source_type: fact
+    tier: "T2"
+    credibility: 6
+    category: tech
+    enabled: true
+
   - id: ars
     name: Ars Technica
     type: rss
@@ -225,10 +238,35 @@ sources:
     category: finance
     enabled: true
 
+  # 2026-07-11 第四轮停用：6 天性价比实证 60 条抓取仅 6 次进精选，且同为
+  # 美股市场事实源、被 CNBC（96→21）全面遮蔽；财经产能由下面两个新源接替。
   - id: marketwatch
     name: MarketWatch
     type: rss
     url: https://feeds.content.dowjones.io/public/rss/mw_topstories
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: finance
+    enabled: false
+
+  # 2026-07-11 第四轮补入（finance 是精选构成最薄的域，6 天仅 7%）。
+  # 两源均走自建 RSSHub，与 ftcn/anthropic 同批 3 天 source_health 验收。
+  # cls/depth 路由带可选 category 参数，若默认路径持续空产出，退到 /cls/depth/1000。
+  - id: cls-depth
+    name: 财联社·深度
+    type: rss
+    url: "{rsshub}/cls/depth"
+    source_type: analysis
+    tier: "T1.5"
+    credibility: 7
+    category: finance
+    enabled: true
+
+  - id: yicai
+    name: 第一财经·头条
+    type: rss
+    url: "{rsshub}/yicai/headline"
     source_type: fact
     tier: "T1.5"
     credibility: 7
@@ -379,7 +417,19 @@ sources:
   #    evidence 分的燃料不是噪音，不砍。
   #  - 二次元：正式从盲区清单划掉，不再评估。B站热搜舆情侧漏够用；
   #    垂直资讯源均为公众号（已判死路径）。
-  #  - zaobao/yicai/经济观察报：无公开 RSS（2026-07-11 探测 404），不再追。
+  #  - zaobao/经济观察报：无公开 RSS（2026-07-11 探测 404），不再追。
+  #    （yicai 官网 RSS 同样 404，但 RSSHub 有 yicai 路由，第四轮经此接入。）
+  #
+  # ---------- 第四轮定案追加（2026-07-11 晚盘问，防重议） ----------
+  #  依据数据：近 6 天精选构成 world 39% 过剩 / finance 7% 最薄 / tech 11% 次薄；
+  #  各源性价比（抓取量→精选贡献）见当日盘问记录。
+  #  - 36氪：全场性价比最差（120→≤3）但系唯一中文创投源，缓刑至 #7 一周复盘，
+  #    届时用两周数据定去留。不要在 #7 之前砍。
+  #  - atlantic 保留：仅存英文深度杂志层，低产（74→4）是分析体裁宿命不是质量问题，
+  #    换 New Yorker 一样低产、纯折腾。
+  #  - 不加清单：Google AI blog / Chrome DevRel（AI 收缩定位相悖或过于边缘）；
+  #    DW德国之声中文 / RFI法广中文 / 台湾报道者 / New Yorker（feed 均实证可达，
+  #    但 world/深度分析方向用户明确未选——world 已 39% 过剩）；AP News（feed 已死）。
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
