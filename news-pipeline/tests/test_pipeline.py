@@ -1067,6 +1067,26 @@ try:
     # 同日重跑幂等覆盖
     dn.write_all_archive(_aa_items[:1], _aa_sources, "2026-07-10", keep_days=90)
     check("同日重跑覆盖为新内容", len(_peel_all(f)["items"]) == 1)
+    check("payload 带 min_score", _peel_all(f).get("min_score") == 40)
+
+    # 评分回填：匹配条目带分、未匹配无 score 键、重复回填幂等
+    dn.write_all_archive(_aa_items, _aa_sources, "2026-07-10",
+                         keep_days=90, min_score=45)
+    _bf_events = [
+        {"ids": [0], "score": 71.6},          # 命中 A（url https://a.com/1）
+        {"ids": [1], "score": None},          # 无分事件不回填
+    ]
+    dn.backfill_all_scores(_bf_events, _aa_items, "2026-07-10")
+    pl = _peel_all(f)
+    by_t = {r["t"]: r for r in pl["items"]}
+    check("回填 min_score 生效", pl.get("min_score") == 45)
+    check("匹配条目带分且取整", by_t["A"].get("score") == 72)
+    check("无分事件不写 score", "score" not in by_t["B"])
+    check("未匹配条目无 score 键", "score" not in by_t["C"])
+    dn.backfill_all_scores(_bf_events, _aa_items, "2026-07-10")
+    check("重复回填幂等", _peel_all(f)["items"] == pl["items"])
+    dn.backfill_all_scores(_bf_events, _aa_items, "2099-01-01")   # 档不存在应静默
+    check("档缺失静默跳过", True)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
     if old_data_dir is None:

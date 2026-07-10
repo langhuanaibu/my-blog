@@ -95,6 +95,34 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .mtab.on{background:var(--accent);border-color:var(--accent);color:var(--card-h);font-weight:600}
 .feed-day{background:var(--bg);font-weight:700;font-size:15px;color:var(--heading);padding:14px 0 8px;border-bottom:1px solid var(--border);margin:14px 0 12px}
 .feed-day .n{font-size:12px;color:var(--text3);font-weight:400;margin-left:8px}
+.feed-day.clk{cursor:pointer;user-select:none}
+.feed-day.clk:hover{color:var(--accent2)}
+.feed-bar{display:flex;align-items:center;gap:10px;margin:14px 0 4px}
+.feed-bar input{flex:1;max-width:460px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 13px;border-radius:8px;font-size:13.5px}
+.feed-bar input:focus{outline:none;border-color:var(--accent)}
+.feed-clear{font-size:12.5px;color:var(--text3);cursor:pointer}
+.feed-clear:hover{color:var(--accent2)}
+.hotbox{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:16px 0 4px;box-shadow:var(--shadow)}
+.hot-h{font-weight:700;color:var(--heading);margin-bottom:8px}
+.hot-h .n{font-size:12px;color:var(--text3);font-weight:400;margin-left:10px}
+.hot-row{display:flex;align-items:baseline;gap:10px;padding:6px 0;cursor:pointer;border-bottom:1px dashed var(--border)}
+.hot-row:last-child{border-bottom:0}
+.hot-row:hover .hot-t{color:var(--accent2)}
+.hot-no{font-weight:800;font-size:14px;min-width:16px;text-align:center;color:var(--text3)}
+.hot-no.n1{color:#e05d44}.hot-no.n2{color:#e08a3c}.hot-no.n3{color:#d9b03f}
+.hot-t{flex:1;font-weight:600;color:var(--text)}
+.hot-m{font-size:12px;color:var(--text3);white-space:nowrap}
+.tl{position:relative;margin:4px 0 8px 6px;padding-left:24px;border-left:2px solid var(--border2);display:flex;flex-direction:column;gap:14px}
+.tl-item{position:relative}
+.tl-item::before{content:"";position:absolute;left:-29px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.tl-time{display:inline-block;font-size:12px;color:var(--text3);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.topic-group{font-weight:700;font-size:14px;color:var(--heading);margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.topic-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:6px}
+.topic-card:hover{border-color:var(--accent);background:var(--card-h)}
+.topic-card b{color:var(--heading);font-size:14px}
+.tc-go{font-size:12px;color:var(--text3)}
+.topic-card:hover .tc-go{color:var(--accent2)}
 
 /* ---------- brief ---------- */
 .brief{margin:22px 0 6px;padding:16px 18px;background:var(--card-h);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;box-shadow:var(--shadow)}
@@ -1345,44 +1373,175 @@ function gotoDay(dt){
   loadDate(dt);
 }
 
-/* ---------- 精选跨天流（最新在上，分批懒加载 daily js） ---------- */
-const feed={days:5};
+/* ---------- 精选跨天流：时间轴 + 每日折叠 + 当前热点 + 页内检索 ---------- */
+const feed={days:5,q:"",open:{}};
+
+function tlTime(iso){
+  const d=new Date(iso);
+  return isNaN(d)?"":d.toTimeString().slice(0,5);
+}
+function feedDayOpen(dt){
+  if(dt in feed.open) return feed.open[dt];
+  return dt===(window.NEWS_MANIFEST||[])[0];   // 默认只展开最新一天
+}
+function feedToggleDay(dt){feed.open[dt]=!feedDayOpen(dt);renderPicksFeed();}
+function feedMore(){feed.days+=5;renderPicksFeed();}
+function ensureIndexP(){return new Promise(res=>ensureIndex(res));}
+function applyHighlight(){
+  if(!state.pendingHighlight) return;
+  const el=document.querySelector(`[data-id="${CSS.escape(state.pendingHighlight)}"]`);
+  state.pendingHighlight=null;
+  if(el){
+    el.scrollIntoView({block:"center"});
+    el.classList.add("hl");
+    setTimeout(()=>el.classList.remove("hl"),2600);
+  }
+}
+
+// 当前热点：近 3 天精选按「独立信源数 × 时间衰减」排序（AIHOT 口径），
+// 多源事件自然浮上，单源硬新闻靠高分兜底；不足 2 条整个榜自动隐藏。
+function hotListHtml(dates){
+  const now=Date.now(), cands=[];
+  for(const dt of dates.slice(0,3)){
+    const d=window.NEWS_DATA[dt];
+    if(!d) continue;
+    for(const it of (d.items||[])){
+      if(it.tier!=="pick") continue;
+      const srcN=(it.sources||[]).length;
+      if(srcN<2&&(+it.score||0)<90) continue;
+      const ageH=Math.max(0,(now-new Date(it.time).getTime())/36e5);
+      cands.push({it,dt,srcN,hot:Math.max(srcN,1)*Math.pow(.5,ageH/36)});
+    }
+  }
+  cands.sort((a,b)=>b.hot-a.hot);
+  const top=cands.slice(0,6);
+  if(top.length<2) return "";
+  return `<div class="hotbox"><div class="hot-h">🔥 当前热点<span class="n">多信源热度 · 随时间消退</span></div>`
+    +top.map((c,i)=>`<div class="hot-row" onclick="hotJump(${jsArg(c.dt)},${jsArg(refOf(c.it))})">
+      <span class="hot-no n${Math.min(i+1,4)}">${i+1}</span>
+      <span class="hot-t">${esc(c.it.title)}</span>
+      <span class="hot-m">${c.srcN} 个信源 · ${fmtTime(c.it.time)}</span>
+    </div>`).join("")+`</div>`;
+}
+function hotJump(dt,ref){
+  feed.open[dt]=true;
+  state.pendingHighlight=ref;
+  renderPicksFeed();
+}
+
+// 主题页小类入口：以 tag: 语法进入精选检索流
+function openTagFeed(tag){
+  feed.q="tag:"+tag;
+  if(state.view!=="picks"){
+    state.view="picks";
+    if(location.search) history.pushState({},"",location.pathname);
+  }
+  renderPicksFeed();
+}
+
 async function renderPicksFeed(){
   const app=document.getElementById("app");
   const M=window.NEWS_MANIFEST||[];
   if(!M.length){app.innerHTML='<div class="empty">还没有数据</div>';updateNav();return;}
-  const dates=M.slice(0,feed.days);
-  app.innerHTML='<div class="empty">加载精选流…</div>';
-  await loadDates(dates);
-  if(state.view!=="picks") return;   // 加载期间用户已切走
+  const q=feed.q.trim().toLowerCase();
   const HID=LS.get("news_hidden");
-  state.itemsById={};
-  let h=`<div class="sec-title">精选 <span style="font-size:12px;color:var(--text3);font-weight:400">(跨天连续流 · 最新在上 · 补看错过的天)</span></div>`;
+  const catFlt=r=>state.cat==="all"||r===state.cat;
+  let h=`<div class="sec-title">精选 <span style="font-size:12px;color:var(--text3);font-weight:400">(跨天时间轴 · 最新在上 · 点日期展开/收起)</span></div>`;
+  h+=`<div class="feed-bar"><input id="feedSearch" placeholder="🔍 检索精选历史（近 180 天标题/标签，支持 tag:标签名）" value="${esc(feed.q)}" autocomplete="off">${feed.q?`<span class="feed-clear" onclick="feed.q='';renderPicksFeed()">✕ 清空</span>`:""}</div>`;
   h+='<div class="tabs">'+["all",...Object.keys(CAT)].map(c=>
     `<span class="tab ${state.cat===c?"on":""}" onclick="setCat('${c}')">${c==="all"?"全部":CAT[c]}</span>`
   ).join("")+"</div>";
-  let shown=0;
-  for(const dt of dates){
-    const d=window.NEWS_DATA[dt];
-    if(!d) continue;
-    const picks=(d.items||[]).filter(i=>i.tier==="pick"
-      &&(state.cat==="all"||i.category===state.cat)&&!HID[dt+":"+i.id]);
-    for(const it of picks){it._date=dt;state.itemsById[refOf(it)]=it;}
-    if(!picks.length) continue;
-    shown+=picks.length;
-    h+=`<div class="feed-day">${esc(dt)}<span class="n">${picks.length} 条精选</span></div>`;
-    h+=`<div class="grid">${picks.map(card).join("")}</div>`;
-  }
-  if(!shown) h+='<div class="empty">该分类下这几天没有精选</div>';
-  if(feed.days<M.length)
-    h+=`<button class="toggle-more" onclick="feedMore()">加载更早 5 天 ▼</button>`;
-  app.innerHTML=h;
-  updateNav();
-}
-function feedMore(){feed.days+=5;renderPicksFeed();}
 
-/* ---------- 全部动态（管线全量轻档 data/all/，未经筛选的底账） ---------- */
-const allFeed={days:7};
+  if(q){
+    // ---- 检索模式：搜索索引全历史匹配，命中日懒加载后成流 ----
+    app.innerHTML='<div class="empty">检索中…</div>';
+    await ensureIndexP();
+    if(state.view!=="picks"||feed.q.trim().toLowerCase()!==q) return;
+    let rows=(window.NEWS_INDEX||[]).filter(r=>r[2]==="pick"&&catFlt(r[3]));
+    if(q.startsWith("tag:")){
+      const tg=q.slice(4).trim();
+      rows=rows.filter(r=>(r[5]||"").toLowerCase().split("|").includes(tg));
+    }else{
+      const terms=q.split(/\s+/);
+      rows=rows.filter(r=>terms.every(t=>((r[4]||"")+" "+(r[5]||"")).toLowerCase().includes(t)));
+    }
+    const byDate={};
+    for(const r of rows)(byDate[r[0]]=byDate[r[0]]||[]).push(r[1]);
+    const hitDates=Object.keys(byDate).sort().reverse();
+    const shownDates=hitDates.slice(0,30);   // 上限 30 天防一次性加载过多
+    await loadDates(shownDates);
+    if(state.view!=="picks"||feed.q.trim().toLowerCase()!==q) return;
+    state.itemsById={};
+    let n=0;
+    for(const dt of shownDates){
+      const d=window.NEWS_DATA[dt];
+      if(!d) continue;
+      const ids=new Set(byDate[dt]);
+      const hits=(d.items||[]).filter(i=>ids.has(i.id)&&!HID[dt+":"+i.id]);
+      for(const it of hits){it._date=dt;state.itemsById[refOf(it)]=it;}
+      if(!hits.length) continue;
+      n+=hits.length;
+      h+=`<div class="feed-day">${esc(dt)}<span class="n">${hits.length} 条命中</span></div>`;
+      h+=`<div class="tl">${hits.map(it=>`<div class="tl-item"><span class="tl-time">${tlTime(it.time)}</span>${card(it)}</div>`).join("")}</div>`;
+    }
+    h+=n?"":'<div class="empty">没有命中的精选条目</div>';
+    if(hitDates.length>shownDates.length)
+      h+=`<div class="empty" style="padding:20px 0">另有 ${hitDates.length-shownDates.length} 天更早的命中未展示，请细化关键词</div>`;
+  }else{
+    // ---- 时间轴模式：按天分组，今天展开、历史折叠 ----
+    const dates=M.slice(0,feed.days);
+    app.innerHTML='<div class="empty">加载精选流…</div>';
+    await loadDates(dates);
+    if(state.view!=="picks"||feed.q) return;
+    state.itemsById={};
+    // 先全量注册（含折叠日），热点榜与跳转依赖引用
+    for(const dt of dates){
+      const d=window.NEWS_DATA[dt];
+      if(!d) continue;
+      for(const it of (d.items||[])){
+        if(it.tier!=="pick") continue;
+        it._date=dt;
+        state.itemsById[refOf(it)]=it;
+      }
+    }
+    h+=hotListHtml(dates);
+    for(const dt of dates){
+      const d=window.NEWS_DATA[dt];
+      if(!d) continue;
+      const picks=(d.items||[]).filter(i=>i.tier==="pick"
+        &&(state.cat==="all"||i.category===state.cat)&&!HID[dt+":"+i.id])
+        .slice().sort((a,b)=>String(b.time||"").localeCompare(String(a.time||"")));
+      if(!picks.length) continue;
+      const open=feedDayOpen(dt);
+      h+=`<div class="feed-day clk" onclick="feedToggleDay(${jsArg(dt)})">${open?"▾":"▸"} ${esc(dt)}<span class="n">${picks.length} 条精选</span></div>`;
+      if(open) h+=`<div class="tl">${picks.map(it=>`<div class="tl-item"><span class="tl-time">${tlTime(it.time)}</span>${card(it)}</div>`).join("")}</div>`;
+    }
+    if(feed.days<M.length)
+      h+=`<button class="toggle-more" onclick="feedMore()">加载更早 5 天 ▼</button>`;
+  }
+  app.innerHTML=h;
+  const fs=document.getElementById("feedSearch");
+  if(fs){
+    fs.oninput=()=>{feed.q=fs.value;feed._focus=true;clearTimeout(feed._t);feed._t=setTimeout(renderPicksFeed,300);};
+    if(feed._focus){fs.focus();fs.setSelectionRange(fs.value.length,fs.value.length);feed._focus=false;}
+  }
+  updateNav();
+  applyHighlight();
+}
+
+/* ---------- 全部动态：全量轻档 + 评分过滤 + 分类 ---------- */
+const allFeed={days:7,cat:"all",showAll:false};
+function setAllCat(c){allFeed.cat=c;renderAllFeed();}
+function allToggleShow(){allFeed.showAll=!allFeed.showAll;renderAllFeed();}
+function allMore(){allFeed.days+=7;renderAllFeed();}
+function allRow(r){
+  const sc=(typeof r.score==="number")?`<span class="score ${scoreCls(r.score)}">${r.score}</span>`:"";
+  return `<div class="row">${sc}
+    <span class="tag cat-${esc(r.c)}">${CAT[r.c]||esc(r.c||"?")}</span>
+    <span class="rt"><a href="${esc(safeUrl(r.u))}" target="_blank" rel="noopener">${esc(r.t)}</a></span>
+    <span class="rs">${esc(r.s||"")} · ${fmtTime(r.time)}</span>
+  </div>`;
+}
 async function renderAllFeed(){
   const app=document.getElementById("app");
   app.innerHTML='<div class="empty">加载全量档…</div>';
@@ -1397,24 +1556,32 @@ async function renderAllFeed(){
   await Promise.all(dates.map(dt=>
     (window.NEWS_ALL&&window.NEWS_ALL[dt])?Promise.resolve():loadWkScript("data/all/"+dt+".js")));
   if(state.view!=="all") return;
-  let h=`<div class="sec-title">全部动态 <span style="font-size:12px;color:var(--text3);font-weight:400">(窗口内全部抓取条目 · 未经筛选 · 保留 90 天)</span></div>`;
+  let h=`<div class="sec-title">全部动态 <span style="font-size:12px;color:var(--text3);font-weight:400">(窗口内全部抓取条目 · 评分过线才默认展示 · 保留 90 天)</span></div>`;
+  h+='<div class="tabs">'+["all",...Object.keys(CAT)].map(c=>
+    `<span class="tab ${allFeed.cat===c?"on":""}" onclick="setAllCat('${c}')">${c==="all"?"全部":CAT[c]}</span>`
+  ).join("")
+  +`<span class="tab ${allFeed.showAll?"on":""}" style="margin-left:auto" onclick="allToggleShow()" title="低于阈值或未参与评分（被预筛砍掉）的条目默认隐藏">${allFeed.showAll?"✓ 含低分/未评分":"显示全部（含低分/未评分）"}</span></div>`;
   for(const dt of dates){
     const d=(window.NEWS_ALL||{})[dt];
     if(!d) continue;
-    const rows=d.items||[];
-    h+=`<div class="feed-day">${esc(dt)}<span class="n">${rows.length} 条</span></div>`;
-    h+=`<div class="more-list">`+rows.map(r=>`<div class="row">
-      <span class="tag cat-${esc(r.c)}">${CAT[r.c]||esc(r.c||"?")}</span>
-      <span class="rt"><a href="${esc(safeUrl(r.u))}" target="_blank" rel="noopener">${esc(r.t)}</a></span>
-      <span class="rs">${esc(r.s||"")} · ${fmtTime(r.time)}</span>
-    </div>`).join("")+`</div>`;
+    const all=(d.items||[]).filter(r=>allFeed.cat==="all"||r.c===allFeed.cat);
+    const minScore=+d.min_score||40;
+    const scored=(d.items||[]).some(r=>typeof r.score==="number");
+    let rows=all, hidden=0;
+    if(scored&&!allFeed.showAll){
+      rows=all.filter(r=>typeof r.score==="number"&&r.score>=minScore);
+      hidden=all.length-rows.length;
+    }
+    h+=`<div class="feed-day">${esc(dt)}<span class="n">${rows.length} 条${scored?"":" · 未回填评分，全部显示"}</span></div>`;
+    if(rows.length) h+=`<div class="more-list">${rows.map(allRow).join("")}</div>`;
+    if(hidden>0) h+=`<div class="hidden-bar">已隐藏 ${hidden} 条低分/未评分 · <a onclick="allToggleShow()">显示</a></div>`;
+    if(!rows.length&&!hidden) h+='<div class="empty" style="padding:14px 0">该分类下这天没有条目</div>';
   }
   if(allFeed.days<M.length)
     h+=`<button class="toggle-more" onclick="allMore()">加载更早 ▼</button>`;
   app.innerHTML=h;
   updateNav();
 }
-function allMore(){allFeed.days+=7;renderAllFeed();}
 
 /* ---------- 主 Tab 导航（精选 / 全部动态 / 日报 / 主题） ---------- */
 function updateTabs(){
@@ -1493,8 +1660,45 @@ async function renderTopics(){
   if(archived.length) h+=`<div class="sec-title" style="font-size:14px">🗄 已归档 (${archived.length})</div>`+archived.map(e=>card(e,false)).join("");
   if(!pinned.length&&!running.length&&!archived.length)
     h+='<div class="empty">还没有跨天主题——事件连续出现 2 天以上才会形成主题线</div>';
+  h+=await topicMapHtml();
+  if(state.view!=="topics") return;   // 索引加载期间用户已切走
   app.innerHTML=h;
   updateNav();
+}
+
+// 题材地图：大类（手工分组）→ 小类（管线受控 topic_tags），条数统计自
+// 180 天搜索索引；点小类进入精选页的 tag: 检索流。未分组的新标签兜底进「其他」。
+const TOPIC_GROUPS=[
+  ["模型与产品","模型发布,产品发布,开源,芯片算力"],
+  ["研究与前沿","研究论文,技巧观点,航天,医疗健康"],
+  ["资本与市场","融资并购,财报,市场行情,加密货币,宏观经济,能源"],
+  ["政策与治理","监管政策,诉讼纠纷,安全隐私,人事变动,教育政策"],
+  ["国际与地缘","地缘冲突,外交,选举政治"],
+  ["社会与生活","灾害事故,劳动就业,高校青年,气候环境,汽车出行"]
+].map(([g,tags])=>[g,tags.split(",")]);
+
+async function topicMapHtml(){
+  await ensureIndexP();
+  const counts={};
+  for(const r of (window.NEWS_INDEX||[])){
+    if(r[2]!=="pick") continue;
+    for(const t of (r[5]||"").split("|")) if(t) counts[t]=(counts[t]||0)+1;
+  }
+  if(!Object.keys(counts).length) return "";
+  const grouped=new Set(TOPIC_GROUPS.flatMap(([,tags])=>tags));
+  const others=Object.keys(counts).filter(t=>!grouped.has(t)).sort((a,b)=>counts[b]-counts[a]);
+  const groups=others.length?[...TOPIC_GROUPS,["其他",others]]:TOPIC_GROUPS;
+  let h=`<div class="sec-title">题材地图 <span style="font-size:12px;color:var(--text3);font-weight:400">(近 180 天精选按受控标签聚合 · 点进查看该题材的历史精选流)</span></div>`;
+  for(const [g,tags] of groups){
+    const cards=tags.filter(t=>counts[t]).map(t=>
+      `<div class="topic-card" onclick="openTagFeed(${jsArg(t)})">
+        <b>${esc(t)}</b>
+        <span class="tc-go">查看 ${counts[t]} 条精选 →</span>
+      </div>`).join("");
+    if(!cards) continue;
+    h+=`<div class="topic-group">${esc(g)}</div><div class="topic-grid">${cards}</div>`;
+  }
+  return h;
 }
 function topicTrack(eventId){
   // 与 trkUntrack 同一 API 形状；标题从登记册按 event_id 查，不经 onclick 传自由文本

@@ -1856,11 +1856,12 @@ def build_vocab(llm, picked, items, date_str, cfg):
     log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
 
 
-def write_all_archive(items, sources, date_str, keep_days=90):
+def write_all_archive(items, sources, date_str, keep_days=90, min_score=40):
     """全部动态轻档：窗口内全量抓取条目的轻字段落盘 data/all/<date>.js。
     不经 LLM、零 token；供前端「全部动态」板块按天懒加载，也是筛选器的
     可核查底账。滚动保留 keep_days 天防仓库膨胀（git 历史仍会增长，接受）。
-    类别取来源配置的 category（条目级类别在此阶段尚不存在）。"""
+    类别取来源配置的 category（条目级类别在此阶段尚不存在）；min_score 是
+    前端默认展示阈值，评分由 backfill_all_scores 在评分阶段后回填。"""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     adir = data_dir / "all"
     adir.mkdir(parents=True, exist_ok=True)
@@ -1873,7 +1874,7 @@ def write_all_archive(items, sources, date_str, keep_days=90):
         "time": it["time"],
     } for it in items]
     rows.sort(key=lambda r: r["time"], reverse=True)
-    payload = {"date": date_str, "items": rows}
+    payload = {"date": date_str, "min_score": min_score, "items": rows}
     js = ("window.NEWS_ALL = window.NEWS_ALL || {};\n"
           f"window.NEWS_ALL[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
@@ -1890,6 +1891,40 @@ def write_all_archive(items, sources, date_str, keep_days=90):
         f"window.ALL_MANIFEST = {json.dumps(dates, ensure_ascii=False)};\n",
         encoding="utf-8")
     log(f"已写入 data/all/{date_str}.js（全量 {len(rows)} 条 · 保留 {keep_days} 天）")
+
+
+def backfill_all_scores(events, items, date_str):
+    """评分回填全量档：按 URL（去 query，与 fetch_all 去重同口径）把事件分
+    写到当日 all 档匹配条目的 score 字段。被预筛砍掉的条目不参与评分、无分，
+    前端默认隐藏、可切换显示。独立故障域，档缺失/格式异常只记日志。"""
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    f = data_dir / "all" / f"{date_str}.js"
+    if not f.exists():
+        return
+    m = re.search(r"window\.NEWS_ALL\[[^\]]+\] = (\{.*\});",
+                  f.read_text(encoding="utf-8"), re.S)
+    if not m:
+        log("  全量档格式异常，跳过评分回填")
+        return
+    payload = json.loads(m.group(1))
+    url_score = {}
+    for ev in events:
+        sc = ev.get("score")
+        if sc is None:
+            continue
+        for i in ev.get("ids", []):
+            url_score[items[i]["url"].split("?")[0]] = round(sc)
+    n = 0
+    for r in payload.get("items", []):
+        sc = url_score.get((r.get("u") or "").split("?")[0])
+        if sc is not None:
+            r["score"] = sc
+            n += 1
+    js = ("window.NEWS_ALL = window.NEWS_ALL || {};\n"
+          f"window.NEWS_ALL[{json.dumps(date_str)}] = "
+          f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
+    f.write_text(js, encoding="utf-8")
+    log(f"  全量档评分回填：{n}/{len(payload.get('items') or [])} 条带分")
 
 
 def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None, opinion=None):
@@ -2418,7 +2453,8 @@ def main():
 
     # 全量轻档（不经 LLM，独立故障域）：写失败只记日志，不阻断主管线
     try:
-        write_all_archive(items, sources, date_str)
+        write_all_archive(items, sources, date_str,
+                          min_score=int(cfg.get("all_view_min_score", 40)))
     except Exception as e:
         log(f"  全量轻档写入失败（不影响主管线）: {e}")
 
@@ -2468,6 +2504,13 @@ def main():
         log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
 
     picked, secondary = score_and_select(events, items, cfg)
+
+    # 评分回填全量档（独立故障域）：让「全部动态」能按分数过滤
+    try:
+        backfill_all_scores(events, items, date_str)
+    except Exception as e:
+        log(f"  全量档评分回填失败（不影响主管线）: {e}")
+
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
     enrich(llm, picked, items, cfg, profile)
     for ev in secondary:
