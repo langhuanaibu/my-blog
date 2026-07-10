@@ -37,12 +37,12 @@
   },
   {
    "event_id": "evt-20260706-b4191e",
-   "title": "美军对伊朗发动新一轮打击，特朗普称不想谈判",
+   "title": "美伊在哈梅内伊葬礼期间互相攻击，冲突升级",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-09",
+   "last_seen": "2026-07-10",
    "history": [
     {
      "date": "2026-07-06",
@@ -60,6 +60,12 @@
      "date": "2026-07-09",
      "title": "美军对伊朗发动新一轮打击，特朗普称不想谈判",
      "summary": "美军对伊朗军事基础设施和小型船只发动数十次打击，特朗普称不想与德黑兰接触，至少三艘国际船舶被击中，伊朗城市停电。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-10",
+     "title": "美伊在哈梅内伊葬礼期间互相攻击，冲突升级",
+     "summary": "美军在哈梅内伊葬礼期间对伊朗90个目标发动空袭，伊朗反击致14人死亡，双方冲突因霍尔木兹海峡争议加剧。",
      "news_status": "发展中"
     }
    ]
@@ -441,34 +447,46 @@
   },
   {
    "event_id": "evt-20260708-0fcda1",
-   "title": "OpenAI获准全面部署GPT-5.6，AI审批制松动",
+   "title": "OpenAI发布GPT-5.6三款变体模型",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-10",
    "history": [
     {
      "date": "2026-07-08",
      "title": "OpenAI GPT-5.6 Sol周四发布，禁令解除",
      "summary": "OpenAI旗舰模型GPT-5.6 Sol将于周四发布，此前因美国政府禁令推迟，经额外测试后解禁。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-10",
+     "title": "OpenAI发布GPT-5.6三款变体模型",
+     "summary": "OpenAI推出GPT-5.6系列，含Sol、Terra、Luna三款变体，已在GitHub Copilot中可用，获美国政府批准后全面上线。",
+     "news_status": "已确认"
     }
    ]
   },
   {
    "event_id": "evt-20260708-44f08d",
-   "title": "Meta发布Muse Image和Muse Video媒体生成模型",
+   "title": "Meta发布Muse Spark 1.1 API，AI价格战升温",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-08",
+   "last_seen": "2026-07-10",
    "history": [
     {
      "date": "2026-07-08",
      "title": "Meta发布Muse Image和Muse Video媒体生成模型",
      "summary": "Meta Superintelligence Labs发布首个媒体生成模型Muse Image和Muse Video，可精确指令、编辑、利用社交上下文。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-10",
+     "title": "Meta发布Muse Spark 1.1 API，AI价格战升温",
+     "summary": "Meta推出Muse Spark 1.1付费API，定价每百万输出token 4.25美元，低于Grok 4.5和Anthropic，首次向企业收费。",
      "news_status": "已确认"
     }
    ]
@@ -1123,6 +1141,363 @@
      "title": "蓝色起源首次寻求私募融资100亿美元",
      "summary": "蓝色起源计划首次通过私募融资100亿美元，公司估值达1300亿美元。此举旨在为与SpaceX竞争提供资金。",
      "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-b135ec",
+   "title": "OpenAI推出跨应用自主工作AI智能体ChatGPT Work",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "OpenAI推出跨应用自主工作AI智能体ChatGPT Work",
+     "summary": "OpenAI发布ChatGPT Work，由GPT-5.6驱动，可跨应用收集信息、分解任务并持续工作数小时，内置Codex技术。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-b080d4",
+   "title": "AI基础设施投资回报争议：需3万亿美元收入才能回本",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "AI基础设施投资回报争议：需3万亿美元收入才能回本",
+     "summary": "红杉合伙人更新估算：2026年全球AI基础设施投入达1.5万亿美元，行业需产生3万亿美元收入才能回本，目前缺口巨大。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-f96255",
+   "title": "Anthropic揭示Claude内部概念推理空间",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Anthropic揭示Claude内部概念推理空间",
+     "summary": "Anthropic开发新技术，首次清晰揭示大语言模型Claude在回答问题时的内部概念推理过程，提供了对AI黑箱的前所未有的洞察。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-5b2aae",
+   "title": "Meta发布Muse Spark 1.1 AI编码模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Meta发布Muse Spark 1.1 AI编码模型",
+     "summary": "Meta发布Muse Spark 1.1，专注于处理大型代理工作负载、修复bug和代码迁移，进入AI编码工具竞争市场。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-ac86b1",
+   "title": "Bun被Anthropic收购后用Rust重写，月下载超2200万",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Bun被Anthropic收购后用Rust重写，月下载超2200万",
+     "summary": "Bun于2025年12月被Anthropic收购，作者用Claude Fable 5将其核心从Zig重写为Rust，月下载量超2200万次。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-59d52f",
+   "title": "蚂蚁灵波开源具身智能MoE视频基模LingBot-Video",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "蚂蚁灵波开源具身智能MoE视频基模LingBot-Video",
+     "summary": "蚂蚁灵波开源全球首个面向具身智能的MoE视频基模LingBot-Video，总参数30B，推理时仅激活3B，效率提升3倍。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-6555af",
+   "title": "蚂蚁灵波开源实时交互世界模型LingBot-World 2.0",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "蚂蚁灵波开源实时交互世界模型LingBot-World 2.0",
+     "summary": "蚂蚁灵波开源14B参数的实时交互世界模型LingBot-World 2.0，支持720p/60fps实时画面，可多人同时交互。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-53ba3d",
+   "title": "Robbyant开源跨实体机器人VLA模型LingBot-VLA 2.0",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Robbyant开源跨实体机器人VLA模型LingBot-VLA 2.0",
+     "summary": "Robbyant开源6B参数跨实体机器人VLA模型LingBot-VLA 2.0，基于Qwen3-VL，训练数据涵盖20种机器人配置。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-c2ea37",
+   "title": "美国对伊朗发动新空袭，伊朗反击科威特和卡塔尔",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "美国对伊朗发动新空袭，伊朗反击科威特和卡塔尔",
+     "summary": "美国对伊朗发动新空袭，特朗普威胁升级；伊朗反击美国盟友科威特和卡塔尔，并指控美军空袭靠近其核电站。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-c8425b",
+   "title": "NVIDIA发布压缩混合MoE模型，吞吐量翻倍",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "NVIDIA发布压缩混合MoE模型，吞吐量翻倍",
+     "summary": "NVIDIA发布Nemotron-Labs-3-Puzzle-75B-A9B，总参数从120.7B降至75.3B，活跃参数降至9.3B，服务器吞吐量提升2.03倍。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-40417c",
+   "title": "Ollama开发者达890万，完成B轮融资",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Ollama开发者达890万，完成B轮融资",
+     "summary": "Ollama开发者数达890万，拥有6.7万集成，B轮融资由Theory领投，与多家模型实验室及硬件供应商合作。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-e0bfb4",
+   "title": "低配电脑运行744B参数GLM-5.2模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "低配电脑运行744B参数GLM-5.2模型",
+     "summary": "开发者用colibrì v1.0引擎在约25GB RAM的消费级电脑上运行744B参数的GLM-5.2 MoE模型，常驻内存仅9.9GB。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-f08b90",
+   "title": "OpenAI AI系统在AtCoder竞赛中击败所有人类选手",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "OpenAI AI系统在AtCoder竞赛中击败所有人类选手",
+     "summary": "在AtCoder World Tour Finals 2026中，OpenAI AI系统在算法组击败所有人类选手，解决了全部5道题，其中2道难度极高。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-97b864",
+   "title": "OpenAI推出可独立运行数小时的Codex代理工具",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "OpenAI推出可独立运行数小时的Codex代理工具",
+     "summary": "OpenAI推出重新命名的Codex代理工具，可独立运行工作流，持续数小时，旨在自动化复杂任务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-7e570c",
+   "title": "微软发布面向AI智能体的可视化语言Flint",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "微软发布面向AI智能体的可视化语言Flint",
+     "summary": "微软研究院推出Flint，一种可视化中间语言，让AI智能体通过简洁spec自动生成图表，支持46种图表类型和3个后端。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-9ab08d",
+   "title": "Google 推出 LiteRT.js，浏览器中运行 AI 模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "Google 推出 LiteRT.js，浏览器中运行 AI 模型",
+     "summary": "Google 发布 LiteRT.js，专为 JS 开发者设计，基于 WebGPU 和 WebNN 在浏览器中运行 ML 模型，并支持回退到 CPU 方案。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-3273d3",
+   "title": "八人因涉嫌策划袭击特朗普 UFC 活动被控谋杀共谋",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "八人因涉嫌策划袭击特朗普 UFC 活动被控谋杀共谋",
+     "summary": "八名男子因涉嫌策划在特朗普的 UFC 格斗秀上实施狙击和无人机袭击，被控谋杀和恐怖主义共谋罪。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-196a71",
+   "title": "IMF 警告：伊朗战争与通胀致全球经济增长急剧放缓",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "IMF 警告：伊朗战争与通胀致全球经济增长急剧放缓",
+     "summary": "国际货币基金组织警告，受伊朗战争及其引发的通胀影响，今年全球经济增长将大幅放缓，并下调了增长预期。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-9c3a05",
+   "title": "EPA 提议削弱重型卡车污染排放规则",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "EPA 提议削弱重型卡车污染排放规则",
+     "summary": "特朗普政府 EPA 称拜登时期的重卡污染规则“不可行”，提议削弱该规则，此举获卡车行业支持，遭环保组织反对。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-1525ba",
+   "title": "澳门国安法首案起诉，欧锦新面临 25 年徒刑",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "澳门国安法首案起诉，欧锦新面临 25 年徒刑",
+     "summary": "澳门前民主派议员欧锦新被以“颠覆国家政权”罪起诉，成为澳门国安法首案，最高面临 25 年监禁。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260710-c9f0ff",
+   "title": "特斯拉 Optimus Gen 3 人形机器人定型，即将量产",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-10",
+   "last_seen": "2026-07-10",
+   "history": [
+    {
+     "date": "2026-07-10",
+     "title": "特斯拉 Optimus Gen 3 人形机器人定型，即将量产",
+     "summary": "特斯拉 Optimus Gen 3 人形机器人通过马斯克评审，即将量产。供应链要求 9 月产能达 1000 台/周，年底目标 10 万台/年。",
+     "news_status": "发展中"
     }
    ]
   }
