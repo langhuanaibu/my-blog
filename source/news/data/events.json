@@ -37,12 +37,12 @@
   },
   {
    "event_id": "evt-20260706-b4191e",
-   "title": "美伊相互发动打击，伊朗最高领袖葬礼后冲突升级",
+   "title": "哈梅内伊下葬期间美伊互相发动攻击",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-11",
    "history": [
     {
      "date": "2026-07-06",
@@ -66,6 +66,12 @@
      "date": "2026-07-10",
      "title": "美伊相互发动打击，伊朗最高领袖葬礼后冲突升级",
      "summary": "美伊相互发动报复性打击，伊朗南部军事目标遭袭，美国否认发动攻击，但冲突规模为6月以来最大。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-11",
+     "title": "哈梅内伊下葬期间美伊互相发动攻击",
+     "summary": "美国空袭打击90个伊朗目标，伊朗称自周二以来14人死亡，冲突在哈梅内伊下葬之际升级。",
      "news_status": "发展中"
     }
    ]
@@ -447,12 +453,12 @@
   },
   {
    "event_id": "evt-20260708-0fcda1",
-   "title": "OpenAI发布GPT-5.6模型，分三个变体",
+   "title": "OpenAI发布GPT-5.6模型系列",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-11",
    "history": [
     {
      "date": "2026-07-08",
@@ -464,6 +470,12 @@
      "date": "2026-07-10",
      "title": "OpenAI发布GPT-5.6模型，分三个变体",
      "summary": "OpenAI发布GPT-5.6，提供Sol、Terra、Luna三个变体，号称最强模型，已集成至GitHub Copilot。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-11",
+     "title": "OpenAI发布GPT-5.6模型系列",
+     "summary": "OpenAI推出GPT-5.6系列，成为Microsoft Copilot 365首选模型，并展示递归自改进能力。",
      "news_status": "已确认"
     }
    ]
@@ -516,12 +528,12 @@
   },
   {
    "event_id": "evt-20260708-cc3bc8",
-   "title": "霍尔木兹海峡重回冲突状态，能源市场动荡",
+   "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-09",
+   "last_seen": "2026-07-11",
    "history": [
     {
      "date": "2026-07-08",
@@ -533,6 +545,12 @@
      "date": "2026-07-09",
      "title": "霍尔木兹海峡重回冲突状态，能源市场动荡",
      "summary": "霍尔木兹海峡重回全面冲突状态，油价飙升，IMF下调2026年全球经济增长预期至3%，称伊朗战争冲击能源市场。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-11",
+     "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
+     "summary": "美伊对谅解备忘录的解读矛盾，导致霍尔木兹海峡冲突再起，伊朗袭击油轮，航运量降至战前三分之一。",
      "news_status": "发展中"
     }
    ]
@@ -1384,17 +1402,23 @@
   },
   {
    "event_id": "evt-20260710-7f4460",
-   "title": "SK海力士在美募资265亿美元，创外国公司最大上市",
+   "title": "SK海力士在美IPO融资265亿美元创纪录",
    "category": "finance",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-11",
    "history": [
     {
      "date": "2026-07-10",
      "title": "SK海力士在美募资265亿美元，创外国公司最大上市",
      "summary": "SK 海力士通过美国上市募资 265 亿美元，将于周五在纳斯达克开始交易，为外国公司最大规模 IPO。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-11",
+     "title": "SK海力士在美IPO融资265亿美元创纪录",
+     "summary": "SK海力士在纳斯达克上市，融资265亿美元，成为美国史上最大外国IPO，市值超万亿美元。",
      "news_status": "已确认"
     }
    ]
@@ -1497,6 +1521,210 @@
      "date": "2026-07-10",
      "title": "马斯克承诺不会切断Anthropic模型访问",
      "summary": "马斯克赞扬Anthropic的Mythos/Fable模型，并承诺不会切断其访问，尽管存在约400亿美元收入利益冲突。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-3a26b5",
+   "title": "中国首次成功回收轨道级火箭助推器",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "中国首次成功回收轨道级火箭助推器",
+     "summary": "中国航天科技集团长征十号乙火箭实现全球首次运载火箭网系回收，成功着陆。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-112d84",
+   "title": "苹果起诉OpenAI窃取硬件商业机密",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "苹果起诉OpenAI窃取硬件商业机密",
+     "summary": "苹果指控OpenAI通过前员工窃取硬件机密，涉及65亿美元设备项目，包括供应商细节和未发布硬件规格。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-be8da3",
+   "title": "西班牙南部野火致12死23失踪",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "西班牙南部野火致12死23失踪",
+     "summary": "西班牙阿尔梅里亚省野火已致至少12人死亡、23人失踪，4名遇难者疑为英国人。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-4eea36",
+   "title": "比亚迪腾势N8官图发布，搭载第二代刀片电池",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "比亚迪腾势N8官图发布，搭载第二代刀片电池",
+     "summary": "比亚迪腾势N8官图公布，为大五座纯电SUV，搭载第二代刀片电池及闪充技术，宣称5分钟充好。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-d01695",
+   "title": "欧盟警告Meta：Facebook和Instagram的成瘾设计或遭重罚",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "欧盟警告Meta：Facebook和Instagram的成瘾设计或遭重罚",
+     "summary": "欧盟警告Meta，其Facebook和Instagram的无限滚动、自动播放等功能违反《数字服务法》，可能面临巨额罚款。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-621d6e",
+   "title": "马斯克公布SpaceX蓝图：太空AI卫星与火星登陆计划",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "马斯克公布SpaceX蓝图：太空AI卫星与火星登陆计划",
+     "summary": "马斯克在访谈中披露SpaceX计划：两年内部署太空AI数据中心，五年内登陆火星，十年内送万人上月球。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-ef8fa5",
+   "title": "大众汽车因中国竞争拟削减一半车型",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "大众汽车因中国竞争拟削减一半车型",
+     "summary": "受中国电动车企冲击，大众在华销量一季度暴跌20%，计划2030年前裁员10万并关闭欧洲四座工厂。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-09725e",
+   "title": "纽约市将禁止欺骗性订阅续费行为",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "纽约市将禁止欺骗性订阅续费行为",
+     "summary": "纽约市市长宣布将立法禁止欺骗性订阅续费行为，要求企业提供清晰的取消流程。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-f64c62",
+   "title": "法国极右翼领袖巴尔德拉因勒庞等待而退居幕后",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "法国极右翼领袖巴尔德拉因勒庞等待而退居幕后",
+     "summary": "30岁的巴尔德拉本被培养为法国极右翼未来领袖，但因勒庞仍在位而需等待更久。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-db8065",
+   "title": "美伊冲突暂停，加沙军事区生活状况曝光",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "美伊冲突暂停，加沙军事区生活状况曝光",
+     "summary": "美伊冲突在两天交火后暂停，同时加沙以色列军事控制区内生活状况被披露。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-800d99",
+   "title": "英国高等法院驳回160万车主柴油门索赔大部分诉求",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "英国高等法院驳回160万车主柴油门索赔大部分诉求",
+     "summary": "英国高等法院驳回160万车主针对日产、福特等车企的柴油门索赔案大部分诉求，车企表示欢迎。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260711-d6ba8b",
+   "title": "GitHub改进Copilot代码审查，迁移至共享Unix风格工具",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-11",
+   "last_seen": "2026-07-11",
+   "history": [
+    {
+     "date": "2026-07-11",
+     "title": "GitHub改进Copilot代码审查，迁移至共享Unix风格工具",
+     "summary": "GitHub将Copilot代码审查迁移至共享Unix风格工具，降低了审查成本并改进了工作流。",
      "news_status": "已确认"
     }
    ]

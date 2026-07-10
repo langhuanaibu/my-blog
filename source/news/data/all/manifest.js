@@ -1,1 +1,1 @@
-window.ALL_MANIFEST = ["2026-07-10"];
+window.ALL_MANIFEST = ["2026-07-11", "2026-07-10"];
