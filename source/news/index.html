@@ -233,6 +233,8 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 /* 今日论文：复用 .deep 卡片，换左边框色与代码标签以示区分 */
 .deep.paper{border-left-color:#8b5cf6}
 .tag.code{background:rgba(139,92,246,.14);color:#8b5cf6}
+/* 舆论观察：复用 .deep 卡片，暖色左边框区分 */
+.deep.pulse{border-left-color:#f59e0b}
 /* ---------- 周视图 ---------- */
 .wk-day{margin-bottom:16px}
 .wk-date{font-weight:700;font-size:14px;margin-bottom:6px;color:var(--accent2);cursor:pointer}
@@ -738,6 +740,21 @@ function render(){
       ${pp.title&&pp.title!==pp.title_zh?`<div class="kv"><b>原题</b> · ${esc(pp.title||"")}</div>`:""}
       ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(pp.id)})">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
     </div>`;}).join("");
+  }
+
+  // 舆论观察：热榜传播机制解读（0-3 条，热榜词条本身不进精选）
+  const opinion=(d.opinion||[]);
+  if(opinion.length){
+    h+=`<div class="sec-title">舆论观察 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${opinion.length} 个传播现象)</span></div>`;
+    h+=opinion.map(op=>`<div class="deep pulse" data-id="${esc(op.id)}">
+      <div class="deep-top">
+        <span class="tag stype">${esc(op.platform||"")}</span>
+        <a class="deep-t" href="${esc(safeUrl(op.url))}" target="_blank" rel="noopener">${esc(op.title||op.word||"")}</a>
+      </div>
+      ${op.why_hot?`<div class="kv why"><b>为何热</b> · ${esc(op.why_hot)}</div>`:""}
+      ${op.emotion?`<div class="kv"><b>群体情绪</b> · ${esc(op.emotion)}</div>`:""}
+      ${op.mechanism?`<div class="kv"><b>平台机制</b> · ${esc(op.mechanism)}</div>`:""}
+    </div>`).join("");
   }
 
   // 追踪中：钉选且今天没进精选的事件（数据来自管线 payload.tracking）

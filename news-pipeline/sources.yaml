@@ -318,17 +318,40 @@ sources:
     category: society
     enabled: true
 
-  # 二期候选（青年教育/就业源，卡在自建实例缺路由，逐条记录避免重复踩坑）：
-  #  实测自建 RSSHub（Vercel 实例，2026-07-09）：能取到 huxiu/moment、36kr/hot-list、
-  #  v2ex/topics/hot、juejin/category/frontend、guokr/scientific、zhihu/daily 等；但青年
-  #  教育最对口的 cyol(中青报)/jiemian(界面) 及 github/trending 报 NotFoundError——路由
-  #  未在该实例注册（疑 Vercel 函数体积超限丢路由 + --experimental-require-module 加载失败）。
-  #  - 中国青年报(cyol) / 界面(jiemian)：自建 Vercel 实例路由未注册（503 NotFoundError），
-  #    待 RSSHub 改 Docker 部署（全量路由）后重接。
-  #  - 青塔 / 软科 / 募格学术 / 青年志Youthology / BIE别的：均为微信公众号，需自建微信转 RSS
-  #    中继（wewe-rss / wechat2rss）才通——需二次拍板。
-  #  - zhihu/daily：可取，但偏生活/情感/娱乐，与「不关注：娱乐八卦/纯观点」冲突，暂不开。
-  #  - v2ex/juejin：可取但噪音大（生活/水帖多），是否接由「榨信号」阶段再评估。
+  # 澎湃频道页直连适配器（type: thepaper_list，AIHOT 式"网页内嵌数据"，无 RSSHub 依赖）
+  # 澎湃所有 list_* 频道页同构，要加别的频道直接抄这一条换 url/id 即可
+  - id: thepaper-edu
+    name: 澎湃·教育家
+    type: thepaper_list
+    url: https://www.thepaper.cn/list_25487
+    source_type: fact
+    tier: "T1.5"
+    credibility: 7
+    category: society
+    enabled: true
+
+  - id: guokr
+    name: 果壳·科学人
+    type: rss
+    url: "{rsshub}/guokr/scientific"
+    source_type: analysis
+    tier: "T2"
+    credibility: 6
+    category: society
+    enabled: true
+
+  # ---------- 信源扩展终局结论（2026-07-10 盘问定案，避免反复重议） ----------
+  # 路线：AIHOT 式逐源直连适配器（fetch_thepaper_list 等），不修 RSSHub 部署、不上 Docker。
+  # 自建 Vercel RSSHub 实例只服务已通路由（sciencenet/thepaper·featured/guokr）。
+  #  - 微信公众号（青塔/软科/募格/青年志等）：正式关闭，不再评估。wewe-rss 类中继需常驻
+  #    服务+人肉续期；AIHOT 168 源里公众号仅 1 个（作者自己的）——连最有动机的人都不翻这堵墙。
+  #  - 知乎（热榜/日报）：正式关闭。无登录态全线 401/403，Cookie 供养=同款维护负担。
+  #  - 中国青年报(cyol)：判弃记档。无 RSS；zqb.cyol.com 是 JS 壳数字报（rmnew.js 动态加载），
+  #    逆向数据端点超出维护预算。青年教育由 澎湃·教育家+果壳+科学网+热榜舆论侧漏 覆盖。
+  #  - 界面(jiemian)：判弃记档。站点 JS 渲染、无静态频道导航，教育频道无稳定入口。
+  #  - X/推特：不自建。AI 类 X 信号经 AIHOT 精选二手接入（fetch_aihot，其中 ~22% 为 X 条目）。
+  #  - 虎嗅快讯/36氪热榜：可取但与已有 36氪主 feed 高度重复、快讯体裁噪音大，不接。
+  #  - v2ex/juejin：可取但生活帖/水帖多，不接；「榨信号」阶段若缺程序员处境信号再议。
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
@@ -340,6 +363,24 @@ sources:
     credibility: 5
     category: world
     enabled: false
+
+# ============================================================
+# 舆论热榜源（仅供"舆论观察"模块与 co-occurrence 公众热度加权）
+# 热榜词条永不进入主管线聚类/评分——热榜是舆论信号，不是新闻条目。
+# type 对应 daily_news.py 的专用适配器（直连公开接口，无 RSSHub/无浏览器）：
+#   weibo_hot    genvisitor 访客握手 + weibo.com/ajax/side/hotSearch
+#   bilibili_hot api.bilibili.com/x/web-interface/search/square（公开无鉴权）
+# 单平台失败只丢当天该平台信号，不影响其余。参数在 config.yaml 的 opinion 块。
+# ============================================================
+pulse_sources:
+  - id: weibo-hot
+    name: 微博热搜
+    type: weibo_hot
+    enabled: true
+  - id: bilibili-hot
+    name: B站热搜
+    type: bilibili_hot
+    enabled: true
 
 # ============================================================
 # 深度阅读长文源（独立频道，不进新闻管线）

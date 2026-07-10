@@ -137,9 +137,9 @@ GITHUB_BRANCH=main
 
 ### 数据管线
 
-- 主管线是 `news-pipeline/daily_news.py`：抓取 RSS / AI HOT → 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分 → 生成摘要、精选长叙述（`detail`，供中文预览页）、今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、RSS 和搜索索引。
+- 主管线是 `news-pipeline/daily_news.py`：抓取（RSS / AI HOT / 逐源直连适配器）→ 预筛 → LLM 去重聚类、分类、五维打分 → 代码合成最终分（含热榜 co-occurrence 公众热度加权）→ 生成摘要、精选长叙述（`detail`，供中文预览页）、今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、舆论观察、RSS 和搜索索引。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
-- 高校/青年/教育类中文源（科学网、澎湃等）无官方 RSS，走**自建 RSSHub 实例**（部署在 Vercel）转 RSS。`sources.yaml` 里这类源的 `url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE`（实例地址）+ `RSSHUB_KEY`（实例 `ACCESS_KEY`）拼真 URL 并追加 `?key=`——地址与密钥都不落公开仓库（`resolve_rsshub_sources`）。未配置 `RSSHUB_BASE` 时这些源自动跳过、不影响其余源。某源连续为空/失败时，先在浏览器直接访问该路由排查（实例挂 / 路由被目标站反爬）。微信公众号类源（青塔/软科/募格等）需付费或自建微信转 RSS 中继才能接，已登记为二期候选，本轮未接。
+- **信源接入采用"逐源直连适配器"路线**（参考 AIHOT 的做法：RSS 优先、没 RSS 就直连公开接口/网页内嵌数据，不建万能适配层）。三类接法并存：①标准 RSS（`fetch_rss`）；②自建 RSSHub 实例（Vercel）转 RSS——仅用于已验证可通的路由（科学网/澎湃热门/果壳），`url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE` + `RSSHUB_KEY` 拼真 URL（地址密钥不落公开仓库，`resolve_rsshub_sources`；未配置则自动跳过）；③专用适配器——`fetch_aihot`（JSON API）、`fetch_thepaper_list`（澎湃频道页 `__NEXT_DATA__` 内嵌数据，各 `list_*` 频道同构可复用）、`fetch_weibo_hot`（genvisitor 访客握手，无需登录/浏览器）、`fetch_bilibili_hot`（公开接口）。**不再扩 RSSHub 路由、不上 Docker**。已关闭的信源线（原因见 `sources.yaml` 尾部终局结论注释）：微信公众号（需常驻中继+人肉续期）、知乎（无登录态全线 4xx）、中青报/界面（JS 壳站）、X 直连（AI 类经 AIHOT 二手接入）。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在精选阈值之下，只能进"更多资讯"；有事实源或分析源交叉佐证后才解除限制。
 - 抓取健壮性：`fetch_rss`/`fetch_aihot` 统一走 `http_get`（指数退避重试），治 AIHOT 连接重置这类偶发失败——单次请求一挂整源归零。`max_per_source` 默认 18（削减 world/舆论刷屏源的 triage 噪音）；AIHOT 是 AI 深度独木、已精选噪音低，在 `fetch_aihot` 内单独放宽取量、不受该值压制。AI 一手供给以逐篇新闻站（The Decoder 等）为主，不用摘要型 newsletter（每期一条不适配事件聚类）。`ftcn` 从云端 Actions 常被限流失败（本地正常），靠重试救偶发，持续告警则手动停用。
 - 精选采用阈值制，不硬凑固定条数；同时保留类目保底、上限、同源封顶和受控主题标签。主题标签只允许来自 `config.yaml` 的 `topic_tags`，词表外标签会被丢弃。
@@ -183,6 +183,7 @@ GITHUB_BRANCH=main
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
 - 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`。深读失败只丢当天深读推荐，不影响新闻日报产出。
 - 今日论文频道同样独立于新闻主管线：抓 **Hugging Face Daily Papers**（社区精选 + 点赞，公开接口无需 key），LLM 按 `interest_profile.md` 的学习坐标（前端/全栈/AI 应用/自动化）从当天几十篇里挑 3-4 篇，产出中文标题、"该读什么/该补什么概念"，带点赞数与"是否有开源代码"标记。写进 daily js 的 `papers` 字段，前端日视图「今日论文」板块渲染（紫色左边框区别于深读）。论文不是新闻——不进精选评分、不占五类名额。参数在 `config.yaml` 的 `papers` 段（`enabled`/`lookback_days`/`max_candidates`/`pick_threshold`/`pick_max`/`seen_keep_days`），失败只记日志、不阻断每日产出。
+- 舆论观察：微博/B站热榜（`sources.yaml` 的 `pulse_sources`，直连公开接口）只作两个用途，热榜词条本身永不成为新闻条目——①`opinion_pulse` 用 LLM 挑 2-3 个值得说的传播现象，讲"为何热/群体情绪/平台机制"（滤纯明星八卦），写 daily js 的 `opinion` 字段，前端「舆论观察」板块渲染（琥珀色左边框）；②co-occurrence 暗排序：热榜词条与真新闻事件文本重合（4 字连片或二元组覆盖 ≥0.5）时，该事件最终分乘 `opinion.cooccur_bonus`（默认 1.08）。参数在 `config.yaml` 的 `opinion` 段；热榜抓取或 LLM 失败只丢当天舆论板块，不阻断日报。
 - 周视图顶部展示「上周综述」（若有）：**趋势连线 + 待验证回收**——把一周事件连成 3-5 条演进主线（带 新增/推进/反转/停滞），并链式回收上周综述提出的关注点（兑现/未兑现/反转），帮读者长期积累判断。下方仍是纯前端聚合的每日 Top3 与跨天事件线。
 - 周综述由主管线在 **`config.yaml` 的 `weekly.run_weekday`（默认周一）** 额外合成：链式读「上周综述 + 本周 daily 文件 + events.json」，写 `data/weekly/<YYYY-Www>.js` + `manifest.js`。**失败只记日志、不阻断每日产出，也不进发布校验**（与深读频道同等地位）；未生成时前端静默降级为原周视图。不新增 workflow，沿用已获批的 `daily-news.yml` 自动 commit（同一 `source/news/data/` 路径）。
 - 英语单词本：管线每天从精选英文原文挑高价值词（通用进阶词 B2-C1 + 时事术语兼收，排除专有名词/基础词）。日报底部「今日单词」区展示候选，候选对所有访客可见；持 token 者可一键收藏进单词本。顶栏「单词本」入口（仅 token 可见）切到复习视图：单词**按新闻日期 `date` 分组**（每组一个"日期 · N 词"标题，日期降序，无 `date` 的归入"未标注日期"垫底），可搜索、按掌握/来源筛选、标已掌握、移除，并可手动加词（存为 `pending` 裸词，管线次日补全音标释义）。收藏词的 `item_id` 形如 `pick-N`，与当日精选卡一致。

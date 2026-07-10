@@ -615,6 +615,150 @@ finally:
         os.environ["DATA_DIR"] = old_data_dir
 
 # ----------------------------------------------------------------
+# 7.5 逐源直连适配器 + 舆论观察（离线，monkeypatch 网络层）
+# ----------------------------------------------------------------
+
+
+class _FakeResp:
+    def __init__(self, text="", data=None):
+        self.text = text
+        self._data = data
+
+    def json(self):
+        return self._data
+
+
+# --- fetch_thepaper_list：__NEXT_DATA__ 解析 / 时间窗 / 脏数据 ---
+_now = dn.datetime.now(dn.timezone.utc)
+_fresh_ms = int((_now - dn.timedelta(hours=1)).timestamp() * 1000)
+_old_ms = int((_now - dn.timedelta(hours=999)).timestamp() * 1000)
+_fake_next = {"props": {"pageProps": {"data": {"list": [
+    {"name": "新文章", "contId": "111", "pubTimeLong": _fresh_ms},
+    {"name": "旧文章", "contId": "222", "pubTimeLong": _old_ms},   # 窗口外 -> 丢
+    {"name": "", "contId": "333", "pubTimeLong": _fresh_ms},       # 空标题 -> 丢
+    {"name": "无时间", "contId": "444"},                            # 无时间戳 -> 丢
+]}}}}
+_fake_html = ('<html><script id="__NEXT_DATA__" type="application/json">'
+              + json.dumps(_fake_next, ensure_ascii=False) + '</script></html>')
+_src_tp = {"id": "tp-edu", "name": "澎湃·教育家", "url": "https://x/list_25487",
+           "source_type": "fact", "tier": "T1.5", "credibility": 7}
+_ws = _now - dn.timedelta(hours=26)
+
+orig_http_get = dn.http_get
+dn.http_get = lambda url, **kw: _FakeResp(text=_fake_html)
+try:
+    got, err = dn.fetch_thepaper_list(_src_tp, _ws, 18)
+    check("thepaper_list 只留窗口内且字段齐", not err and len(got) == 1
+          and got[0]["title"] == "新文章"
+          and got[0]["url"].endswith("newsDetail_forward_111")
+          and got[0]["tier"] == "T1.5")
+    dn.http_get = lambda url, **kw: (_ for _ in ()).throw(IOError("down"))
+    got2, err2 = dn.fetch_thepaper_list(_src_tp, _ws, 18)
+    check("thepaper_list 抓取失败返回 error", got2 == [] and err2 is True)
+finally:
+    dn.http_get = orig_http_get
+
+# --- fetch_bilibili_hot（monkeypatch http_get）---
+dn.http_get = lambda url, **kw: _FakeResp(data={"data": {"trending": {"list": [
+    {"keyword": "话题A"}, {"show_name": "话题B"}, {}]}}})
+try:
+    bl = dn.fetch_bilibili_hot()
+    check("B站热搜解析+过滤空词", [b["word"] for b in bl] == ["话题A", "话题B"]
+          and bl[0]["platform"] == "B站")
+finally:
+    dn.http_get = orig_http_get
+
+
+# --- fetch_weibo_hot（monkeypatch requests.Session：握手 + 过滤广告）---
+class _FakeSession:
+    def __init__(self):
+        self.headers = {}
+
+    def post(self, url, **kw):
+        return _FakeResp(text='{"tid":"T123"}')
+
+    def get(self, url, **kw):
+        if "hotSearch" in url:
+            return _FakeResp(data={"data": {"realtime": [
+                {"word": "热词1", "num": "999"},
+                {"word": "广告词", "is_ad": 1},
+                {"word": "热词2"}]}})
+        return _FakeResp(text="")
+
+
+orig_session = dn.requests.Session
+dn.requests.Session = _FakeSession
+try:
+    wb = dn.fetch_weibo_hot()
+    check("微博热搜握手+过滤广告", [w["word"] for w in wb] == ["热词1", "热词2"]
+          and wb[0]["hot"] == 999)
+finally:
+    dn.requests.Session = orig_session
+
+# --- fetch_pulse_all 分发（开关 / 未知 type 跳过）---
+orig_pf = dn.PULSE_FETCHERS
+dn.PULSE_FETCHERS = {
+    "weibo_hot": lambda: [{"platform": "微博", "word": "w", "hot": 1, "url": "u"}],
+    "bilibili_hot": lambda: []}
+try:
+    pl = dn.fetch_pulse_all({"pulse_sources": [
+        {"id": "a", "name": "微博热搜", "type": "weibo_hot", "enabled": True},
+        {"id": "b", "name": "B站热搜", "type": "bilibili_hot", "enabled": True},
+        {"id": "c", "name": "关掉的", "type": "weibo_hot", "enabled": False},
+        {"id": "d", "name": "未知型", "type": "nope", "enabled": True}]})
+    check("pulse_all 分发+开关+未知type跳过", len(pl) == 1 and pl[0]["word"] == "w")
+    check("pulse_all 无配置返回空", dn.fetch_pulse_all({}) == [])
+finally:
+    dn.PULSE_FETCHERS = orig_pf
+
+# --- apply_pulse_bonus：4字连片命中 / 不命中 / 关闭 ---
+_pb_items = [{"title": "台风巴威登陆浙江沿海"}, {"title": "某公司发布新模型"}]
+_pb_events = [{"ids": [0], "title": "台风巴威影响华东"},
+              {"ids": [1], "title": "新模型发布"}]
+_pb_pulse = [{"platform": "微博", "word": "台风巴威又改路线了", "hot": 1, "url": ""}]
+hits = dn.apply_pulse_bonus(_pb_events, _pb_items, _pb_pulse,
+                            {"opinion": {"cooccur_bonus": 1.08}})
+check("co-occurrence 实体连片命中加乘数", hits == 1
+      and _pb_events[0].get("pulse_mult") == 1.08
+      and "pulse_mult" not in _pb_events[1])
+check("co-occurrence bonus=1.0 关闭",
+      dn.apply_pulse_bonus(_pb_events, _pb_items, _pb_pulse,
+                           {"opinion": {"cooccur_bonus": 1.0}}) == 0)
+check("co-occurrence 空热榜为0",
+      dn.apply_pulse_bonus(_pb_events, _pb_items, [], {"opinion": {}}) == 0)
+
+
+# --- opinion_pulse：挑选 / 重复与越界过滤 / 禁用 / LLM 失败 ---
+class OpStub:
+    def json_call(self, system, user):
+        assert "今日热榜" in user
+        return [{"idx": 0, "title": "话题一", "why_hot": "w", "emotion": "e", "mechanism": "m"},
+                {"idx": 0, "title": "重复"},
+                {"idx": 9, "title": "越界"},
+                {"idx": 1, "title": "话题二", "why_hot": "w2"}]
+
+
+_op_pulse = [{"platform": "微博", "word": "词A", "hot": 1, "url": "https://s"},
+             {"platform": "B站", "word": "词B", "hot": 0, "url": ""}]
+ops = dn.opinion_pulse(OpStub(), {"opinion": {"enabled": True, "pick_max": 3}}, _op_pulse)
+check("舆论观察挑选+去重+越界过滤", len(ops) == 2 and ops[0]["title"] == "话题一"
+      and ops[0]["platform"] == "微博" and ops[1]["word"] == "词B"
+      and ops[0]["id"].startswith("op-"))
+check("舆论观察禁用返回空",
+      dn.opinion_pulse(OpStub(), {"opinion": {"enabled": False}}, _op_pulse) == [])
+check("舆论观察空热榜返回空",
+      dn.opinion_pulse(OpStub(), {"opinion": {"enabled": True}}, []) == [])
+
+
+class OpBoom:
+    def json_call(self, system, user):
+        raise RuntimeError("boom")
+
+
+check("舆论观察 LLM失败返回空",
+      dn.opinion_pulse(OpBoom(), {"opinion": {"enabled": True}}, _op_pulse) == [])
+
+# ----------------------------------------------------------------
 # 8. 英语单词本（normalize / 去重 / 挑词 / 手动词补全）
 # ----------------------------------------------------------------
 

@@ -31,6 +31,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import feedparser
 import requests
@@ -192,6 +193,123 @@ def fetch_aihot(src, window_start, max_items):
     return [x for x in items if x["title"] and x["url"]][:cap], False
 
 
+def fetch_thepaper_list(src, window_start, max_items):
+    """澎湃频道页适配器（AIHOT 式"网页内嵌数据"直连，无 RSSHub 依赖）。
+    澎湃各频道 list_* 页同构：__NEXT_DATA__ -> props.pageProps.data.list，
+    每条带 name / contId / pubTimeLong（epoch 毫秒，绝对时间戳）。"""
+    try:
+        resp = http_get(src["url"])
+        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>',
+                      resp.text, re.S)
+        rows = json.loads(m.group(1))["props"]["pageProps"]["data"]["list"] if m else []
+    except Exception as e:
+        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        return [], True
+    items = []
+    for it in rows:
+        title = (it.get("name") or "").strip()
+        cont_id = str(it.get("contId") or "")
+        ts = it.get("pubTimeLong")
+        if not title or not cont_id or not ts:
+            continue
+        try:
+            pub = datetime.fromtimestamp(int(ts) / 1000, tz=timezone.utc)
+        except (ValueError, OSError, OverflowError):
+            continue
+        if pub < window_start:
+            continue
+        items.append({
+            "title": title,
+            "url": f"https://www.thepaper.cn/newsDetail_forward_{cont_id}",
+            "desc": "",
+            "time": pub.isoformat(),
+            "source": src["name"],
+            "source_id": src["id"],
+            "source_type": src["source_type"],
+            "tier": src.get("tier", "T2"),
+            "credibility": src["credibility"],
+        })
+    items.sort(key=lambda x: x["time"], reverse=True)
+    return items[:max_items], False
+
+
+# ----------------------------------------------------------------
+# 1.1 舆论热榜适配器（直连公开接口，无 RSSHub / 无浏览器）
+#   热榜词条只作两个用途，本身永不成为新闻条目：
+#   ① opinion_pulse 舆论观察模块的 LLM 输入
+#   ② co-occurrence 暗排序：与真新闻事件重合时加公众热度 bonus
+# ----------------------------------------------------------------
+
+def fetch_weibo_hot(limit=40):
+    """微博热搜：genvisitor 两步握手拿访客 cookie（无需登录/浏览器），再取榜单。
+    失败返回 []（独立故障域，只丢当天微博信号）。"""
+    try:
+        sess = requests.Session()
+        sess.headers.update({"User-Agent": UA})
+        r1 = sess.post("https://passport.weibo.com/visitor/genvisitor",
+                       data={"cb": "gen_callback"}, timeout=15)
+        m = re.search(r'"tid":"([^"]+)"', r1.text)
+        if m:
+            sess.get("https://passport.weibo.com/visitor/visitor",
+                     params={"a": "incarnate", "t": m.group(1), "w": "2",
+                             "c": "095", "cb": "cross_domain"}, timeout=15)
+        r2 = sess.get("https://weibo.com/ajax/side/hotSearch",
+                      headers={"Referer": "https://weibo.com/"}, timeout=15)
+        rows = (r2.json().get("data") or {}).get("realtime") or []
+        out = []
+        for x in rows:
+            w = (x.get("word") or "").strip()
+            if not w or x.get("is_ad"):
+                continue
+            out.append({"platform": "微博", "word": w,
+                        "hot": int(x.get("num") or 0),
+                        "url": "https://s.weibo.com/weibo?q=" + quote(f"#{w}#")})
+        return out[:limit]
+    except Exception as e:
+        log(f"  ✗ 微博热搜: {e}")
+        return []
+
+
+def fetch_bilibili_hot(limit=30):
+    """B站热搜：公开 JSON 接口，无鉴权。失败返回 []（独立故障域）。"""
+    try:
+        resp = http_get("https://api.bilibili.com/x/web-interface/search/square?limit=30")
+        rows = (((resp.json().get("data") or {}).get("trending") or {}).get("list")) or []
+        out = []
+        for x in rows:
+            w = (x.get("keyword") or x.get("show_name") or "").strip()
+            if not w:
+                continue
+            out.append({"platform": "B站", "word": w, "hot": 0,
+                        "url": "https://search.bilibili.com/all?keyword=" + quote(w)})
+        return out[:limit]
+    except Exception as e:
+        log(f"  ✗ B站热搜: {e}")
+        return []
+
+
+PULSE_FETCHERS = {"weibo_hot": fetch_weibo_hot, "bilibili_hot": fetch_bilibili_hot}
+
+
+def fetch_pulse_all(src_cfg):
+    """拉全部启用的舆论热榜源。单平台失败只丢该平台，永不抛异常。"""
+    pulse = []
+    for s in (src_cfg.get("pulse_sources") or []):
+        if not s.get("enabled", True):
+            continue
+        fn = PULSE_FETCHERS.get(s.get("type"))
+        if not fn:
+            continue
+        got = fn()
+        if got:
+            log(f"  ✓ {s.get('name', s['type'])}: {len(got)} 条热榜词")
+        pulse += got
+    return pulse
+
+
+FETCHERS = {"aihot": fetch_aihot, "thepaper_list": fetch_thepaper_list}
+
+
 def fetch_all(sources, cfg):
     """返回 (items, fetch_stats)。fetch_stats 按源记录条数与抓取是否失败，
     供健康度记录使用。"""
@@ -203,7 +321,7 @@ def fetch_all(sources, cfg):
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         futs = {}
         for src in sources:
-            fn = fetch_aihot if src["type"] == "aihot" else fetch_rss
+            fn = FETCHERS.get(src["type"], fetch_rss)
             futs[pool.submit(fn, src, window_start, max_items)] = src
         for fut in concurrent.futures.as_completed(futs):
             src = futs[fut]
@@ -438,7 +556,8 @@ def score_and_select(events, items, cfg):
         w = float(weights.get(ev["category"], 1.0))
         raw = (0.62 * importance + 0.30 * cred + multi_bonus) * 10 \
             * float(tier_mult.get(best_tier, 0.83)) * w \
-            * float(ev.get("interest_mult", 1.0))
+            * float(ev.get("interest_mult", 1.0)) \
+            * float(ev.get("pulse_mult", 1.0))
         ev["score"] = int(max(5, min(99, round(raw))))
         # 舆论源硬约束：事件的所有来源都是舆论源（无事实/分析源交叉）时，
         # 分数封顶在阈值之下——只能进"更多资讯"，不进精选、不参与保底补位
@@ -1321,6 +1440,103 @@ def papers_channel(llm, cfg, date_str, profile_text=""):
 
 
 # ----------------------------------------------------------------
+# 5.2 舆论观察（微博/B站热榜 → 传播机制解读）+ co-occurrence 暗排序
+#   热榜词条永不成为新闻条目：只作 LLM 输入与排序信号。
+# ----------------------------------------------------------------
+
+OPINION_SYSTEM = """你为一位关注"舆论机制"的读者做每日舆论观察。输入是今天微博/B站的热榜词条。
+读者不想看热榜本身，想理解传播现象：一件事为什么热、映射什么群体情绪、什么平台机制在起作用。
+从候选里挑 2-3 个真正值得说的（有公共意义/群体情绪/平台机制可讲的）：
+- 纯明星八卦、综艺、剧集、体育赛果本身一律跳过，除非其传播方式本身反映平台机制
+- 优先：社会公共事件、青年/教育/就业议题、科技产品争议、梗与亚文化破圈现象
+对每个输出：
+{"idx": 编号, "title": "话题的中性转述（≤24字）",
+ "why_hot": "为什么热：事件是什么+传播动力（≤60字）",
+ "emotion": "映射的群体情绪（≤40字）",
+ "mechanism": "平台机制的作用（算法推流/话题运营/社群结构等，≤40字）"}
+拿不准的宁可少挑，一个都不值得说就输出 []。只输出 JSON 数组，不要其他文字。"""
+
+
+def _cjk_norm(s):
+    """匹配用归一化：只留中英数字，去掉标点/空白/emoji。"""
+    return re.sub(r"[^0-9A-Za-z一-鿿]", "", s or "")
+
+
+def _bigrams(s):
+    return {s[i:i + 2] for i in range(len(s) - 1)}
+
+
+def apply_pulse_bonus(events, items, pulse, cfg):
+    """co-occurrence 暗排序：热榜词条与事件文本重合 -> 事件最终分乘公众热度 bonus。
+    命中判据（宁松勿严，bonus 很温和）：热榜词的任意 4 字连片出现在事件文本里
+    （实体名兜底，如"台风巴威"），或热榜词字符二元组被事件文本覆盖率 >= 0.5。
+    每事件最多命中一次。返回命中数。"""
+    bonus = float((cfg.get("opinion") or {}).get("cooccur_bonus", 1.08))
+    if not pulse or bonus <= 1.0:
+        return 0
+    hits = 0
+    for ev in events:
+        text = _cjk_norm(ev.get("title", "") + " " + " ".join(
+            items[i]["title"] for i in ev.get("ids", []) if 0 <= i < len(items)))
+        tb = _bigrams(text)
+        for p in pulse:
+            wn = _cjk_norm(p["word"])
+            if len(wn) < 2:
+                continue
+            wb = _bigrams(wn)
+            if any(wn[i:i + 4] in text for i in range(max(len(wn) - 3, 0))) or \
+               (wb and len(wb & tb) / len(wb) >= 0.5):
+                ev["pulse_mult"] = bonus
+                ev["pulse_word"] = p["word"]
+                hits += 1
+                break
+    return hits
+
+
+def opinion_pulse(llm, cfg, pulse, profile_text=""):
+    """舆论观察编排。独立故障域：任何异常只 log 并返回 []，绝不影响主管线。"""
+    try:
+        ocfg = cfg.get("opinion") or {}
+        if not ocfg.get("enabled", False) or not pulse:
+            return []
+        cand = pulse[:int(ocfg.get("max_candidates", 50))]
+        lines = [f"[{i}] ({p['platform']}) {p['word']}" for i, p in enumerate(cand)]
+        user = ""
+        if profile_has_content(profile_text):
+            user = "【读者兴趣画像】\n" + profile_text + "\n\n"
+        user += "【今日热榜】\n" + "\n".join(lines)
+        result = llm.json_call(OPINION_SYSTEM, user)
+
+        out, used = [], set()
+        pick_max = int(ocfg.get("pick_max", 3))
+        for r in (result if isinstance(result, list) else []):
+            try:
+                i = int(r["idx"])
+            except Exception:
+                continue
+            if not (0 <= i < len(cand)) or i in used or len(out) >= pick_max:
+                continue
+            used.add(i)
+            p = cand[i]
+            out.append({
+                "id": "op-" + hashlib.sha1(
+                    (p["platform"] + p["word"]).encode("utf-8")).hexdigest()[:8],
+                "platform": p["platform"],
+                "word": p["word"],
+                "title": str(r.get("title") or p["word"])[:30],
+                "why_hot": str(r.get("why_hot", ""))[:90],
+                "emotion": str(r.get("emotion", ""))[:60],
+                "mechanism": str(r.get("mechanism", ""))[:60],
+                "url": p.get("url", ""),
+            })
+        log(f"  舆论观察：{len(out)} 条")
+        return out
+    except Exception as e:
+        log(f"  舆论观察失败（不影响主管线）: {e}")
+        return []
+
+
+# ----------------------------------------------------------------
 # 6. 输出
 # ----------------------------------------------------------------
 
@@ -1637,7 +1853,7 @@ def build_vocab(llm, picked, items, date_str, cfg):
     log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None):
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None, opinion=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -1667,6 +1883,8 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
         payload["deep"] = deep
     if papers:
         payload["papers"] = papers
+    if opinion:
+        payload["opinion"] = opinion
     js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
           f"window.NEWS_DATA[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
@@ -2143,11 +2361,20 @@ def main():
         log("没有抓到任何内容，退出。")
         sys.exit(1)
 
+    # 舆论热榜（独立信号层）：dry-run 也拉取——CI 手动 dry-run 即可验证
+    # 热榜接口从 GitHub Actions 出口 IP 是否可达
+    pulse = fetch_pulse_all(src_cfg)
+
     if args.dry_run:
         log("dry-run 完成，各源状态：")
         for sid, st in sorted(fetch_stats.items(), key=lambda x: -x[1]["count"]):
             flag = "✗ 抓取失败" if st["error"] else ("- 窗口内无新文章" if st["count"] == 0 else "✓")
             print(f"    {st['name']}: {st['count']} 条 {flag}")
+        for s in (src_cfg.get("pulse_sources") or []):
+            if s.get("enabled", True):
+                n = sum(1 for p in pulse
+                        if p["platform"] in s.get("name", s.get("type", "")))
+                print(f"    [热榜] {s.get('name', s['type'])}: {n} 条词条")
         return
 
     if "在这里填" in cfg["llm"]["api_key"]:
@@ -2190,6 +2417,11 @@ def main():
     interest_fit(llm, profile, events,
                  span=cfg.get("scoring", {}).get("fit_span", 0.30))
 
+    # co-occurrence 暗排序：热榜与真新闻事件重合 -> 公众热度 bonus（热榜不进条目）
+    n_pulse = apply_pulse_bonus(events, items, pulse, cfg)
+    if n_pulse:
+        log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
+
     picked, secondary = score_and_select(events, items, cfg)
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
     enrich(llm, picked, items, cfg, profile)
@@ -2206,8 +2438,12 @@ def main():
     log("今日论文：HF Daily Papers 筛选 ...")
     papers = papers_channel(llm, cfg, date_str, profile)
 
+    log("舆论观察：热榜传播机制解读 ...")
+    opinion = opinion_pulse(llm, cfg, pulse, profile)
+
     write_output(date_str, brief, picked, secondary, items, cfg,
-                 registry=registry, deep=deep, themes=themes, papers=papers)
+                 registry=registry, deep=deep, themes=themes, papers=papers,
+                 opinion=opinion)
     log("英语单词本：挑词 + 补全手动词 ...")
     build_vocab(llm, picked, items, date_str, cfg)
 

@@ -116,6 +116,7 @@ topic_tags:
   - 灾害事故
   - 劳动就业
   - 高校青年      # 大学生处境/高校治理/考研就业/青年文化（配合高校源与画像）
+  - 教育政策      # 教育部门政策/招考改革/双减类监管（区别于商业向的"监管政策"）
   - 技巧观点      # AI 工具怎么用/工作流实践/方法论（承接 AIHOT 的 tip 分类）
 
 # ---------- 精选长叙述（中文预览页正文） ----------
@@ -157,6 +158,20 @@ papers:
   pick_threshold: 7     # 该读价值分（0-10）过线才推
   pick_max: 4           # 每天最多推几篇
   seen_keep_days: 45    # 已推荐记录（data/papers_seen.json）保留天数
+
+# ---------- 舆论观察（微博/B站热榜 → 传播机制解读） ----------
+# 热榜源在 sources.yaml 的 pulse_sources 块（直连公开接口，无 RSSHub）。
+# 热榜词条只有两个用途，本身永不成为新闻条目：
+#  1) opinion_pulse：LLM 挑 2-3 个值得说的，讲"为何热/群体情绪/平台机制"，
+#     写 daily js 的 opinion 字段（前端"舆论观察"板块）
+#  2) co-occurrence 暗排序：热榜词条与真新闻事件文本重合时，该事件最终分
+#     乘 cooccur_bonus（温和加权，1.0=关闭）
+# 独立故障域：热榜抓取/LLM 失败只丢当天舆论板块，不阻断日报。
+opinion:
+  enabled: true
+  pick_max: 3           # 每天最多解读几条
+  max_candidates: 50    # 送 LLM 的热榜词条上限（控 token）
+  cooccur_bonus: 1.08   # 公众热度乘数
 
 # ---------- RSS 输出 / 搜索索引 ----------
 site_url: https://aoiblog.top   # feed 的 channel link 用
