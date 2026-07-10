@@ -123,6 +123,11 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .topic-card b{color:var(--heading);font-size:14px}
 .tc-go{font-size:12px;color:var(--text3)}
 .topic-card:hover .tc-go{color:var(--accent2)}
+.brief-delta{margin-top:8px;font-size:12.5px;color:var(--text3)}
+.brief-delta b{color:var(--accent2);font-weight:700}
+#backTop{position:fixed;right:22px;bottom:22px;z-index:30;display:none;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:9px 15px;border-radius:999px;cursor:pointer;font-size:13px;box-shadow:var(--shadow)}
+#backTop.show{display:block}
+#backTop:hover{border-color:var(--accent);color:var(--accent2)}
 
 /* ---------- brief ---------- */
 .brief{margin:22px 0 6px;padding:16px 18px;background:var(--card-h);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;box-shadow:var(--shadow)}
@@ -186,10 +191,6 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .kv.ctx{border-left-color:var(--dev)}
 .kv.sig{border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 6px 6px 0;padding:4px 10px}
 .kv.watch{border-left-color:var(--border2)}
-.kv-more{font-size:12.5px;color:var(--text3);cursor:pointer;user-select:none;align-self:flex-start}
-.kv-more:hover{color:var(--accent2)}
-.kv-extra{display:none}
-.kv-extra.open{display:flex;flex-direction:column;gap:9px}
 .toc{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:13px;box-shadow:var(--shadow)}
 .toc-t{font-weight:700;color:var(--heading)}
 .toc a{color:var(--text2);cursor:pointer}
@@ -316,9 +317,6 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .toast.err{border-color:var(--rumor)}
 
 /* ---------- 英语单词本 ---------- */
-.vocab-sec{margin-top:8px}
-.vocab-fold{cursor:pointer;user-select:none}
-.vocab-fold .vf-i{color:var(--text3);font-weight:400;font-size:12px;transition:.15s}
 .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:860px){.vgrid{grid-template-columns:1fr}}
 .vdate-h{margin:22px 0 10px;font-size:14px;font-weight:700;color:var(--heading);display:flex;align-items:center;gap:8px}
@@ -394,9 +392,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
 const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
-               itemsById:{}, view:"day", pendingHighlight:null, vocabOpen:true, detailId:null};
-// 单词本视图的本地状态（book 缓存 + 筛选），仅本人可见
-const vocab = {book:null, q:"", filter:"all", src:"all"};
+               itemsById:{}, view:"day", pendingHighlight:null, detailId:null};
 
 /* ---------- 用户状态：与在线后台共用 token，仅本人可见操作按钮 ---------- */
 const TOKEN = localStorage.getItem("aoiblog_admin_token") || "";
@@ -438,6 +434,25 @@ function pruneLocal(){
     if(d&&d<c60){delete t[k];dirty=true;}
   }
   if(dirty) LS.set("news_tracked",t);
+  // 已读日期标记保留 90 天
+  const c90=cut(90), seen=LS.get("news_seen_days");
+  let sd=false;
+  for(const k of Object.keys(seen)) if(k<c90){delete seen[k];sd=true;}
+  if(sd) LS.set("news_seen_days",seen);
+}
+
+// 已读日期：打开过哪天的日报就打 ✓，下拉里一眼看出漏了哪天
+function markSeen(date){
+  const seen=LS.get("news_seen_days");
+  if(seen[date]) return;
+  seen[date]=1;LS.set("news_seen_days",seen);
+  refreshDateSel();
+}
+function refreshDateSel(){
+  const seen=LS.get("news_seen_days");
+  const sel=document.getElementById("dateSel");
+  if(!sel) return;
+  for(const o of sel.options) o.textContent=(seen[o.value]?"✓ ":"")+o.value;
 }
 
 async function postState(type,payload){
@@ -479,20 +494,10 @@ function fmtTime(iso){
   return (d.getMonth()+1)+"/"+d.getDate()+" "+hm;
 }
 
-// 按需懒加载当日单词候选 data/vocab/<date>.js；缺失记为 null（已尝试）避免重复请求
-function ensureVocab(date,cb){
-  if(!window.VOCAB_DATA) window.VOCAB_DATA={};
-  if(window.VOCAB_DATA[date]!==undefined) return cb();
-  const s=document.createElement("script");
-  s.src="data/vocab/"+date+".js";
-  s.onload=cb;
-  s.onerror=()=>{window.VOCAB_DATA[date]=null;cb();};
-  document.head.appendChild(s);
-}
 function loadDate(date,after){
   state.date=date; state.moreOpen=false; state.tag=null;
   const cb=after||render;
-  const done=()=>ensureVocab(date,cb);
+  const done=()=>{markSeen(date);cb();};
   if(window.NEWS_DATA && window.NEWS_DATA[date]) return done();
   const s=document.createElement("script");
   s.src="data/daily/"+date+".js";
@@ -527,7 +532,9 @@ function card(it){
     ${it.detail?`<a class="readmore" onclick="openDetail(${jsArg(ref)})">读全文 →</a>`:""}
     ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
-    ${extraBlock(it)}
+    ${it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:""}
+    ${it.significance?`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`:""}
+    ${it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""}
     <div class="srcs">${srcLinks(it)}</div>
     ${actionRow(it)}
   </div>`;
@@ -539,23 +546,6 @@ function toggleHist(el){
   if(h) h.classList.toggle("open");
 }
 
-/* ---------- 卡片折叠解读：背景/意义/关注默认收起，按需展开 ---------- */
-function extraBlock(it){
-  const extra=[
-    it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:"",
-    it.significance?`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`:"",
-    it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""
-  ].join("");
-  if(!extra) return "";
-  return `<a class="kv-more" onclick="toggleExtra(this)">展开解读 ▾</a><div class="kv-extra">${extra}</div>`;
-}
-
-function toggleExtra(el){
-  const box=el.nextElementSibling;
-  if(!box) return;
-  const open=box.classList.toggle("open");
-  el.textContent=open?"收起解读 ▴":"展开解读 ▾";
-}
 
 /* ---------- 今日看点：真实阅读时长（按默认可见字段字数，约 400 字/分钟） ---------- */
 function estReadMinutes(d,picks,mores,deep,papers,opinion,trk){
@@ -563,7 +553,7 @@ function estReadMinutes(d,picks,mores,deep,papers,opinion,trk){
   const add=s=>{if(s)n+=String(s).length;};
   add(d.brief);
   for(const t of (Array.isArray(d.themes)?d.themes:[])){add(t.title);add(t.one_liner);}
-  for(const it of picks){add(it.title);add(it.summary);add(it.why);}
+  for(const it of picks){add(it.title);add(it.summary);add(it.why);add(it.context);add(it.significance);add(it.watch);}
   for(const it of mores.slice(0,5)){add(it.title);}
   for(const dp of deep){add(dp.title_zh||dp.title);add(dp.brief);add(dp.why);}
   for(const pp of papers){add(pp.title_zh||pp.title);add(pp.brief);add(pp.why);}
@@ -762,7 +752,14 @@ function render(){
   for(const c of Object.keys(CAT)) counts[c]=items.filter(i=>i.category===c).length;
 
   let h="";
-  if(d.brief) h+=`<div class="brief"><div class="bt">今日导语 · ${esc(d.date)}</div><p>${esc(d.brief)}</p></div>`;
+  if(d.brief){
+    // 较昨日增量：延续=带跨天计数的精选，其余视为今日新事件
+    const allPicks=items.filter(i=>i.tier==="pick");
+    const contN=allPicks.filter(i=>(+i.day_count||0)>=2).length;
+    const newN=allPicks.length-contN;
+    const delta=[newN?`今日新事件 <b>${newN}</b>`:"",contN?`延续事件 <b>${contN}</b>`:""].filter(Boolean).join(" · ");
+    h+=`<div class="brief"><div class="bt">今日导语 · ${esc(d.date)}</div><p>${esc(d.brief)}</p>${delta?`<div class="brief-delta">${delta}</div>`:""}</div>`;
+  }
   // 今日主线：管线把相关条目拼成 2-3 条主线，点成员跳到对应卡（旧数据无 themes 自动跳过）
   const themes=Array.isArray(d.themes)?d.themes:[];
   if(themes.length){
@@ -780,14 +777,11 @@ function render(){
   const st=d.stats||{};
   const deep=d.deep||[],papers=d.papers||[],opinion=d.opinion||[];
   const trk=(d.tracking||[]).filter(t=>state.cat==="all"||t.category===state.cat);
-  const vd=(window.VOCAB_DATA||{})[state.date];
-  const vwords=vd&&Array.isArray(vd.words)?vd.words:[];
   // 今日看点目录卡：版块条数 + 锚点 + 按默认可见字数估算的真实阅读时长
   const mins=estReadMinutes(d,pickPool,mores,deep,papers,opinion,trk);
-  const secs=[["sec-picks","精选",pickPool.length],["sec-deep","深读",deep.length],
-    ["sec-papers","论文",papers.length],["sec-opinion","舆论",opinion.length],
-    ["sec-track","追踪",trk.length],["sec-more","更多",mores.length],
-    ["sec-vocab","单词",vwords.length]].filter(s=>s[2]>0);
+  const secs=[["sec-picks","精选",pickPool.length],["sec-track","追踪",trk.length],
+    ["sec-deep","深读",deep.length],["sec-papers","论文",papers.length],
+    ["sec-opinion","舆论",opinion.length],["sec-more","更多",mores.length]].filter(s=>s[2]>0);
   h+=`<div class="toc"><span class="toc-t">今日看点</span>`+
     secs.map(([id,name,n])=>`<a onclick="scrollToSec('${id}')">${name} <b>${n}</b></a>`).join("")+
     `<span class="toc-meta">约 ${mins} 分钟 · 扫描 ${st.sources_count||"?"} 源 / ${st.raw_count||"?"} 条 · 生成于 ${d.generated_at?fmtTime(d.generated_at):""}</span></div>`;
@@ -812,6 +806,21 @@ function render(){
     if(state.showHidden){
       h+=hiddenPicks.map(i=>`<div class="hidden-row"><span class="rt">${esc(i.title)}</span><a onclick="restoreHidden(${jsArg(itemKey(i.id))})">恢复</a></div>`).join("");
     }
+  }
+
+  // 追踪中：钉选事件是主动关注的，紧跟精选、先于深读（2026-07-10 上移）
+  if(trk.length){
+    h+=`<div class="sec-title" id="sec-track">追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
+    h+=trk.map(t=>`<div class="trk">
+      <div class="trk-top" onclick="toggleTrk(this)">
+        <span class="tag day">📌 第${+t.day_count||1}天</span>
+        <span class="tag cat-${esc(t.category)}">${CAT[t.category]||esc(t.category)}</span>
+        <b>${esc(t.title)}</b>
+        <span class="trk-upd">${t.updated_today?"今日有新进展":"今日无新进展 · 最后 "+esc(t.last_seen)}</span>
+        ${TOKEN?`<span class="act" onclick="event.stopPropagation();trkUntrack(${jsArg(t.event_id)})">取消追踪</span>`:""}
+      </div>
+      <div class="trk-hist">${(t.history||[]).map(hh=>`<div><span class="eh-d">${esc(hh.date)}</span>${esc(hh.summary)}</div>`).join("")}</div>
+    </div>`).join("");
   }
 
   // 深度阅读：管线深读频道推荐（0-3 篇，阈值制）
@@ -866,21 +875,6 @@ function render(){
     </div>`).join("");
   }
 
-  // 追踪中：钉选且今天没进精选的事件（数据来自管线 payload.tracking）
-  if(trk.length){
-    h+=`<div class="sec-title" id="sec-track">追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
-    h+=trk.map(t=>`<div class="trk">
-      <div class="trk-top" onclick="toggleTrk(this)">
-        <span class="tag day">📌 第${+t.day_count||1}天</span>
-        <span class="tag cat-${esc(t.category)}">${CAT[t.category]||esc(t.category)}</span>
-        <b>${esc(t.title)}</b>
-        <span class="trk-upd">${t.updated_today?"今日有新进展":"今日无新进展 · 最后 "+esc(t.last_seen)}</span>
-        ${TOKEN?`<span class="act" onclick="event.stopPropagation();trkUntrack(${jsArg(t.event_id)})">取消追踪</span>`:""}
-      </div>
-      <div class="trk-hist">${(t.history||[]).map(hh=>`<div><span class="eh-d">${esc(hh.date)}</span>${esc(hh.summary)}</div>`).join("")}</div>
-    </div>`).join("");
-  }
-
   if(mores.length){
     h+=`<div class="sec-title" id="sec-more">更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
     if(state.moreOpen){
@@ -891,13 +885,6 @@ function render(){
       if(mores.length>5) h+=`<button class="toggle-more" onclick="toggleMore()">展开全部 ${mores.length} 条 ▼</button>`;
     }
   }
-  // 今日单词：管线从精选英文原文挑的高价值词（候选对所有访客可见，收藏按钮仅本人）
-  if(vwords.length){
-    const open=state.vocabOpen;
-    h+=`<div class="sec-title vocab-sec vocab-fold" id="sec-vocab" onclick="toggleVocabDay()">📖 今日单词 <span class="vf-i">(${vwords.length} 个高价值词 · 点击${open?"收起":"展开"})</span></div>`;
-    if(open) h+=`<div class="vgrid">${vwords.map(w=>vocabDayCard(w)).join("")}</div>`;
-  }
-
   app.innerHTML=h;
   updateNav();
   if(state.pendingHighlight){
@@ -923,7 +910,6 @@ function jumpToItem(id){
   render();
 }
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
-function toggleVocabDay(){state.vocabOpen=!state.vocabOpen;render();}
 
 /* ---------- 中文预览页（pick 详情，页内路由 ?date=&item=） ---------- */
 // 从当前已渲染的卡片进入：数据已加载，直接渲染 + pushState 让 URL 可分享/可回退
@@ -948,7 +934,6 @@ function backToDay(){
 function renderDetail(date,id){
   state.view="detail"; state.date=date; state.detailId=id;
   document.getElementById("viewBtn").textContent="🗓 周视图";
-  updateVocabBtn();
   const app=document.getElementById("app");
   const d=window.NEWS_DATA&&window.NEWS_DATA[date];
   const it=d&&(d.items||[]).find(x=>x.id===id);
@@ -959,8 +944,6 @@ function renderDetail(date,id){
   const dayN=+it.day_count||0;
   const hist=(it.history||[]).map(h=>
     `<div><span class="eh-d">${esc(h.date)}</span>${esc(h.summary)}</div>`).join("");
-  const vd=(window.VOCAB_DATA||{})[date];
-  const relWords=vd&&Array.isArray(vd.words)?vd.words.filter(w=>w.item_id===id):[];
   // 正文：优先 detail 长叙述（按空行分段）；历史条目无 detail 时降级为短字段
   const body=it.detail
     ? esc(it.detail).split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join("")
@@ -987,10 +970,6 @@ function renderDetail(date,id){
   if(it.watch) kv.push(`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`);
   if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
   h+=`<div class="detail-sec-t">来源</div><div class="srcs">${srcLinks(it)}</div>`;
-  if(relWords.length){
-    h+=`<div class="detail-sec-t">📖 本条相关单词 (${relWords.length})</div>`;
-    h+=`<div class="vgrid">${relWords.map(vocabDayCard).join("")}</div>`;
-  }
   h+="</div>";
   app.innerHTML=h;
   updateNav();
@@ -1009,179 +988,8 @@ function routeFromUrl(){
   else gotoDay(dt);
 }
 
-/* ---------- 英语单词本 ---------- */
-async function getVocab(){
-  const r=await fetch("/api/vocab",{headers:{Authorization:"Bearer "+TOKEN}});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
-  return j.data;
-}
-async function vocabOp(op,payload){
-  const r=await fetch("/api/vocab",{method:"POST",
-    headers:{"Content-Type":"application/json",Authorization:"Bearer "+TOKEN},
-    body:JSON.stringify({op,payload})});
-  const j=await r.json().catch(()=>({}));
-  if(!r.ok||!j.success) throw new Error(j.error||("HTTP "+r.status));
-  return j.data;
-}
-
-// 今日单词候选卡（日报语境区）。收藏状态本地乐观缓存，键为词元
-function vocabDayCard(w){
-  const lm=w.lemma||String(w.word||"").toLowerCase().replace(/[^a-z]/g,"");
-  const got=LS.get("vocab_collected")[lm];
-  const btn=TOKEN?`<div class="vacts"><span class="act ${got?"done":""}" onclick="vocabCollect(this,${jsArg(lm)})">${got?"✓ 已收藏":"➕ 收藏到单词本"}</span></div>`:"";
-  return `<div class="vcard" data-lm="${esc(lm)}">
-    <div class="vhead"><span class="vword">${esc(w.word)}</span>
-      ${w.phonetic?`<span class="vph">${esc(w.phonetic)}</span>`:""}
-      ${w.pos?`<span class="vpos">${esc(w.pos)}</span>`:""}</div>
-    ${w.sense_zh?`<div class="vsense">${esc(w.sense_zh)}</div>`:""}
-    ${w.example_en?`<div class="vex">${esc(w.example_en)}</div>`:""}
-    ${w.item_title?`<div class="vmeta"><span>📰 ${esc(w.item_title)}</span></div>`:""}
-    ${btn}</div>`;
-}
-function vocabCollect(el,lm){
-  const vd=(window.VOCAB_DATA||{})[state.date]||{};
-  const w=(vd.words||[]).find(x=>(x.lemma||String(x.word||"").toLowerCase().replace(/[^a-z]/g,""))===lm);
-  if(!w) return;
-  const col=LS.get("vocab_collected");
-  if(col[lm]){toast("已在单词本里");return;}
-  col[lm]=1;LS.set("vocab_collected",col);
-  el.classList.add("done");el.textContent="✓ 已收藏";
-  vocabOp("collect",{word:w.word,lemma:w.lemma,phonetic:w.phonetic,pos:w.pos,
-    sense_zh:w.sense_zh,example_en:w.example_en,item_id:w.item_id,
-    item_title:w.item_title,date:state.date})
-    .then(()=>toast("已收藏到单词本"))
-    .catch(e=>{col[lm]=undefined;delete col[lm];LS.set("vocab_collected",col);
-      el.classList.remove("done");el.textContent="➕ 收藏到单词本";
-      toast("收藏失败："+e.message,true);});
-}
-
-function updateVocabBtn(){
-  const b=document.getElementById("vocabBtn");
-  if(b) b.textContent=state.view==="vocab"?"📅 日视图":"📖 单词本";
-}
-function toggleVocab(){
-  if(state.view==="vocab"){state.view="day";updateVocabBtn();updateTabs();loadDate(state.date||(window.NEWS_MANIFEST||[])[0]);return;}
-  state.view="vocab";
-  document.getElementById("viewBtn").textContent="🗓 周视图";
-  updateVocabBtn();
-  updateTabs();
-  renderVocab();
-}
-async function renderVocab(refetch){
-  const app=document.getElementById("app");
-  updateNav();
-  if(refetch!==false&&!vocab.book){
-    app.innerHTML='<div class="empty">加载单词本…</div>';
-    try{vocab.book=await getVocab();}
-    catch(e){app.innerHTML='<div class="empty">加载失败：'+esc(e.message)+"</div>";return;}
-  }
-  if(state.view!=="vocab") return;   // 加载期间用户已切走
-  const book=vocab.book||{words:[],pending:[]};
-  const words=(book.words||[]).slice().reverse();
-  const pend=book.pending||[];
-  const q=vocab.q.trim().toLowerCase();
-  const filtered=words.filter(w=>{
-    if(vocab.filter==="mastered"&&!w.mastered) return false;
-    if(vocab.filter==="learning"&&w.mastered) return false;
-    if(vocab.src!=="all"&&(w.source||"auto")!==vocab.src) return false;
-    if(q){const hay=((w.word||"")+" "+(w.sense_zh||"")+" "+(w.example_en||"")).toLowerCase();
-      if(!hay.includes(q)) return false;}
-    return true;
-  });
-  const total=words.length, mastered=words.filter(w=>w.mastered).length;
-  const chip=(k,v,label)=>`<span class="tab sub ${vocab[k]===v?"on":""}" onclick="vocabSetFilter('${k}','${v}')">${label}</span>`;
-  let h=`<div class="sec-title">📖 我的单词本 <span style="font-size:12px;color:var(--text3);font-weight:400">(共 ${total} 词 · 已掌握 ${mastered})</span></div>`;
-  h+=`<div class="vbar">
-    <input class="vsearch" id="vSearch" placeholder="🔍 搜索单词/释义" value="${esc(vocab.q)}" autocomplete="off">
-    <div class="tabs sub" style="margin:0">
-      ${chip("filter","all","全部")}${chip("filter","learning","未掌握")}${chip("filter","mastered","已掌握")}
-    </div>
-    <div class="tabs sub" style="margin:0">
-      ${chip("src","all","不限来源")}${chip("src","auto","自动挑")}${chip("src","manual","手动加")}
-    </div>
-    <div class="vadd">
-      <input id="vAddInput" placeholder="手动加词：输入英文单词，明日补全音标释义" autocomplete="off">
-      <button onclick="vocabAdd()">加入</button>
-    </div>
-  </div>`;
-  if(pend.length){
-    h+=`<div class="vpending"><b>补全中 ${pend.length} 个</b> · 手动加的词会在管线次日运行时补齐音标释义：`
-      +pend.map(p=>esc(p.word)).join("、")+"</div>";
-  }
-  if(!filtered.length){
-    h+='<div class="empty">'+(total?"没有匹配的单词":"单词本还是空的——去日报的「今日单词」区收藏，或在上面手动加词")+"</div>";
-  }else{
-    // 按新闻日期 date 分组，日期降序；无 date 的归入"未标注日期"垫底。组内保持现有顺序（新收藏在前）
-    const NOD="__nodate__", groups={}, order=[];
-    for(const w of filtered){
-      const k=w.date||NOD;
-      if(!groups[k]){groups[k]=[];order.push(k);}
-      groups[k].push(w);
-    }
-    const keys=order.slice().sort((a,b)=>a===NOD?1:b===NOD?-1:(a<b?1:a>b?-1:0));
-    h+=keys.map(k=>{
-      const arr=groups[k];
-      const label=k===NOD?"未标注日期":esc(k);
-      return `<div class="vdate-h">${label}<span class="vdate-n">${arr.length} 词</span></div>`
-        +`<div class="vgrid">${arr.map(vocabBookCard).join("")}</div>`;
-    }).join("");
-  }
-  app.innerHTML=h;
-  const si=document.getElementById("vSearch");
-  if(si){si.oninput=()=>{vocab.q=si.value;renderVocab(false);};
-    // 保持焦点与光标（重渲染后）
-    si.focus();si.setSelectionRange(si.value.length,si.value.length);}
-  const ai=document.getElementById("vAddInput");
-  if(ai) ai.onkeydown=e=>{if(e.key==="Enter") vocabAdd();};
-}
-function vocabBookCard(w){
-  const lm=w.lemma||String(w.word||"").toLowerCase().replace(/[^a-z]/g,"");
-  return `<div class="vcard ${w.mastered?"mastered":""}" data-lm="${esc(lm)}">
-    <div class="vhead"><span class="vword">${esc(w.word)}</span>
-      ${w.phonetic?`<span class="vph">${esc(w.phonetic)}</span>`:""}
-      ${w.pos?`<span class="vpos">${esc(w.pos)}</span>`:""}</div>
-    ${w.sense_zh?`<div class="vsense">${esc(w.sense_zh)}</div>`:""}
-    ${w.example_en?`<div class="vex">${esc(w.example_en)}</div>`:""}
-    <div class="vmeta">
-      <span class="vsrc ${w.source==="manual"?"manual":""}">${w.source==="manual"?"手动":"自动"}</span>
-      ${w.date?`<span>${esc(w.date)}</span>`:""}
-      ${w.item_title?`<span>📰 ${esc(w.item_title)}</span>`:""}
-    </div>
-    <div class="vacts">
-      <span class="act ${w.mastered?"done":""}" onclick="vocabMaster(${jsArg(lm)},${w.mastered?"false":"true"})">${w.mastered?"✓ 已掌握":"◎ 标为已掌握"}</span>
-      <span class="act" onclick="vocabRemove(${jsArg(lm)})">✕ 移除</span>
-    </div></div>`;
-}
-function vocabSetFilter(k,v){vocab[k]=v;renderVocab(false);}
-function vocabAdd(){
-  const ai=document.getElementById("vAddInput");
-  const word=(ai.value||"").trim();
-  if(!word){toast("请输入单词",true);return;}
-  if(!/[a-zA-Z]/.test(word)){toast("请输入英文单词",true);return;}
-  ai.value="";
-  vocabOp("add",{word})
-    .then(d=>{if(d.changed){vocab.book=null;toast("已加入，明日补全音标释义");renderVocab();}
-      else toast("这个词已经在单词本里了");})
-    .catch(e=>toast("加入失败："+e.message,true));
-}
-function vocabMaster(lm,want){
-  vocabOp(want?"master":"unmaster",{word:lm})
-    .then(()=>{const w=(vocab.book.words||[]).find(x=>(x.lemma||"")===lm||String(x.word||"").toLowerCase().replace(/[^a-z]/g,"")===lm);
-      if(w) w.mastered=want;renderVocab(false);
-      toast(want?"已标为掌握":"已取消掌握");})
-    .catch(e=>toast("操作失败："+e.message,true));
-}
-function vocabRemove(lm){
-  vocabOp("remove",{word:lm})
-    .then(()=>{if(vocab.book){vocab.book.words=(vocab.book.words||[]).filter(x=>(x.lemma||String(x.word||"").toLowerCase().replace(/[^a-z]/g,""))!==lm);
-      vocab.book.pending=(vocab.book.pending||[]).filter(p=>(p.lemma||String(p.word||"").toLowerCase().replace(/[^a-z]/g,""))!==lm);}
-      // 同步清掉本地收藏标记，便于重新收藏
-      const col=LS.get("vocab_collected");if(col[lm]){delete col[lm];LS.set("vocab_collected",col);}
-      renderVocab(false);toast("已移除");})
-    .catch(e=>toast("移除失败："+e.message,true));
-}
-
+/* ---------- 英语单词本：已停用（2026-07-10 用户决定）。api/vocab.js 与
+   data/vocab/ 历史数据保留，管线 vocab.enabled=false，恢复时从 git 历史找回前端。 ---------- */
 /* ---------- 稍后读抽屉 ---------- */
 function openRl(){
   const dr=document.getElementById("rlDrawer");
@@ -1255,7 +1063,7 @@ function gotoItem(date,id){
   document.getElementById("searchInput").value="";
   state.view="day";
   document.getElementById("viewBtn").textContent="🗓 周视图";
-  updateVocabBtn();updateTabs();
+  updateTabs();
   state.pendingHighlight=id;
   state.moreOpen=true;   // 目标可能在"更多资讯"折叠部分
   const sel=document.getElementById("dateSel");
@@ -1308,7 +1116,6 @@ function renderWeekly(syn){
 function toggleView(){
   state.view=state.view==="week"?"day":"week";
   document.getElementById("viewBtn").textContent=state.view==="week"?"📅 日视图":"🗓 周视图";
-  updateVocabBtn();   // 从单词本视图切过来时把按钮标签复位
   updateTabs();
   if(state.view==="week") renderWeek(); else render();
 }
@@ -1364,7 +1171,7 @@ async function renderWeek(){
 function gotoDay(dt){
   state.view="day";
   document.getElementById("viewBtn").textContent="🗓 周视图";
-  updateVocabBtn();updateTabs();
+  updateTabs();
   // 从主题视图跳出时清掉 ?view=topics，避免刷新/分享回到主题而非所看的那天
   if(new URLSearchParams(location.search).get("view")==="topics")
     history.replaceState({},"","?date="+encodeURIComponent(dt));
@@ -1586,7 +1393,7 @@ async function renderAllFeed(){
 /* ---------- 主 Tab 导航（精选 / 全部动态 / 日报 / 主题） ---------- */
 function updateTabs(){
   const map={picks:"picks",all:"all",topics:"topics"};
-  const active=map[state.view]||"day";   // day/week/detail/vocab 都归日报 Tab
+  const active=map[state.view]||"day";   // day/week/detail 都归日报 Tab
   document.querySelectorAll(".mtab").forEach(t=>t.classList.toggle("on",t.dataset.v===active));
   const dc=document.getElementById("dayCtrls");
   if(dc) dc.style.display=active==="day"?"flex":"none";
@@ -1606,7 +1413,7 @@ function switchTab(v){
     renderAllFeed();return;
   }
   // 日报：已在日报族（日/周/详情/单词本）则不动
-  if(!["day","week","detail","vocab"].includes(state.view))
+  if(!["day","week","detail"].includes(state.view))
     gotoDay(state.date||(window.NEWS_MANIFEST||[])[0]);
 }
 
@@ -1615,7 +1422,6 @@ function enterTopics(push){
   state.view="topics";
   if(push) history.pushState({v:"topics"},"","?view=topics");
   document.getElementById("viewBtn").textContent="🗓 周视图";
-  updateVocabBtn();
   updateTabs();
   renderTopics();
 }
@@ -1726,11 +1532,6 @@ function topicTrack(eventId){
     btn.onclick=openRl;
     const nav=document.querySelector(".datenav");
     nav.insertBefore(btn,nav.firstChild);
-    const vbtn=document.createElement("button");
-    vbtn.id="vocabBtn";
-    vbtn.textContent="📖 单词本";
-    vbtn.onclick=toggleVocab;
-    nav.insertBefore(vbtn,nav.firstChild);
   }
   const si=document.getElementById("searchInput");
   si.addEventListener("focus",()=>ensureIndex(doSearch));
@@ -1743,7 +1544,14 @@ function topicTrack(eventId){
   const sel=document.getElementById("dateSel");
   if(!M.length){document.getElementById("app").innerHTML='<div class="empty">还没有任何日报数据。<br><br>先运行 <code style="color:var(--accent2)">python daily_news.py</code> 生成今天的数据。</div>';return;}
   sel.innerHTML=M.map(d=>`<option value="${d}">${d}</option>`).join("");
+  refreshDateSel();
   sel.onchange=()=>loadDate(sel.value);
+  // 返回顶部：滚过一屏后右下角浮现
+  const bt=document.createElement("button");
+  bt.id="backTop";bt.textContent="↑ 顶部";bt.title="返回顶部";
+  bt.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+  document.body.appendChild(bt);
+  window.addEventListener("scroll",()=>bt.classList.toggle("show",window.scrollY>600),{passive:true});
   document.getElementById("prevBtn").onclick=()=>{const i=M.indexOf(state.date);if(i<M.length-1){sel.value=M[i+1];loadDate(M[i+1]);}};
   document.getElementById("nextBtn").onclick=()=>{const i=M.indexOf(state.date);if(i>0){sel.value=M[i-1];loadDate(M[i-1]);}};
   window.addEventListener("popstate",routeFromUrl);
