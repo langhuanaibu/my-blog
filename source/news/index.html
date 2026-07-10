@@ -317,6 +317,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
       <div id="searchRes" class="search-res"></div>
     </div>
     <div class="datenav">
+      <button id="topicsBtn">🧵 主题</button>
       <button id="viewBtn">🗓 周视图</button>
       <button id="prevBtn">◀ 前一天</button>
       <select id="dateSel"></select>
@@ -889,6 +890,7 @@ function renderDetail(date,id){
 // 读当前 URL 决定渲染当日还是详情（供 popstate / 初始化调用）
 function routeFromUrl(){
   const p=new URLSearchParams(location.search);
+  if(p.get("view")==="topics"){enterTopics(false);return;}
   const qd=p.get("date"), qi=p.get("item");
   const M=window.NEWS_MANIFEST||[];
   const dt=(qd&&M.indexOf(qd)>=0)?qd:(state.date||M[0]);
@@ -951,10 +953,11 @@ function updateVocabBtn(){
   if(b) b.textContent=state.view==="vocab"?"📅 日视图":"📖 单词本";
 }
 function toggleVocab(){
-  if(state.view==="vocab"){state.view="day";updateVocabBtn();loadDate(state.date||(window.NEWS_MANIFEST||[])[0]);return;}
+  if(state.view==="vocab"){state.view="day";updateVocabBtn();updateTopicsBtn();loadDate(state.date||(window.NEWS_MANIFEST||[])[0]);return;}
   state.view="vocab";
   document.getElementById("viewBtn").textContent="🗓 周视图";
   updateVocabBtn();
+  updateTopicsBtn();
   renderVocab();
 }
 async function renderVocab(refetch){
@@ -1143,6 +1146,7 @@ function gotoItem(date,id){
   document.getElementById("searchInput").value="";
   state.view="day";
   document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateVocabBtn();updateTopicsBtn();
   state.pendingHighlight=id;
   state.moreOpen=true;   // 目标可能在"更多资讯"折叠部分
   const sel=document.getElementById("dateSel");
@@ -1195,7 +1199,8 @@ function renderWeekly(syn){
 function toggleView(){
   state.view=state.view==="week"?"day":"week";
   document.getElementById("viewBtn").textContent=state.view==="week"?"📅 日视图":"🗓 周视图";
-  updateVocabBtn();   // 从单词本视图切过来时把按钮标签复位
+  updateVocabBtn();   // 从单词本/主题视图切过来时把按钮标签复位
+  updateTopicsBtn();
   if(state.view==="week") renderWeek(); else render();
 }
 async function renderWeek(){
@@ -1250,9 +1255,93 @@ async function renderWeek(){
 function gotoDay(dt){
   state.view="day";
   document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateVocabBtn();updateTopicsBtn();
+  // 从主题视图跳出时清掉 ?view=topics，避免刷新/分享回到主题而非所看的那天
+  if(new URLSearchParams(location.search).get("view")==="topics")
+    history.replaceState({},"","?date="+encodeURIComponent(dt));
   const sel=document.getElementById("dateSel");
   if([...sel.options].some(o=>o.value===dt)) sel.value=dt;
   loadDate(dt);
+}
+
+/* ---------- 主题视图（events.json 跨天事件登记册的一等入口） ---------- */
+function updateTopicsBtn(){
+  const b=document.getElementById("topicsBtn");
+  if(b) b.textContent=state.view==="topics"?"📅 日视图":"🧵 主题";
+}
+function toggleTopics(){
+  if(state.view==="topics"){
+    history.pushState({},"",location.pathname);
+    gotoDay(state.date||(window.NEWS_MANIFEST||[])[0]);
+    return;
+  }
+  enterTopics(true);
+}
+function enterTopics(push){
+  state.view="topics";
+  if(push) history.pushState({v:"topics"},"","?view=topics");
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateVocabBtn();
+  updateTopicsBtn();
+  renderTopics();
+}
+async function renderTopics(){
+  const app=document.getElementById("app");
+  app.innerHTML='<div class="empty">加载主题数据…</div>';
+  let reg=state.topicsReg;
+  if(!reg){
+    try{
+      const r=await fetch("data/events.json");
+      if(r.ok) reg=state.topicsReg=await r.json();
+    }catch(e){}
+  }
+  if(state.view!=="topics") return;   // 加载期间用户已切走
+  const evs=(reg&&reg.events)||[];
+  const days=e=>new Set((e.history||[]).map(x=>x.date)).size;
+  // 分组：📌追踪中(钉选且活跃) / 🔥进行中(活跃且≥2天) / 🗄已归档(≥2天)。
+  // 单日未钉选事件不展示——那只是某天的精选，还没长成"主题"。
+  const pinned=evs.filter(e=>e.pinned&&e.status==="active");
+  const running=evs.filter(e=>!e.pinned&&e.status==="active"&&days(e)>=2);
+  const archived=evs.filter(e=>e.status==="archived"&&days(e)>=2);
+  const byRecent=(a,b)=>(b.last_seen||"").localeCompare(a.last_seen||"")||days(b)-days(a);
+  pinned.sort(byRecent);running.sort(byRecent);archived.sort(byRecent);
+  const card=(e,open)=>{
+    const n=days(e);
+    const hist=(e.history||[]).slice(-14).reverse();
+    return `<div class="trk ${open?"open":""}">
+      <div class="trk-top" onclick="toggleTrk(this)">
+        <span class="tag day">📅 ${n}天</span>
+        <span class="tag cat-${esc(e.category)}">${CAT[e.category]||esc(e.category)}</span>
+        <b>${esc(e.title)}</b>
+        ${e.pinned?'<span class="tag stype">📌 追踪中</span>':""}
+        <span class="trk-upd">${esc(e.first_seen||"")} ~ ${esc(e.last_seen||"")}${e.status==="archived"?" · 已归档":""}</span>
+        ${TOKEN?`<span class="act" onclick="event.stopPropagation();topicTrack(${jsArg(e.event_id)})">${e.pinned?"取消追踪":"📌 追踪"}</span>`:""}
+      </div>
+      <div class="trk-hist">${hist.map(x=>`<div><span class="eh-d" style="cursor:pointer" onclick="gotoDay(${jsArg(x.date)})" title="跳到这一天">${esc(x.date)}</span>${esc(x.summary)}</div>`).join("")}</div>
+    </div>`;
+  };
+  let h=`<div class="sec-title">主题 <span style="font-size:12px;color:var(--text3);font-weight:400">(跨天事件线 · 点卡片展开进展 · 点日期跳到当天)</span></div>`;
+  if(pinned.length) h+=`<div class="sec-title" style="font-size:14px">📌 追踪中 (${pinned.length})</div>`+pinned.map(e=>card(e,true)).join("");
+  if(running.length) h+=`<div class="sec-title" style="font-size:14px">🔥 进行中 (${running.length})</div>`+running.map(e=>card(e,false)).join("");
+  if(archived.length) h+=`<div class="sec-title" style="font-size:14px">🗄 已归档 (${archived.length})</div>`+archived.map(e=>card(e,false)).join("");
+  if(!pinned.length&&!running.length&&!archived.length)
+    h+='<div class="empty">还没有跨天主题——事件连续出现 2 天以上才会形成主题线</div>';
+  app.innerHTML=h;
+  updateNav();
+}
+function topicTrack(eventId){
+  // 与 trkUntrack 同一 API 形状；标题从登记册按 event_id 查，不经 onclick 传自由文本
+  const evs=(state.topicsReg&&state.topicsReg.events)||[];
+  const e=evs.find(x=>x.event_id===eventId);
+  if(!e) return;
+  const next=!e.pinned;
+  e.pinned=next;   // 本地乐观，失败回滚
+  const lt=LS.get("news_tracked");lt[eventId]=next;LS.set("news_tracked",lt);
+  renderTopics();
+  postState("feedback",{date:state.date||"",item_id:eventId,title:e.title||"",
+    category:e.category||"",action:next?"track":"untrack",event_id:eventId})
+    .then(()=>toast(next?"已钉选：即使不进精选也会持续追踪":"已取消追踪，明日生效"))
+    .catch(err=>{e.pinned=!next;renderTopics();toast("同步失败："+err.message,true);});
 }
 
 (function init(){
@@ -1279,6 +1368,7 @@ function gotoDay(dt){
     if(!e.target.closest(".searchbox")) document.getElementById("searchRes").classList.remove("open");
   });
   document.getElementById("viewBtn").onclick=toggleView;
+  document.getElementById("topicsBtn").onclick=toggleTopics;
   const M=window.NEWS_MANIFEST||[];
   const sel=document.getElementById("dateSel");
   if(!M.length){document.getElementById("app").innerHTML='<div class="empty">还没有任何日报数据。<br><br>先运行 <code style="color:var(--accent2)">python daily_news.py</code> 生成今天的数据。</div>';return;}
@@ -1287,10 +1377,13 @@ function gotoDay(dt){
   document.getElementById("prevBtn").onclick=()=>{const i=M.indexOf(state.date);if(i<M.length-1){sel.value=M[i+1];loadDate(M[i+1]);}};
   document.getElementById("nextBtn").onclick=()=>{const i=M.indexOf(state.date);if(i>0){sel.value=M[i-1];loadDate(M[i-1]);}};
   window.addEventListener("popstate",routeFromUrl);
-  // 初始路由：?date=&item= 直达详情/当日；否则默认最新一天
+  // 初始路由：?view=topics 直达主题；?date=&item= 直达详情/当日；否则默认最新一天
   const qp=new URLSearchParams(location.search);
   const qd=qp.get("date"), qi=qp.get("item");
-  if(qd&&M.indexOf(qd)>=0){
+  if(qp.get("view")==="topics"){
+    state.date=M[0];sel.value=M[0];
+    enterTopics(false);
+  }else if(qd&&M.indexOf(qd)>=0){
     sel.value=qd;
     if(qi) showDetail(qd,qi); else loadDate(qd);
   }else{
