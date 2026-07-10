@@ -1017,6 +1017,63 @@ finally:
         else:
             os.environ[k] = v
 
+# ----------------------------------------------------------------
+# 全量轻档（write_all_archive）：落盘 / 轻字段 / 剪枝 / manifest / 幂等
+# ----------------------------------------------------------------
+
+tmp = Path(tempfile.mkdtemp(prefix="allarch_test_"))
+old_data_dir = os.environ.get("DATA_DIR")
+os.environ["DATA_DIR"] = str(tmp)
+try:
+    _aa_sources = [
+        {"id": "openai", "name": "OpenAI", "category": "ai"},
+        {"id": "aihot", "name": "AI HOT 精选", "category": "ai"},
+        {"id": "guardian", "name": "卫报", "category": "world"},
+    ]
+    _aa_items = [
+        {"title": "A", "url": "https://a.com/1", "source": "OpenAI",
+         "source_id": "openai", "time": "2026-07-10T02:00:00+00:00"},
+        {"title": "B", "url": "https://b.com/2", "source": "AI HOT · X：Someone",
+         "source_id": "aihot:X：Someone", "time": "2026-07-10T05:00:00+00:00"},
+        {"title": "C", "url": "https://c.com/3", "source": "卫报",
+         "source_id": "guardian", "time": "2026-07-10T01:00:00+00:00"},
+    ]
+
+    def _peel_all(p):
+        raw = p.read_text(encoding="utf-8")
+        return json.loads(raw[raw.index("= {") + 2: raw.rindex(";")])
+
+    # 先造一个超期旧档 + 一个窗口内旧档，验证剪枝只删超期的
+    adir = tmp / "all"
+    adir.mkdir(parents=True)
+    (adir / "2026-01-01.js").write_text("window.NEWS_ALL={};\n", encoding="utf-8")
+    (adir / "2026-07-01.js").write_text("window.NEWS_ALL={};\n", encoding="utf-8")
+
+    dn.write_all_archive(_aa_items, _aa_sources, "2026-07-10", keep_days=90)
+    f = adir / "2026-07-10.js"
+    check("全量档文件写出", f.exists())
+    pl = _peel_all(f)
+    check("全量档按时间倒序", [r["t"] for r in pl["items"]] == ["B", "A", "C"])
+    check("全量档轻字段齐全",
+          set(pl["items"][0].keys()) == {"t", "u", "s", "c", "time"})
+    check("aihot:前缀映射回源类别", pl["items"][0]["c"] == "ai")
+    check("普通源类别正确", pl["items"][2]["c"] == "world")
+    check("超期旧档被剪枝", not (adir / "2026-01-01.js").exists())
+    check("窗口内旧档保留", (adir / "2026-07-01.js").exists())
+    mf = (adir / "manifest.js").read_text(encoding="utf-8")
+    check("manifest 倒序且不含超期档",
+          json.loads(mf[mf.index("["): mf.rindex(";")]) == ["2026-07-10", "2026-07-01"])
+
+    # 同日重跑幂等覆盖
+    dn.write_all_archive(_aa_items[:1], _aa_sources, "2026-07-10", keep_days=90)
+    check("同日重跑覆盖为新内容", len(_peel_all(f)["items"]) == 1)
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+    if old_data_dir is None:
+        os.environ.pop("DATA_DIR", None)
+    else:
+        os.environ["DATA_DIR"] = old_data_dir
+
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")
 sys.exit(1 if failures else 0)

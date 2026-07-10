@@ -1856,6 +1856,42 @@ def build_vocab(llm, picked, items, date_str, cfg):
     log(f"  英语单词本：新挑 {len(cards)} 词，补全手动词 {n_enriched} 个")
 
 
+def write_all_archive(items, sources, date_str, keep_days=90):
+    """全部动态轻档：窗口内全量抓取条目的轻字段落盘 data/all/<date>.js。
+    不经 LLM、零 token；供前端「全部动态」板块按天懒加载，也是筛选器的
+    可核查底账。滚动保留 keep_days 天防仓库膨胀（git 历史仍会增长，接受）。
+    类别取来源配置的 category（条目级类别在此阶段尚不存在）。"""
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    adir = data_dir / "all"
+    adir.mkdir(parents=True, exist_ok=True)
+    cat_by_src = {s["id"]: s.get("category", "") for s in sources}
+    rows = [{
+        "t": it["title"],
+        "u": it["url"],
+        "s": it["source"],
+        "c": cat_by_src.get(it["source_id"].split(":")[0], ""),
+        "time": it["time"],
+    } for it in items]
+    rows.sort(key=lambda r: r["time"], reverse=True)
+    payload = {"date": date_str, "items": rows}
+    js = ("window.NEWS_ALL = window.NEWS_ALL || {};\n"
+          f"window.NEWS_ALL[{json.dumps(date_str)}] = "
+          f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
+    (adir / f"{date_str}.js").write_text(js, encoding="utf-8")
+    # 滚动剪枝（ISO 日期字符串可直接比大小）+ manifest 倒序
+    cutoff = (datetime.strptime(date_str, "%Y-%m-%d")
+              - timedelta(days=keep_days)).strftime("%Y-%m-%d")
+    for p in adir.glob("*.js"):
+        if p.stem != "manifest" and p.stem < cutoff:
+            p.unlink()
+    dates = sorted([p.stem for p in adir.glob("*.js") if p.stem != "manifest"],
+                   reverse=True)
+    (adir / "manifest.js").write_text(
+        f"window.ALL_MANIFEST = {json.dumps(dates, ensure_ascii=False)};\n",
+        encoding="utf-8")
+    log(f"已写入 data/all/{date_str}.js（全量 {len(rows)} 条 · 保留 {keep_days} 天）")
+
+
 def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None, opinion=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
@@ -2379,6 +2415,12 @@ def main():
                         if p["platform"] in s.get("name", s.get("type", "")))
                 print(f"    [热榜] {s.get('name', s['type'])}: {n} 条词条")
         return
+
+    # 全量轻档（不经 LLM，独立故障域）：写失败只记日志，不阻断主管线
+    try:
+        write_all_archive(items, sources, date_str)
+    except Exception as e:
+        log(f"  全量轻档写入失败（不影响主管线）: {e}")
 
     if "在这里填" in cfg["llm"]["api_key"]:
         log("错误：请先在 config.yaml 里填写 llm.api_key")
