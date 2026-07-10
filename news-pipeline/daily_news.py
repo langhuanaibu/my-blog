@@ -178,13 +178,16 @@ def fetch_aihot(src, window_start, max_items):
             stype, tier = "analysis", "T2"
         else:
             stype, tier = src["source_type"], src.get("tier", "T1.5")
+        # source_id 透传 AIHOT 内部真实来源：多源加分/同源封顶按真实出处计数，
+        # 统一记成 "aihot" 会把独立信源信号压扁（多家报道被当成同一来源）
+        sid = f"{src['id']}:{re.sub(r'\s+', '', inner)}" if inner else src["id"]
         items.append({
             "title": it.get("title") or it.get("title_en") or "",
             "url": it.get("url", ""),
             "desc": (it.get("summary") or "")[:400],
             "time": it.get("publishedAt") or datetime.now(timezone.utc).isoformat(),
             "source": f"AI HOT · {inner}" if inner else src["name"],
-            "source_id": src["id"],
+            "source_id": sid,
             "source_type": stype,
             "tier": tier,
             "credibility": src["credibility"],

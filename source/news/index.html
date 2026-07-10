@@ -93,8 +93,6 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .brief{margin:22px 0 6px;padding:16px 18px;background:var(--card-h);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;box-shadow:var(--shadow)}
 .brief .bt{font-size:12px;color:var(--accent2);font-weight:600;letter-spacing:1px;margin-bottom:6px}
 .brief p{color:var(--text);font-size:14.5px}
-.meta-line{color:var(--text3);font-size:12.5px;margin:10px 2px 0}
-.meta-line b{color:var(--text2);font-weight:600}
 
 /* ---------- 今日主线 ---------- */
 .mainlines{margin:14px 0 6px;padding:14px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)}
@@ -153,6 +151,16 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .kv.ctx{border-left-color:var(--dev)}
 .kv.sig{border-left-color:var(--accent);background:var(--accent-soft);border-radius:0 6px 6px 0;padding:4px 10px}
 .kv.watch{border-left-color:var(--border2)}
+.kv-more{font-size:12.5px;color:var(--text3);cursor:pointer;user-select:none;align-self:flex-start}
+.kv-more:hover{color:var(--accent2)}
+.kv-extra{display:none}
+.kv-extra.open{display:flex;flex-direction:column;gap:9px}
+.toc{display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:13px;box-shadow:var(--shadow)}
+.toc-t{font-weight:700;color:var(--heading)}
+.toc a{color:var(--text2);cursor:pointer}
+.toc a:hover{color:var(--accent2)}
+.toc a b{color:var(--accent2)}
+.toc-meta{margin-left:auto;color:var(--text3);font-size:12px}
 .srcs{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:auto;padding-top:8px;border-top:1px dashed var(--border2);font-size:12px}
 .srcs a{color:var(--text2)}
 .srcs a:hover{color:var(--accent2)}
@@ -465,9 +473,7 @@ function card(it){
     ${it.detail?`<a class="readmore" onclick="openDetail(${jsArg(it.id)})">读全文 →</a>`:""}
     ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
-    ${it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:""}
-    ${it.significance?`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`:""}
-    ${it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""}
+    ${extraBlock(it)}
     <div class="srcs">${srcLinks(it)}</div>
     ${actionRow(it)}
   </div>`;
@@ -477,6 +483,44 @@ function toggleHist(el){
   const card=el.closest(".card");
   const h=card&&card.querySelector(".ev-history");
   if(h) h.classList.toggle("open");
+}
+
+/* ---------- 卡片折叠解读：背景/意义/关注默认收起，按需展开 ---------- */
+function extraBlock(it){
+  const extra=[
+    it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:"",
+    it.significance?`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`:"",
+    it.watch?`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`:""
+  ].join("");
+  if(!extra) return "";
+  return `<a class="kv-more" onclick="toggleExtra(this)">展开解读 ▾</a><div class="kv-extra">${extra}</div>`;
+}
+
+function toggleExtra(el){
+  const box=el.nextElementSibling;
+  if(!box) return;
+  const open=box.classList.toggle("open");
+  el.textContent=open?"收起解读 ▴":"展开解读 ▾";
+}
+
+/* ---------- 今日看点：真实阅读时长（按默认可见字段字数，约 400 字/分钟） ---------- */
+function estReadMinutes(d,picks,mores,deep,papers,opinion,trk){
+  let n=0;
+  const add=s=>{if(s)n+=String(s).length;};
+  add(d.brief);
+  for(const t of (Array.isArray(d.themes)?d.themes:[])){add(t.title);add(t.one_liner);}
+  for(const it of picks){add(it.title);add(it.summary);add(it.why);}
+  for(const it of mores.slice(0,5)){add(it.title);}
+  for(const dp of deep){add(dp.title_zh||dp.title);add(dp.brief);add(dp.why);}
+  for(const pp of papers){add(pp.title_zh||pp.title);add(pp.brief);add(pp.why);}
+  for(const op of opinion){add(op.title||op.word);add(op.why_hot);add(op.emotion);add(op.mechanism);}
+  for(const t of trk){add(t.title);}
+  return Math.max(1,Math.ceil(n/400));
+}
+
+function scrollToSec(id){
+  const el=document.getElementById(id);
+  if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 /* ---------- 反馈操作行（仅持 token 的精选卡片） ---------- */
@@ -679,7 +723,19 @@ function render(){
     }).join("")+`</div>`;
   }
   const st=d.stats||{};
-  h+=`<div class="meta-line">扫描 <b>${st.sources_count||"?"}</b> 个来源 / <b>${st.raw_count||"?"}</b> 条原始资讯 → 精选 <b>${st.pick_count||picks.length}</b> 条 · 预计阅读 <b>15 分钟</b> · 生成于 ${d.generated_at?fmtTime(d.generated_at):""}</div>`;
+  const deep=d.deep||[],papers=d.papers||[],opinion=d.opinion||[];
+  const trk=(d.tracking||[]).filter(t=>state.cat==="all"||t.category===state.cat);
+  const vd=(window.VOCAB_DATA||{})[state.date];
+  const vwords=vd&&Array.isArray(vd.words)?vd.words:[];
+  // 今日看点目录卡：版块条数 + 锚点 + 按默认可见字数估算的真实阅读时长
+  const mins=estReadMinutes(d,pickPool,mores,deep,papers,opinion,trk);
+  const secs=[["sec-picks","精选",pickPool.length],["sec-deep","深读",deep.length],
+    ["sec-papers","论文",papers.length],["sec-opinion","舆论",opinion.length],
+    ["sec-track","追踪",trk.length],["sec-more","更多",mores.length],
+    ["sec-vocab","单词",vwords.length]].filter(s=>s[2]>0);
+  h+=`<div class="toc"><span class="toc-t">今日看点</span>`+
+    secs.map(([id,name,n])=>`<a onclick="scrollToSec('${id}')">${name} <b>${n}</b></a>`).join("")+
+    `<span class="toc-meta">约 ${mins} 分钟 · 扫描 ${st.sources_count||"?"} 源 / ${st.raw_count||"?"} 条 · 生成于 ${d.generated_at?fmtTime(d.generated_at):""}</span></div>`;
 
   h+='<div class="tabs">'+["all",...Object.keys(CAT)].map(c=>
     `<span class="tab ${state.cat===c?"on":""}" onclick="setCat('${c}')">${c==="all"?"全部":CAT[c]}<span class="n">${counts[c]||0}</span></span>`
@@ -693,7 +749,7 @@ function render(){
     ).join("")+"</div>";
   }
 
-  h+=`<div class="sec-title">每日精选</div>`;
+  h+=`<div class="sec-title" id="sec-picks">每日精选</div>`;
   h+=picks.length?`<div class="grid">${picks.map(card).join("")}</div>`:'<div class="empty">该分类下今天没有精选</div>';
 
   if(hiddenPicks.length){
@@ -704,9 +760,8 @@ function render(){
   }
 
   // 深度阅读：管线深读频道推荐（0-3 篇，阈值制）
-  const deep=(d.deep||[]);
   if(deep.length){
-    h+=`<div class="sec-title">深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
+    h+=`<div class="sec-title" id="sec-deep">深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
     h+=deep.map(dp=>{
       const rl=LS.get("news_rl")[itemKey(dp.id)];
       return `<div class="deep" data-id="${esc(dp.id)}">
@@ -724,9 +779,8 @@ function render(){
   }
 
   // 今日论文：HF Daily Papers 社区精选（0-4 篇，阈值制，按学习坐标筛）
-  const papers=(d.papers||[]);
   if(papers.length){
-    h+=`<div class="sec-title">今日论文 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${papers.length} 篇值得读的 arXiv 热门)</span></div>`;
+    h+=`<div class="sec-title" id="sec-papers">今日论文 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${papers.length} 篇值得读的 arXiv 热门)</span></div>`;
     h+=papers.map(pp=>{
       const rl=LS.get("news_rl")[itemKey(pp.id)];
       return `<div class="deep paper" data-id="${esc(pp.id)}">
@@ -744,9 +798,8 @@ function render(){
   }
 
   // 舆论观察：热榜传播机制解读（0-3 条，热榜词条本身不进精选）
-  const opinion=(d.opinion||[]);
   if(opinion.length){
-    h+=`<div class="sec-title">舆论观察 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${opinion.length} 个传播现象)</span></div>`;
+    h+=`<div class="sec-title" id="sec-opinion">舆论观察 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${opinion.length} 个传播现象)</span></div>`;
     h+=opinion.map(op=>`<div class="deep pulse" data-id="${esc(op.id)}">
       <div class="deep-top">
         <span class="tag stype">${esc(op.platform||"")}</span>
@@ -759,9 +812,8 @@ function render(){
   }
 
   // 追踪中：钉选且今天没进精选的事件（数据来自管线 payload.tracking）
-  const trk=(d.tracking||[]).filter(t=>state.cat==="all"||t.category===state.cat);
   if(trk.length){
-    h+=`<div class="sec-title">追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
+    h+=`<div class="sec-title" id="sec-track">追踪中 <span style="font-size:12px;color:var(--text3);font-weight:400">(${trk.length} 个钉选事件，点击展开进展)</span></div>`;
     h+=trk.map(t=>`<div class="trk">
       <div class="trk-top" onclick="toggleTrk(this)">
         <span class="tag day">📌 第${+t.day_count||1}天</span>
@@ -775,7 +827,7 @@ function render(){
   }
 
   if(mores.length){
-    h+=`<div class="sec-title">更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
+    h+=`<div class="sec-title" id="sec-more">更多资讯 <span style="font-size:12px;color:var(--text3);font-weight:400">(${mores.length} 条)</span></div>`;
     if(state.moreOpen){
       h+=`<div class="more-list">${mores.map(row).join("")}</div>`;
       h+=`<button class="toggle-more" onclick="toggleMore()">收起 ▲</button>`;
@@ -785,11 +837,9 @@ function render(){
     }
   }
   // 今日单词：管线从精选英文原文挑的高价值词（候选对所有访客可见，收藏按钮仅本人）
-  const vd=(window.VOCAB_DATA||{})[state.date];
-  const vwords=vd&&Array.isArray(vd.words)?vd.words:[];
   if(vwords.length){
     const open=state.vocabOpen;
-    h+=`<div class="sec-title vocab-sec vocab-fold" onclick="toggleVocabDay()">📖 今日单词 <span class="vf-i">(${vwords.length} 个高价值词 · 点击${open?"收起":"展开"})</span></div>`;
+    h+=`<div class="sec-title vocab-sec vocab-fold" id="sec-vocab" onclick="toggleVocabDay()">📖 今日单词 <span class="vf-i">(${vwords.length} 个高价值词 · 点击${open?"收起":"展开"})</span></div>`;
     if(open) h+=`<div class="vgrid">${vwords.map(w=>vocabDayCard(w)).join("")}</div>`;
   }
 
