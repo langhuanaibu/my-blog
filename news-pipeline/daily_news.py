@@ -361,6 +361,9 @@ class LLM:
         self.model = cfg["model"]
         self.temperature = cfg.get("temperature", 0.3)
         self.max_retries = cfg.get("max_retries", 3)
+        # 供应商专有请求体字段（如 DeepSeek V4 的 thinking 开关），原样透传。
+        # 不配置则完全不发，保持对任意 OpenAI 兼容接口的通用性。
+        self.extra_body = cfg.get("extra_body") or None
 
     def json_call(self, system, user):
         """调用并解析 JSON，自动重试"""
@@ -372,6 +375,7 @@ class LLM:
                     temperature=self.temperature,
                     messages=[{"role": "system", "content": system},
                               {"role": "user", "content": user}],
+                    extra_body=self.extra_body,
                 )
                 text = resp.choices[0].message.content.strip()
                 # 提取 JSON（容忍 ```json 包裹）

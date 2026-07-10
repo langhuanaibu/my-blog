@@ -7,14 +7,22 @@
 
 llm:
   # 任何 OpenAI 兼容接口都可以。示例：
-  #   DeepSeek:  base_url: https://api.deepseek.com/v1     model: deepseek-chat
+  #   DeepSeek:  base_url: https://api.deepseek.com/v1     model: deepseek-v4-flash
   #   Kimi:      base_url: https://api.moonshot.cn/v1      model: moonshot-v1-32k
   #   智谱:      base_url: https://open.bigmodel.cn/api/paas/v4   model: glm-4-plus
   #   OpenAI:    base_url: https://api.openai.com/v1       model: gpt-4o-mini
   base_url: https://api.deepseek.com/v1
   api_key: ""   # 由环境变量 LLM_API_KEY 注入，不要在这里填
-  model: deepseek-chat
+  # 2026-07-11 从 deepseek-chat 别名迁到显式 deepseek-v4-flash：官方公告别名
+  # 2026-07-24 停用（deepseek-chat ≙ v4-flash 非思考模式）。V4 裸模型名默认开
+  # thinking，下面 extra_body 显式关掉以保持原行为（thinking 模式下 temperature
+  # 会静默失效且思考 token 计费）。换其他供应商时把 extra_body 删掉即可。
+  model: deepseek-v4-flash
   temperature: 0.3
+  # 供应商专有请求体字段，原样透传（daily_news.py 的 LLM 类；不配置则不发）
+  extra_body:
+    thinking:
+      type: disabled
   # 单次请求最大重试次数
   max_retries: 3
 
