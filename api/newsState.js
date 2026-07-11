@@ -8,15 +8,17 @@ const {
   putTextFile
 } = require('./_github');
 
-// 新闻驾驶舱用户状态写回通道：反馈 / 稍后读，追加写入仓库数据文件。
-// 仅本人（ADMIN_TOKEN）可用；管线在次日运行时读取这些文件。
+// 新闻驾驶舱用户状态写回通道：反馈 / 稍后读 / 收藏，追加写入仓库数据文件。
+// 仅本人（ADMIN_TOKEN）可用；管线在次日运行时读取 feedback/read_later（favorites 暂不消费）。
 const STATE_FILES = {
   feedback: 'source/news/data/feedback.json',
-  read_later: 'source/news/data/read_later.json'
+  read_later: 'source/news/data/read_later.json',
+  favorites: 'source/news/data/favorites.json'
 };
 
 const FEEDBACK_ACTIONS = ['not_interested', 'more_like_this', 'low_quality_source', 'track', 'untrack'];
 const READ_LATER_OPS = ['add', 'done', 'remove'];
+const FAVORITES_OPS = ['add', 'remove'];
 const MAX_ENTRIES = 1000;
 const MAX_PAYLOAD_BYTES = 4096;
 
@@ -74,7 +76,7 @@ function validateEntry(type, payload) {
     entry.note = clip(payload.note, 500);
     if (payload.event_id) entry.event_id = clip(payload.event_id, 60);
     if (payload.source) entry.source = clip(payload.source, 100);
-  } else {
+  } else if (type === 'read_later') {
     entry.op = READ_LATER_OPS.includes(payload.op) ? payload.op : 'add';
     if (entry.op === 'add') {
       const url = String(payload.url || '');
@@ -83,6 +85,14 @@ function validateEntry(type, payload) {
       }
       entry.url = clip(url, 500);
       entry.done = false;
+    }
+  } else {
+    // favorites：永久收藏。核心是 date+item_id 引用（前端凭它从 daily/*.js
+    // 重渲染完整卡片），url 仅作降级展示的兜底，允许缺省
+    entry.op = FAVORITES_OPS.includes(payload.op) ? payload.op : 'add';
+    if (entry.op === 'add') {
+      const url = String(payload.url || '');
+      if (/^https?:\/\//i.test(url)) entry.url = clip(url, 500);
     }
   }
 
@@ -93,7 +103,7 @@ function appendEntry(state, type, entry, now) {
   const key = entriesKey(type);
   const list = Array.isArray(state[key]) ? state[key] : [];
 
-  if (type === 'read_later') {
+  if (type === 'read_later' || type === 'favorites') {
     const idx = list.findIndex((it) => it.item_id === entry.item_id && it.date === entry.date);
     if (entry.op === 'done') {
       if (idx === -1) return { state, deduped: true };
@@ -110,7 +120,7 @@ function appendEntry(state, type, entry, now) {
     return { state: { ...state, [key]: [...list, { ts: now, ...added }].slice(-MAX_ENTRIES) }, deduped: false };
   }
 
-  // 反馈撤销（feedback 专用；read_later 的 remove 在上面自己的分支里处理）：
+  // 反馈撤销（feedback 专用；read_later/favorites 的 remove 在上面自己的分支里处理）：
   // 删掉最后一条同 (item_id, date, action) 的记录。匹配到 action 级，不看 reasons/source——
   // 目前只有 more_like_this 用它，每个 item+date 至多一条，精确无误。若将来给
   // low_quality_source / not_interested 也加撤销，需把匹配键细化到具体来源/理由。

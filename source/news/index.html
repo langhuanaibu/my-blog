@@ -415,7 +415,7 @@ function itemKey(id){
 }
 
 // 过期清理：hidden/rl 键形如 "YYYY-MM-DD:id"，tracked 键形如 "evt-YYYYMMDD-xxx"，
-// 分别保留 30/60 天，防 localStorage 无限累积
+// 分别保留 30/60 天，防 localStorage 无限累积；news_fav 是永久收藏语义且量小，不清理
 function pruneLocal(){
   const cut=k=>{const d=new Date();d.setDate(d.getDate()-k);return d.toISOString().slice(0,10);};
   const c30=cut(30), c60=cut(60).replace(/-/g,"");
@@ -546,6 +546,40 @@ function toggleHist(el){
   if(h) h.classList.toggle("open");
 }
 
+/* ---------- 深读/论文卡片模板（日报页与收藏页共用） ---------- */
+function deepCard(dp){
+  const ref=refOf(dp);
+  const rl=LS.get("news_rl")[itemKey(ref)];
+  return `<div class="deep" data-id="${esc(ref)}">
+  <div class="deep-top">
+    <span class="tag mins">📖 约 ${+dp.read_minutes||"?"} 分钟</span>
+    <span class="tag stype">${esc(dp.source||"")}</span>
+    ${dp.lang==="en"?'<span class="tag stype">EN</span>':""}
+    <a class="deep-t" href="${esc(safeUrl(dp.url))}" target="_blank" rel="noopener">${esc(dp.title_zh||dp.title||"")}</a>
+  </div>
+  ${dp.brief?`<div class="sum">${esc(dp.brief)}</div>`:""}
+  ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
+  ${dp.lang==="en"&&dp.title!==dp.title_zh?`<div class="kv"><b>原题</b> · ${esc(dp.title||"")}</div>`:""}
+  ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(ref)})">${rl?"✓ 已收":"⏳ 稍后读"}</span>${favBtn(dp)}</div>`:""}
+</div>`;
+}
+function paperCard(pp){
+  const ref=refOf(pp);
+  const rl=LS.get("news_rl")[itemKey(ref)];
+  return `<div class="deep paper" data-id="${esc(ref)}">
+  <div class="deep-top">
+    <span class="tag mins">👍 ${+pp.upvotes||0}</span>
+    ${pp.has_code?'<span class="tag code">&lt;/&gt; 代码</span>':""}
+    <span class="tag stype">arXiv</span>
+    <a class="deep-t" href="${esc(safeUrl(pp.url))}" target="_blank" rel="noopener">${esc(pp.title_zh||pp.title||"")}</a>
+  </div>
+  ${pp.brief?`<div class="sum">${esc(pp.brief)}</div>`:""}
+  ${pp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(pp.why)}</div>`:""}
+  ${pp.title&&pp.title!==pp.title_zh?`<div class="kv"><b>原题</b> · ${esc(pp.title||"")}</div>`:""}
+  ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(ref)})">${rl?"✓ 已收":"⏳ 稍后读"}</span>${favBtn(pp)}</div>`:""}
+</div>`;
+}
+
 
 /* ---------- 今日看点：真实阅读时长（按默认可见字段字数，约 400 字/分钟） ---------- */
 function estReadMinutes(d,picks,mores,deep,papers,opinion,trk){
@@ -576,6 +610,7 @@ function actionRow(it){
   const tracked=LS.get("news_tracked")[it.event_id]===true;
   return `<div class="acts">
     <span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(ref)})">${rl?"✓ 已收":"⏳ 稍后读"}</span>
+    ${favBtn(it)}
     <span class="act ${liked?"done":""}" title="${liked?"再点一次撤销这条反馈":"让明天的排序更偏向类似内容"}" onclick="fbLike(this,${jsArg(ref)})">${liked?"👍 已记录":"👍 更多类似"}</span>
     ${it.event_id?`<span class="act ${tracked?"done":""}" onclick="fbTrack(${jsArg(ref)})">${tracked?"📌 追踪中":"📌 追踪"}</span>`:""}
     <span class="act" onclick="fbPanel(this,${jsArg(ref)},'src')">🚫 来源</span>
@@ -707,6 +742,35 @@ function rlToggle(el,id){
     .catch(e=>toast("同步失败："+e.message,true));
 }
 
+// ⭐ 收藏：独立于稍后读的永久精华库。只写 date+item_id 引用（收藏页凭它从
+// daily/*.js 重渲染完整卡片），url 仅作兜底展示，没有外链也不阻断收藏。
+function favBtn(it){
+  const ref=refOf(it);
+  const fav=LS.get("news_fav")[itemKey(ref)];
+  return `<span class="act ${fav?"done":""}" title="${fav?"再点一次取消收藏":"收藏进精华库"}" onclick="favToggle(this,${jsArg(ref)})">${fav?"★ 已藏":"⭐ 收藏"}</span>`;
+}
+function favToggle(el,id){
+  const it=state.itemsById[id]||{};
+  const key=itemKey(id);
+  const date=it._date||state.date, itemId=it.id||id;
+  const fav=LS.get("news_fav");
+  if(fav[key]){
+    delete fav[key];LS.set("news_fav",fav);
+    el.classList.remove("done");el.textContent="⭐ 收藏";el.title="收藏进精华库";
+    postState("favorites",{date,item_id:itemId,op:"remove"})
+      .then(()=>{toast("已取消收藏");if(state.view==="favs")renderFavs();})
+      .catch(e=>toast("同步失败（本地已取消）："+e.message,true));
+    return;
+  }
+  fav[key]=1;LS.set("news_fav",fav);
+  el.classList.add("done");el.textContent="★ 已藏";el.title="再点一次取消收藏";
+  const url=it.url||((it.sources||[])[0]||{}).url||"";
+  const cat=it.category||(String(itemId).indexOf("paper-")===0?"paper":"deep");
+  postState("favorites",{date,item_id:itemId,title:it.title_zh||it.title||"",category:cat,url})
+    .then(()=>toast("已收藏"))
+    .catch(e=>toast("同步失败："+e.message,true));
+}
+
 function restoreHidden(key){
   const hid=LS.get("news_hidden");
   if(key){delete hid[key];}else{
@@ -826,39 +890,13 @@ function render(){
   // 深度阅读：管线深读频道推荐（0-3 篇，阈值制）
   if(deep.length){
     h+=`<div class="sec-title" id="sec-deep">深度阅读 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${deep.length} 篇长文推荐)</span></div>`;
-    h+=deep.map(dp=>{
-      const rl=LS.get("news_rl")[itemKey(dp.id)];
-      return `<div class="deep" data-id="${esc(dp.id)}">
-      <div class="deep-top">
-        <span class="tag mins">📖 约 ${+dp.read_minutes||"?"} 分钟</span>
-        <span class="tag stype">${esc(dp.source||"")}</span>
-        ${dp.lang==="en"?'<span class="tag stype">EN</span>':""}
-        <a class="deep-t" href="${esc(safeUrl(dp.url))}" target="_blank" rel="noopener">${esc(dp.title_zh||dp.title||"")}</a>
-      </div>
-      ${dp.brief?`<div class="sum">${esc(dp.brief)}</div>`:""}
-      ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
-      ${dp.lang==="en"&&dp.title!==dp.title_zh?`<div class="kv"><b>原题</b> · ${esc(dp.title||"")}</div>`:""}
-      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(dp.id)})">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
-    </div>`;}).join("");
+    h+=deep.map(dp=>deepCard(dp)).join("");
   }
 
   // 今日论文：HF Daily Papers 社区精选（0-4 篇，阈值制，按学习坐标筛）
   if(papers.length){
     h+=`<div class="sec-title" id="sec-papers">今日论文 <span style="font-size:12px;color:var(--text3);font-weight:400">(今日 ${papers.length} 篇值得读的 arXiv 热门)</span></div>`;
-    h+=papers.map(pp=>{
-      const rl=LS.get("news_rl")[itemKey(pp.id)];
-      return `<div class="deep paper" data-id="${esc(pp.id)}">
-      <div class="deep-top">
-        <span class="tag mins">👍 ${+pp.upvotes||0}</span>
-        ${pp.has_code?'<span class="tag code">&lt;/&gt; 代码</span>':""}
-        <span class="tag stype">arXiv</span>
-        <a class="deep-t" href="${esc(safeUrl(pp.url))}" target="_blank" rel="noopener">${esc(pp.title_zh||pp.title||"")}</a>
-      </div>
-      ${pp.brief?`<div class="sum">${esc(pp.brief)}</div>`:""}
-      ${pp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(pp.why)}</div>`:""}
-      ${pp.title&&pp.title!==pp.title_zh?`<div class="kv"><b>原题</b> · ${esc(pp.title||"")}</div>`:""}
-      ${TOKEN?`<div class="acts"><span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(pp.id)})">${rl?"✓ 已收":"⏳ 稍后读"}</span></div>`:""}
-    </div>`;}).join("");
+    h+=papers.map(pp=>paperCard(pp)).join("");
   }
 
   // 舆论观察：热榜传播机制解读（0-3 条，热榜词条本身不进精选）
@@ -978,6 +1016,7 @@ function renderDetail(date,id){
 function routeFromUrl(){
   const p=new URLSearchParams(location.search);
   if(p.get("view")==="topics"){enterTopics(false);return;}
+  if(p.get("view")==="favs"&&TOKEN){enterFavs(false);return;}
   const qd=p.get("date"), qi=p.get("item");
   const M=window.NEWS_MANIFEST||[];
   const dt=(qd&&M.indexOf(qd)>=0)?qd:(state.date||M[0]);
@@ -1020,6 +1059,60 @@ function rlOp(id,date,op){
   postState("read_later",{date,item_id:id,op})
     .then(()=>{if(op==="remove"){const rl=LS.get("news_rl");delete rl[date+":"+id];LS.set("news_rl",rl);}loadRl();})
     .catch(e=>toast("操作失败："+e.message,true));
+}
+
+/* ---------- ⭐ 收藏页：永久精华库，凭 date+item_id 引用重渲染完整卡片 ---------- */
+function enterFavs(push){
+  state.view="favs";
+  if(push) history.pushState({v:"favs"},"","?view=favs");
+  document.getElementById("viewBtn").textContent="🗓 周视图";
+  updateTabs();
+  renderFavs();
+}
+async function renderFavs(){
+  const app=document.getElementById("app");
+  app.innerHTML='<div class="empty">加载收藏…</div>';
+  let favs;
+  try{
+    favs=(await getState("favorites")).items||[];
+  }catch(e){
+    if(state.view!=="favs") return;
+    app.innerHTML='<div class="empty">加载失败：'+esc(e.message)+'</div>';
+    updateNav();return;
+  }
+  if(state.view!=="favs") return;
+  if(!favs.length){
+    app.innerHTML='<div class="empty">还没有收藏。在精选、深度阅读或今日论文的卡片上点 ⭐ 收藏，它们会沉淀到这里。</div>';
+    updateNav();return;
+  }
+  // 服务端是收藏的真源：把引用键并入本地缓存，换设备后卡片上的 ★ 高亮才一致
+  const lf=LS.get("news_fav");
+  for(const f of favs) lf[f.date+":"+f.item_id]=1;
+  LS.set("news_fav",lf);
+  const dates=[...new Set(favs.map(f=>f.date))].sort().reverse();
+  await loadDates(dates);
+  if(state.view!=="favs") return;
+  state.itemsById={};
+  let h=`<div class="sec-title">⭐ 收藏 <span style="font-size:12px;color:var(--text3);font-weight:400">(${favs.length} 条 · 按日报日期分组 · 再点一次 ★ 取消收藏)</span></div>`;
+  for(const dt of dates){
+    const d=(window.NEWS_DATA||{})[dt];
+    const wanted=new Set(favs.filter(f=>f.date===dt).map(f=>f.item_id));
+    const total=wanted.size;
+    // 组内保持日报原序：精选 → 深读 → 论文
+    const cards=[];
+    if(d){
+      for(const it of (d.items||[])) if(wanted.has(it.id)){it._date=dt;state.itemsById[refOf(it)]=it;cards.push(card(it));wanted.delete(it.id);}
+      for(const dp of (d.deep||[])) if(wanted.has(dp.id)){dp._date=dt;state.itemsById[refOf(dp)]=dp;cards.push(deepCard(dp));wanted.delete(dp.id);}
+      for(const pp of (d.papers||[])) if(wanted.has(pp.id)){pp._date=dt;state.itemsById[refOf(pp)]=pp;cards.push(paperCard(pp));wanted.delete(pp.id);}
+    }
+    // 数据文件缺失或条目找不回（理论不发生）：降级为收藏记录自身的链接行
+    for(const f of favs) if(f.date===dt&&wanted.has(f.item_id))
+      cards.push(`<div class="row"><span class="rt"><a href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener">${esc(f.title||f.item_id)}</a></span><span class="rs">${CAT[f.category]||esc(f.category||"")}</span></div>`);
+    h+=`<div class="feed-day">${esc(dt)}<span class="n">${total} 条</span></div>`;
+    h+=cards.join("");
+  }
+  app.innerHTML=h;
+  updateNav();
 }
 
 function updateNav(){
@@ -1172,8 +1265,8 @@ function gotoDay(dt){
   state.view="day";
   document.getElementById("viewBtn").textContent="🗓 周视图";
   updateTabs();
-  // 从主题视图跳出时清掉 ?view=topics，避免刷新/分享回到主题而非所看的那天
-  if(new URLSearchParams(location.search).get("view")==="topics")
+  // 从主题/收藏视图跳出时清掉 ?view=，避免刷新/分享回到该视图而非所看的那天
+  if(["topics","favs"].includes(new URLSearchParams(location.search).get("view")))
     history.replaceState({},"","?date="+encodeURIComponent(dt));
   const sel=document.getElementById("dateSel");
   if([...sel.options].some(o=>o.value===dt)) sel.value=dt;
@@ -1392,7 +1485,7 @@ async function renderAllFeed(){
 
 /* ---------- 主 Tab 导航（精选 / 全部动态 / 日报 / 主题） ---------- */
 function updateTabs(){
-  const map={picks:"picks",all:"all",topics:"topics"};
+  const map={picks:"picks",all:"all",topics:"topics",favs:"favs"};
   const active=map[state.view]||"day";   // day/week/detail 都归日报 Tab
   document.querySelectorAll(".mtab").forEach(t=>t.classList.toggle("on",t.dataset.v===active));
   const dc=document.getElementById("dayCtrls");
@@ -1400,6 +1493,7 @@ function updateTabs(){
 }
 function switchTab(v){
   if(v==="topics"){if(state.view!=="topics")enterTopics(true);return;}
+  if(v==="favs"){if(state.view!=="favs")enterFavs(true);return;}
   if(v==="picks"){
     if(state.view==="picks")return;
     state.view="picks";
@@ -1532,6 +1626,12 @@ function topicTrack(eventId){
     btn.onclick=openRl;
     const nav=document.querySelector(".datenav");
     nav.insertBefore(btn,nav.firstChild);
+    // ⭐ 收藏 tab：与操作按钮同规则，仅本人可见
+    const favTab=document.createElement("span");
+    favTab.className="mtab";favTab.dataset.v="favs";
+    favTab.textContent="⭐ 收藏";
+    favTab.onclick=()=>switchTab("favs");
+    document.querySelector(".tabs-main").appendChild(favTab);
   }
   const si=document.getElementById("searchInput");
   si.addEventListener("focus",()=>ensureIndex(doSearch));
@@ -1561,6 +1661,9 @@ function topicTrack(eventId){
   if(qp.get("view")==="topics"){
     state.date=M[0];sel.value=M[0];
     enterTopics(false);
+  }else if(qp.get("view")==="favs"&&TOKEN){
+    state.date=M[0];sel.value=M[0];
+    enterFavs(false);
   }else if(qd&&M.indexOf(qd)>=0){
     sel.value=qd;
     if(qi) showDetail(qd,qi); else loadDate(qd);
