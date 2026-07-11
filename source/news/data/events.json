@@ -1283,18 +1283,24 @@
   },
   {
    "event_id": "evt-20260710-8de6a7",
-   "title": "台风巴威逼近台湾，近30年暴风半径最大",
+   "title": "台风巴威登陆浙江，多预警齐发",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-12",
    "history": [
     {
      "date": "2026-07-10",
      "title": "台风巴威逼近台湾，近30年暴风半径最大",
      "summary": "超强台风巴威逼近台湾，暴风半径近30年最大，10县市停班停课，预计11日晚登陆浙闽沿海。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-12",
+     "title": "台风巴威登陆浙江，多预警齐发",
+     "summary": "台风巴威在浙江两次登陆，中心最大风力13级，中央气象台发布台风、暴雨、强对流三预警。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -1493,17 +1499,23 @@
   },
   {
    "event_id": "evt-20260710-b83b00",
-   "title": "国内首个十万卡AI超集群曙光8000投入使用",
+   "title": "国内首个全国产十万卡AI超集群落地",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-12",
    "history": [
     {
      "date": "2026-07-10",
      "title": "国内首个十万卡AI超集群曙光8000投入使用",
      "summary": "中科曙光宣布国内首个全国产十万卡AI超集群曙光8000落成，并接入国家超算互联网，支持全精度计算。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-12",
+     "title": "国内首个全国产十万卡AI超集群落地",
+     "summary": "中科曙光宣布建成中国首个全国产十万卡AI超集群“曙光8000”，并接入国家超算互联网。",
      "news_status": "已确认"
     }
    ]
@@ -1544,18 +1556,24 @@
   },
   {
    "event_id": "evt-20260711-112d84",
-   "title": "苹果起诉OpenAI窃取硬件商业机密",
+   "title": "苹果起诉OpenAI窃取商业机密开发AI硬件",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-11",
-   "last_seen": "2026-07-11",
+   "last_seen": "2026-07-12",
    "history": [
     {
      "date": "2026-07-11",
      "title": "苹果起诉OpenAI窃取硬件商业机密",
      "summary": "苹果指控OpenAI通过前员工窃取硬件机密，涉及65亿美元设备项目，包括供应商细节和未发布硬件规格。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-12",
+     "title": "苹果起诉OpenAI窃取商业机密开发AI硬件",
+     "summary": "苹果在加州起诉OpenAI，指控其通过挖角员工系统性窃取商业机密，用于开发AI硬件设备。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -1726,6 +1744,261 @@
      "title": "GitHub改进Copilot代码审查，迁移至共享Unix风格工具",
      "summary": "GitHub将Copilot代码审查迁移至共享Unix风格工具，降低了审查成本并改进了工作流。",
      "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-b7edf4",
+   "title": "OpenAI承认ChatGPT Work发布存在严重问题并紧急修复",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "OpenAI承认ChatGPT Work发布存在严重问题并紧急修复",
+     "summary": "OpenAI承认ChatGPT Work发布存在计算资源消耗过大、桌面界面混乱等严重问题，正紧急修复。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-978cee",
+   "title": "委内瑞拉地震死亡人数超4300人救援工作持续",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "委内瑞拉地震死亡人数超4300人救援工作持续",
+     "summary": "委内瑞拉双震死亡人数超4300人，近17000人受伤，数千人失踪，联合国呼吁国际援助。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-898087",
+   "title": "特朗普政府传唤纽约时报记者调查空军一号报道",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "特朗普政府传唤纽约时报记者调查空军一号报道",
+     "summary": "美国司法部传唤多名纽约时报记者，要求就卡塔尔赠送的空军一号安全问题报道出庭作证。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-c73c85",
+   "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
+     "summary": "美国众议员罗·卡纳在约旦河西岸被武装以色列定居者扣押90分钟，以色列军队拒绝干预。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-6b354c",
+   "title": "研究揭示博科圣地利用主流AI聊天机器人策划袭击",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "研究揭示博科圣地利用主流AI聊天机器人策划袭击",
+     "summary": "剑桥大学研究显示，博科圣地已系统使用ChatGPT、Claude等AI聊天机器人策划袭击和制造爆炸装置。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-266d24",
+   "title": "AI公司施压削弱澳版权法引艺术家抗议",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "AI公司施压削弱澳版权法引艺术家抗议",
+     "summary": "AI公司试图游说澳大利亚政府削弱版权法，引发艺术家强烈抗议，执政党工党内部意见分裂。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-861624",
+   "title": "英国前议员安·威德科姆谋杀案调查进展",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "英国前议员安·威德科姆谋杀案调查进展",
+     "summary": "一名28岁男子因涉嫌谋杀英国前议员安·威德科姆被捕，此前另一名嫌疑人已被释放。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-bbb15f",
+   "title": "德国宣判华人跨国有组织性侵案核心成员",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "德国宣判华人跨国有组织性侵案核心成员",
+     "summary": "德国法院对“德国老司机驾校”Telegram跨国有组织性侵案核心成员作出宣判，该团伙主要由中国籍男性组成。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-32fa3d",
+   "title": "西班牙致命野火致12人死亡，23人失踪",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "西班牙致命野火致12人死亡，23人失踪",
+     "summary": "西班牙南部爆发致命野火，已造成至少12人死亡，23人失踪，其中包括4名英国人。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-5df466",
+   "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
+     "summary": "美国要求伊朗周六前承诺开放霍尔木兹海峡，伊朗革命卫队宣布关闭海峡并警告射击船只。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-7fbbe9",
+   "title": "美国里程碑式住房法案在特朗普反对下成为法律",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "美国里程碑式住房法案在特朗普反对下成为法律",
+     "summary": "美国一项旨在降低住房成本、增加供应的住房法案在特朗普反对下仍成为法律。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-772907",
+   "title": "Meta关闭Instagram基于公开账户生成AI深度伪造功能",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "Meta关闭Instagram基于公开账户生成AI深度伪造功能",
+     "summary": "Meta因用户强烈反对，关闭了Instagram上允许用户基于公开账户生成AI图片的功能。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-adef51",
+   "title": "智能眼镜赛道2028年或成关键爆发节点",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "智能眼镜赛道2028年或成关键爆发节点",
+     "summary": "IDC数据显示2026年Q1全球智能眼镜出货量同比增长130%，行业预计2028年迎来“iPhone时刻”。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-a7c4a7",
+   "title": "高盛称AI推动内存电力和软件涨价或推高核心PCE 0.5个百分点",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "高盛称AI推动内存电力和软件涨价或推高核心PCE 0.5个百分点",
+     "summary": "高盛报告指出，AI驱动的内存、电力和软件涨价已推高美国核心PCE 0.2个百分点，年底或达0.5个百分点。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260712-a281d8",
+   "title": "科技巨头AI债券遭市场抛售，价格持续下跌",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-12",
+   "last_seen": "2026-07-12",
+   "history": [
+    {
+     "date": "2026-07-12",
+     "title": "科技巨头AI债券遭市场抛售，价格持续下跌",
+     "summary": "科技巨头发行的AI相关长期债券价格持续下跌，亚马逊250亿美元债券需求疲软，长期债券认购率低。",
+     "news_status": "发展中"
     }
    ]
   }

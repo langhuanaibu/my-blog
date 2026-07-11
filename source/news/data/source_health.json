@@ -801,6 +801,140 @@
     "count": 0,
     "error": false
    }
+  },
+  "2026-07-12": {
+   "github-blog": {
+    "count": 0,
+    "error": false
+   },
+   "github-changelog": {
+    "count": 0,
+    "error": false
+   },
+   "huggingface": {
+    "count": 0,
+    "error": false
+   },
+   "mit-tr": {
+    "count": 0,
+    "error": false
+   },
+   "deepmind": {
+    "count": 0,
+    "error": false
+   },
+   "hn": {
+    "count": 18,
+    "error": false
+   },
+   "openai": {
+    "count": 0,
+    "error": false
+   },
+   "aihot": {
+    "count": 11,
+    "error": false
+   },
+   "techcrunch": {
+    "count": 7,
+    "error": false
+   },
+   "cloudflare": {
+    "count": 0,
+    "error": false
+   },
+   "verge": {
+    "count": 10,
+    "error": false
+   },
+   "thedecoder": {
+    "count": 6,
+    "error": false
+   },
+   "ars": {
+    "count": 4,
+    "error": false
+   },
+   "cnbc": {
+    "count": 16,
+    "error": false
+   },
+   "36kr": {
+    "count": 18,
+    "error": false
+   },
+   "bbc-cn": {
+    "count": 3,
+    "error": false
+   },
+   "bbc-world": {
+    "count": 18,
+    "error": false
+   },
+   "wscn": {
+    "count": 14,
+    "error": false
+   },
+   "ithome": {
+    "count": 18,
+    "error": false
+   },
+   "vercel": {
+    "count": 0,
+    "error": false
+   },
+   "npr": {
+    "count": 10,
+    "error": false
+   },
+   "guardian": {
+    "count": 18,
+    "error": false
+   },
+   "nyt-cn": {
+    "count": 0,
+    "error": false
+   },
+   "aljazeera": {
+    "count": 18,
+    "error": false
+   },
+   "atlantic": {
+    "count": 8,
+    "error": false
+   },
+   "thepaper-edu": {
+    "count": 0,
+    "error": false
+   },
+   "ftcn": {
+    "count": 0,
+    "error": true
+   },
+   "yicai": {
+    "count": 0,
+    "error": false
+   },
+   "thepaper": {
+    "count": 16,
+    "error": false
+   },
+   "cls-depth": {
+    "count": 18,
+    "error": false
+   },
+   "sciencenet": {
+    "count": 3,
+    "error": false
+   },
+   "guokr": {
+    "count": 3,
+    "error": false
+   },
+   "anthropic": {
+    "count": 0,
+    "error": false
+   }
   }
  }
 }
