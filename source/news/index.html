@@ -207,16 +207,42 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .card h3.clk{cursor:pointer}
 .card h3.clk:hover{color:var(--accent2)}
 .detail-wrap{max-width:760px;margin:0 auto}
-.dback{display:inline-block;margin-bottom:14px;font-size:13px;color:var(--text2);cursor:pointer}
+.dback{display:inline-flex;align-items:center;min-height:44px;margin-bottom:12px;font-size:13px;color:var(--text2);cursor:pointer}
 .dback:hover{color:var(--accent2)}
-.detail-title{font-size:24px;line-height:1.4;font-weight:800;color:var(--heading);margin:8px 0 10px}
-.detail-lede{font-size:15px;color:var(--text2);line-height:1.7;padding:10px 14px;background:var(--accent-soft);border-radius:8px;margin-bottom:18px}
-.detail-body{font-size:15.5px;line-height:1.9;color:var(--text)}
+.dback:focus-visible,.detail-link:focus-visible,.detail-source-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+.detail-title{font-size:clamp(25px,4vw,34px);line-height:1.32;font-weight:800;color:var(--heading);margin:10px 0 14px;overflow-wrap:anywhere}
+.detail-lede{font-size:16px;color:var(--text);line-height:1.75;padding:14px 16px;background:var(--accent-soft);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;margin-bottom:22px}
+.detail-body{font-size:16px;line-height:1.85;color:var(--text)}
 .detail-body p{margin:0 0 15px}
 .detail-fallback-note{font-size:12.5px;color:var(--text3);margin:6px 0 12px}
-.detail-kv{display:flex;flex-direction:column;gap:10px;margin:18px 0}
-.detail-sec-t{margin:22px 0 12px;font-size:14px;font-weight:700;color:var(--heading);letter-spacing:.5px}
+.detail-kv{display:flex;flex-direction:column;gap:10px;margin:22px 0}
+.detail-sec-t{margin:28px 0 12px;font-size:15px;font-weight:700;color:var(--heading);letter-spacing:.5px}
+.detail-takeaway{margin:0 0 22px;padding:16px 18px;background:var(--card);border:1px solid var(--border2);border-radius:10px;box-shadow:var(--shadow)}
+.detail-takeaway .label{display:block;color:var(--accent2);font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:7px}
+.detail-takeaway p{margin:0;font-size:17px;line-height:1.7;font-weight:650;color:var(--heading)}
+.detail-list{margin:0;padding-left:22px}.detail-list li{margin:8px 0;line-height:1.75}
+.detail-claims{display:flex;flex-direction:column;gap:9px}
+.detail-claim{padding:11px 13px;border:1px solid var(--border);border-radius:8px;background:var(--card)}
+.detail-claim .claim-kind{display:inline-block;min-width:52px;margin-right:8px;font-size:11px;font-weight:700;color:var(--text3)}
+.detail-claim.kind-fact{border-left:3px solid var(--ok)}.detail-claim.kind-analysis{border-left:3px solid var(--accent)}.detail-claim.kind-uncertain{border-left:3px solid var(--rumor)}
+.claim-sources{margin-top:6px;font-size:11.5px;color:var(--text3)}
+.detail-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 15px;border:1px solid var(--border2);border-radius:8px;color:var(--accent2);font-weight:650;cursor:pointer;background:var(--card)}
+.detail-link:hover{background:var(--card-h);border-color:var(--accent)}
+.detail-source-toggle{display:none}
+.detail-actions-card{margin-top:24px;padding:12px;background:transparent;box-shadow:none}
+.detail-actions-card .acts{border-top:0;padding-top:0}
+.detail-kind{font-size:12px;color:var(--text3);font-weight:700;letter-spacing:.08em}
+.detail-topbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.detail-export{align-self:center;white-space:nowrap}
 .time{color:var(--text3);font-size:11.5px;margin-left:auto}
+
+@media(max-width:600px){
+  .detail-wrap{max-width:none}.detail-title{font-size:26px}.detail-lede{font-size:16px;padding:13px 14px}
+  .detail-body{font-size:16px;line-height:1.8}.detail-actions-card{padding:10px 0}
+  .detail-source-toggle{display:inline-flex;background:none;border:0;padding:0;min-height:44px;align-items:center;color:var(--accent2);font:inherit;cursor:pointer}
+  .detail-sources.collapsed span:nth-child(n+3){display:none}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*{transition:none!important}}
 
 /* ---------- more list ---------- */
 .more-list{display:flex;flex-direction:column;gap:6px}
@@ -392,7 +418,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
 const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
-               itemsById:{}, view:"day", pendingHighlight:null, detailId:null};
+               itemsById:{}, view:"day", pendingHighlight:null, detailId:null, detailType:"news"};
 
 /* ---------- 用户状态：与在线后台共用 token，仅本人可见操作按钮 ---------- */
 const TOKEN = localStorage.getItem("aoiblog_admin_token") || "";
@@ -484,6 +510,11 @@ function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&l
 function jsArg(s){return esc(JSON.stringify(String(s??"")));}
 function safeUrl(u){u=String(u||"");return /^https?:\/\//i.test(u)?u:"#";}
 function scoreCls(s){return s>=80?"hi":s>=60?"mid":"lo";}
+function fmtAbs(iso){
+  const d=new Date(iso); if(!iso||isNaN(d)) return "";
+  const p=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());
+}
 function fmtTime(iso){
   if(!iso) return "";
   const d=new Date(iso); if(isNaN(d)) return "";
@@ -507,7 +538,7 @@ function loadDate(date,after){
 }
 
 function srcLinks(it){
-  return it.sources.map(s=>
+  return (it.sources||[]).map(s=>
     `<span><a href="${esc(safeUrl(s.url))}" target="_blank" rel="noopener" title="${esc(s.name)}">↗ ${esc(s.name)}</a> <span class="stp">${esc(s.type||"")}</span></span>`
   ).join("");
 }
@@ -527,9 +558,9 @@ function card(it){
       <span class="tag stype">${esc(it.source_type||"")}</span>
       <span class="time">${fmtTime(it.time)}</span>
     </div>
-    <h3 class="clk" onclick="openDetail(${jsArg(ref)})" title="查看中文预览页">${esc(it.title)}</h3>
+    <h3 class="clk" onclick="openDetail(${jsArg(ref)},'news')" title="查看分析详情">${esc(it.title)}</h3>
     <div class="sum">${esc(it.summary)}</div>
-    ${it.detail?`<a class="readmore" onclick="openDetail(${jsArg(ref)})">读全文 →</a>`:""}
+    <a class="readmore" onclick="openDetail(${jsArg(ref)},'news')">查看详情 →</a>
     ${dayN>=2&&hist?`<div class="ev-history"><b>此前进展</b>${hist}</div>`:""}
     ${it.why?`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`:""}
     ${it.context?`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`:""}
@@ -547,6 +578,15 @@ function toggleHist(el){
 }
 
 /* ---------- 深读/论文卡片模板（日报页与收藏页共用） ---------- */
+// 有料才进详情：详情字段是新管线才产出的，历史条目点标题仍直达原文，避免空详情页
+function deepHasDetail(dp){return !!(dp.takeaway||(dp.key_points||[]).length||dp.audience);}
+function paperHasDetail(pp){return !!(pp.takeaway||pp.contribution||pp.evidence||pp.limitations);}
+function detailTitleLink(it,type,hasDetail){
+  const t=esc(it.title_zh||it.title||"");
+  if(!hasDetail) return `<a class="deep-t" href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">${t}</a>`;
+  const ref=refOf(it);
+  return `<a class="deep-t" href="${esc(NewsDetail.buildUrl(it._date||state.date,type,it.id))}" onclick="openDetail(${jsArg(ref)},'${type}');return false">${t}</a>`;
+}
 function deepCard(dp){
   const ref=refOf(dp);
   const rl=LS.get("news_rl")[itemKey(ref)];
@@ -555,7 +595,7 @@ function deepCard(dp){
     <span class="tag mins">📖 约 ${+dp.read_minutes||"?"} 分钟</span>
     <span class="tag stype">${esc(dp.source||"")}</span>
     ${dp.lang==="en"?'<span class="tag stype">EN</span>':""}
-    <a class="deep-t" href="${esc(safeUrl(dp.url))}" target="_blank" rel="noopener">${esc(dp.title_zh||dp.title||"")}</a>
+    ${detailTitleLink(dp,"deep",deepHasDetail(dp))}
   </div>
   ${dp.brief?`<div class="sum">${esc(dp.brief)}</div>`:""}
   ${dp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(dp.why)}</div>`:""}
@@ -571,7 +611,7 @@ function paperCard(pp){
     <span class="tag mins">👍 ${+pp.upvotes||0}</span>
     ${pp.has_code?'<span class="tag code">&lt;/&gt; 代码</span>':""}
     <span class="tag stype">arXiv</span>
-    <a class="deep-t" href="${esc(safeUrl(pp.url))}" target="_blank" rel="noopener">${esc(pp.title_zh||pp.title||"")}</a>
+    ${detailTitleLink(pp,"paper",paperHasDetail(pp))}
   </div>
   ${pp.brief?`<div class="sum">${esc(pp.brief)}</div>`:""}
   ${pp.why?`<div class="kv why"><b>为什么值得读</b> · ${esc(pp.why)}</div>`:""}
@@ -949,65 +989,223 @@ function jumpToItem(id){
 }
 function toggleMore(){state.moreOpen=!state.moreOpen;render();}
 
-/* ---------- 中文预览页（pick 详情，页内路由 ?date=&item=） ---------- */
-// 从当前已渲染的卡片进入：数据已加载，直接渲染 + pushState 让 URL 可分享/可回退
-function openDetail(id){
-  // id 可能是跨天流的复合引用 "日期:id"，剥出纯 id 供详情路由使用
+/* ---------- 统一详情页（新闻 / 深读 / 论文，页内路由） ---------- */
+// 路由辅助：type ↔ 数据数组的映射与 URL 读写（内联保持单文件架构）
+const NewsDetail=(()=>{
+  const TYPES={news:"items",deep:"deep",paper:"papers"};
+  const normalizeType=t=>Object.prototype.hasOwnProperty.call(TYPES,t)?t:"news";
+  return {
+    normalizeType,
+    findItem:(d,type,id)=>((d&&d[TYPES[normalizeType(type)]])||[]).find(x=>x.id===id)||null,
+    buildUrl:(date,type,item)=>"?date="+encodeURIComponent(date)+"&type="+encodeURIComponent(normalizeType(type))+"&item="+encodeURIComponent(item),
+    readRoute:s=>{const p=new URLSearchParams(s||"");return {date:p.get("date"),type:normalizeType(p.get("type")),item:p.get("item")};}
+  };
+})();
+function openDetail(id,type="news"){
+  type=NewsDetail.normalizeType(type);
   const it=state.itemsById[id];
   const date=(it&&it._date)||state.date;
   const pid=(it&&it.id)||id;
   if(!date) return;
-  history.pushState({v:"detail",date,item:pid},"","?date="+encodeURIComponent(date)+"&item="+encodeURIComponent(pid));
+  const url=NewsDetail.buildUrl(date,type,pid);
+  history.pushState({v:"detail",date,type,item:pid},"",url);
   window.scrollTo(0,0);
-  renderDetail(date,pid);
+  renderDetail(date,type,pid);
 }
-// URL/popstate 驱动：数据可能未加载，先 load 再渲染详情
-function showDetail(date,id){ loadDate(date,()=>renderDetail(date,id)); }
+function showDetail(date,type,id){ loadDate(date,()=>renderDetail(date,type,id)); }
 // 返回当日：用 replaceState 落到当日 URL 并渲染，避免 direct-URL 进入时 back 退出站点
 function backToDay(){
   const date=state.date;
   history.replaceState({v:"day",date},"","?date="+encodeURIComponent(date));
   gotoDay(date);
 }
-function renderDetail(date,id){
-  state.view="detail"; state.date=date; state.detailId=id;
+
+function detailActions(it,type){
+  if(!TOKEN) return "";
+  const ref=refOf(it), key=itemKey(ref), rl=LS.get("news_rl")[key];
+  if(type==="news"&&it.tier==="pick") return `<div class="card detail-actions-card">${actionRow(it)}</div>`;
+  return `<div class="card detail-actions-card"><div class="acts">
+    <span class="act ${rl?"done":""}" title="${rl?"再点一次移出稍后读":"加入稍后读"}" onclick="rlToggle(this,${jsArg(ref)})">${rl?"✓ 已收":"⏳ 稍后读"}</span>
+    ${favBtn(it)}
+  </div></div>`;
+}
+
+function detailSources(it){
+  const links=srcLinks(it);
+  if(!links) return '<div class="detail-fallback-note">暂无可用来源链接</div>';
+  return `<div id="detailSources" class="srcs detail-sources collapsed">${links}</div>
+    ${(it.sources||[]).length>2?'<button class="detail-source-toggle" onclick="toggleDetailSources(this)">显示全部来源</button>':""}`;
+}
+function toggleDetailSources(btn){
+  const box=document.getElementById("detailSources");
+  if(!box)return;
+  const collapsed=box.classList.toggle("collapsed");
+  btn.textContent=collapsed?"显示全部来源":"收起来源";
+}
+
+function detailMeta(it,type){
+  const kind={news:"新闻事件",deep:"深读文章",paper:"研究论文"}[type];
+  let tags=`<span class="detail-kind">${kind}</span>`;
+  if(typeof it.score==="number") tags+=`<span class="score ${scoreCls(it.score)}">${it.score}</span>`;
+  if(type==="news"){
+    tags+=`<span class="tag cat-${esc(it.category)}">${CAT[it.category]||esc(it.category||"")}</span>`;
+    if(it.status) tags+=`<span class="tag st-${esc(it.status)}">${esc(it.status)}</span>`;
+    if(+it.day_count>=2) tags+=`<span class="tag day">第${+it.day_count}天</span>`;
+    tags+=(it.tags||[]).map(t=>`<span class="tag topic">${esc(t)}</span>`).join("");
+    if(it.source_type) tags+=`<span class="tag stype">${esc(it.source_type)}</span>`;
+    if(it.time){
+      const rel=fmtTime(it.time);   // 24h 内是"X 前"，之外 fmtTime 已是短绝对格式，拼上就重复了
+      tags+=`<span class="time">${fmtAbs(it.time)}${rel.includes("前")?" · "+rel:""}</span>`;
+    }
+  }else if(type==="deep"){
+    tags+=`<span class="tag mins">约 ${+it.read_minutes||"?"} 分钟</span>`;
+    if(it.source) tags+=`<span class="tag stype">${esc(it.source)}</span>`;
+    if(it.lang==="en") tags+='<span class="tag stype">EN</span>';
+  }else{
+    tags+=`<span class="tag mins">${+it.upvotes||0} 赞</span>`;
+    if(it.has_code) tags+='<span class="tag code">含代码</span>';
+    tags+='<span class="tag stype">arXiv</span>';
+  }
+  return `<div class="card-top">${tags}</div>`;
+}
+
+function claimHtml(it){
+  const labels={fact:"事实",analysis:"判断",uncertain:"待核实"};
+  const claims=(it.claims||[]).filter(c=>c&&c.text);
+  if(!claims.length) return "";
+  return `<div class="detail-sec-t">结论与证据</div><div class="detail-claims">`+claims.map(c=>{
+    const kind=labels[c.kind]?c.kind:"uncertain";
+    const names=(c.sources||[]).filter(Boolean);
+    return `<div class="detail-claim kind-${kind}"><span class="claim-kind">${labels[kind]}</span>${esc(c.text)}${names.length?`<div class="claim-sources">依据：${names.map(esc).join("、")}</div>`:""}</div>`;
+  }).join("")+`</div>`;
+}
+
+/* ---------- 导出 Markdown：把当前详情条目复制为 MD（剪贴板失败时降级下载） ---------- */
+function detailMarkdown(it,type,date){
+  const L=[];
+  const lab={fact:"事实",analysis:"判断",uncertain:"待核实"};
+  L.push("# "+(type==="news"?it.title:(it.title_zh||it.title||"")),"");
+  L.push("- 日期："+date+(it.time?"（"+fmtAbs(it.time)+"）":""));
+  if(type==="news"){
+    L.push("- 分类："+(CAT[it.category]||it.category||"")+(it.status?" · "+it.status:"")+(typeof it.score==="number"?" · "+it.score+"分":""));
+    if(it.significance) L.push("","**对我的意义** · "+it.significance);
+    if(it.why) L.push("","**为什么重要** · "+it.why);
+    if(it.summary) L.push("","> "+it.summary);
+    if(it.detail) L.push("","## 发生了什么","",it.detail);
+    const cl=(it.claims||[]).filter(c=>c&&c.text);
+    if(cl.length){
+      L.push("","## 结论与证据","");
+      for(const c of cl) L.push("- 【"+(lab[c.kind]||"待核实")+"】"+c.text+((c.sources||[]).length?"（依据："+c.sources.join("、")+"）":""));
+    }
+    if(it.context) L.push("","**背景与机制** · "+it.context);
+    if(it.watch) L.push("","**后续关注** · "+it.watch);
+    if((it.sources||[]).length){
+      L.push("","## 来源","");
+      for(const s of it.sources) L.push("- ["+s.name+"]("+s.url+")");
+    }
+  }else if(type==="deep"){
+    if(it.takeaway) L.push("","**读完带走** · "+it.takeaway);
+    if(it.brief) L.push("","> "+it.brief);
+    if((it.key_points||[]).length){L.push("","## 核心观点","");for(const k of it.key_points) L.push("- "+k);}
+    if(it.why) L.push("","**为什么值得读** · "+it.why);
+    if(it.audience) L.push("","**适合谁读** · "+it.audience);
+    L.push("","原文："+(it.url||""));
+  }else{
+    if(it.takeaway) L.push("","**学习价值** · "+it.takeaway);
+    if(it.brief) L.push("","> "+it.brief);
+    if(it.contribution) L.push("","**核心贡献** · "+it.contribution);
+    if(it.evidence) L.push("","**证据与实验** · "+it.evidence);
+    if(it.limitations) L.push("","**适用边界** · "+it.limitations);
+    if(it.why) L.push("","**为什么值得读** · "+it.why);
+    L.push("","原文："+(it.url||""));
+  }
+  return L.join("\n")+"\n";
+}
+function exportDetailMd(){
+  const it=state.itemsById[state.detailId];
+  if(!it){toast("条目未加载",true);return;}
+  const md=detailMarkdown(it,state.detailType,it._date||state.date);
+  const fallback=()=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([md],{type:"text/markdown"}));
+    a.download=(it._date||state.date)+"-"+(it.id||"item")+".md";
+    a.click();URL.revokeObjectURL(a.href);
+    toast("剪贴板不可用，已下载 .md");
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText)
+    navigator.clipboard.writeText(md).then(()=>toast("已复制 Markdown")).catch(fallback);
+  else fallback();
+}
+
+function renderNewsDetail(it){
+  const takeaway=it.significance||it.why;
+  const takeawayLabel=it.significance?"对我的意义":"为什么值得关注";
+  const body=it.detail
+    ? esc(it.detail).split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join("")
+    : `<p>${esc(it.summary||"")}</p><div class="detail-fallback-note">较早日报暂无完整叙述，以下按已有要点展示。</div>`;
+  const hist=(it.history||[]).map(x=>`<div><span class="eh-d">${esc(x.date)}</span>${esc(x.summary)}</div>`).join("");
+  let h=takeaway?`<div class="detail-takeaway"><span class="label">${takeawayLabel}</span><p>${esc(takeaway)}</p></div>`:"";
+  if(it.summary) h+=`<div class="detail-lede">${esc(it.summary)}</div>`;
+  h+=`<div class="detail-sec-t">发生了什么</div><div class="detail-body">${body}</div>`;
+  h+=claimHtml(it);
+  const kv=[];
+  // takeaway 卡只占用了 significance||why 中的一个；另一个仍是独立维度，回到字段区展示
+  if(it.significance&&it.why) kv.push(`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`);
+  if(it.context) kv.push(`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`);
+  if(it.watch) kv.push(`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`);
+  if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
+  if(+it.day_count>=2&&hist) h+=`<div class="detail-sec-t">事件进展</div><div class="ev-history open">${hist}</div>`;
+  return h;
+}
+
+function renderDeepDetail(it){
+  let h=it.takeaway?`<div class="detail-takeaway"><span class="label">读完带走</span><p>${esc(it.takeaway)}</p></div>`:"";
+  if(it.brief) h+=`<div class="detail-lede">${esc(it.brief)}</div>`;
+  if((it.key_points||[]).length) h+=`<div class="detail-sec-t">核心观点</div><ul class="detail-list">${it.key_points.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  const kv=[];
+  if(it.why) kv.push(`<div class="kv why"><b>为什么值得读</b> · ${esc(it.why)}</div>`);
+  if(it.audience) kv.push(`<div class="kv ctx"><b>适合谁读</b> · ${esc(it.audience)}</div>`);
+  if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
+  if(it.lang==="en"&&it.title!==it.title_zh) h+=`<div class="detail-fallback-note">原题：${esc(it.title||"")}</div>`;
+  return h;
+}
+
+function renderPaperDetail(it){
+  let h=it.takeaway?`<div class="detail-takeaway"><span class="label">对我的学习价值</span><p>${esc(it.takeaway)}</p></div>`:"";
+  if(it.brief) h+=`<div class="detail-lede">${esc(it.brief)}</div>`;
+  const kv=[];
+  if(it.contribution) kv.push(`<div class="kv why"><b>核心贡献</b> · ${esc(it.contribution)}</div>`);
+  if(it.evidence) kv.push(`<div class="kv ctx"><b>证据与实验</b> · ${esc(it.evidence)}</div>`);
+  if(it.limitations) kv.push(`<div class="kv watch"><b>适用边界</b> · ${esc(it.limitations)}</div>`);
+  if(it.why) kv.push(`<div class="kv sig"><b>为什么值得读</b> · ${esc(it.why)}</div>`);
+  if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
+  if(it.title&&it.title!==it.title_zh) h+=`<div class="detail-fallback-note">原题：${esc(it.title)}</div>`;
+  return h;
+}
+
+function renderDetail(date,type,id){
+  type=NewsDetail.normalizeType(type);
+  state.view="detail";state.date=date;state.detailId=id;state.detailType=type;
   document.getElementById("viewBtn").textContent="🗓 周视图";
   const app=document.getElementById("app");
   const d=window.NEWS_DATA&&window.NEWS_DATA[date];
-  const it=d&&(d.items||[]).find(x=>x.id===id);
+  const it=NewsDetail.findItem(d,type,id);
   if(!it){
     app.innerHTML='<div class="empty">找不到这条内容（可能数据未加载）<br><br><a class="dback" onclick="backToDay()">← 返回 '+esc(date)+' 当日</a></div>';
     updateNav();return;
   }
-  const dayN=+it.day_count||0;
-  const hist=(it.history||[]).map(h=>
-    `<div><span class="eh-d">${esc(h.date)}</span>${esc(h.summary)}</div>`).join("");
-  // 正文：优先 detail 长叙述（按空行分段）；历史条目无 detail 时降级为短字段
-  const body=it.detail
-    ? esc(it.detail).split(/\n+/).filter(p=>p.trim()).map(p=>`<p>${p}</p>`).join("")
-    : `<p>${esc(it.summary||"")}</p><div class="detail-fallback-note">这条是较早的日报，暂无完整长文，以下为要点。</div>`;
+  it._date=date;
+  state.itemsById[id]=it;   // 并入而非整表替换，避免清掉跨天流/收藏页的注册
+  const title=type==="news"?it.title:(it.title_zh||it.title);
   let h='<div class="detail-wrap">';
-  h+=`<a class="dback" onclick="backToDay()">← 返回 ${esc(date)} 当日</a>`;
-  h+=`<div class="card-top">
-      <span class="score ${scoreCls(it.score)}">${it.score}</span>
-      <span class="tag cat-${it.category}">${CAT[it.category]||it.category}</span>
-      ${it.status?`<span class="tag st-${esc(it.status)}">${esc(it.status)}</span>`:""}
-      ${dayN>=2?`<span class="tag day">📌 第${dayN}天</span>`:""}
-      ${(it.tags||[]).map(t=>`<span class="tag topic">${esc(t)}</span>`).join("")}
-      <span class="tag stype">${esc(it.source_type||"")}</span>
-      <span class="time">${fmtTime(it.time)}</span>
-    </div>`;
-  h+=`<h1 class="detail-title">${esc(it.title)}</h1>`;
-  if(it.summary) h+=`<div class="detail-lede">${esc(it.summary)}</div>`;
-  h+=`<div class="detail-body">${body}</div>`;
-  if(dayN>=2&&hist) h+=`<div class="ev-history open"><b>此前进展</b>${hist}</div>`;
-  const kv=[];
-  if(it.why) kv.push(`<div class="kv why"><b>为什么重要</b> · ${esc(it.why)}</div>`);
-  if(it.context) kv.push(`<div class="kv ctx"><b>背景与机制</b> · ${esc(it.context)}</div>`);
-  if(it.significance) kv.push(`<div class="kv sig"><b>对我的意义</b> · ${esc(it.significance)}</div>`);
-  if(it.watch) kv.push(`<div class="kv watch"><b>后续关注</b> · ${esc(it.watch)}</div>`);
-  if(kv.length) h+=`<div class="detail-kv">${kv.join("")}</div>`;
-  h+=`<div class="detail-sec-t">来源</div><div class="srcs">${srcLinks(it)}</div>`;
+  h+=`<div class="detail-topbar"><a class="dback" tabindex="0" onclick="backToDay()" onkeydown="if(event.key==='Enter')backToDay()">← 返回 ${esc(date)} 当日</a>
+    <span class="act detail-export" tabindex="0" onclick="exportDetailMd()" onkeydown="if(event.key==='Enter')exportDetailMd()" title="复制本条为 Markdown">⧉ 导出 MD</span></div>`;
+  h+=detailMeta(it,type)+`<h1 class="detail-title">${esc(title||"")}</h1>`;
+  h+=type==="news"?renderNewsDetail(it):type==="deep"?renderDeepDetail(it):renderPaperDetail(it);
+  h+=`<div class="detail-sec-t">${type==="news"?"来源":"继续阅读"}</div>`;
+  if(type==="news") h+=detailSources(it);
+  else h+=`<a class="detail-link" href="${esc(safeUrl(it.url))}" target="_blank" rel="noopener">打开原文 ↗</a>`;
+  h+=detailActions(it,type);
   h+="</div>";
   app.innerHTML=h;
   updateNav();
@@ -1017,13 +1215,14 @@ function routeFromUrl(){
   const p=new URLSearchParams(location.search);
   if(p.get("view")==="topics"){enterTopics(false);return;}
   if(p.get("view")==="favs"&&TOKEN){enterFavs(false);return;}
-  const qd=p.get("date"), qi=p.get("item");
+  const route=NewsDetail.readRoute(location.search);
+  const qd=route.date, qi=route.item;
   const M=window.NEWS_MANIFEST||[];
   const dt=(qd&&M.indexOf(qd)>=0)?qd:(state.date||M[0]);
   if(!dt) return;
   const sel=document.getElementById("dateSel");
   if(sel&&[...sel.options].some(o=>o.value===dt)) sel.value=dt;
-  if(qi) showDetail(dt,qi);
+  if(qi) showDetail(dt,route.type,qi);
   else gotoDay(dt);
 }
 
@@ -1657,7 +1856,8 @@ function topicTrack(eventId){
   window.addEventListener("popstate",routeFromUrl);
   // 初始路由：?view=topics 直达主题；?date=&item= 直达详情/当日；否则默认最新一天
   const qp=new URLSearchParams(location.search);
-  const qd=qp.get("date"), qi=qp.get("item");
+  const detailRoute=NewsDetail.readRoute(location.search);
+  const qd=detailRoute.date, qi=detailRoute.item;
   if(qp.get("view")==="topics"){
     state.date=M[0];sel.value=M[0];
     enterTopics(false);
@@ -1666,7 +1866,7 @@ function topicTrack(eventId){
     enterFavs(false);
   }else if(qd&&M.indexOf(qd)>=0){
     sel.value=qd;
-    if(qi) showDetail(qd,qi); else loadDate(qd);
+    if(qi) showDetail(qd,detailRoute.type,qi); else loadDate(qd);
   }else{
     loadDate(M[0]);
   }

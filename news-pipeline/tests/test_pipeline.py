@@ -458,6 +458,20 @@ check("阅读时长-英文", dn.estimate_read_minutes({"content_chars": 0, "cont
 check("阅读时长下限3", dn.estimate_read_minutes({"content_chars": 100}, "zh") == 3)
 check("阅读时长上限60", dn.estimate_read_minutes({"content_words": 999999}, "en") == 60)
 
+claims = dn.sanitize_claims([
+    {"text": "已由官方确认", "kind": "fact", "source_indexes": [0, 2, 9, "1"]},
+    {"text": "可能改变行业格局", "kind": "analysis", "source_indexes": [1]},
+    {"text": "重复来源被去重", "kind": "fact", "source_indexes": [0, 1, 0]},
+    {"text": "仍待进一步核实", "kind": "unexpected", "source_indexes": []},
+    {"text": "", "kind": "fact", "source_indexes": [0]},
+], ["路透社", "路透社", "TechCrunch"])
+check("claims索引解析为来源名并规范类型", claims == [
+    {"text": "已由官方确认", "kind": "fact", "sources": ["路透社", "TechCrunch"]},
+    {"text": "可能改变行业格局", "kind": "analysis", "sources": ["路透社"]},
+    {"text": "重复来源被去重", "kind": "fact", "sources": ["路透社"]},
+    {"text": "仍待进一步核实", "kind": "uncertain", "sources": []},
+])
+
 tmp = Path(tempfile.mkdtemp(prefix="phase3_test_"))
 old_data_dir = os.environ.get("DATA_DIR")
 os.environ["DATA_DIR"] = str(tmp)
@@ -489,7 +503,10 @@ try:
     class DeepStub:
         def json_call(self, system, user):
             # 去重后候选只剩 B(0) C(1)：B 过线，C 不过线
-            return [{"idx": 0, "score": 9, "title_zh": "深读B", "brief": "b", "why": "w"},
+            return [{"idx": 0, "score": 9, "title_zh": "深读B", "brief": "b", "why": "w",
+                     "key_points": ["观点一", "观点二", "", "观点三", "观点四"],
+                     "audience": "正在搭建 AI 工具的开发者",
+                     "takeaway": "先验证工作流，再考虑模型升级"},
                     {"idx": 1, "score": 4, "title_zh": "深读C", "brief": "b", "why": "w"}]
 
     deep = dn.deep_channel(DeepStub(), {"deep": {"enabled": True, "pick_threshold": 7,
@@ -498,6 +515,9 @@ try:
     check("deep已推荐URL被去重且阈值过滤", [d["url"] for d in deep] == ["https://a.com/3"])
     check("deep字段完整", deep[0]["title_zh"] == "深读B" and deep[0]["read_minutes"] == 20
           and deep[0]["id"].startswith("deep-"))
+    check("deep详情字段保留且限制要点数量", deep[0]["key_points"] == ["观点一", "观点二", "观点三"]
+          and deep[0]["audience"] == "正在搭建 AI 工具的开发者"
+          and deep[0]["takeaway"] == "先验证工作流，再考虑模型升级")
     seen = json.loads((tmp / "deep_seen.json").read_text(encoding="utf-8"))
     check("deep推荐写回seen", seen["urls"].get("https://a.com/3") == "2026-07-05")
 
@@ -529,7 +549,9 @@ try:
     class PapersStub:
         def json_call(self, system, user):
             # 去重+点赞排序后候选：B(idx0,👍80) C(idx1,👍50)；B 过线、C 不过线
-            return [{"idx": 0, "score": 9, "title_zh": "论文B", "brief": "b", "why": "w"},
+            return [{"idx": 0, "score": 9, "title_zh": "论文B", "brief": "b", "why": "w",
+                     "contribution": "提出统一评测框架", "evidence": "在三个数据集上验证",
+                     "limitations": "尚未覆盖端侧场景", "takeaway": "学习评测设计方法"},
                     {"idx": 1, "score": 4, "title_zh": "论文C", "brief": "b", "why": "w"}]
 
     try:
@@ -540,6 +562,10 @@ try:
               [p["url"] for p in papers] == ["https://huggingface.co/papers/3"])
         check("papers字段完整", papers[0]["title_zh"] == "论文B" and papers[0]["upvotes"] == 80
               and papers[0]["has_code"] is True and papers[0]["id"] == "paper-3")
+        check("papers详情字段保留", papers[0]["contribution"] == "提出统一评测框架"
+              and papers[0]["evidence"] == "在三个数据集上验证"
+              and papers[0]["limitations"] == "尚未覆盖端侧场景"
+              and papers[0]["takeaway"] == "学习评测设计方法")
         pseen = json.loads((tmp / "papers_seen.json").read_text(encoding="utf-8"))
         check("papers推荐写回seen", pseen["urls"].get("https://huggingface.co/papers/3") == "2026-07-05")
 
