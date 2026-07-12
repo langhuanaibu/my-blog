@@ -186,18 +186,24 @@
   },
   {
    "event_id": "evt-20260706-aaa9db",
-   "title": "超强台风巴威登陆美属太平洋岛屿",
+   "title": "强台风巴威登陆浙江，中国疏散近200万人",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-13",
    "history": [
     {
      "date": "2026-07-06",
      "title": "超强台风巴威登陆美属太平洋岛屿",
      "summary": "超强台风巴威以290公里/小时风速登陆美属罗塔岛，阵风达350公里/小时，随后趋向台湾。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "强台风巴威登陆浙江，中国疏散近200万人",
+     "summary": "强台风“巴威”在浙江温州两次登陆，浙江、福建两省提前疏散近200万人，多地航班取消、交通中断。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -528,12 +534,12 @@
   },
   {
    "event_id": "evt-20260708-cc3bc8",
-   "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
+   "title": "美伊在霍尔木兹海峡交火，伊朗宣布关闭海峡",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-11",
+   "last_seen": "2026-07-13",
    "history": [
     {
      "date": "2026-07-08",
@@ -551,6 +557,12 @@
      "date": "2026-07-11",
      "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
      "summary": "美伊对谅解备忘录的解读矛盾，导致霍尔木兹海峡冲突再起，伊朗袭击油轮，航运量降至战前三分之一。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "美伊在霍尔木兹海峡交火，伊朗宣布关闭海峡",
+     "summary": "伊朗革命卫队宣布关闭霍尔木兹海峡，美军随即对伊朗发动新一轮打击，伊朗报复性打击美在中东目标。",
      "news_status": "发展中"
     }
    ]
@@ -1800,18 +1812,24 @@
   },
   {
    "event_id": "evt-20260712-c73c85",
-   "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
+   "title": "美议员指控以色列军方在约旦河西岸拘留事件中撒谎",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-13",
    "history": [
     {
      "date": "2026-07-12",
      "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
      "summary": "美国众议员罗·卡纳在约旦河西岸被武装以色列定居者扣押90分钟，以色列军队拒绝干预。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "美议员指控以色列军方在约旦河西岸拘留事件中撒谎",
+     "summary": "美国民主党议员Ro Khanna指控以色列军方在约旦河西岸拘留其车队事件中撒谎，引发亲以色列势力攻击。",
+     "news_status": "有争议"
     }
    ]
   },
@@ -1999,6 +2017,295 @@
      "title": "科技巨头AI债券遭市场抛售，价格持续下跌",
      "summary": "科技巨头发行的AI相关长期债券价格持续下跌，亚马逊250亿美元债券需求疲软，长期债券认购率低。",
      "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-1ca989",
+   "title": "美国参议员林赛·格雷厄姆去世，享年71岁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "美国参议员林赛·格雷厄姆去世，享年71岁",
+     "summary": "美国共和党参议员、特朗普盟友林赛·格雷厄姆因突发疾病去世，死因疑似与心脏有关。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-d19f1e",
+   "title": "OpenAI GPT-5.6 Sol Ultra一小时证明50年图论猜想",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "OpenAI GPT-5.6 Sol Ultra一小时证明50年图论猜想",
+     "summary": "OpenAI的GPT-5.6 Sol Ultra模型在一小时内生成了悬而未决50年的图论难题“循环双覆盖猜想”的完整证明。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-9aeb2e",
+   "title": "曼谷酒吧火灾致至少27人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "曼谷酒吧火灾致至少27人死亡",
+     "summary": "泰国曼谷一家酒吧发生火灾，造成至少27人死亡，63人受伤，其中22人伤势严重。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-753c1c",
+   "title": "多伦多节日枪击致2死4伤",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "多伦多节日枪击致2死4伤",
+     "summary": "加拿大多伦多一个拉丁文化节庆活动上发生枪击，造成至少2人死亡、4人受伤，警方正在追捕嫌疑人。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-c9bbfc",
+   "title": "苹果起诉OpenAI挖角窃密，涉400名员工",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "苹果起诉OpenAI挖角窃密，涉400名员工",
+     "summary": "苹果在美国起诉OpenAI，指控其挖角400名员工、窃取工程机和机密文件，前员工发现漏洞后持续访问内网。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-5d13f1",
+   "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
+     "summary": "俄罗斯导弹袭击乌克兰东北部城市苏梅，击中一家咖啡店附近，民众惊慌逃离。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-cad0e3",
+   "title": "英伟达路演：季度收入近千亿美元，增速加快",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "英伟达路演：季度收入近千亿美元，增速加快",
+     "summary": "英伟达CEO黄仁勋在摩根士丹利路演中表示，季度收入近千亿美元且增速加快，Rubin Ultra没有延期。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-027dd5",
+   "title": "德州男子被ICE枪杀引发抗议",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "德州男子被ICE枪杀引发抗议",
+     "summary": "美国德州建筑工人Lorenzo Salgado Araujo被ICE枪杀，引发民众抗议特朗普移民政策。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-1b3ce4",
+   "title": "特朗普威胁摧毁伊朗并制裁其金融家",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "特朗普威胁摧毁伊朗并制裁其金融家",
+     "summary": "特朗普威胁称若伊朗试图刺杀他，将用1000枚导弹“摧毁”伊朗，同时美国财政部制裁一名伊朗金融家。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-24fa71",
+   "title": "卡塔尔前埃米尔哈马德去世，享年74岁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "卡塔尔前埃米尔哈马德去世，享年74岁",
+     "summary": "卡塔尔前埃米尔哈马德·本·哈利法·阿勒萨尼去世，享年74岁，他通过不流血政变上台并推动国家转型。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-dd4d2a",
+   "title": "白宫强力施压苹果英伟达扶持英特尔",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "白宫强力施压苹果英伟达扶持英特尔",
+     "summary": "特朗普政府过去一年持续施压苹果、英伟达等公司，为英特尔撮合合作，以扶持其代工业务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-cfcbeb",
+   "title": "德州大学因行政令关闭移民主题艺术展",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "德州大学因行政令关闭移民主题艺术展",
+     "summary": "德克萨斯大学因特朗普行政令关闭一场涉及移民主题的艺术展，该展品包括“ICE冰棒”等作品。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-519d7a",
+   "title": "国常会部署加快新一代通信网和算力网建设",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "国常会部署加快新一代通信网和算力网建设",
+     "summary": "李强主持召开国常会，听取数字中国建设汇报，要求适度超前布局数字基础设施，加快通信网和算力网建设。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-4b6034",
+   "title": "南非驱逐超5.3万名外国人，打击非法移民",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "南非驱逐超5.3万名外国人，打击非法移民",
+     "summary": "南非在移民行动中驱逐超过5.3万名外国人，以回应国内广泛的反移民抗议。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-8b0dc9",
+   "title": "印度穆斯林女法官因定罪牛义警面临死亡威胁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "印度穆斯林女法官因定罪牛义警面临死亡威胁",
+     "summary": "印度穆斯林女法官塔巴苏姆·汗因定罪14名印度教男子（涉及牛义警私刑案）而面临网络死亡威胁。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-ae9c06",
+   "title": "OpenAI成Oracle关键信用风险，评级被下调",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "OpenAI成Oracle关键信用风险，评级被下调",
+     "summary": "标普将Oracle信用评级下调至BBB-（垃圾级上一档），称OpenAI占其6380亿美元合同义务约一半，若OpenAI退出将构成重大风险。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-c572d2",
+   "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
+     "summary": "美国玩具进口商Jonathan Silva因关税尝试在美国本土生产大富翁游戏，发现成本比中国进口高出数倍，且供应链配套不足。",
+     "news_status": "已确认"
     }
    ]
   }
