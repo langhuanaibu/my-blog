@@ -472,51 +472,87 @@ deep_sources:
     name: Simon Willison
     url: https://simonwillison.net/atom/everything/
     lang: en
+    channel: ai_engineering
     enabled: true
   - id: importai
     name: Import AI
     url: https://importai.substack.com/feed
     lang: en
+    channel: ai_engineering
     enabled: true
   - id: interconnects
     name: Interconnects
     url: https://www.interconnects.ai/feed
     lang: en
+    channel: ai_engineering
     enabled: true
   - id: oneusefulthing
     name: One Useful Thing
     url: https://www.oneusefulthing.org/feed
     lang: en
+    channel: ai_engineering
     enabled: true
   - id: latentspace
     name: Latent Space
     url: https://www.latent.space/feed
     lang: en
+    channel: ai_engineering
     enabled: true
   # Anthropic 工程博客（官方无 RSS，走自建 RSSHub；deep 源同样支持 {rsshub} 占位符）
   - id: anthropic-eng
     name: Anthropic Engineering
     url: "{rsshub}/anthropic/engineering"
     lang: en
+    channel: ai_engineering
+    enabled: true
+  - id: eugeneyan
+    name: Eugene Yan
+    url: https://eugeneyan.com/rss/
+    lang: en
+    channel: ai_engineering
     enabled: true
   # ---------- 科技/商业分析 ----------
   - id: stratechery
     name: Stratechery
     url: https://stratechery.com/feed/
     lang: en
+    channel: tech_business
     enabled: true
   - id: pragmaticengineer
     name: The Pragmatic Engineer
     url: https://blog.pragmaticengineer.com/rss/
     lang: en
+    channel: tech_business
     enabled: true
+  - id: constructionphysics
+    name: Construction Physics
+    url: https://www.construction-physics.com/feed
+    lang: en
+    channel: tech_business
+    enabled: true
+  # ---------- 中文社会/财经 ----------
   - id: sspai
     name: 少数派
     url: https://sspai.com/feed
     lang: zh
+    channel: zh_society_finance
     enabled: true
   - id: jiqizhixin
     name: 机器之心
     url: https://www.jiqizhixin.com/rss
     lang: zh
+    channel: zh_society_finance
+    enabled: true
+  - id: chinanews-dxw
+    name: 中国新闻网·东西问
+    url: https://www.chinanews.com.cn/rss/dxw.xml
+    lang: zh
+    channel: zh_society_finance
+    # 2026-07-12 冒烟：可抓且时间正常，但摘要均长仅 29 字，未过深读摘要门槛。
+    enabled: false
+  - id: cna-finance
+    name: 中央社·产经证券
+    url: https://feeds.feedburner.com/rsscna/finance
+    lang: zh
+    channel: zh_society_finance
     enabled: true

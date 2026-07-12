@@ -1271,6 +1271,70 @@ def load_deep_seen(data_dir, date_str, filename="deep_seen.json"):
     return seen
 
 
+DEEP_CHANNELS = ("ai_engineering", "tech_business", "zh_society_finance")
+
+
+def deep_source_channel(source):
+    """旧配置兼容映射；新源应在 sources.yaml 显式声明 channel。"""
+    if source.get("channel") in DEEP_CHANNELS:
+        return source["channel"]
+    if source.get("lang") == "zh":
+        return "zh_society_finance"
+    if source.get("id") in {"stratechery", "pragmaticengineer"}:
+        return "tech_business"
+    return "ai_engineering"
+
+
+def select_deep_soft_quota(scored, pick_max):
+    """每栏优先一篇；空栏或剩余名额按总分回填，不降低既有质量门槛。"""
+    ordered = sorted(scored, key=lambda t: -t[0])
+    selected, used = [], set()
+    for channel in DEEP_CHANNELS:
+        hit = next((t for t in ordered
+                    if t[1] not in used and t[2].get("channel") == channel), None)
+        if hit and len(selected) < pick_max:
+            selected.append(hit)
+            used.add(hit[1])
+    for row in ordered:
+        if len(selected) >= pick_max:
+            break
+        if row[1] not in used:
+            selected.append(row)
+            used.add(row[1])
+    return selected
+
+
+def update_deep_health(data_dir, date_str, sources, candidates, picked):
+    """记录最近 14 天深读来源/栏目的候选与入选量，供后续健康审计。"""
+    path = data_dir / "deep_health.json"
+    health = {"version": 1, "days": {}}
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded.get("days"), dict):
+                health = loaded
+        except Exception as e:
+            log(f"  deep_health.json 读取失败，重建: {e}")
+    source_rows = {s["id"]: {"candidates": 0, "picked": 0} for s in sources}
+    channel_rows = {c: {"candidates": 0, "picked": 0} for c in DEEP_CHANNELS}
+    for item in candidates:
+        sid, channel = item.get("source_id"), item.get("channel", "ai_engineering")
+        source_rows.setdefault(sid, {"candidates": 0, "picked": 0})["candidates"] += 1
+        channel_rows.setdefault(channel, {"candidates": 0, "picked": 0})["candidates"] += 1
+    picked_urls = {item.get("url") for item in picked}
+    for item in candidates:
+        if item.get("url") not in picked_urls:
+            continue
+        sid, channel = item.get("source_id"), item.get("channel", "ai_engineering")
+        source_rows.setdefault(sid, {"candidates": 0, "picked": 0})["picked"] += 1
+        channel_rows.setdefault(channel, {"candidates": 0, "picked": 0})["picked"] += 1
+    health["days"][date_str] = {"sources": source_rows, "channels": channel_rows}
+    cutoff = (datetime.strptime(date_str, "%Y-%m-%d") - timedelta(days=13)).strftime("%Y-%m-%d")
+    health["days"] = {d: v for d, v in health["days"].items() if d >= cutoff}
+    data_dir.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(health, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def deep_channel(llm, cfg, date_str, profile_text=""):
     """深读频道编排。独立故障域：任何异常只 log 并返回 []，绝不影响新闻主管线。"""
     try:
@@ -1292,7 +1356,10 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
             src = dict(s, source_type="analysis", credibility=7)
             fetched, _err = fetch_rss(src, window_start, max_per)
             for it in fetched:
+                it["source_id"] = s["id"]
+                it["source"] = s["name"]
                 it["lang"] = s.get("lang", "en")
+                it["channel"] = deep_source_channel(s)
             candidates += fetched
 
         data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -1317,10 +1384,11 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
             except Exception:
                 continue
             if 0 <= i < len(candidates):
+                r["channel"] = candidates[i].get("channel", "ai_engineering")
                 scored.append((max(0.0, min(10.0, score)), i, r))
         threshold = float(dcfg.get("pick_threshold", 7))
         pick_max = int(dcfg.get("pick_max", 3))
-        scored = sorted([t for t in scored if t[0] >= threshold], key=lambda t: -t[0])
+        scored = select_deep_soft_quota([t for t in scored if t[0] >= threshold], pick_max)
 
         deep, used = [], set()
         for score, i, r in scored:
@@ -1336,6 +1404,7 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
                 "title_zh": str(r.get("title_zh") or c["title"])[:40],
                 "url": c["url"],
                 "source": c["source"],
+                "channel": c.get("channel", "ai_engineering"),
                 "lang": c["lang"],
                 "brief": str(r.get("brief", ""))[:60],
                 "why": str(r.get("why", ""))[:90],
@@ -1362,6 +1431,10 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         data_dir.mkdir(parents=True, exist_ok=True)
         (data_dir / "deep_seen.json").write_text(
             json.dumps(seen, ensure_ascii=False, indent=1), encoding="utf-8")
+        try:
+            update_deep_health(data_dir, date_str, deep_sources, candidates, deep)
+        except Exception as e:
+            log(f"  深读健康统计写入失败: {e}")
         log(f"  深读推荐：{len(deep)} 篇（阈值 {threshold} 分）")
         return deep
     except Exception as e:

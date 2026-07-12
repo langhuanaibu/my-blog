@@ -25,6 +25,19 @@ def check(name, cond):
         failures.append(name)
 
 
+# 深读软配额：三栏优先各取一篇，空栏名额按总分释放
+quota_rows = [
+    (9.5, 0, {"channel": "ai_engineering"}),
+    (9.0, 1, {"channel": "ai_engineering"}),
+    (8.5, 2, {"channel": "tech_business"}),
+    (8.0, 3, {"channel": "zh_society_finance"}),
+]
+check("deep三栏软配额",
+      [row[1] for row in dn.select_deep_soft_quota(quota_rows, 3)] == [0, 2, 3])
+check("deep空栏释放名额",
+      [row[1] for row in dn.select_deep_soft_quota(quota_rows[:3], 3)] == [0, 2, 1])
+
+
 # ----------------------------------------------------------------
 # 1. 舆论源硬约束（score_and_select）
 # ----------------------------------------------------------------
@@ -520,6 +533,11 @@ try:
           and deep[0]["takeaway"] == "先验证工作流，再考虑模型升级")
     seen = json.loads((tmp / "deep_seen.json").read_text(encoding="utf-8"))
     check("deep推荐写回seen", seen["urls"].get("https://a.com/3") == "2026-07-05")
+    deep_health = json.loads((tmp / "deep_health.json").read_text(encoding="utf-8"))
+    check("deep健康统计记录来源候选与入选", deep_health["days"]["2026-07-05"]["sources"]["simonwillison"]
+          == {"candidates": 2, "picked": 1})
+    check("deep健康统计记录栏目候选与入选", deep_health["days"]["2026-07-05"]["channels"]["ai_engineering"]
+          == {"candidates": 2, "picked": 1})
 
     class DeepBoom:
         def json_call(self, system, user):

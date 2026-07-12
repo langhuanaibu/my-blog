@@ -116,6 +116,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .tl-item{position:relative}
 .tl-item::before{content:"";position:absolute;left:-29px;top:16px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
 .tl-time{display:inline-block;font-size:12px;color:var(--text3);margin-bottom:4px;font-variant-numeric:tabular-nums}
+.tl-badge{display:inline-block;margin:0 0 4px 8px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:11px}
 .topic-group{font-weight:700;font-size:14px;color:var(--heading);margin:20px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
 .topic-card{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:6px}
@@ -415,6 +416,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 </div>
 
 <script src="data/manifest.js"></script>
+<script src="news-timeline.js"></script>
 <script>
 const CAT = {ai:"AI", tech:"互联网/科技", finance:"财经", society:"社会", world:"国际"};
 const state = {date:null, cat:"all", tag:null, moreOpen:false, showHidden:false,
@@ -1481,7 +1483,7 @@ function tlTime(iso){
 }
 function feedDayOpen(dt){
   if(dt in feed.open) return feed.open[dt];
-  return dt===(window.NEWS_MANIFEST||[])[0];   // 默认只展开最新一天
+  return dt===(feed.latestDate||(window.NEWS_MANIFEST||[])[0]);   // 默认只展开时间轴最新一天
 }
 function feedToggleDay(dt){feed.open[dt]=!feedDayOpen(dt);renderPicksFeed();}
 function feedMore(){feed.days+=5;renderPicksFeed();}
@@ -1499,24 +1501,21 @@ function applyHighlight(){
 
 // 当前热点：近 3 天精选按「独立信源数 × 时间衰减」排序（AIHOT 口径），
 // 多源事件自然浮上，单源硬新闻靠高分兜底；不足 2 条整个榜自动隐藏。
-function hotListHtml(dates){
+function hotListHtml(rows){
   const now=Date.now(), cands=[];
-  for(const dt of dates.slice(0,3)){
-    const d=window.NEWS_DATA[dt];
-    if(!d) continue;
-    for(const it of (d.items||[])){
-      if(it.tier!=="pick") continue;
-      const srcN=(it.sources||[]).length;
-      if(srcN<2&&(+it.score||0)<90) continue;
-      const ageH=Math.max(0,(now-new Date(it.time).getTime())/36e5);
-      cands.push({it,dt,srcN,hot:Math.max(srcN,1)*Math.pow(.5,ageH/36)});
-    }
+  const recent=[...new Set(rows.map(r=>r.reportDate))].sort().reverse().slice(0,3);
+  for(const g of NewsTimeline.groupHotEvents(rows.filter(r=>recent.includes(r.reportDate)))){
+    const {item:it,reportDate:dt}=g.latest, srcN=g.sourceCount;
+    if(srcN<2&&(+it.score||0)<90) continue;
+    const ageH=Math.max(0,(now-new Date(it.time).getTime())/36e5);
+    const pd=NewsTimeline.publishedDate(it,dt).date;
+    cands.push({it,dt,pd,srcN,hot:Math.max(srcN,1)*Math.pow(.5,ageH/36)});
   }
   cands.sort((a,b)=>b.hot-a.hot);
   const top=cands.slice(0,6);
   if(top.length<2) return "";
   return `<div class="hotbox"><div class="hot-h">🔥 当前热点<span class="n">多信源热度 · 随时间消退</span></div>`
-    +top.map((c,i)=>`<div class="hot-row" onclick="hotJump(${jsArg(c.dt)},${jsArg(refOf(c.it))})">
+    +top.map((c,i)=>`<div class="hot-row" onclick="hotJump(${jsArg(c.pd)},${jsArg(refOf(c.it))})">
       <span class="hot-no n${Math.min(i+1,4)}">${i+1}</span>
       <span class="hot-t">${esc(c.it.title)}</span>
       <span class="hot-m">${c.srcN} 个信源 · ${fmtTime(c.it.time)}</span>
@@ -1564,24 +1563,31 @@ async function renderPicksFeed(){
       const terms=q.split(/\s+/);
       rows=rows.filter(r=>terms.every(t=>((r[4]||"")+" "+(r[5]||"")).toLowerCase().includes(t)));
     }
-    const byDate={};
-    for(const r of rows)(byDate[r[0]]=byDate[r[0]]||[]).push(r[1]);
-    const hitDates=Object.keys(byDate).sort().reverse();
-    const shownDates=hitDates.slice(0,30);   // 上限 30 天防一次性加载过多
+    const byReport={};
+    for(const r of rows)(byReport[r[0]]=byReport[r[0]]||[]).push(r[1]);
+    const hitDates=Object.keys(byReport).sort().reverse();
+    const shownDates=hitDates.slice(0,30);   // 上限 30 个日报文件防一次性加载过多
     await loadDates(shownDates);
     if(state.view!=="picks"||feed.q.trim().toLowerCase()!==q) return;
     state.itemsById={};
-    let n=0;
+    const raw=[];
     for(const dt of shownDates){
       const d=window.NEWS_DATA[dt];
       if(!d) continue;
-      const ids=new Set(byDate[dt]);
-      const hits=(d.items||[]).filter(i=>ids.has(i.id)&&!HID[dt+":"+i.id]);
-      for(const it of hits){it._date=dt;state.itemsById[refOf(it)]=it;}
-      if(!hits.length) continue;
-      n+=hits.length;
-      h+=`<div class="feed-day">${esc(dt)}<span class="n">${hits.length} 条命中</span></div>`;
-      h+=`<div class="tl">${hits.map(it=>`<div class="tl-item"><span class="tl-time">${tlTime(it.time)}</span>${card(it)}</div>`).join("")}</div>`;
+      const ids=new Set(byReport[dt]);
+      for(const it of (d.items||[])) if(ids.has(it.id)&&!HID[dt+":"+it.id]) raw.push({reportDate:dt,item:it});
+    }
+    const hits=NewsTimeline.timelineRows(raw), byDate={};
+    for(const row of hits){
+      row.item._date=row.reportDate;
+      state.itemsById[refOf(row.item)]=row.item;
+      (byDate[row.publishedDate]=byDate[row.publishedDate]||[]).push(row);
+    }
+    let n=0;
+    for(const dt of Object.keys(byDate).sort().reverse()){
+      const dayRows=byDate[dt]; n+=dayRows.length;
+      h+=`<div class="feed-day">${esc(dt)}<span class="n">${dayRows.length} 条命中</span></div>`;
+      h+=`<div class="tl">${dayRows.map(r=>`<div class="tl-item"><span class="tl-time">${tlTime(r.item.time)}${r.timeUncertain?' ?':''}</span>${r.isContinuation?'<span class="tl-badge">持续事件</span>':''}${card(r.item)}</div>`).join("")}</div>`;
     }
     h+=n?"":'<div class="empty">没有命中的精选条目</div>';
     if(hitDates.length>shownDates.length)
@@ -1593,27 +1599,32 @@ async function renderPicksFeed(){
     await loadDates(dates);
     if(state.view!=="picks"||feed.q) return;
     state.itemsById={};
-    // 先全量注册（含折叠日），热点榜与跳转依赖引用
+    const raw=[], rawAll=[];
     for(const dt of dates){
       const d=window.NEWS_DATA[dt];
       if(!d) continue;
       for(const it of (d.items||[])){
         if(it.tier!=="pick") continue;
+        if(HID[dt+":"+it.id]) continue;
         it._date=dt;
         state.itemsById[refOf(it)]=it;
+        rawAll.push({reportDate:dt,item:it});
+        if(state.cat==="all"||it.category===state.cat) raw.push({reportDate:dt,item:it});
       }
     }
-    h+=hotListHtml(dates);
-    for(const dt of dates){
-      const d=window.NEWS_DATA[dt];
-      if(!d) continue;
-      const picks=(d.items||[]).filter(i=>i.tier==="pick"
-        &&(state.cat==="all"||i.category===state.cat)&&!HID[dt+":"+i.id])
-        .slice().sort((a,b)=>String(b.time||"").localeCompare(String(a.time||"")));
-      if(!picks.length) continue;
+    h+=hotListHtml(rawAll);
+    const timeline=NewsTimeline.timelineRows(raw), byDate={};
+    for(const row of timeline){
+      row.item._date=row.reportDate;
+      state.itemsById[refOf(row.item)]=row.item;
+      (byDate[row.publishedDate]=byDate[row.publishedDate]||[]).push(row);
+    }
+    feed.latestDate=Object.keys(byDate).sort().reverse()[0]||null;
+    for(const dt of Object.keys(byDate).sort().reverse()){
+      const dayRows=byDate[dt];
       const open=feedDayOpen(dt);
-      h+=`<div class="feed-day clk" onclick="feedToggleDay(${jsArg(dt)})">${open?"▾":"▸"} ${esc(dt)}<span class="n">${picks.length} 条精选</span></div>`;
-      if(open) h+=`<div class="tl">${picks.map(it=>`<div class="tl-item"><span class="tl-time">${tlTime(it.time)}</span>${card(it)}</div>`).join("")}</div>`;
+      h+=`<div class="feed-day clk" onclick="feedToggleDay(${jsArg(dt)})">${open?"▾":"▸"} ${esc(dt)}<span class="n">${dayRows.length} 条精选</span></div>`;
+      if(open) h+=`<div class="tl">${dayRows.map(r=>`<div class="tl-item"><span class="tl-time">${tlTime(r.item.time)}${r.timeUncertain?' ?':''}</span>${r.isContinuation?'<span class="tl-badge">持续事件</span>':''}${card(r.item)}</div>`).join("")}</div>`;
     }
     if(feed.days<M.length)
       h+=`<button class="toggle-more" onclick="feedMore()">加载更早 5 天 ▼</button>`;
