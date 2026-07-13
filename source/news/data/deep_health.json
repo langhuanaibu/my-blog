@@ -70,6 +70,76 @@
      "picked": 0
     }
    }
+  },
+  "2026-07-14": {
+   "sources": {
+    "simonwillison": {
+     "candidates": 5,
+     "picked": 1
+    },
+    "importai": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "interconnects": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "oneusefulthing": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "latentspace": {
+     "candidates": 1,
+     "picked": 0
+    },
+    "anthropic-eng": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "eugeneyan": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "stratechery": {
+     "candidates": 1,
+     "picked": 1
+    },
+    "pragmaticengineer": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "constructionphysics": {
+     "candidates": 1,
+     "picked": 0
+    },
+    "sspai": {
+     "candidates": 5,
+     "picked": 1
+    },
+    "jiqizhixin": {
+     "candidates": 0,
+     "picked": 0
+    },
+    "cna-finance": {
+     "candidates": 5,
+     "picked": 0
+    }
+   },
+   "channels": {
+    "ai_engineering": {
+     "candidates": 6,
+     "picked": 1
+    },
+    "tech_business": {
+     "candidates": 2,
+     "picked": 1
+    },
+    "zh_society_finance": {
+     "candidates": 10,
+     "picked": 1
+    }
+   }
   }
  }
 }

@@ -5,7 +5,7 @@
    "event_id": "evt-20260706-1cf469",
    "title": "斯坦福数据：AI致美国年轻程序员就业锐减19%",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -22,7 +22,7 @@
    "event_id": "evt-20260706-cf44d6",
    "title": "Meta被曝让外包伪装未成年人诱导竞品AI聊敏感话题",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -80,7 +80,7 @@
    "event_id": "evt-20260706-da6968",
    "title": "英伟达下一代AI服务器机架Kyber NVL144推迟至2028年",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -120,7 +120,7 @@
    "event_id": "evt-20260706-0e0dfc",
    "title": "首个AI代理勒索软件JADEPUFFER利用大模型自动攻击",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -137,7 +137,7 @@
    "event_id": "evt-20260706-98f322",
    "title": "中国强制字节阿里关闭AI聊天机器人拟人角色功能",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -154,7 +154,7 @@
    "event_id": "evt-20260706-fa0e05",
    "title": "Hugging Face发布LeRobot v0.6.0",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -171,7 +171,7 @@
    "event_id": "evt-20260706-01d19b",
    "title": "特朗普干预FIFA裁决使美国前锋巴洛贡获准参加世界杯",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -234,7 +234,7 @@
    "event_id": "evt-20260706-bc22de",
    "title": "AI模型路由器技术成企业降本新趋势",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -251,7 +251,7 @@
    "event_id": "evt-20260706-818d22",
    "title": "中国海警扩大执法巡查至台湾以东太平洋水域",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -268,7 +268,7 @@
    "event_id": "evt-20260706-ad1a90",
    "title": "中国民族团结法生效后遭批评，官方强硬回击",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -308,7 +308,7 @@
    "event_id": "evt-20260706-eb22b5",
    "title": "Wegovy减肥药片在英国药店和线上开售",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -325,7 +325,7 @@
    "event_id": "evt-20260706-841f19",
    "title": "Hugging Face公布PRX数据策略",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -342,7 +342,7 @@
    "event_id": "evt-20260706-42cca5",
    "title": "Hugging Face发布Kernels重大更新",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -359,7 +359,7 @@
    "event_id": "evt-20260706-9d1e37",
    "title": "特朗普斡旋下中国地下教会牧师金明日获释",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -376,7 +376,7 @@
    "event_id": "evt-20260706-b210da",
    "title": "西藏活动人士在纽约联合国总部外自焚身亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -393,7 +393,7 @@
    "event_id": "evt-20260706-f15581",
    "title": "易捷航空同意Castlelake 73亿美元收购要约",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -410,7 +410,7 @@
    "event_id": "evt-20260706-42a395",
    "title": "百度推出可一次处理数十页文档的无限OCR技术",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -427,7 +427,7 @@
    "event_id": "evt-20260706-db4010",
    "title": "澳大利亚研究显示极端高温使年轻人精神健康入院风险翻倍",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -444,7 +444,7 @@
    "event_id": "evt-20260706-dfcbd5",
    "title": "特朗普政府改变美国公民配偶移民政策",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -1295,12 +1295,12 @@
   },
   {
    "event_id": "evt-20260710-8de6a7",
-   "title": "台风巴威登陆浙江，多预警齐发",
+   "title": "台风巴威登陆华东，近200万人疏散",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-10",
@@ -1312,6 +1312,12 @@
      "date": "2026-07-12",
      "title": "台风巴威登陆浙江，多预警齐发",
      "summary": "台风巴威在浙江两次登陆，中心最大风力13级，中央气象台发布台风、暴雨、强对流三预警。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "台风巴威登陆华东，近200万人疏散",
+     "summary": "台风巴威先后登陆浙江台州和温州，华东近200万人提前疏散，1200多架次航班取消，河北因暴雨引发洪水致约1800人被困。",
      "news_status": "已确认"
     }
    ]
@@ -1551,17 +1557,23 @@
   },
   {
    "event_id": "evt-20260711-3a26b5",
-   "title": "中国首次成功回收轨道级火箭助推器",
+   "title": "长征十号乙火箭成功测试海上回收技术",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-11",
-   "last_seen": "2026-07-11",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-11",
      "title": "中国首次成功回收轨道级火箭助推器",
      "summary": "中国航天科技集团长征十号乙火箭实现全球首次运载火箭网系回收，成功着陆。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "长征十号乙火箭成功测试海上回收技术",
+     "summary": "长征十号乙运载火箭一子级成功降落在南海海上平台，完成中国可重复使用火箭技术的关键测试。",
      "news_status": "已确认"
     }
    ]
@@ -1920,17 +1932,23 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
+   "title": "阿联酋谴责伊朗攻击油轮，美国发动新一轮打击",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-12",
      "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
      "summary": "美国要求伊朗周六前承诺开放霍尔木兹海峡，伊朗革命卫队宣布关闭海峡并警告射击船只。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "阿联酋谴责伊朗攻击油轮，美国发动新一轮打击",
+     "summary": "阿联酋谴责伊朗对油轮的“无耻”攻击，美国连续第三晚对伊朗发动打击，特朗普宣布对霍尔木兹海峡实施新封锁并加征20%费用。",
      "news_status": "发展中"
     }
    ]
@@ -2022,17 +2040,23 @@
   },
   {
    "event_id": "evt-20260713-1ca989",
-   "title": "美国参议员林赛·格雷厄姆去世，享年71岁",
+   "title": "美共和党参议员格雷厄姆猝死，特朗普提名其胞妹接任",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-13",
-   "last_seen": "2026-07-13",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-13",
      "title": "美国参议员林赛·格雷厄姆去世，享年71岁",
      "summary": "美国共和党参议员、特朗普盟友林赛·格雷厄姆因突发疾病去世，死因疑似与心脏有关。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "美共和党参议员格雷厄姆猝死，特朗普提名其胞妹接任",
+     "summary": "美国共和党参议员林赛·格雷厄姆因病猝死，特朗普迅速提名其胞妹填补参议院席位空缺，南卡州长将宣布临时任命。",
      "news_status": "已确认"
     }
    ]
@@ -2056,17 +2080,23 @@
   },
   {
    "event_id": "evt-20260713-9aeb2e",
-   "title": "曼谷酒吧火灾致至少27人死亡",
+   "title": "曼谷酒吧火灾致28死25重伤",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-13",
-   "last_seen": "2026-07-13",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-13",
      "title": "曼谷酒吧火灾致至少27人死亡",
      "summary": "泰国曼谷一家酒吧发生火灾，造成至少27人死亡，63人受伤，其中22人伤势严重。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "曼谷酒吧火灾致28死25重伤",
+     "summary": "曼谷乍都节区一家酒吧发生火灾，至少28人死亡、25人重伤，目击者称现场发生爆炸，死伤者多为年轻顾客。",
      "news_status": "已确认"
     }
    ]
@@ -2305,6 +2335,261 @@
      "date": "2026-07-13",
      "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
      "summary": "美国玩具进口商Jonathan Silva因关税尝试在美国本土生产大富翁游戏，发现成本比中国进口高出数倍，且供应链配套不足。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-bbf24b",
+   "title": "大众拟再裁5万人，关闭德国工厂应对中国困境",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "大众拟再裁5万人，关闭德国工厂应对中国困境",
+     "summary": "大众汽车CEO宣布计划再裁减最多5万个全球岗位，并面临关闭德国四座工厂的风险，以应对在华市场份额下滑和成本高企。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-e283fc",
+   "title": "开放权重模型占AI流量29%，token价格趋稳",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "开放权重模型占AI流量29%，token价格趋稳",
+     "summary": "Vercel AI Gateway数据显示，2026年7月开放权重模型占生产流量的29%，每token价格趋于平稳，反映AI应用成本下降和开源生态成熟。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-189996",
+   "title": "德国AI协会发布开源模型Soofi S，性能领先",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "德国AI协会发布开源模型Soofi S，性能领先",
+     "summary": "德国AI协会发布开源大模型Soofi S 30B-A3B，总参数316亿，激活参数约32亿，采用Mamba-2与注意力混合的MoE架构，在英语和德语基准测试中超越OLMo 3等开源模型。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-f4f5a9",
+   "title": "Meta豪掷超500亿美元扩建路易斯安那州数据中心至5GW",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "Meta豪掷超500亿美元扩建路易斯安那州数据中心至5GW",
+     "summary": "Meta宣布将其路易斯安那州数据中心算力扩至5GW，总投资超500亿美元，为全球最大AI基础设施投资之一。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-ab3185",
+   "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
+     "summary": "2026世界人工智能大会将于7月17日至20日在上海举行，国家主席习近平将出席开幕式并发表主旨讲话。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-a45ced",
+   "title": "特朗普政府放弃以医保资金威胁跨性别医疗",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "特朗普政府放弃以医保资金威胁跨性别医疗",
+     "summary": "特朗普政府卫生与公众服务部放弃了一项最激进的提案，即通过扣留联邦医保资金来迫使各州停止为青少年提供性别确认护理。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-570deb",
+   "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
+     "summary": "美国12个州的总检察长联合提起诉讼，试图阻止派拉蒙与华纳兄弟探索公司价值1100亿美元的合并案，称其将损害竞争。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-43495a",
+   "title": "《侏罗纪公园》演员山姆·尼尔去世享年78岁",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "《侏罗纪公园》演员山姆·尼尔去世享年78岁",
+     "summary": "《侏罗纪公园》主演山姆·尼尔去世，享年78岁，各界人士悼念。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-3350a0",
+   "title": "Cloudflare推出Precursor持续行为验证引擎",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "Cloudflare推出Precursor持续行为验证引擎",
+     "summary": "Cloudflare推出Precursor引擎，通过持续客户端信号检测机器人行为。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-550de8",
+   "title": "美参议员林赛·格雷厄姆去世，其妹接任",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "美参议员林赛·格雷厄姆去世，其妹接任",
+     "summary": "美国参议员林赛·格雷厄姆去世，南卡州长任命其妹达琳·格雷厄姆·诺多内接替其任期至2027年初。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-4e1cfd",
+   "title": "匈牙利议会投票罢免总统",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "匈牙利议会投票罢免总统",
+     "summary": "匈牙利议会投票罢免总统舒尤克·道马什，他被视为前总理欧尔班的忠诚支持者。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-8158d7",
+   "title": "ICE在缅因州枪杀哥伦比亚男子，移民执法已致9死",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "ICE在缅因州枪杀哥伦比亚男子，移民执法已致9死",
+     "summary": "ICE在缅因州一次行动中枪杀一名26岁哥伦比亚男子，参议员质疑未佩戴执法记录仪。特朗普移民执法已致至少9人死亡。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-8e0f50",
+   "title": "中国机器人技术热潮致蓝领工人失业转向零工经济",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "中国机器人技术热潮致蓝领工人失业转向零工经济",
+     "summary": "中国制造业自动化转型导致大量蓝领工人失业，许多人被迫转向零工经济。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-d5227b",
+   "title": "美联储理事沃勒暗示若通胀持续可能加息",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "美联储理事沃勒暗示若通胀持续可能加息",
+     "summary": "美联储理事沃勒表示，若本周核心通胀数据仍高，需考虑近期加息，市场应声下跌。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-f36387",
+   "title": "苏丹准军事组织RSF首领因战争罪被判死刑",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "苏丹准军事组织RSF首领因战争罪被判死刑",
+     "summary": "苏丹法院缺席判处准军事组织RSF首领穆罕默德·哈姆丹·达加洛死刑，另有15名指挥官同判。",
      "news_status": "已确认"
     }
    ]
