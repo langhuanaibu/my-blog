@@ -899,39 +899,178 @@ try:
     check("单词候选文件是可解析壳", m is not None
           and json.loads(m.group(1))["words"][0]["word"] == "Tariff")
 
-    # ---- 周综述：write_weekly 落盘 + 剥壳 + 链式键 + 降级 ----
+    # ---- 自然周 v2：覆盖率 / 引用 / 幂等 / 跨年 / 旧数据兼容 ----
     class _FakeLLM:
         def json_call(self, system, user):
             self.last_user = user
-            return {"threads": [{"title": "T", "one_liner": "o",
-                                 "direction": "推进", "detail": "d"}],
-                    "watch_recap": [{"prior": "p", "status": "未兑现", "note": "n"}],
+            return {"lead": {"title": "本周主线", "summary": "一周变化总述"},
+                    "threads": [
+                        {"title": "T1", "one_liner": "o1", "direction": "推进",
+                         "detail": "d1", "member_refs": ["2026-07-06:pick-0"],
+                         "representative_refs": ["2026-07-06:pick-0"]}],
+                    "watch_recap": [{"prior": "p", "status": "未兑现", "note": "n",
+                                      "evidence_refs": ["2026-07-06:pick-0"]}],
                     "outlook": ["x"]}
     wtmp = tmp / "wk"
     (wtmp / "daily").mkdir(parents=True, exist_ok=True)
-    for k in range(6, 13):
+    for k in (6, 7, 8, 10, 12):
         ds = f"2026-07-{k:02d}"
         p = {"date": ds, "items": [{"id": "pick-0", "tier": "pick", "category": "ai",
-                                    "title": "x", "summary": "s", "watch": "w"}]}
+                                    "title": "x", "summary": "s", "watch": "w",
+                                    "event_id": f"evt-{k}",
+                                    "sources": [{"name": f"source-{k}", "url": "https://x.test"}]}],
+             "deep": ([{"id": "deep-0", "title": "deep", "read_minutes": 3}]
+                      if k == 6 else []),
+             "papers": ([{"id": "paper-0", "title": "paper"}] if k == 7 else [])}
         (wtmp / "daily" / f"{ds}.js").write_text(
             f'window.NEWS_DATA["{ds}"] = {json.dumps(p, ensure_ascii=False)};\n',
             encoding="utf-8")
-    wcfg = {"weekly": {"enabled": True, "lookback_days": 7, "keep_weeks": 26}}
+    wcfg = {"weekly": {"enabled": True, "min_daily_count": 5, "keep_weeks": 26}}
     fake = _FakeLLM()
-    dn.write_weekly(fake, "2026-07-13", wcfg, wtmp)   # 目标上周 = 含 7/06..7/12
+    dn.write_weekly(fake, "2026-07-15", wcfg, wtmp)   # 任意日运行，目标最近已结束自然周
     wkey = dn.iso_week_key(dn.datetime(2026, 7, 12))
     check("周综述键为 ISO 周", wkey == "2026-W28")
-    check("周综述输入含精选与watch", "关注:w" in fake.last_user)
+    check("周综述输入使用稳定复合引用", "[2026-07-06:pick-0]" in fake.last_user)
     wpl = dn.read_weekly_payload(wtmp / "weekly" / f"{wkey}.js")
-    check("周综述落盘可剥壳", wpl is not None and wpl["week"] == wkey
-          and len(wpl["threads"]) == 1 and len(wpl["watch_recap"]) == 1)
+    check("周综述 v2 覆盖信息", wpl is not None and wpl["version"] == 2
+          and wpl["coverage"]["daily_count"] == 5
+          and wpl["coverage"]["expected_days"] == 7
+          and wpl["coverage"]["missing_dates"] == ["2026-07-09", "2026-07-11"])
+    check("周综述 v2 主线与统计", wpl["lead"]["title"] == "本周主线"
+          and wpl["stats"]["pick_count"] == 5
+          and wpl["stats"]["event_count"] == 5
+          and wpl["stats"]["source_count"] == 5
+          and wpl["stats"]["read_minutes"] >= 1)
+    check("周综述模型少产时确定性补足三条", len(wpl["threads"]) == 3
+          and len({t["representative_refs"][0] for t in wpl["threads"]}) == 3)
+    check("周综述代表引用有效", not dn.validate_weekly_references(wpl,
+          [dn.read_daily_payload(p) for p in sorted((wtmp / "daily").glob("*.js"))]))
+    short_threads = json.loads(json.dumps(wpl))
+    short_threads["threads"] = short_threads["threads"][:2]
+    check("周综述校验拒绝不足三条主题", bool(dn.validate_weekly_references(
+          short_threads, [dn.read_daily_payload(p)
+          for p in sorted((wtmp / "daily").glob("*.js"))])))
+    check("周综述深读论文单列", wpl["reading"]["deep_refs"] == ["2026-07-06:deep-0"]
+          and wpl["reading"]["paper_refs"] == ["2026-07-07:paper-0"])
     check("周综述 manifest 含本周",
           (wtmp / "weekly" / "manifest.js").exists()
           and wkey in (wtmp / "weekly" / "manifest.js").read_text(encoding="utf-8"))
+    # 幂等：已有周报时不再调用 LLM，也不改写文件。
+    class _BoomLLM:
+        def json_call(self, system, user):
+            raise AssertionError("idempotence failed")
+    before = (wtmp / "weekly" / f"{wkey}.js").read_bytes()
+    dn.write_weekly(_BoomLLM(), "2026-07-16", wcfg, wtmp)
+    check("周综述幂等不改写", before == (wtmp / "weekly" / f"{wkey}.js").read_bytes())
+
     dtmp = tmp / "wk_empty"
     (dtmp / "daily").mkdir(parents=True, exist_ok=True)
     dn.write_weekly(_FakeLLM(), "2026-07-13", wcfg, dtmp)
-    check("周综述降级：无 daily 不产文件", not (dtmp / "weekly").exists())
+    check("周综述门槛：低于 5/7 不产文件", not (dtmp / "weekly").exists())
+
+    # ISO 年边界：2027-01-06 最近闭合周是 2026-W53（12/28-01/03）。
+    start, end, cross_key = dn.latest_closed_iso_week("2027-01-06")
+    check("周综述跨年 ISO 周", (start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d"), cross_key)
+          == ("2026-12-28", "2027-01-03", "2026-W53"))
+
+    # 无效引用必须在写前被拒绝，不能静默留下悬空回链。
+    bad = json.loads(json.dumps(wpl))
+    bad["threads"][0]["representative_refs"] = ["2026-07-06:not-found"]
+    check("周综述悬空引用校验", bool(dn.validate_weekly_references(bad,
+          [dn.read_daily_payload(p) for p in sorted((wtmp / "daily").glob("*.js"))])))
+
+    outside_day = {"date": "2026-06-30", "items": [{"id": "pick-x", "tier": "pick"}]}
+    outside = json.loads(json.dumps(wpl))
+    outside["threads"][0]["member_refs"] = ["2026-06-30:pick-x"]
+    outside["threads"][0]["representative_refs"] = ["2026-06-30:pick-x"]
+    check("周综述拒绝目标自然周外引用", bool(dn.validate_weekly_references(
+          outside, [outside_day] + [dn.read_daily_payload(p)
+          for p in sorted((wtmp / "daily").glob("*.js"))])))
+
+    # 旧周报仍可读取；低于 5/7 的旧周报不进入新 manifest。
+    legacy_dir = tmp / "legacy" / "weekly"
+    legacy_dir.mkdir(parents=True, exist_ok=True)
+    legacy = {"week": "2026-W27", "range": {"start": "2026-06-29", "end": "2026-07-05"},
+              "threads": [], "watch_recap": [], "outlook": []}
+    legacy_path = legacy_dir / "2026-W27.js"
+    legacy_path.write_text('window.WEEKLY_DATA["2026-W27"] = '
+                           + json.dumps(legacy, ensure_ascii=False) + ';\n', encoding="utf-8")
+    check("旧周报读取兼容", dn.read_weekly_payload(legacy_path) == legacy)
+    dn.write_weekly_manifest(tmp / "legacy", keep=26)
+    check("低覆盖旧周报不进新版归档", "2026-W27" not in
+          (legacy_dir / "manifest.js").read_text(encoding="utf-8"))
+    legacy_daily = tmp / "legacy" / "daily"
+    legacy_daily.mkdir(parents=True, exist_ok=True)
+    for ds in ("2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03"):
+        payload_date = "2026-06-28" if ds == "2026-07-03" else ds
+        lp = {"date": payload_date, "items": []}
+        (legacy_daily / f"{ds}.js").write_text(
+            f'window.NEWS_DATA["{ds}"] = {json.dumps(lp, ensure_ascii=False)};\n', encoding="utf-8")
+    dn.write_weekly_manifest(tmp / "legacy", keep=26)
+    check("旧周报归档不计日期错配日报", "2026-W27" not in
+          (legacy_dir / "manifest.js").read_text(encoding="utf-8"))
+
+    # 模型素材要按日期均衡，单日海量条目不能挤掉周末日报。
+    material_days = []
+    for offset in range(5):
+        ds = f"2026-07-{6 + offset:02d}"
+        count = 120 if offset == 0 else 1
+        material_days.append({"date": ds, "items": [
+            {"id": f"pick-{i}", "tier": "pick", "category": "ai",
+             "title": f"title-{i}", "summary": "s"} for i in range(count)]})
+    balanced_lines = dn.weekly_pick_material(material_days, max_total=100)
+    check("周综述素材按日期均衡", len(balanced_lines) == 100
+          and all(any(f"[{d['date']}:" in line for line in balanced_lines)
+                  for d in material_days))
+
+    # 文件名日期与 payload.date 不一致时不计覆盖，避免越窗引用。
+    mismatch = tmp / "wk_mismatch"
+    (mismatch / "daily").mkdir(parents=True, exist_ok=True)
+    for k in (6, 7, 8, 9, 10):
+        ds = f"2026-07-{k:02d}"
+        payload_date = "2026-06-30" if k == 10 else ds
+        mp = {"date": payload_date, "items": [{"id": "pick-0", "tier": "pick",
+                                                "category": "ai", "title": "x", "summary": "s"}]}
+        (mismatch / "daily" / f"{ds}.js").write_text(
+            f'window.NEWS_DATA["{ds}"] = {json.dumps(mp, ensure_ascii=False)};\n', encoding="utf-8")
+    dn.write_weekly(_FakeLLM(), "2026-07-15", wcfg, mismatch)
+    check("周综述 payload 日期错配不计覆盖", not (mismatch / "weekly").exists())
+
+    # 有 5/7 日但总精选不足 3 条时拒绝生成，维持 3-6 主题合同。
+    sparse = tmp / "wk_sparse"
+    (sparse / "daily").mkdir(parents=True, exist_ok=True)
+    for k in (6, 7, 8, 9, 10):
+        ds = f"2026-07-{k:02d}"
+        sp = {"date": ds, "items": ([{"id": "pick-0", "tier": "pick",
+                                       "category": "ai", "title": "x", "summary": "s"}]
+                                     if k in (6, 7) else [])}
+        (sparse / "daily" / f"{ds}.js").write_text(
+            f'window.NEWS_DATA["{ds}"] = {json.dumps(sp, ensure_ascii=False)};\n', encoding="utf-8")
+    dn.write_weekly(_FakeLLM(), "2026-07-15", wcfg, sparse)
+    check("周综述不足三条事实引用拒绝生成", not (sparse / "weekly").exists())
+
+    # 跨年不只验日期计算，也验 5/7 收集、写入和引用范围。
+    class _CrossYearLLM:
+        def json_call(self, system, user):
+            refs = _re.findall(r"\[(\d{4}-\d{2}-\d{2}:pick-0)\]", user)
+            return {"lead": {"title": "跨年周", "summary": "跨年周总述"},
+                    "threads": [{"title": "跨年", "one_liner": "推进", "direction": "推进",
+                                 "detail": "d", "member_refs": refs[:1],
+                                 "representative_refs": refs[:1]}],
+                    "watch_recap": [], "outlook": []}
+    cross = tmp / "wk_cross"
+    (cross / "daily").mkdir(parents=True, exist_ok=True)
+    for ds in ("2026-12-28", "2026-12-29", "2026-12-31", "2027-01-01", "2027-01-03"):
+        cp = {"date": ds, "items": [{"id": "pick-0", "tier": "pick", "category": "world",
+                                      "title": ds, "summary": "s"}]}
+        (cross / "daily" / f"{ds}.js").write_text(
+            f'window.NEWS_DATA["{ds}"] = {json.dumps(cp, ensure_ascii=False)};\n', encoding="utf-8")
+    dn.write_weekly(_CrossYearLLM(), "2027-01-06", wcfg, cross)
+    cross_payload = dn.read_weekly_payload(cross / "weekly" / "2026-W53.js")
+    check("跨年自然周完整生成", cross_payload is not None
+          and cross_payload["coverage"]["missing_dates"] == ["2026-12-30", "2027-01-02"]
+          and not dn.validate_weekly_references(cross_payload,
+          [dn.read_daily_payload(p) for p in sorted((cross / "daily").glob("*.js"))]))
 
     # ---- http_get 重试兜底（stub requests.get + time.sleep，不联网）----
     class _Resp:
@@ -1139,8 +1278,13 @@ finally:
         os.environ["DATA_DIR"] = old_data_dir
 
 # ----------------------------------------------------------------
-# 单类精选上限（max_per_category，2026-07-11 仅 ai 启用）
+# 单类精选上限（通用可选能力；当前配置未启用）
 # ----------------------------------------------------------------
+
+_repo_cfg = dn.yaml.safe_load(
+    (Path(dn.__file__).resolve().parent / "config.yaml").read_text(encoding="utf-8"))
+check("当前配置未启用 ai 精选上限",
+      (_repo_cfg.get("max_per_category") or {}).get("ai") is None)
 
 _cap_items = [mk_item("openai", "fact", "T1", 9) for _ in range(8)]
 _cap_dims_hi = {d: 10.0 for d in dn.DIMS}
@@ -1173,7 +1317,7 @@ _few_events = [{"ids": [0], "category": "ai", "dims": dict(_cap_dims_hi), "title
 _few_picked, _ = dn.score_and_select(_few_events, _cap_items, dict(_cap_cfg))
 check("ai 不足上限时原样保留", sum(1 for e in _few_picked if e["category"] == "ai") == 1)
 
-# 未配置 max_per_category 时行为与现状一致
+# 未配置 max_per_category 时，所有过线 ai 事件均可进入精选
 _nocap_events = _mk_cap_events()
 _nocap_picked, _ = dn.score_and_select(_nocap_events, _cap_items,
                                        {k: v for k, v in _cap_cfg.items() if k != "max_per_category"})
@@ -1191,6 +1335,199 @@ _bf_picked, _ = dn.score_and_select(_bf_events, _bf_items,
                                     dict(_cap_cfg, pick_min=5))
 check("腾位后从线下补齐保底",
       len(_bf_picked) == 5 and sum(1 for e in _bf_picked if e["category"] == "ai") == 3)
+
+# ----------------------------------------------------------------
+# 质量审计：错误聚类拆分、事实污染清除、失败保守降级
+# ----------------------------------------------------------------
+
+
+class QueueLLM:
+    def __init__(self, replies):
+        self.replies = list(replies)
+        self.users = []
+
+    def json_call(self, system, user):
+        self.users.append(user)
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+
+def _quality_item(title, desc, source, sid):
+    return {
+        "title": title, "desc": desc, "source": source, "source_id": sid,
+        "source_type": "fact", "tier": "T1", "credibility": 9,
+        "url": f"https://example.com/{sid}", "time": "2026-07-15T00:00:00+00:00",
+    }
+
+
+_qa_items = [
+    _quality_item("OpenAI 发布新模型", "OpenAI 发布模型并公布评测。", "OpenAI", "openai"),
+    _quality_item("Meta 重组 AI 团队", "Meta 调整其超级智能团队。", "Meta", "meta"),
+    _quality_item("委内瑞拉发生地震", "委内瑞拉近海发生 6 级地震。", "Reuters", "reuters"),
+    _quality_item("伊朗海峡局势升温", "霍尔木兹海峡航运风险上升。", "AP", "ap"),
+]
+_qa_dims = {d: 8.0 for d in dn.DIMS}
+_qa_events = [
+    {"ids": [0, 1], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 与 Meta AI 动态"},
+    {"ids": [2, 3], "category": "world", "dims": dict(_qa_dims), "title": "委内瑞拉地震与伊朗海峡"},
+]
+_qa_reply = [
+    {"groups": [
+        {"ids": [0], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 发布新模型"},
+        {"ids": [1], "category": "ai", "dims": dict(_qa_dims), "title": "Meta 重组 AI 团队"},
+    ]},
+    {"groups": [
+        {"ids": [2], "category": "world", "dims": dict(_qa_dims), "title": "委内瑞拉发生地震"},
+        {"ids": [3], "category": "world", "dims": dict(_qa_dims), "title": "伊朗海峡局势升温"},
+    ]},
+]
+_qa_llm = QueueLLM(_qa_reply)
+_qa_out, _qa_stats = dn.audit_event_cohesion(_qa_llm, _qa_events, _qa_items)
+check("凝聚度审计覆盖全部多条事件", _qa_stats["audited_events"] == 2)
+check("OpenAI/Meta 污染样本被拆分", [e["ids"] for e in _qa_out[:2]] == [[0], [1]])
+check("地震/海峡污染样本被拆分", [e["ids"] for e in _qa_out[2:]] == [[2], [3]])
+check("凝聚度审计输入含标题摘要来源",
+      all("OpenAI 发布新模型" in _qa_llm.users[0] and "OpenAI 发布模型并公布评测" in _qa_llm.users[0]
+          and "OpenAI" in _qa_llm.users[0] for _ in [0]))
+check("拆分质量计数", _qa_stats["split_events"] == 2 and not _qa_stats["degraded"])
+
+_order_llm = QueueLLM([
+    {"groups": [{"ids": [1, 0], "category": "ai", "dims": dict(_qa_dims),
+                 "title": "同一事件"}]},
+    {"groups": [
+        {"ids": [1], "category": "ai", "dims": dict(_qa_dims), "title": "Meta"},
+        {"ids": [0], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI"},
+    ]},
+])
+_ordered_group, _ = dn.audit_event_cohesion(_order_llm, [_qa_events[0]], _qa_items)
+_ordered_split, _ = dn.audit_event_cohesion(_order_llm, [_qa_events[0]], _qa_items)
+check("凝聚度审计组内 ids 按原事件顺序稳定", _ordered_group[0]["ids"] == [0, 1])
+check("凝聚度审计分组按原事件首项顺序稳定",
+      [e["ids"] for e in _ordered_split] == [[0], [1]])
+
+_bad_llm = QueueLLM([{"groups": [{"ids": [0], "category": "ai", "dims": {}, "title": "漏项"}]}])
+_bad_out, _bad_stats = dn.audit_event_cohesion(_bad_llm, [_qa_events[0]], _qa_items)
+check("凝聚度无效输出拆回单条", [e["ids"] for e in _bad_out] == [[0], [1]])
+check("降级单条证据分回中性值",
+      all(e["dims"]["evidence"] == dn.QUALITY_NEUTRAL_EVIDENCE for e in _bad_out))
+check("凝聚度失败标记降级", _bad_stats["degraded"] is True)
+_bool_id_llm = QueueLLM([{"groups": [
+    {"ids": [False, 1], "category": "ai", "dims": dict(_qa_dims), "title": "bool id"},
+]}])
+_bool_id_out, _bool_id_stats = dn.audit_event_cohesion(
+    _bool_id_llm, [_qa_events[0]], _qa_items)
+check("凝聚度审计拒绝 bool 条目编号并降级",
+      _bool_id_stats["degraded"] is True
+      and all(e.get("cohesion_audit") == "degraded" for e in _bool_id_out))
+
+_enriched = [{
+    "ids": [0], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 发布新模型",
+    "summary": "OpenAI 发布模型。", "why": "影响开发者。", "context": "背景可信。",
+    "significance": "值得测试。", "watch": "关注 API。", "detail": "夹带 Meta 团队重组。",
+    "claims": [
+        {"text": "OpenAI 发布模型", "kind": "fact", "sources": ["OpenAI"]},
+        {"text": "Meta 重组团队", "kind": "fact", "sources": ["OpenAI"]},
+    ],
+}]
+_support_llm = QueueLLM([{
+    "fields": {"why": True, "context": True, "significance": True,
+               "watch": True, "detail": False},
+    "supported_claim_indexes": [0],
+}])
+_support_stats = dn.new_quality_stats()
+dn.audit_enrichment_support(_support_llm, _enriched, _qa_items, _support_stats)
+check("长叙述污染被整段清除", "detail" not in _enriched[0])
+check("不受支持 claim 被删除",
+      [c["text"] for c in _enriched[0]["claims"]] == ["OpenAI 发布模型"])
+check("事实审计删除计数", _support_stats["removed_fields"] == 2)
+
+_empty_ref_event = [{
+    "ids": [0], "category": "ai", "title": "OpenAI 发布新模型", "summary": "摘要",
+    "claims": [{"text": "无来源结论", "kind": "fact", "sources": []}],
+}]
+_empty_ref_stats = dn.new_quality_stats()
+dn.audit_enrichment_support(
+    QueueLLM([{"fields": {}, "supported_claim_indexes": [0]}]),
+    _empty_ref_event, _qa_items, _empty_ref_stats)
+check("事实支撑审计删除空 sources claim",
+      "claims" not in _empty_ref_event[0] and _empty_ref_stats["removed_fields"] == 1)
+
+_bool_claim_event = [{
+    "ids": [0], "category": "ai", "title": "OpenAI 发布新模型", "summary": "摘要",
+    "claims": [
+        {"text": "第一条", "kind": "fact", "sources": ["OpenAI"]},
+        {"text": "第二条", "kind": "fact", "sources": ["OpenAI"]},
+    ],
+}]
+_bool_claim_stats = dn.new_quality_stats()
+dn.audit_enrichment_support(
+    QueueLLM([{"fields": {}, "supported_claim_indexes": [True]}]),
+    _bool_claim_event, _qa_items, _bool_claim_stats)
+check("事实支撑审计拒绝 bool claim 编号并保守降级",
+      _bool_claim_stats["degraded"] is True and "claims" not in _bool_claim_event[0])
+
+_degrade_event = dict(_enriched[0], why="why", context="context", significance="sig",
+                      watch="watch", detail="detail", claims=[{"text": "x", "sources": []}])
+_degrade_stats = dn.new_quality_stats()
+dn.audit_enrichment_support(QueueLLM([RuntimeError("model down")]),
+                            [_degrade_event], _qa_items, _degrade_stats)
+check("事实审计异常移除全部扩展字段",
+      all(k not in _degrade_event for k in dn.QUALITY_EXTENSION_FIELDS))
+check("事实审计异常保留基础内容",
+      _degrade_event["title"] == "OpenAI 发布新模型" and _degrade_event["summary"] == "OpenAI 发布模型。")
+check("事实审计异常标记降级", _degrade_stats["degraded"] is True)
+_degrade_event.update(score=70, status="发展中")
+_degraded_item = dn.event_to_item(_degrade_event, _qa_items, "pick")
+check("事实审计降级输出不重新注入空扩展字段",
+      all(k not in _degraded_item for k in dn.QUALITY_EXTENSION_FIELDS))
+
+_quality_payload = {
+    "date": "2026-07-15", "quality": dn.new_quality_stats(),
+    "items": [{"id": "pick-0", "sources": [{"name": "OpenAI", "url": "https://openai.com"}],
+               "claims": [{"text": "x", "kind": "fact", "sources": ["OpenAI"]}]}],
+    "themes": [{"member_ids": ["pick-0"]}],
+}
+check("发布校验接受有效条目与 claim 引用", dn.validate_daily_payload(_quality_payload) == [])
+_quality_payload["items"][0]["claims"][0]["sources"] = ["Meta"]
+check("发布校验拒绝 claim 越界来源",
+      any("claim" in e for e in dn.validate_daily_payload(_quality_payload)))
+_quality_payload["items"][0]["claims"][0]["sources"] = []
+check("发布校验拒绝 claim 空来源引用",
+      any("claim" in e for e in dn.validate_daily_payload(_quality_payload)))
+
+_qh_tmp = Path(tempfile.mkdtemp(prefix="news-quality-"))
+try:
+    dn.update_quality_health(_qh_tmp, "2026-07-15",
+                             {**dn.new_quality_stats(), "audited_events": 2, "split_events": 1})
+    dn.update_quality_health(_qh_tmp, "2026-07-15",
+                             {**dn.new_quality_stats(), "audited_events": 4, "split_events": 1})
+    _health = json.loads((_qh_tmp / "quality-health.json").read_text(encoding="utf-8"))
+    check("质量健康记录同日幂等", len(_health["records"]) == 1)
+    check("质量健康记录滚动错误聚类率", _health["summary"]["split_rate"] == 0.25)
+finally:
+    shutil.rmtree(_qh_tmp, ignore_errors=True)
+
+_qo_tmp = Path(tempfile.mkdtemp(prefix="news-quality-output-"))
+_qo_old = os.environ.get("DATA_DIR")
+try:
+    os.environ["DATA_DIR"] = str(_qo_tmp)
+    _qo_event = {"ids": [0], "category": "ai", "title": "OpenAI 发布新模型",
+                 "summary": "OpenAI 发布模型。", "score": 80, "status": "已确认",
+                 "tags": [], "tier": "T1"}
+    dn.write_output("2026-07-15", "今日导语", [_qo_event], [], _qa_items, {},
+                    quality={**dn.new_quality_stats(), "audited_events": 3})
+    _qo_path = _qo_tmp / "daily" / "2026-07-15.js"
+    check("日报顶层写入 quality 元数据",
+          '"quality"' in _qo_path.read_text(encoding="utf-8")
+          and dn.validate_daily_output_file(_qo_path, "2026-07-15") == [])
+finally:
+    shutil.rmtree(_qo_tmp, ignore_errors=True)
+    if _qo_old is None:
+        os.environ.pop("DATA_DIR", None)
+    else:
+        os.environ["DATA_DIR"] = _qo_old
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")

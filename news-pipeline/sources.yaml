@@ -409,6 +409,8 @@ sources:
   #  - AI 板块角色翻案：日报 AI 精选每日上限 3 条（config max_per_category），
   #    定位=头条提醒器；AI 深度阅读用户直接看 AIHOT 网站本体。07-10 否决的
   #    「单类精选上限」仅对 ai 类定向翻案，其余类不设上限。
+  #  - 2026-07-15 撤销上述 AI 定向上限：max_per_category 当前为空；AI 与其他类目
+  #    一样按阈值和分数竞争，仅受全局 pick_max、类目保底及既有评分规则约束。
   #  - ftcn：改走 RSSHub 中转（死因=GH Actions 出口 IP，feed 本身活着），3 天验收。
   #  - Anthropic：news 进主管线、engineering 进深读（RSSHub anthropic 路由）。
   #  - techcrunch/ars 维持全量 feed：AIHOT 的"窄 feed"原则只对垂直站成立，

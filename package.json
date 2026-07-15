@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "hexo server",
     "build": "hexo clean && hexo generate",
-    "preview": "hexo server"
+    "preview": "hexo server",
+    "test:news": "node --test news-pipeline/tests/test_news_timeline.js news-pipeline/tests/test_news_frontend.mjs news-pipeline/tests/test_news_app.mjs"
   },
   "keywords": [],
   "author": "",
@@ -32,5 +33,8 @@
     "hexo-server": "^3.0.0",
     "hexo-theme-fluid": "^1.9.9",
     "pinyin-pro": "^3.28.1"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
   }
 }

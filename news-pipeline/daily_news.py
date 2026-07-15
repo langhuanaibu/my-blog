@@ -56,6 +56,18 @@ TYPE_NAMES = {"fact": "事实源", "analysis": "分析源", "opinion": "舆论�
 STATUS_SET = {"已确认", "发展中", "有争议", "仅传言"}
 TIER_ORDER = {"T1": 0, "T1.5": 1, "T2": 2}
 DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
+QUALITY_NEUTRAL_EVIDENCE = 5.0
+QUALITY_EXTENSION_FIELDS = ("why", "context", "significance", "watch", "detail", "claims")
+
+
+def new_quality_stats():
+    """Create the stable, JSON-safe daily quality summary."""
+    return {
+        "audited_events": 0,
+        "split_events": 0,
+        "removed_fields": 0,
+        "degraded": False,
+    }
 
 
 def log(msg):
@@ -538,6 +550,111 @@ def merge_events(llm, events, items):
     return result
 
 
+COHESION_AUDIT_SYSTEM = """你是新闻事件聚类质检员。给你一个已聚类事件及其中的原始报道。
+逐条核对是否确实是同一主体、同一具体事实。主题相近、同属一家公司或同属一个地区都不能合并。
+可把错误聚类拆成多个组，并校正每组标题、五类分类及五维评分。
+只输出 JSON 对象：
+{"groups":[{"ids":[原始条目编号],"category":"ai|tech|finance|society|world",
+"dims":{"impact":0-10,"novelty":0-10,"substance":0-10,"evidence":0-10,"durability":0-10},
+"title":"只描述一件事的中文标题"}]}
+每个输入编号必须恰好出现一次，不得新增、遗漏或重复。"""
+
+
+def _audit_singletons(event, items):
+    """Conservative cohesion fallback: one raw report per event, neutral evidence."""
+    out = []
+    for item_id in event.get("ids", []):
+        dims = {d: float((event.get("dims") or {}).get(d, 3.0)) for d in DIMS}
+        dims["evidence"] = QUALITY_NEUTRAL_EVIDENCE
+        out.append({
+            "ids": [item_id],
+            "category": event.get("category") if event.get("category") in CATEGORIES else "world",
+            "dims": dims,
+            "title": items[item_id].get("title") or event.get("title", ""),
+            "cohesion_audit": "degraded",
+        })
+    return out
+
+
+def _validated_audit_groups(raw, expected_ids):
+    if not isinstance(raw, dict) or not isinstance(raw.get("groups"), list):
+        return None
+    groups, seen = [], []
+    for group in raw["groups"]:
+        if not isinstance(group, dict):
+            return None
+        ids = group.get("ids")
+        if (not isinstance(ids, list) or not ids
+                or any(not isinstance(i, int) or isinstance(i, bool) for i in ids)):
+            return None
+        category = group.get("category")
+        title = str(group.get("title", "")).strip()
+        raw_dims = group.get("dims")
+        if category not in CATEGORIES or not title or not isinstance(raw_dims, dict):
+            return None
+        dims = {}
+        for dim in DIMS:
+            value = raw_dims.get(dim)
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                return None
+            dims[dim] = max(0.0, min(10.0, float(value)))
+        seen.extend(ids)
+        groups.append({"ids": ids, "category": category, "dims": dims, "title": title,
+                       "cohesion_audit": "passed"})
+    if (len(expected_ids) != len(set(expected_ids))
+            or len(seen) != len(expected_ids)
+            or len(seen) != len(set(seen))
+            or set(seen) != set(expected_ids)):
+        return None
+    order = {item_id: index for index, item_id in enumerate(expected_ids)}
+    for group in groups:
+        group["ids"].sort(key=order.__getitem__)
+    groups.sort(key=lambda group: order[group["ids"][0]])
+    return groups
+
+
+def audit_event_cohesion(llm, events, items, quality=None):
+    """Recheck every multi-report event after cross-batch clustering.
+
+    An invalid result is not trusted partially: the affected event is split into
+    singletons so it cannot retain a cross-source score bonus.
+    """
+    quality = quality if quality is not None else new_quality_stats()
+    audited = []
+    for event in events:
+        ids = list(event.get("ids") or [])
+        if len(ids) < 2:
+            audited.append(event)
+            continue
+        quality["audited_events"] += 1
+        reports = [{
+            "id": i,
+            "title": items[i].get("title", ""),
+            "summary": items[i].get("desc", ""),
+            "source": items[i].get("source", ""),
+        } for i in ids]
+        user = json.dumps({
+            "event_title": event.get("title", ""),
+            "event_category": event.get("category", ""),
+            "reports": reports,
+        }, ensure_ascii=False)
+        try:
+            groups = _validated_audit_groups(
+                llm.json_call(COHESION_AUDIT_SYSTEM, user), ids)
+        except Exception as exc:
+            log(f"  事件凝聚度审计失败，拆回单条: {exc}")
+            groups = None
+        if groups is None:
+            quality["split_events"] += 1
+            quality["degraded"] = True
+            audited.extend(_audit_singletons(event, items))
+            continue
+        if len(groups) > 1:
+            quality["split_events"] += 1
+        audited.extend(groups)
+    return audited, quality
+
+
 # ----------------------------------------------------------------
 # 5. 评分（代码合成最终分）+ 阈值制精选
 # ----------------------------------------------------------------
@@ -606,7 +723,7 @@ def score_and_select(events, items, cfg):
                 picked.append(e)
     picked = sorted(picked, key=lambda e: e["score"], reverse=True)[:pick_max]
 
-    # 单类精选上限（config max_per_category；2026-07-11 翻案仅对 ai 启用）：
+    # 单类精选上限（可选，由 config max_per_category 按类目启用）：
     # 该类只留最高分 N 条，超限的高分事件降级——events 按分排序，它们会
     # 自然落到"更多资讯"头部，不丢失。腾出的位置从线下补齐到保底条数。
     max_per_cat = cfg.get("max_per_category") or {}
@@ -763,6 +880,94 @@ def enrich(llm, picked, items, cfg, profile_text=""):
                 if h in tag_set and h not in tags:
                     tags.insert(0, h)
             ev["tags"] = tags[:2]
+    return picked
+
+
+SUPPORT_AUDIT_SYSTEM = """你是新闻事实支撑质检员。原始报道是唯一可用证据。
+检查编辑扩展字段是否只讨论当前事件且能由原始报道支撑；不要凭常识补证据。
+对 why/context/significance/watch/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
+只输出 JSON 对象：
+{"fields":{"why":true,"context":true,"significance":true,"watch":true,"detail":true},
+ "supported_claim_indexes":[0]}
+受到别的事件污染、超出来源或无法确认的字段/claim 必须判为不支持。"""
+
+
+def _remove_extension(event, field, quality):
+    if field in event:
+        event.pop(field, None)
+        quality["removed_fields"] += 1
+
+
+def _strip_extensions(event, quality):
+    for field in QUALITY_EXTENSION_FIELDS:
+        _remove_extension(event, field, quality)
+
+
+def _validated_support_result(raw, event):
+    if not isinstance(raw, dict) or not isinstance(raw.get("fields"), dict):
+        return None
+    fields = raw["fields"]
+    for field in QUALITY_EXTENSION_FIELDS[:-1]:
+        if field in event and not isinstance(fields.get(field), bool):
+            return None
+    indexes = raw.get("supported_claim_indexes")
+    if (not isinstance(indexes, list)
+            or any(not isinstance(i, int) or isinstance(i, bool) for i in indexes)):
+        return None
+    claims = event.get("claims") or []
+    if len(indexes) != len(set(indexes)) or any(i < 0 or i >= len(claims) for i in indexes):
+        return None
+    return fields, indexes
+
+
+def audit_enrichment_support(llm, picked, items, quality=None):
+    """Remove enriched prose/claims that cannot be traced to this event's sources."""
+    quality = quality if quality is not None else new_quality_stats()
+    for event in picked:
+        ids = event.get("ids") or []
+        reports = [{
+            "id": i,
+            "title": items[i].get("title", ""),
+            "summary": items[i].get("desc", ""),
+            "source": items[i].get("source", ""),
+        } for i in ids]
+        extension = {field: event.get(field) for field in QUALITY_EXTENSION_FIELDS
+                     if field in event}
+        try:
+            checked = _validated_support_result(
+                llm.json_call(SUPPORT_AUDIT_SYSTEM, json.dumps({
+                    "event_title": event.get("title", ""),
+                    "reports": reports,
+                    "extension": extension,
+                }, ensure_ascii=False)), event)
+        except Exception as exc:
+            log(f"  事实支撑审计失败，移除扩展字段: {exc}")
+            checked = None
+        if checked is None:
+            quality["degraded"] = True
+            _strip_extensions(event, quality)
+            continue
+
+        fields, supported_indexes = checked
+        for field in QUALITY_EXTENSION_FIELDS[:-1]:
+            if field in event and not fields.get(field, False):
+                _remove_extension(event, field, quality)
+
+        claims = event.get("claims") or []
+        valid_sources = {items[i].get("source", "") for i in ids}
+        kept = []
+        for index, claim in enumerate(claims):
+            claim_sources = claim.get("sources") if isinstance(claim, dict) else None
+            if (index in supported_indexes and isinstance(claim_sources, list)
+                    and bool(claim_sources)
+                    and set(claim_sources).issubset(valid_sources)):
+                kept.append(claim)
+            else:
+                quality["removed_fields"] += 1
+        if kept:
+            event["claims"] = kept
+        else:
+            event.pop("claims", None)
     return picked
 
 
@@ -1713,10 +1918,10 @@ def event_to_item(ev, items, tier):
         "category": ev["category"],
         "title": ev.get("title", primary["title"]),
         "summary": ev.get("summary", primary["desc"][:100]),
-        "why": ev.get("why", ""),
-        "watch": ev.get("watch", ""),
         "status": ev.get("status", ""),
         "tags": ev.get("tags", []),
+        **({"why": ev["why"]} if ev.get("why") else {}),
+        **({"watch": ev["watch"]} if ev.get("watch") else {}),
         **({"context": ev["context"]} if ev.get("context") else {}),
         **({"significance": ev["significance"]} if ev.get("significance") else {}),
         **({"detail": ev["detail"]} if ev.get("detail") else {}),
@@ -2077,7 +2282,98 @@ def backfill_all_scores(events, items, date_str):
     log(f"  全量档评分回填：{n}/{len(payload.get('items') or [])} 条带分")
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None, themes=None, papers=None, opinion=None):
+def validate_daily_payload(payload):
+    """Return structural/reference errors that must block publication."""
+    errors = []
+    quality = payload.get("quality")
+    if not isinstance(quality, dict):
+        errors.append("quality must be an object")
+    else:
+        for field in ("audited_events", "split_events", "removed_fields"):
+            value = quality.get(field)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                errors.append(f"quality.{field} must be a non-negative integer")
+        if not isinstance(quality.get("degraded"), bool):
+            errors.append("quality.degraded must be boolean")
+
+    rows = payload.get("items")
+    if not isinstance(rows, list):
+        return errors + ["items must be an array"]
+    item_ids = [row.get("id") for row in rows if isinstance(row, dict)]
+    valid_ids = {item_id for item_id in item_ids if isinstance(item_id, str) and item_id}
+    if len(item_ids) != len(rows) or len(valid_ids) != len(rows):
+        errors.append("item ids must be present and unique")
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source_names = {source.get("name") for source in (row.get("sources") or [])
+                        if isinstance(source, dict) and source.get("name")}
+        claims = row.get("claims") or []
+        if not isinstance(claims, list):
+            errors.append(f"item {row.get('id')} claims must be an array")
+            continue
+        for claim in claims:
+            refs = claim.get("sources") if isinstance(claim, dict) else None
+            if (not isinstance(refs, list) or not refs
+                    or any(ref not in source_names for ref in refs)):
+                errors.append(f"item {row.get('id')} claim has unknown source reference")
+    for theme in payload.get("themes") or []:
+        refs = theme.get("member_ids") if isinstance(theme, dict) else None
+        if not isinstance(refs, list) or any(ref not in valid_ids for ref in refs):
+            errors.append("theme has unknown item reference")
+    return errors
+
+
+def update_quality_health(data_dir, date_str, quality, keep_days=90):
+    """Upsert a rolling, non-daily-file quality health record."""
+    data_dir = Path(data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    path = data_dir / "quality-health.json"
+    try:
+        current = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, ValueError):
+        current = {}
+    records = [row for row in (current.get("records") or [])
+               if isinstance(row, dict) and row.get("date") != date_str]
+    records.append({"date": date_str, **new_quality_stats(), **quality})
+    records.sort(key=lambda row: row.get("date", ""))
+    records = records[-max(1, int(keep_days)):]
+    audited = sum(int(row.get("audited_events", 0)) for row in records)
+    split = sum(int(row.get("split_events", 0)) for row in records)
+    payload = {
+        "version": 1,
+        "records": records,
+        "summary": {
+            "days": len(records),
+            "audited_events": audited,
+            "split_events": split,
+            "split_rate": round(split / audited, 4) if audited else 0.0,
+        },
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return payload
+
+
+def validate_daily_output_file(path, date_str):
+    path = Path(path)
+    if not path.exists():
+        return ["daily output file missing"]
+    raw = path.read_text(encoding="utf-8")
+    match = re.search(r"window\.NEWS_DATA\[[^\]]+\] = (\{.*\});\s*$", raw, re.S)
+    if not match:
+        return ["daily output wrapper invalid"]
+    try:
+        payload = json.loads(match.group(1))
+    except ValueError:
+        return ["daily output JSON invalid"]
+    errors = validate_daily_payload(payload)
+    if payload.get("date") != date_str:
+        errors.append("daily output date mismatch")
+    return errors
+
+
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None,
+                 themes=None, papers=None, opinion=None, quality=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
     # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -2096,6 +2392,7 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
             "pick_count": len(picked),
             "more_count": len(secondary),
         },
+        "quality": {**new_quality_stats(), **(quality or {})},
         "items": out_items,
     }
     if themes:
@@ -2109,6 +2406,9 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
         payload["papers"] = papers
     if opinion:
         payload["opinion"] = opinion
+    errors = validate_daily_payload(payload)
+    if errors:
+        raise ValueError("daily payload validation failed: " + "; ".join(errors))
     js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
           f"window.NEWS_DATA[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
@@ -2119,6 +2419,7 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     manifest = f"window.NEWS_MANIFEST = {json.dumps(dates, ensure_ascii=False)};\n"
     (data_dir / "manifest.js").write_text(manifest, encoding="utf-8")
     log(f"已写入 data/daily/{date_str}.js（精选 {len(picked)} + 更多 {len(secondary)}）")
+    return payload
 
 
 # ----------------------------------------------------------------
@@ -2130,18 +2431,16 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
 WEEKLY_DIRECTIONS = {"新增", "推进", "反转", "停滞"}
 WEEKLY_STATUS = {"兑现", "部分兑现", "未兑现", "反转"}
 
-WEEKLY_SYSTEM = """你是资深主编，为个人读者写"每周综述"，帮他把一周的信息流沉淀成判断。
-用户会给你：可能有【上周综述】、本周的【精选与关注点】(每条带日期/类目/关注信号)、
-本周【跨天事件线】(同一事件多天的进展)。若给了【读者兴趣画像】，综述要向读者关注的领域倾斜。
-产出三部分：
-- threads: 3-5 条本周演进主线，把相关事件连成线，说清"这周往哪走"。每条：
-    title(≤12字主线名) / one_liner(≤50字这周整体走向) /
-    direction(只能是 新增|推进|反转|停滞，相对上周或本周内的态势) / detail(≤80字关键进展与机制)
-- watch_recap: 回收"待验证"。结合【上周综述】提出的主线/关注点，对照本周事实，逐条说它兑现没：
-    prior(上周关注的点，≤40字) / status(只能是 兑现|部分兑现|未兑现|反转) / note(≤50字现在怎样了)
-    没有【上周综述】就给空数组；不要编造上周没提过的点。
-- outlook: 2-3 条下周值得盯的信号(每条≤40字)。
-只输出 JSON：{"threads":[...],"watch_recap":[...],"outlook":[...]}。不要其他文字。"""
+WEEKLY_SYSTEM = """你是资深主编，把一个完整自然周的日报压缩为可核验的每周报告。
+输入中的每条素材都以 [YYYY-MM-DD:item_id] 开头；引用只能原样使用这些复合键。
+新闻精选与事件延续用于生成 3-6 条动态主题，深读和论文不混入主题。
+输出 JSON：
+{"lead":{"title":"≤18字周主线","summary":"≤100字总述"},
+ "threads":[{"title":"≤16字","one_liner":"≤60字","direction":"新增|推进|反转|停滞",
+ "detail":"≤100字","member_refs":["复合键"],"representative_refs":["1-3个复合键"]}],
+ "watch_recap":[{"prior":"≤40字","status":"兑现|部分兑现|未兑现|反转",
+ "note":"≤60字","evidence_refs":["复合键"]}],"outlook":["≤50字"]}。
+不得创造输入中不存在的引用；只输出 JSON。"""
 
 
 def iso_week_key(d):
@@ -2170,57 +2469,202 @@ def read_weekly_payload(path):
         return None
 
 
-def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
-    """合成上周综述，写 data/weekly/<YYYY-Www>.js + manifest.js。宁缺毋滥、失败不抛。"""
-    wcfg = cfg.get("weekly") or {}
-    lookback = int(wcfg.get("lookback_days", 7))
-    keep = int(wcfg.get("keep_weeks", 26))
-    today = datetime.strptime(date_str, "%Y-%m-%d")
-    target_day = today - timedelta(days=1)          # 周一跑 -> 目标是上周
-    week_key = iso_week_key(target_day)
+def latest_closed_iso_week(date_str):
+    """Return Monday/Sunday/key for the most recent fully ended ISO week."""
+    current = datetime.strptime(date_str, "%Y-%m-%d")
+    this_monday = current - timedelta(days=current.weekday())
+    start = this_monday - timedelta(days=7)
+    end = start + timedelta(days=6)
+    return start, end, iso_week_key(end)
 
-    # 本周素材：回看窗口内的 daily 精选与其 watch
+
+def _weekly_ref_index(days):
+    refs = {}
+    for dp in days:
+        date = str(dp.get("date") or "")
+        for kind, key in (("item", "items"), ("deep", "deep"), ("paper", "papers")):
+            for item in dp.get(key) or []:
+                item_id = str(item.get("id") or "")
+                if date and item_id:
+                    refs[f"{date}:{item_id}"] = (kind, item)
+    return refs
+
+
+def validate_weekly_references(payload, days):
+    """Return structural/reference errors; an empty list means safe to publish."""
+    errors = []
+    refs = _weekly_ref_index(days)
+    threads = payload.get("threads") or []
+    if payload.get("version") == 2 and not 3 <= len(threads) <= 6:
+        errors.append("v2 threads must contain 3-6 entries")
+    try:
+        range_start = datetime.strptime(payload["range"]["start"], "%Y-%m-%d")
+        range_end = datetime.strptime(payload["range"]["end"], "%Y-%m-%d")
+        if payload.get("version") == 2:
+            if ((range_end - range_start).days != 6 or range_start.weekday() != 0
+                    or range_end.weekday() != 6 or iso_week_key(range_end) != payload.get("week")):
+                errors.append("v2 range must be the report's complete ISO week")
+    except (KeyError, TypeError, ValueError):
+        range_start = range_end = None
+        errors.append("range is invalid")
+
+    def check_refs(values, path, allowed):
+        if not isinstance(values, list):
+            errors.append(f"{path} must be a list")
+            return
+        for ref in values:
+            if not isinstance(ref, str) or ref not in refs:
+                errors.append(f"{path} unresolved ref: {ref}")
+            elif refs[ref][0] not in allowed:
+                errors.append(f"{path} wrong ref type: {ref}")
+            elif range_start is not None:
+                try:
+                    ref_day = datetime.strptime(ref.split(":", 1)[0], "%Y-%m-%d")
+                    if not range_start <= ref_day <= range_end:
+                        errors.append(f"{path} out-of-week ref: {ref}")
+                except ValueError:
+                    errors.append(f"{path} invalid date ref: {ref}")
+
+    for i, thread in enumerate(threads):
+        check_refs(thread.get("member_refs"), f"threads[{i}].member_refs", {"item"})
+        check_refs(thread.get("representative_refs"),
+                   f"threads[{i}].representative_refs", {"item"})
+    for i, recap in enumerate(payload.get("watch_recap") or []):
+        check_refs(recap.get("evidence_refs"), f"watch_recap[{i}].evidence_refs", {"item"})
+    reading = payload.get("reading") or {}
+    check_refs(reading.get("deep_refs", []), "reading.deep_refs", {"deep"})
+    check_refs(reading.get("paper_refs", []), "reading.paper_refs", {"paper"})
+    return errors
+
+
+def write_weekly_manifest(data_dir, keep=26):
+    """Write a compatible archive list without mutating any historical report."""
+    wdir = Path(data_dir) / "weekly"
+    if not wdir.exists():
+        return []
+    eligible = []
+    for path in wdir.glob("*.js"):
+        if path.stem == "manifest":
+            continue
+        payload = read_weekly_payload(path)
+        if not payload:
+            continue
+        if payload.get("version") == 2:
+            coverage = payload.get("coverage") or {}
+            include = (coverage.get("expected_days") == 7
+                       and int(coverage.get("daily_count") or 0) >= 5)
+        else:
+            try:
+                start = datetime.strptime(payload["range"]["start"], "%Y-%m-%d")
+                end = datetime.strptime(payload["range"]["end"], "%Y-%m-%d")
+                declared_days = (end - start).days + 1
+                daily_dir = Path(data_dir) / "daily"
+                if daily_dir.exists() and declared_days > 0:
+                    available = 0
+                    cursor = start
+                    while cursor <= end:
+                        cursor_date = cursor.strftime("%Y-%m-%d")
+                        daily = read_daily_payload(daily_dir / f"{cursor_date}.js")
+                        if daily and daily.get("date") == cursor_date:
+                            available += 1
+                        cursor += timedelta(days=1)
+                    include = available >= 5
+                else:
+                    # Legacy files have no explicit coverage metadata. Without
+                    # their daily payloads, a wide range cannot prove 5/7.
+                    include = False
+            except (KeyError, TypeError, ValueError):
+                include = False
+        if include:
+            eligible.append(path.stem)
+    weeks = sorted(eligible, reverse=True)[:int(keep)]
+    (wdir / "manifest.js").write_text(
+        f"window.WEEKLY_MANIFEST = {json.dumps(weeks, ensure_ascii=False)};\n",
+        encoding="utf-8")
+    return weeks
+
+
+def weekly_pick_material(days, max_total=100):
+    """Build date-balanced prompt lines so a busy early day cannot starve later days."""
+    buckets = []
+    for dp in sorted(days, key=lambda value: str(value.get("date") or "")):
+        date = str(dp.get("date") or "")
+        lines = []
+        for it in dp.get("items") or []:
+            if it.get("tier") != "pick" or not it.get("id"):
+                continue
+            ref = f"{date}:{it.get('id')}"
+            history = " → ".join(f"{h.get('date', '')}:{h.get('summary', '')}"
+                                 for h in (it.get("history") or [])[-3:])
+            lines.append(
+                f"[{ref}] [{CAT_NAMES.get(it.get('category', ''), it.get('category', ''))}] "
+                f"{it.get('title', '')}：{it.get('summary', '')}"
+                + (f"｜事件延续:{history}" if history else "")
+                + (f"｜关注:{it.get('watch')}" if it.get("watch") else ""))
+        if lines:
+            buckets.append(lines)
+
+    selected = []
+    row = 0
+    while len(selected) < int(max_total):
+        added = False
+        for bucket in buckets:
+            if row < len(bucket):
+                selected.append(bucket[row])
+                added = True
+                if len(selected) >= int(max_total):
+                    break
+        if not added:
+            break
+        row += 1
+    return selected
+
+
+def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
+    """Idempotently create v2 report for the most recent fully closed ISO week."""
+    wcfg = cfg.get("weekly") or {}
+    keep = int(wcfg.get("keep_weeks", 26))
+    minimum = int(wcfg.get("min_daily_count", 5))
+    start, end, week_key = latest_closed_iso_week(date_str)
+    data_dir = Path(data_dir)
+    target = data_dir / "weekly" / f"{week_key}.js"
+    if target.exists():
+        write_weekly_manifest(data_dir, keep)
+        log(f"  周综述：{week_key} 已存在，跳过（幂等）")
+        return read_weekly_payload(target)
+
     daily_dir = data_dir / "daily"
     days = []
-    for k in range(1, lookback + 1):
-        p = daily_dir / f"{(today - timedelta(days=k)).strftime('%Y-%m-%d')}.js"
+    missing_dates = []
+    cursor = start
+    while cursor <= end:
+        day_str = cursor.strftime("%Y-%m-%d")
+        p = daily_dir / f"{day_str}.js"
         payload = read_daily_payload(p)
-        if payload:
+        if payload and payload.get("date") == day_str:
             days.append(payload)
-    if not days:
-        log("  周综述：回看窗口无 daily 数据，跳过")
-        return
-    pick_lines = []
+        else:
+            missing_dates.append(day_str)
+        cursor += timedelta(days=1)
+    if len(days) < minimum:
+        log(f"  周综述：{week_key} 仅覆盖 {len(days)}/7 天（门槛 {minimum}/7），跳过")
+        return None
+
+    refs = _weekly_ref_index(days)
+    pick_refs = []
     for dp in days:
         for it in dp.get("items", []):
             if it.get("tier") != "pick":
                 continue
-            w = it.get("watch", "")
-            pick_lines.append(
-                f"[{dp.get('date', '')}|{CAT_NAMES.get(it.get('category', ''), it.get('category', ''))}] "
-                f"{it.get('title', '')}：{it.get('summary', '')}"
-                + (f" ｜关注:{w}" if w else ""))
+            ref = f"{dp.get('date')}:{it.get('id')}"
+            pick_refs.append(ref)
+    pick_refs = list(dict.fromkeys(ref for ref in pick_refs if ref in refs))
+    if len(pick_refs) < 3:
+        log(f"  周综述：{week_key} 仅有 {len(pick_refs)} 条可引用精选，不足 3 条主题合同，跳过")
+        return None
+    pick_lines = weekly_pick_material(days, max_total=100)
 
-    # 跨天事件线：events.json 里本周窗口内、≥2 天的活跃事件
-    ev_lines = []
-    win = {dp.get("date") for dp in days}
-    try:
-        reg = data_dir / "events.json"
-        registry = json.loads(reg.read_text(encoding="utf-8")) if reg.exists() else {}
-        for e in registry.get("events", []):
-            hist = e.get("history", [])
-            ds = {h.get("date") for h in hist}
-            if len(ds) >= 2 and (ds & win):
-                seq = " → ".join(f"{h.get('date', '')}:{h.get('summary', '')}"
-                                 for h in hist[-4:])
-                ev_lines.append(
-                    f"[{CAT_NAMES.get(e.get('category', ''), e.get('category', ''))}] "
-                    f"{e.get('title', '')}｜{seq}")
-    except Exception:
-        pass
-
-    # 链式：读上周综述
-    prev_key = iso_week_key(target_day - timedelta(days=7))
+    prev_key = iso_week_key(start - timedelta(days=1))
     prev = read_weekly_payload(data_dir / "weekly" / f"{prev_key}.js")
     prev_block = ""
     if prev:
@@ -2232,49 +2676,129 @@ def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
     prof_block = ("【读者兴趣画像】\n" + profile_text.strip() + "\n\n"
                   if profile_has_content(profile_text) else "")
     user = (prof_block + prev_block
-            + "【本周精选与关注点】\n" + "\n".join(pick_lines[:80])
-            + "\n\n【本周跨天事件线】\n" + ("\n".join(ev_lines) or "（无）"))
+            + "【本周新闻精选与事件线】\n" + "\n".join(pick_lines))
 
     result = llm.json_call(WEEKLY_SYSTEM, user)
     if not isinstance(result, dict):
         log("  周综述：LLM 输出异常，跳过")
-        return
+        return None
 
     def _clip(s, n):
         return str(s or "")[:n]
 
+    def _valid_refs(values, kinds={"item"}):
+        out = []
+        for ref in values or []:
+            if ref in refs and refs[ref][0] in kinds and ref not in out:
+                out.append(ref)
+        return out
+
     threads = []
-    for t in (result.get("threads") or [])[:5]:
+    claimed_representatives = set()
+    for t in (result.get("threads") or [])[:6]:
         if not isinstance(t, dict):
             continue
+        member_refs = _valid_refs(t.get("member_refs"))
+        representative_refs = _valid_refs(t.get("representative_refs"))[:3]
+        member_refs = member_refs or representative_refs
+        representative_refs = representative_refs or member_refs[:1]
+        if not member_refs:
+            continue
+        unused_representatives = [ref for ref in representative_refs
+                                  if ref not in claimed_representatives]
+        if not unused_representatives:
+            unused_representatives = [ref for ref in member_refs
+                                      if ref not in claimed_representatives][:1]
+        if not unused_representatives:
+            continue
+        representative_refs = unused_representatives[:3]
+        claimed_representatives.update(representative_refs)
         threads.append({
-            "title": _clip(t.get("title"), 12),
-            "one_liner": _clip(t.get("one_liner"), 50),
+            "title": _clip(t.get("title"), 16),
+            "one_liner": _clip(t.get("one_liner"), 60),
             "direction": t.get("direction") if t.get("direction") in WEEKLY_DIRECTIONS else "推进",
-            "detail": _clip(t.get("detail"), 80),
+            "detail": _clip(t.get("detail"), 100),
+            "member_refs": member_refs,
+            "representative_refs": representative_refs,
         })
+
+    # Keep the public v2 contract stable even when the model under-produces themes.
+    # Theme representatives must be distinct. A broad model theme may list all
+    # members; those members are still available for deterministic split themes.
+    used = set(claimed_representatives)
+    for ref in pick_refs:
+        if len(threads) >= 3:
+            break
+        if ref in used or ref not in refs:
+            continue
+        item = refs[ref][1]
+        threads.append({
+            "title": _clip(item.get("title"), 16),
+            "one_liner": _clip(item.get("summary"), 60),
+            "direction": "新增",
+            "detail": _clip(item.get("why") or item.get("summary"), 100),
+            "member_refs": [ref],
+            "representative_refs": [ref],
+        })
+        used.add(ref)
+        claimed_representatives.add(ref)
+
+    if len(threads) < 3:
+        log(f"  周综述：仅形成 {len(threads)} 条有效主题，不满足 3-6 条合同，跳过")
+        return None
     recap = []
     for r in (result.get("watch_recap") or [])[:6]:
         if not isinstance(r, dict):
             continue
+        evidence_refs = _valid_refs(r.get("evidence_refs"))
+        if not evidence_refs:
+            continue
         recap.append({
             "prior": _clip(r.get("prior"), 40),
             "status": r.get("status") if r.get("status") in WEEKLY_STATUS else "未兑现",
-            "note": _clip(r.get("note"), 50),
+            "note": _clip(r.get("note"), 60),
+            "evidence_refs": evidence_refs,
         })
-    outlook = [_clip(o, 40) for o in (result.get("outlook") or [])[:3] if str(o or "").strip()]
-    if not threads and not recap:
+    outlook = [_clip(o, 50) for o in (result.get("outlook") or [])[:3] if str(o or "").strip()]
+    if not threads:
         log("  周综述：无有效内容，跳过写文件")
-        return
+        return None
+
+    lead_in = result.get("lead") if isinstance(result.get("lead"), dict) else {}
+    lead = {
+        "title": _clip(lead_in.get("title") or threads[0]["title"], 18),
+        "summary": _clip(lead_in.get("summary") or threads[0]["one_liner"], 100),
+    }
+    pick_items = [refs[ref][1] for ref in pick_refs if ref in refs]
+    event_count = len({it.get("event_id") or ref for ref, it in
+                       ((ref, refs[ref][1]) for ref in pick_refs if ref in refs)})
+    source_names = {src.get("name") for it in pick_items for src in (it.get("sources") or [])
+                    if src.get("name")}
+    deep_refs = sorted(ref for ref, (kind, _) in refs.items() if kind == "deep")
+    paper_refs = sorted(ref for ref, (kind, _) in refs.items() if kind == "paper")
+    reading_minutes = sum(int((refs[ref][1].get("read_minutes") or 0))
+                          for ref in deep_refs + paper_refs)
 
     payload = {
+        "version": 2,
         "week": week_key,
-        "range": {"start": days[-1].get("date", ""), "end": days[0].get("date", "")},
+        "range": {"start": start.strftime("%Y-%m-%d"), "end": end.strftime("%Y-%m-%d")},
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "coverage": {"daily_count": len(days), "expected_days": 7,
+                     "missing_dates": missing_dates},
+        "lead": lead,
+        "stats": {"pick_count": len(pick_items), "event_count": event_count,
+                  "source_count": len(source_names),
+                  "read_minutes": max(1, int(round(len(pick_items) * 0.75 + reading_minutes)))},
         "threads": threads,
         "watch_recap": recap,
+        "reading": {"deep_refs": deep_refs, "paper_refs": paper_refs},
         "outlook": outlook,
     }
+    errors = validate_weekly_references(payload, days)
+    if errors:
+        log("  周综述：引用校验失败，跳过写文件：" + "; ".join(errors))
+        return None
     wdir = data_dir / "weekly"
     wdir.mkdir(parents=True, exist_ok=True)
     js = ("window.WEEKLY_DATA = window.WEEKLY_DATA || {};\n"
@@ -2282,18 +2806,9 @@ def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
     (wdir / f"{week_key}.js").write_text(js, encoding="utf-8")
 
-    weeks = sorted([p.stem for p in wdir.glob("*.js") if p.stem != "manifest"],
-                   reverse=True)
-    for old in weeks[keep:]:
-        try:
-            (wdir / f"{old}.js").unlink()
-        except Exception:
-            pass
-    weeks = weeks[:keep]
-    (wdir / "manifest.js").write_text(
-        f"window.WEEKLY_MANIFEST = {json.dumps(weeks, ensure_ascii=False)};\n",
-        encoding="utf-8")
+    write_weekly_manifest(data_dir, keep)
     log(f"  周综述已写入 data/weekly/{week_key}.js（主线 {len(threads)} · 回收 {len(recap)}）")
+    return payload
 
 
 # ----------------------------------------------------------------
@@ -2642,6 +3157,9 @@ def main():
     log("阶段A：去重聚类 + 分类 + 五维打分 ...")
     events = triage(llm, items)
     log(f"  聚成 {len(events)} 个事件")
+    log("质量审计：复核多来源事件凝聚度 ...")
+    events, quality = audit_event_cohesion(llm, events, items)
+    log(f"  审计 {quality['audited_events']} 个事件，拆分 {quality['split_events']} 个")
 
     log("偏好学习：画像蒸馏 + 兴趣拟合 ...")
     profile = update_profile(llm, _data_dir, feedback, read_later)
@@ -2663,6 +3181,8 @@ def main():
 
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
     enrich(llm, picked, items, cfg, profile)
+    log("质量审计：核对精加工内容的事实支撑 ...")
+    audit_enrichment_support(llm, picked, items, quality)
     for ev in secondary:
         ev.setdefault("status", "")
     log("事件登记表：跨天延续性匹配 ...")
@@ -2681,13 +3201,17 @@ def main():
 
     write_output(date_str, brief, picked, secondary, items, cfg,
                  registry=registry, deep=deep, themes=themes, papers=papers,
-                 opinion=opinion)
+                 opinion=opinion, quality=quality)
+    try:
+        update_quality_health(_data_dir, date_str, quality)
+    except Exception as e:
+        log(f"  质量健康记录写入失败（不影响当日日报）: {e}")
     log("英语单词本：挑词 + 补全手动词 ...")
     build_vocab(llm, picked, items, date_str, cfg)
 
-    # 每周综述：仅在配置的 weekday（默认周一）额外合成上周综述；失败不阻断每日产出
+    # 每次日报运行都幂等检查最近一个已结束自然周；失败不阻断每日产出。
     wk = cfg.get("weekly") or {}
-    if wk.get("enabled") and datetime.now().weekday() == wk.get("run_weekday", 0):
+    if wk.get("enabled"):
         log("周综述：趋势连线 + 待验证回收 ...")
         try:
             write_weekly(llm, date_str, cfg, _data_dir, profile)
@@ -2701,9 +3225,11 @@ def main():
     # ---- 发布前校验：精选非空、输出文件存在且包含当日数据 ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     out_file = _data_dir / "daily" / f"{date_str}.js"
-    if (not picked or not out_file.exists()
-            or f'window.NEWS_DATA["{date_str}"]' not in out_file.read_text(encoding="utf-8")):
-        log("校验失败：精选为空或输出文件异常，中止发布。")
+    publish_errors = validate_daily_output_file(out_file, date_str)
+    if not picked:
+        publish_errors.append("picked items empty")
+    if publish_errors:
+        log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
         sys.exit(2)
 
     publish_to_blog(cfg, date_str)
