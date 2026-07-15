@@ -5,7 +5,7 @@
    "event_id": "evt-20260706-1cf469",
    "title": "斯坦福数据：AI致美国年轻程序员就业锐减19%",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -22,7 +22,7 @@
    "event_id": "evt-20260706-cf44d6",
    "title": "Meta被曝让外包伪装未成年人诱导竞品AI聊敏感话题",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -80,7 +80,7 @@
    "event_id": "evt-20260706-da6968",
    "title": "英伟达下一代AI服务器机架Kyber NVL144推迟至2028年",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -120,7 +120,7 @@
    "event_id": "evt-20260706-0e0dfc",
    "title": "首个AI代理勒索软件JADEPUFFER利用大模型自动攻击",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -137,7 +137,7 @@
    "event_id": "evt-20260706-98f322",
    "title": "中国强制字节阿里关闭AI聊天机器人拟人角色功能",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -154,7 +154,7 @@
    "event_id": "evt-20260706-fa0e05",
    "title": "Hugging Face发布LeRobot v0.6.0",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -171,7 +171,7 @@
    "event_id": "evt-20260706-01d19b",
    "title": "特朗普干预FIFA裁决使美国前锋巴洛贡获准参加世界杯",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -186,18 +186,24 @@
   },
   {
    "event_id": "evt-20260706-aaa9db",
-   "title": "超强台风巴威登陆美属太平洋岛屿",
+   "title": "强台风巴威登陆浙江，中国疏散近200万人",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-06",
-   "last_seen": "2026-07-06",
+   "last_seen": "2026-07-13",
    "history": [
     {
      "date": "2026-07-06",
      "title": "超强台风巴威登陆美属太平洋岛屿",
      "summary": "超强台风巴威以290公里/小时风速登陆美属罗塔岛，阵风达350公里/小时，随后趋向台湾。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "强台风巴威登陆浙江，中国疏散近200万人",
+     "summary": "强台风“巴威”在浙江温州两次登陆，浙江、福建两省提前疏散近200万人，多地航班取消、交通中断。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -228,7 +234,7 @@
    "event_id": "evt-20260706-bc22de",
    "title": "AI模型路由器技术成企业降本新趋势",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -245,7 +251,7 @@
    "event_id": "evt-20260706-818d22",
    "title": "中国海警扩大执法巡查至台湾以东太平洋水域",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -262,7 +268,7 @@
    "event_id": "evt-20260706-ad1a90",
    "title": "中国民族团结法生效后遭批评，官方强硬回击",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -302,7 +308,7 @@
    "event_id": "evt-20260706-eb22b5",
    "title": "Wegovy减肥药片在英国药店和线上开售",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -319,7 +325,7 @@
    "event_id": "evt-20260706-841f19",
    "title": "Hugging Face公布PRX数据策略",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -336,7 +342,7 @@
    "event_id": "evt-20260706-42cca5",
    "title": "Hugging Face发布Kernels重大更新",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -353,7 +359,7 @@
    "event_id": "evt-20260706-9d1e37",
    "title": "特朗普斡旋下中国地下教会牧师金明日获释",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -370,7 +376,7 @@
    "event_id": "evt-20260706-b210da",
    "title": "西藏活动人士在纽约联合国总部外自焚身亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -387,7 +393,7 @@
    "event_id": "evt-20260706-f15581",
    "title": "易捷航空同意Castlelake 73亿美元收购要约",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -404,7 +410,7 @@
    "event_id": "evt-20260706-42a395",
    "title": "百度推出可一次处理数十页文档的无限OCR技术",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -421,7 +427,7 @@
    "event_id": "evt-20260706-db4010",
    "title": "澳大利亚研究显示极端高温使年轻人精神健康入院风险翻倍",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -438,7 +444,7 @@
    "event_id": "evt-20260706-dfcbd5",
    "title": "特朗普政府改变美国公民配偶移民政策",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-06",
@@ -528,12 +534,12 @@
   },
   {
    "event_id": "evt-20260708-cc3bc8",
-   "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
+   "title": "美军首次实战使用爆炸无人艇攻击伊朗海军港口",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-08",
-   "last_seen": "2026-07-11",
+   "last_seen": "2026-07-15",
    "history": [
     {
      "date": "2026-07-08",
@@ -551,6 +557,18 @@
      "date": "2026-07-11",
      "title": "美伊协议解读分歧，霍尔木兹海峡冲突风险上升",
      "summary": "美伊对谅解备忘录的解读矛盾，导致霍尔木兹海峡冲突再起，伊朗袭击油轮，航运量降至战前三分之一。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "美伊在霍尔木兹海峡交火，伊朗宣布关闭海峡",
+     "summary": "伊朗革命卫队宣布关闭霍尔木兹海峡，美军随即对伊朗发动新一轮打击，伊朗报复性打击美在中东目标。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-15",
+     "title": "美军首次实战使用爆炸无人艇攻击伊朗海军港口",
+     "summary": "美军在美伊冲突中首次使用爆炸性无人艇攻击伊朗海军港口，伊朗则向巴林美军基地发射导弹。",
      "news_status": "发展中"
     }
    ]
@@ -1283,12 +1301,12 @@
   },
   {
    "event_id": "evt-20260710-8de6a7",
-   "title": "台风巴威登陆浙江，多预警齐发",
+   "title": "台风巴威登陆华东，近200万人疏散",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-10",
@@ -1300,6 +1318,12 @@
      "date": "2026-07-12",
      "title": "台风巴威登陆浙江，多预警齐发",
      "summary": "台风巴威在浙江两次登陆，中心最大风力13级，中央气象台发布台风、暴雨、强对流三预警。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "台风巴威登陆华东，近200万人疏散",
+     "summary": "台风巴威先后登陆浙江台州和温州，华东近200万人提前疏散，1200多架次航班取消，河北因暴雨引发洪水致约1800人被困。",
      "news_status": "已确认"
     }
    ]
@@ -1340,17 +1364,23 @@
   },
   {
    "event_id": "evt-20260710-b892b9",
-   "title": "美伊冲突升级：美军打击伊朗，油价航运受冲击",
+   "title": "美国对伊朗新空袭致油价上涨，也门危机联动",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-15",
    "history": [
     {
      "date": "2026-07-10",
      "title": "美伊冲突升级：美军打击伊朗，油价航运受冲击",
      "summary": "美军对伊朗发动新一轮打击，击中90个目标，致14人死亡；霍尔木兹海峡航运量下降，油价下跌2%。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-15",
+     "title": "美国对伊朗新空袭致油价上涨，也门危机联动",
+     "summary": "美国对伊朗发动新一轮空袭，油价应声上涨。同时，也门胡塞武装为报复沙特空袭，向沙特发射导弹。",
      "news_status": "发展中"
     }
    ]
@@ -1539,17 +1569,23 @@
   },
   {
    "event_id": "evt-20260711-3a26b5",
-   "title": "中国首次成功回收轨道级火箭助推器",
+   "title": "长征十号乙火箭成功测试海上回收技术",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-11",
-   "last_seen": "2026-07-11",
+   "last_seen": "2026-07-14",
    "history": [
     {
      "date": "2026-07-11",
      "title": "中国首次成功回收轨道级火箭助推器",
      "summary": "中国航天科技集团长征十号乙火箭实现全球首次运载火箭网系回收，成功着陆。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "长征十号乙火箭成功测试海上回收技术",
+     "summary": "长征十号乙运载火箭一子级成功降落在南海海上平台，完成中国可重复使用火箭技术的关键测试。",
      "news_status": "已确认"
     }
    ]
@@ -1800,18 +1836,24 @@
   },
   {
    "event_id": "evt-20260712-c73c85",
-   "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
+   "title": "美议员指控以色列军方在约旦河西岸拘留事件中撒谎",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-13",
    "history": [
     {
      "date": "2026-07-12",
      "title": "美国众议员罗·卡纳称在约旦河西岸被以色列定居者扣押",
      "summary": "美国众议员罗·卡纳在约旦河西岸被武装以色列定居者扣押90分钟，以色列军队拒绝干预。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-13",
+     "title": "美议员指控以色列军方在约旦河西岸拘留事件中撒谎",
+     "summary": "美国民主党议员Ro Khanna指控以色列军方在约旦河西岸拘留其车队事件中撒谎，引发亲以色列势力攻击。",
+     "news_status": "有争议"
     }
    ]
   },
@@ -1902,18 +1944,30 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
+   "title": "特朗普放弃霍尔木兹海峡20%货运费计划",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-15",
    "history": [
     {
      "date": "2026-07-12",
      "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
      "summary": "美国要求伊朗周六前承诺开放霍尔木兹海峡，伊朗革命卫队宣布关闭海峡并警告射击船只。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "阿联酋谴责伊朗攻击油轮，美国发动新一轮打击",
+     "summary": "阿联酋谴责伊朗对油轮的“无耻”攻击，美国连续第三晚对伊朗发动打击，特朗普宣布对霍尔木兹海峡实施新封锁并加征20%费用。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-15",
+     "title": "特朗普放弃霍尔木兹海峡20%货运费计划",
+     "summary": "特朗普宣布放弃对通过霍尔木兹海峡的货物征收20%费用的计划，转而寻求与海湾国家达成贸易投资协议。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -1999,6 +2053,897 @@
      "title": "科技巨头AI债券遭市场抛售，价格持续下跌",
      "summary": "科技巨头发行的AI相关长期债券价格持续下跌，亚马逊250亿美元债券需求疲软，长期债券认购率低。",
      "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-1ca989",
+   "title": "美共和党参议员格雷厄姆猝死，特朗普提名其胞妹接任",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "美国参议员林赛·格雷厄姆去世，享年71岁",
+     "summary": "美国共和党参议员、特朗普盟友林赛·格雷厄姆因突发疾病去世，死因疑似与心脏有关。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "美共和党参议员格雷厄姆猝死，特朗普提名其胞妹接任",
+     "summary": "美国共和党参议员林赛·格雷厄姆因病猝死，特朗普迅速提名其胞妹填补参议院席位空缺，南卡州长将宣布临时任命。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-d19f1e",
+   "title": "OpenAI GPT-5.6 Sol Ultra一小时证明50年图论猜想",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "OpenAI GPT-5.6 Sol Ultra一小时证明50年图论猜想",
+     "summary": "OpenAI的GPT-5.6 Sol Ultra模型在一小时内生成了悬而未决50年的图论难题“循环双覆盖猜想”的完整证明。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-9aeb2e",
+   "title": "曼谷酒吧火灾致28死25重伤",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "曼谷酒吧火灾致至少27人死亡",
+     "summary": "泰国曼谷一家酒吧发生火灾，造成至少27人死亡，63人受伤，其中22人伤势严重。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "曼谷酒吧火灾致28死25重伤",
+     "summary": "曼谷乍都节区一家酒吧发生火灾，至少28人死亡、25人重伤，目击者称现场发生爆炸，死伤者多为年轻顾客。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-753c1c",
+   "title": "多伦多节日枪击致2死4伤",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "多伦多节日枪击致2死4伤",
+     "summary": "加拿大多伦多一个拉丁文化节庆活动上发生枪击，造成至少2人死亡、4人受伤，警方正在追捕嫌疑人。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-c9bbfc",
+   "title": "苹果起诉OpenAI挖角窃密，涉400名员工",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "苹果起诉OpenAI挖角窃密，涉400名员工",
+     "summary": "苹果在美国起诉OpenAI，指控其挖角400名员工、窃取工程机和机密文件，前员工发现漏洞后持续访问内网。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-5d13f1",
+   "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
+     "summary": "俄罗斯导弹袭击乌克兰东北部城市苏梅，击中一家咖啡店附近，民众惊慌逃离。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-cad0e3",
+   "title": "英伟达路演：季度收入近千亿美元，增速加快",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "英伟达路演：季度收入近千亿美元，增速加快",
+     "summary": "英伟达CEO黄仁勋在摩根士丹利路演中表示，季度收入近千亿美元且增速加快，Rubin Ultra没有延期。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-027dd5",
+   "title": "德州男子被ICE枪杀引发抗议",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "德州男子被ICE枪杀引发抗议",
+     "summary": "美国德州建筑工人Lorenzo Salgado Araujo被ICE枪杀，引发民众抗议特朗普移民政策。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-1b3ce4",
+   "title": "特朗普威胁摧毁伊朗并制裁其金融家",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "特朗普威胁摧毁伊朗并制裁其金融家",
+     "summary": "特朗普威胁称若伊朗试图刺杀他，将用1000枚导弹“摧毁”伊朗，同时美国财政部制裁一名伊朗金融家。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-24fa71",
+   "title": "卡塔尔前埃米尔哈马德去世，享年74岁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "卡塔尔前埃米尔哈马德去世，享年74岁",
+     "summary": "卡塔尔前埃米尔哈马德·本·哈利法·阿勒萨尼去世，享年74岁，他通过不流血政变上台并推动国家转型。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-dd4d2a",
+   "title": "白宫强力施压苹果英伟达扶持英特尔",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "白宫强力施压苹果英伟达扶持英特尔",
+     "summary": "特朗普政府过去一年持续施压苹果、英伟达等公司，为英特尔撮合合作，以扶持其代工业务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-cfcbeb",
+   "title": "德州大学因行政令关闭移民主题艺术展",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "德州大学因行政令关闭移民主题艺术展",
+     "summary": "德克萨斯大学因特朗普行政令关闭一场涉及移民主题的艺术展，该展品包括“ICE冰棒”等作品。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-519d7a",
+   "title": "国常会部署加快新一代通信网和算力网建设",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "国常会部署加快新一代通信网和算力网建设",
+     "summary": "李强主持召开国常会，听取数字中国建设汇报，要求适度超前布局数字基础设施，加快通信网和算力网建设。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-4b6034",
+   "title": "南非驱逐超5.3万名外国人，打击非法移民",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "南非驱逐超5.3万名外国人，打击非法移民",
+     "summary": "南非在移民行动中驱逐超过5.3万名外国人，以回应国内广泛的反移民抗议。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-8b0dc9",
+   "title": "印度穆斯林女法官因定罪牛义警面临死亡威胁",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "印度穆斯林女法官因定罪牛义警面临死亡威胁",
+     "summary": "印度穆斯林女法官塔巴苏姆·汗因定罪14名印度教男子（涉及牛义警私刑案）而面临网络死亡威胁。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-ae9c06",
+   "title": "OpenAI成Oracle关键信用风险，评级被下调",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "OpenAI成Oracle关键信用风险，评级被下调",
+     "summary": "标普将Oracle信用评级下调至BBB-（垃圾级上一档），称OpenAI占其6380亿美元合同义务约一半，若OpenAI退出将构成重大风险。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260713-c572d2",
+   "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-13",
+   "last_seen": "2026-07-13",
+   "history": [
+    {
+     "date": "2026-07-13",
+     "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
+     "summary": "美国玩具进口商Jonathan Silva因关税尝试在美国本土生产大富翁游戏，发现成本比中国进口高出数倍，且供应链配套不足。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-bbf24b",
+   "title": "大众拟再裁5万人，关闭德国工厂应对中国困境",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "大众拟再裁5万人，关闭德国工厂应对中国困境",
+     "summary": "大众汽车CEO宣布计划再裁减最多5万个全球岗位，并面临关闭德国四座工厂的风险，以应对在华市场份额下滑和成本高企。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-e283fc",
+   "title": "开放权重模型占AI流量29%，token价格趋稳",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "开放权重模型占AI流量29%，token价格趋稳",
+     "summary": "Vercel AI Gateway数据显示，2026年7月开放权重模型占生产流量的29%，每token价格趋于平稳，反映AI应用成本下降和开源生态成熟。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-189996",
+   "title": "德国AI协会发布开源模型Soofi S，性能领先",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "德国AI协会发布开源模型Soofi S，性能领先",
+     "summary": "德国AI协会发布开源大模型Soofi S 30B-A3B，总参数316亿，激活参数约32亿，采用Mamba-2与注意力混合的MoE架构，在英语和德语基准测试中超越OLMo 3等开源模型。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-f4f5a9",
+   "title": "Meta豪掷超500亿美元扩建路易斯安那州数据中心至5GW",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "Meta豪掷超500亿美元扩建路易斯安那州数据中心至5GW",
+     "summary": "Meta宣布将其路易斯安那州数据中心算力扩至5GW，总投资超500亿美元，为全球最大AI基础设施投资之一。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-ab3185",
+   "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
+     "summary": "2026世界人工智能大会将于7月17日至20日在上海举行，国家主席习近平将出席开幕式并发表主旨讲话。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-a45ced",
+   "title": "特朗普政府放弃以医保资金威胁跨性别医疗",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "特朗普政府放弃以医保资金威胁跨性别医疗",
+     "summary": "特朗普政府卫生与公众服务部放弃了一项最激进的提案，即通过扣留联邦医保资金来迫使各州停止为青少年提供性别确认护理。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-570deb",
+   "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
+     "summary": "美国12个州的总检察长联合提起诉讼，试图阻止派拉蒙与华纳兄弟探索公司价值1100亿美元的合并案，称其将损害竞争。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-43495a",
+   "title": "《侏罗纪公园》演员山姆·尼尔去世享年78岁",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "《侏罗纪公园》演员山姆·尼尔去世享年78岁",
+     "summary": "《侏罗纪公园》主演山姆·尼尔去世，享年78岁，各界人士悼念。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-3350a0",
+   "title": "Cloudflare推出Precursor持续行为验证引擎",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "Cloudflare推出Precursor持续行为验证引擎",
+     "summary": "Cloudflare推出Precursor引擎，通过持续客户端信号检测机器人行为。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-550de8",
+   "title": "美参议员林赛·格雷厄姆去世，其妹接任",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "美参议员林赛·格雷厄姆去世，其妹接任",
+     "summary": "美国参议员林赛·格雷厄姆去世，南卡州长任命其妹达琳·格雷厄姆·诺多内接替其任期至2027年初。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-4e1cfd",
+   "title": "匈牙利议会投票罢免总统",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "匈牙利议会投票罢免总统",
+     "summary": "匈牙利议会投票罢免总统舒尤克·道马什，他被视为前总理欧尔班的忠诚支持者。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-8158d7",
+   "title": "哥伦比亚公民在缅因州被ICE探员击毙",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "ICE在缅因州枪杀哥伦比亚男子，移民执法已致9死",
+     "summary": "ICE在缅因州一次行动中枪杀一名26岁哥伦比亚男子，参议员质疑未佩戴执法记录仪。特朗普移民执法已致至少9人死亡。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-15",
+     "title": "哥伦比亚公民在缅因州被ICE探员击毙",
+     "summary": "一名哥伦比亚公民在缅因州被ICE探员击毙，一周内发生第二起类似事件，ICE暂停非紧急车辆拦截。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-8e0f50",
+   "title": "中国机器人热潮致蓝领工人失业转向零工",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "中国机器人技术热潮致蓝领工人失业转向零工经济",
+     "summary": "中国制造业自动化转型导致大量蓝领工人失业，许多人被迫转向零工经济。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-15",
+     "title": "中国机器人热潮致蓝领工人失业转向零工",
+     "summary": "中国制造业自动化转型中，蓝领工人面临失业压力，被迫转向零工经济，凸显高科技转型的社会挑战。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-d5227b",
+   "title": "美联储理事沃勒暗示若通胀持续可能加息",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "美联储理事沃勒暗示若通胀持续可能加息",
+     "summary": "美联储理事沃勒表示，若本周核心通胀数据仍高，需考虑近期加息，市场应声下跌。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260714-f36387",
+   "title": "苏丹准军事组织RSF首领因战争罪被判死刑",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-14",
+   "last_seen": "2026-07-14",
+   "history": [
+    {
+     "date": "2026-07-14",
+     "title": "苏丹准军事组织RSF首领因战争罪被判死刑",
+     "summary": "苏丹法院缺席判处准军事组织RSF首领穆罕默德·哈姆丹·达加洛死刑，另有15名指挥官同判。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-32e7df",
+   "title": "中共政治局委员马兴瑞被双开",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "中共政治局委员马兴瑞被双开",
+     "summary": "新华社公布，中共政治局委员、前新疆党委书记马兴瑞因严重违纪违法被开除党籍和公职。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-09d176",
+   "title": "美国6月CPI同比上涨3.5%低于预期",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "美国6月CPI同比上涨3.5%低于预期",
+     "summary": "美国6月消费者价格指数同比上涨3.5%，低于预期的3.8%，能源价格回落是主因。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-7b1603",
+   "title": "Meta被前员工起诉指控AI工具歧视性裁员",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "Meta被前员工起诉指控AI工具歧视性裁员",
+     "summary": "26名Meta前员工起诉公司，指控其使用AI工具对休病假或育儿假的员工进行歧视性裁员。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-42ea95",
+   "title": "日本筹建二战后首个中央情报机构",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "日本筹建二战后首个中央情报机构",
+     "summary": "日本首相高市早苗计划建立国内情报机构，以应对中俄朝威胁，并已向西方寻求帮助。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-02d6f0",
+   "title": "以色列空袭加沙警察哨所致7人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "以色列空袭加沙警察哨所致7人死亡",
+     "summary": "以色列空袭加沙北部一警察哨所，造成7人死亡，包括一名哈马斯高级警官。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-0eab42",
+   "title": "特朗普向卡罗尔支付560万美元性侵案赔偿",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "特朗普向卡罗尔支付560万美元性侵案赔偿",
+     "summary": "特朗普已向作家E·简·卡罗尔支付560万美元，作为性侵及诽谤案的赔偿金。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-82e822",
+   "title": "特朗普宣布与伊拉克达成大规模石油协议",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "特朗普宣布与伊拉克达成大规模石油协议",
+     "summary": "特朗普宣布美伊将很快达成“大规模”石油协议，伊拉克总理同时要求美军9月底前撤离。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-b8964d",
+   "title": "霍尔木兹紧张局势蔓延至AI芯片和化肥供应链",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "霍尔木兹紧张局势蔓延至AI芯片和化肥供应链",
+     "summary": "霍尔木兹海峡紧张局势正从能源扩散至化肥、硫磺、铝材和氦气等关键工业原材料供应链。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-149d2e",
+   "title": "视频生成创企PixVerse完成4.39亿美元C轮融资",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "视频生成创企PixVerse完成4.39亿美元C轮融资",
+     "summary": "新加坡AI视频生成公司PixVerse完成4.39亿美元C轮融资，估值超20亿美元。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-130dc2",
+   "title": "英国举报人揭露美商务部长与爱泼斯坦关联",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "英国举报人揭露美商务部长与爱泼斯坦关联",
+     "summary": "英国举报人Simon Andriesz在公开的爱泼斯坦文件中发现美国商务部长Howard Lutnick与爱泼斯坦的关联。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-b1f19c",
+   "title": "中国异见人士董广平驾艇偷渡韩国",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "中国异见人士董广平驾艇偷渡韩国",
+     "summary": "中国异见人士董广平为寻求政治庇护，驾驶小艇穿越300公里黄海偷渡韩国，此前四次偷渡均失败。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-edf97c",
+   "title": "特朗普政府将美国公民列入刚果禁飞名单并拒绝埃博拉感染者回国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "特朗普政府将美国公民列入刚果禁飞名单并拒绝埃博拉感染者回国",
+     "summary": "特朗普政府将身处刚果的美国公民列入禁飞名单，要求其在第三国隔离21天，并拒绝一名埃博拉感染者回国。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-42871d",
+   "title": "IBM发布盈利预警股价暴跌25%创纪录",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "IBM发布盈利预警股价暴跌25%创纪录",
+     "summary": "IBM发布二季度盈利预警，营收预计172亿美元低于预期，股价单日暴跌25%，创历史最大跌幅。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-f10ee2",
+   "title": "欧盟与英国正式签署直布罗陀条约",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "欧盟与英国正式签署直布罗陀条约",
+     "summary": "欧盟与英国在布鲁塞尔正式签署关于直布罗陀的条约，实现人员自由流动，结束118年边境管控。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-b8984c",
+   "title": "多家出版商起诉谷歌未经授权使用版权内容训练AI",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "多家出版商起诉谷歌未经授权使用版权内容训练AI",
+     "summary": "Hachette、Cengage、Elsevier等出版商及作者团体对谷歌提起集体诉讼，指控其未经授权使用版权作品训练Gemini模型。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-4fac9d",
+   "title": "近200名专家联署警告AI经济冲击",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "近200名专家联署警告AI经济冲击",
+     "summary": "近200名经济学家和科技领袖联署声明，警告AI改变经济速度可能超过以往任何技术，呼吁政策制定者加强应对。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-628113",
+   "title": "纽约州暂停新建大型数据中心审批一年",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "纽约州暂停新建大型数据中心审批一年",
+     "summary": "纽约州成为全美首个暂停50兆瓦以上数据中心建设的州，禁令预计持续一年，影响十余个项目。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-ae11c2",
+   "title": "微软Secure Boot被曝存在十年未修复绕过漏洞",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "微软Secure Boot被曝存在十年未修复绕过漏洞",
+     "summary": "微软Secure Boot被曝存在一个十年未修复的绕过漏洞，攻击者可通过旧版shim组件绕过安全启动机制。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260715-77def8",
+   "title": "GitHub代码扫描新增AI安全检测功能",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-15",
+   "last_seen": "2026-07-15",
+   "history": [
+    {
+     "date": "2026-07-15",
+     "title": "GitHub代码扫描新增AI安全检测功能",
+     "summary": "GitHub代码扫描现在可在拉取请求中显示AI驱动的安全检测结果，扩展了对CodeQL不支持的语言和框架的覆盖。",
+     "news_status": "已确认"
     }
    ]
   }
