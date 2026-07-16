@@ -53,7 +53,7 @@ sources:
 
   # Anthropic 官方无 RSS，走自建 RSSHub 的 anthropic/news 路由（2026-07-11 补，
   # 动机：aihot 源 6 天挂 2 天，Anthropic 信号此前只能经 aihot 二手到达）。
-  # 与 ftcn 同批 3 天 source_health 验收。
+  # 2026-07-16 验收：6 天内 1 天产出 2 条、无抓取错误；官方低频属正常，保留。
   - id: anthropic
     name: Anthropic News
     type: rss
@@ -206,8 +206,8 @@ sources:
   # 2026-07-11 实证：feed 本身活着（本机直连 200），连续 6 天 error 的死因是
   # GitHub Actions 出口 IP 被 FT 封锁。改走自建 RSSHub 中转换出口 IP
   # （直连 /rss/news 等价于 RSSHub 的 /ftchinese/simplified/news 路由）。
-  # 验收：3 天内 source_health 仍持续失败 = FT 连 Vercel IP 也封，改 enabled:false
-  # 彻底收口（中文财经深度分析缺口已确认无免费等价替代）。
+  # 2026-07-16 验收：连续 6 天 0 条且 6 天均为抓取错误，确认中转出口同样不可用，
+  # 按既定口径停用；中文财经深度分析缺口暂无免费等价替代。
   - id: ftcn
     name: FT中文网
     type: rss
@@ -216,7 +216,7 @@ sources:
     tier: "T1"
     credibility: 9
     category: finance
-    enabled: true
+    enabled: false
 
   - id: wscn
     name: 华尔街见闻
@@ -251,8 +251,7 @@ sources:
     enabled: false
 
   # 2026-07-11 第四轮补入（finance 是精选构成最薄的域，6 天仅 7%）。
-  # 两源均走自建 RSSHub，与 ftcn/anthropic 同批 3 天 source_health 验收。
-  # cls/depth 路由带可选 category 参数，若默认路径持续空产出，退到 /cls/depth/1000。
+  # 2026-07-16 验收：cls-depth 连续 6 天稳定产出，保留默认 /cls/depth 路由。
   - id: cls-depth
     name: 财联社·深度
     type: rss
@@ -263,6 +262,8 @@ sources:
     category: finance
     enabled: true
 
+  # 2026-07-16 验收：RSSHub 路由可达、解析无错误，但其上游 headline API 最新内容
+  # 停留在 2026-05-30，连续 6 天在 26 小时时窗内均为 0；停用，待上游恢复再评估。
   - id: yicai
     name: 第一财经·头条
     type: rss
@@ -271,7 +272,7 @@ sources:
     tier: "T1.5"
     credibility: 7
     category: finance
-    enabled: true
+    enabled: false
 
   # ---------- 社会 / 国际（事实源） ----------
   - id: bbc-cn
@@ -411,7 +412,7 @@ sources:
   #    「单类精选上限」仅对 ai 类定向翻案，其余类不设上限。
   #  - 2026-07-15 撤销上述 AI 定向上限：max_per_category 当前为空；AI 与其他类目
   #    一样按阈值和分数竞争，仅受全局 pick_max、类目保底及既有评分规则约束。
-  #  - ftcn：改走 RSSHub 中转（死因=GH Actions 出口 IP，feed 本身活着），3 天验收。
+  #  - ftcn：曾改走 RSSHub 中转；2026-07-16 连续 6 天抓取失败后停用。
   #  - Anthropic：news 进主管线、engineering 进深读（RSSHub anthropic 路由）。
   #  - techcrunch/ars 维持全量 feed：AIHOT 的"窄 feed"原则只对垂直站成立，
   #    本日报 tech 域就是要全量科技新闻，AI 子集已经 aihot 二手到达，不换不加。
@@ -420,13 +421,14 @@ sources:
   #  - 二次元：正式从盲区清单划掉，不再评估。B站热搜舆情侧漏够用；
   #    垂直资讯源均为公众号（已判死路径）。
   #  - zaobao/经济观察报：无公开 RSS（2026-07-11 探测 404），不再追。
-  #    （yicai 官网 RSS 同样 404，但 RSSHub 有 yicai 路由，第四轮经此接入。）
+  #    yicai 官网 RSS 同样 404；RSSHub 路由曾在第四轮接入，因上游接口长期停更于
+  #    2026-07-16 验收停用。
   #
   # ---------- 第四轮定案追加（2026-07-11 晚盘问，防重议） ----------
   #  依据数据：近 6 天精选构成 world 39% 过剩 / finance 7% 最薄 / tech 11% 次薄；
   #  各源性价比（抓取量→精选贡献）见当日盘问记录。
-  #  - 36氪：全场性价比最差（120→≤3）但系唯一中文创投源，缓刑至 #7 一周复盘，
-  #    届时用两周数据定去留。不要在 #7 之前砍。
+  #  - 36氪：2026-07-16 六日复核为 108 条抓取→6 条精选（5.6%），与财联社·深度
+  #    同档，且仍是唯一中文创投源；撤销缓刑并保留。旧样本的“120→≤3”不再成立。
   #  - atlantic 保留：仅存英文深度杂志层，低产（74→4）是分析体裁宿命不是质量问题，
   #    换 New Yorker 一样低产、纯折腾。
   #  - 不加清单：Google AI blog / Chrome DevRel（AI 收缩定位相悖或过于边缘）；
@@ -500,7 +502,8 @@ deep_sources:
     lang: en
     channel: ai_engineering
     enabled: true
-  # Anthropic 工程博客（官方无 RSS，走自建 RSSHub；deep 源同样支持 {rsshub} 占位符）
+  # Anthropic 工程博客（官方无 RSS，走自建 RSSHub；deep 源同样支持 {rsshub} 占位符）。
+  # 2026-07-16 验收：已连续写入 deep_health；路由与页面选择器正常，近期无 78 小时窗口内文章。
   - id: anthropic-eng
     name: Anthropic Engineering
     url: "{rsshub}/anthropic/engineering"

@@ -357,6 +357,16 @@ test("favorites uses server truth, backfills local/index, and read-later support
   dom.window.document.querySelector("#readLaterBtn").click(); await app.idle(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, false); assert.ok(dom.window.document.querySelector('[data-read-later-op="done"]')); dom.window.document.querySelector('[data-read-later-op="done"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "done")); dom.window.document.querySelector('[data-read-later-op="remove"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "remove")); dom.window.document.querySelector("[data-close-drawer]").click(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, true); assert.equal(dom.window.document.activeElement.id, "readLaterBtn");
 });
 
+test("logged-out favorites route keeps its URL and renders a clear fallback", async () => {
+  const dom = shell("https://example.test/news/?view=favs");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), manifests: { daily: [day.date] } });
+  await app.start();
+  assert.equal(dom.window.location.search, "?view=favs");
+  assert.equal(dom.window.document.querySelector("main h1")?.textContent, "收藏");
+  assert.match(dom.window.document.querySelector('main [role="status"]')?.textContent || "", /登录后可查看收藏/);
+  assert.equal(dom.window.document.querySelector("#favoritesNav").hidden, true);
+});
+
 test("favorites sorts by saved time and filters news deep and paper through app state", async () => {
   const dom = shell("https://example.test/news/?view=favs"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
   const fetchStub = async (url) => String(url).includes("type=favorites") ? { ok: true, json: async () => ({ success: true, data: { items: [

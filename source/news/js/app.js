@@ -75,7 +75,10 @@ export function createNewsApp(options) {
       if (route.view === "timeline") { const tag = new URLSearchParams(win.location.search).get("tag"); if (tag) timelineState.tag = tag; const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: (data, date) => { if (isCurrent(requestId)) indexData(data, date); }, timelineApi, now: options.now, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreTimelineFocus) { const input = doc.getElementById("timelineSearch"); input?.focus(); input?.setSelectionRange(timelineCaret, timelineCaret); restoreTimelineFocus = false; } }
       else if (route.view === "all") { const html = await renderAllDynamics({ dataApi, state: allState }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreAllFocus) { const input = app.querySelector('[data-all-action="search"]'); input?.focus(); input?.setSelectionRange(allCaret, allCaret); restoreAllFocus = false; } }
       else if (route.view === "topics") { const html = await renderTopics({ dataApi, personal, tracked: storage.get(STORAGE_KEYS.tracked) }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
-      else if (route.view === "favs" && personal) { const html = await renderFavorites({ storage, dataApi, api, personal, state: favoritesState, isCurrent: () => isCurrent(requestId), onData: indexData, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
+      else if (route.view === "favs") {
+        if (!personal) { app.innerHTML = '<section><h1>收藏</h1><div class="empty" role="status">登录后可查看收藏</div></section>'; }
+        else { const html = await renderFavorites({ storage, dataApi, api, personal, state: favoritesState, isCurrent: () => isCurrent(requestId), onData: indexData, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
+      }
       else { win.history.replaceState({}, "", routeUrl({ view: "timeline" })); const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: indexData, timelineApi, now: options.now, ...personalState() }); if (requestId === renderRequest) app.innerHTML = html; }
     } catch (error) {
       if (!isCurrent(requestId)) return;
