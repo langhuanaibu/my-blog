@@ -285,7 +285,7 @@
    "event_id": "evt-20260706-a043de",
    "title": "中国向太平洋发射远程弹道导弹引发分析",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-08",
@@ -577,7 +577,7 @@
    "event_id": "evt-20260708-14d1db",
    "title": "AI芯片需求推动三星利润暴增1800%",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -594,7 +594,7 @@
    "event_id": "evt-20260708-5e9959",
    "title": "GitHub AI代理提示注入漏洞可泄露私有仓库",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -611,7 +611,7 @@
    "event_id": "evt-20260708-c65919",
    "title": "Anthropic将Claude Cowork AI代理扩展至移动端和网页",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -628,7 +628,7 @@
    "event_id": "evt-20260708-ffef6d",
    "title": "DeepSeek正在自研AI芯片以减少对外依赖",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -645,7 +645,7 @@
    "event_id": "evt-20260708-9b1ea6",
    "title": "黑客利用9种AI工具组装大规模僵尸网络",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -662,7 +662,7 @@
    "event_id": "evt-20260708-68cdd9",
    "title": "美国首批自主地面车辆在乌克兰参战",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -679,7 +679,7 @@
    "event_id": "evt-20260708-664323",
    "title": "AI推理成本暴跌，数据系统面临变革",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -696,7 +696,7 @@
    "event_id": "evt-20260708-a544fb",
    "title": "美最高法院裁定特朗普出生公民权行政令无效",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -736,7 +736,7 @@
    "event_id": "evt-20260708-88b871",
    "title": "微软用自研模型替代OpenAI和Anthropic降本",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -776,7 +776,7 @@
    "event_id": "evt-20260708-e7d5de",
    "title": "特朗普要求切断美国与西班牙所有贸易",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -793,7 +793,7 @@
    "event_id": "evt-20260708-18ceca",
    "title": "GitHub发布Q1创新图：全球开源协作加速",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -810,7 +810,7 @@
    "event_id": "evt-20260708-00012d",
    "title": "美最高法院允许得州执行应用商店法律",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -827,7 +827,7 @@
    "event_id": "evt-20260708-4f5ee5",
    "title": "AI芯片公司SambaNova估值110亿美元融资10亿",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -844,7 +844,7 @@
    "event_id": "evt-20260708-2d0b03",
    "title": "韩国股市跌入技术性熊市，监管紧急开会",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -861,7 +861,7 @@
    "event_id": "evt-20260708-33e3b4",
    "title": "Virgin Media因阻止用户取消合同被罚2800万英镑",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -878,7 +878,7 @@
    "event_id": "evt-20260708-130bba",
    "title": "起底“静默代扣”灰色产业链",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-08",
@@ -1364,12 +1364,12 @@
   },
   {
    "event_id": "evt-20260710-b892b9",
-   "title": "美国对伊朗新空袭致油价上涨，也门危机联动",
+   "title": "美国对伊朗发动新一轮空袭，特朗普警告德黑兰",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-10",
@@ -1381,6 +1381,12 @@
      "date": "2026-07-15",
      "title": "美国对伊朗新空袭致油价上涨，也门危机联动",
      "summary": "美国对伊朗发动新一轮空袭，油价应声上涨。同时，也门胡塞武装为报复沙特空袭，向沙特发射导弹。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "美国对伊朗发动新一轮空袭，特朗普警告德黑兰",
+     "summary": "美国对伊朗发动新一轮空袭，特朗普警告伊朗“最好老实点”，并称尚未决定是否“彻底摧毁”伊朗。",
      "news_status": "发展中"
     }
    ]
@@ -1944,12 +1950,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "特朗普放弃霍尔木兹海峡20%货运费计划",
+   "title": "美伊对峙升级，伊朗威胁封锁霍尔木兹海峡",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-12",
@@ -1968,6 +1974,12 @@
      "title": "特朗普放弃霍尔木兹海峡20%货运费计划",
      "summary": "特朗普宣布放弃对通过霍尔木兹海峡的货物征收20%费用的计划，转而寻求与海湾国家达成贸易投资协议。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "美伊对峙升级，伊朗威胁封锁霍尔木兹海峡",
+     "summary": "伊朗威胁封锁霍尔木兹海峡并停止中东能源出口，以回应美国的海上封锁。特朗普则威胁攻击伊朗核设施。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -2172,17 +2184,23 @@
   },
   {
    "event_id": "evt-20260713-cad0e3",
-   "title": "英伟达路演：季度收入近千亿美元，增速加快",
+   "title": "黄仁勋否认Vera Rubin延期，称已进入生产阶段",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-13",
-   "last_seen": "2026-07-13",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-13",
      "title": "英伟达路演：季度收入近千亿美元，增速加快",
      "summary": "英伟达CEO黄仁勋在摩根士丹利路演中表示，季度收入近千亿美元且增速加快，Rubin Ultra没有延期。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "黄仁勋否认Vera Rubin延期，称已进入生产阶段",
+     "summary": "英伟达CEO黄仁勋回应SemiAnalysis报道，称下一代AI加速器Vera Rubin已进入大规模生产，将按计划交付客户。",
      "news_status": "已确认"
     }
    ]
@@ -2569,12 +2587,12 @@
   },
   {
    "event_id": "evt-20260714-8e0f50",
-   "title": "中国机器人热潮致蓝领工人失业转向零工",
+   "title": "中国机器人技术导致蓝领工人失业，转向零工经济",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-14",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-14",
@@ -2586,6 +2604,12 @@
      "date": "2026-07-15",
      "title": "中国机器人热潮致蓝领工人失业转向零工",
      "summary": "中国制造业自动化转型中，蓝领工人面临失业压力，被迫转向零工经济，凸显高科技转型的社会挑战。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "中国机器人技术导致蓝领工人失业，转向零工经济",
+     "summary": "随着中国制造业向自动化转型，技术水平较低的蓝领工人面临失业压力，被迫转向零工经济。",
      "news_status": "已确认"
     }
    ]
@@ -2626,17 +2650,23 @@
   },
   {
    "event_id": "evt-20260715-32e7df",
-   "title": "中共政治局委员马兴瑞被双开",
+   "title": "中共高官马兴瑞被双开，成第三位落马政治局委员",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-15",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-15",
      "title": "中共政治局委员马兴瑞被双开",
      "summary": "新华社公布，中共政治局委员、前新疆党委书记马兴瑞因严重违纪违法被开除党籍和公职。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "中共高官马兴瑞被双开，成第三位落马政治局委员",
+     "summary": "中共中央决定对马兴瑞给予开除党籍和公职处分，其成为中央政治局第三位被免职的成员，标志着反腐深入最高层。",
      "news_status": "已确认"
     }
    ]
@@ -2915,17 +2945,23 @@
   },
   {
    "event_id": "evt-20260715-ae11c2",
-   "title": "微软Secure Boot被曝存在十年未修复绕过漏洞",
+   "title": "微软Secure Boot被曝存在十年未修复的漏洞",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-15",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-16",
    "history": [
     {
      "date": "2026-07-15",
      "title": "微软Secure Boot被曝存在十年未修复绕过漏洞",
      "summary": "微软Secure Boot被曝存在一个十年未修复的绕过漏洞，攻击者可通过旧版shim组件绕过安全启动机制。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-16",
+     "title": "微软Secure Boot被曝存在十年未修复的漏洞",
+     "summary": "Ars Technica报道，微软Secure Boot因未撤销旧shim，存在可被利用的漏洞，已持续十年。",
      "news_status": "已确认"
     }
    ]
@@ -2943,6 +2979,312 @@
      "date": "2026-07-15",
      "title": "GitHub代码扫描新增AI安全检测功能",
      "summary": "GitHub代码扫描现在可在拉取请求中显示AI驱动的安全检测结果，扩展了对CodeQL不支持的语言和框架的覆盖。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-0700cd",
+   "title": "OpenAI发布GPT-Red自动红队系统，攻击成功率84%",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "OpenAI发布GPT-Red自动红队系统，攻击成功率84%",
+     "summary": "OpenAI发布GPT-Red，通过自我对弈强化学习自动模拟攻击，在测试中成功率84%，远超人类的13%。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-52bf7b",
+   "title": "Thinking Machines发布开源多模态模型Inkling",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "Thinking Machines发布开源多模态模型Inkling",
+     "summary": "Thinking Machines Lab发布首款开源多模态模型Inkling，支持文本、图像和音频推理，提供完整权重。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-f8fb2b",
+   "title": "中国二季度GDP增长4.3%，创2022年底以来新低",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "中国二季度GDP增长4.3%，创2022年底以来新低",
+     "summary": "中国二季度GDP同比增长4.3%，低于全年目标，为2022年底以来最低季度增速。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-5741b6",
+   "title": "Apple Intelligence获中国备案，集成阿里千问模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "Apple Intelligence获中国备案，集成阿里千问模型",
+     "summary": "Apple Intelligence大模型获中国网信办备案，将集成阿里千问模型为国内用户提供AI功能。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-884049",
+   "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
+     "summary": "OpenAI前CTO米拉·穆拉蒂创立的Thinking Machines Lab发布首款AI模型Inkling，采用开放权重模式。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-e877ad",
+   "title": "微软创纪录补丁日同日曝Windows 0-day漏洞",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "微软创纪录补丁日同日曝Windows 0-day漏洞",
+     "summary": "微软发布史上最多补丁同日，安全研究员披露Windows 0-day漏洞HiveLegacy，称其为“强大原语”可执行其他恶意操作。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-fa1477",
+   "title": "黑客入侵揭示AI音乐生成器Suno抓取YouTube等平台数据训练模型",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "黑客入侵揭示AI音乐生成器Suno抓取YouTube等平台数据训练模型",
+     "summary": "黑客利用员工凭证访问Suno源代码，发现其抓取YouTube、Deezer等平台数百万首歌曲和歌词用于训练AI模型。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-452ea8",
+   "title": "香港警方搜查独立书店拘捕5人涉售煽动书籍",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "香港警方搜查独立书店拘捕5人涉售煽动书籍",
+     "summary": "香港警方搜查两间独立书店，拘捕5人，涉嫌出售具“煽动意图”的刊物，内容煽动对当局的憎恨。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-9b1d6c",
+   "title": "超100名美国众议院民主党议员投票反对对以色列军事援助",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "超100名美国众议院民主党议员投票反对对以色列军事援助",
+     "summary": "超过100名美国众议院民主党议员投票反对一项对以色列的军事援助法案，显示党内对以色列政策的分歧。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-f0054f",
+   "title": "GPT-5.6 Sol在90分钟内推翻30年未解统计学猜想",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "GPT-5.6 Sol在90分钟内推翻30年未解统计学猜想",
+     "summary": "宾夕法尼亚大学统计学教授使用OpenAI的GPT-5.6 Sol Pro在约90分钟内推翻了一个关于Benjamini-Hochberg方法的中心猜想。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-861ea3",
+   "title": "乌克兰总统泽连斯基解雇国防部长费多罗夫",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "乌克兰总统泽连斯基解雇国防部长费多罗夫",
+     "summary": "乌克兰总统泽连斯基解雇了广受欢迎的国防部长米哈伊洛·费多罗夫，尽管外国盟友曾请求其留任。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-72c4fa",
+   "title": "皮尤调查：多国民众对华好感度超美国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "皮尤调查：多国民众对华好感度超美国",
+     "summary": "皮尤研究中心调查显示，多国民众对中国及习近平的正面看法比例超过美国及特朗普，主要受对华印象改善和对美看法下滑驱动。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-a430c0",
+   "title": "阿根廷逆转英格兰，晋级2026世界杯决赛",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "阿根廷逆转英格兰，晋级2026世界杯决赛",
+     "summary": "阿根廷在2026世界杯半决赛中2-1逆转战胜英格兰，晋级决赛将对阵西班牙。赛后阿根廷球员展示“马尔维纳斯群岛属于阿根廷”横幅。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-c01eee",
+   "title": "苹果寻求收购AI芯片公司，加速服务器芯片布局",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "苹果寻求收购AI芯片公司，加速服务器芯片布局",
+     "summary": "苹果正积极寻找收购AI芯片公司的机会，以加强其AI服务器芯片能力，应对自研芯片性能瓶颈和延期问题。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-600605",
+   "title": "OpenAI发布230美元Codex专用键盘，可操控AI编程智能体",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "OpenAI发布230美元Codex专用键盘，可操控AI编程智能体",
+     "summary": "OpenAI与Work Louder合作推出kbd-1.0-codex-micro键盘，售价230美元，专为Codex AI编程应用设计，可监控多个智能体线程。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-439024",
+   "title": "知网下架将AI列为作者的论文",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "知网下架将AI列为作者的论文",
+     "summary": "知网对将DeepSeek等AI列为作者的论文已做下架处理，以回应学术规范争议。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-3d5fd6",
+   "title": "Anthropic推进IPO筹备，最快10月上市",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "Anthropic推进IPO筹备，最快10月上市",
+     "summary": "Anthropic正推进IPO计划，承销银行已安排投资者会面，最快今年10月上市，有望先于OpenAI登陆资本市场。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260716-1201b0",
+   "title": "数据中心需求致美国公众电费增加230亿美元",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-16",
+   "last_seen": "2026-07-16",
+   "history": [
+    {
+     "date": "2026-07-16",
+     "title": "数据中心需求致美国公众电费增加230亿美元",
+     "summary": "数据中心电力需求已导致美国公众电费增加230亿美元，涨价将持续至2028年底，监管机构面临成本分摊挑战。",
      "news_status": "已确认"
     }
    ]
