@@ -5,7 +5,7 @@ const {
   requireAdmin,
   readJsonBody,
   readTextFile,
-  putTextFile
+  putTextFilesAtomic
 } = require('./_github');
 
 const SITE_CONFIG = '_config.yml';
@@ -177,12 +177,15 @@ async function handler(req, res) {
       const body = await readJsonBody(req);
       const next = applySettings(siteFile.content, fluidFile.content, body.settings || {});
 
-      if (next.siteConfig !== siteFile.content) {
-        await putTextFile(SITE_CONFIG, next.siteConfig, 'update site settings', siteFile.sha);
-      }
-      if (next.fluidConfig !== fluidFile.content) {
-        await putTextFile(FLUID_CONFIG, next.fluidConfig, 'update site settings', fluidFile.sha);
-      }
+      const files = [];
+      if (next.siteConfig !== siteFile.content) files.push({ path: SITE_CONFIG, content: next.siteConfig });
+      if (next.fluidConfig !== fluidFile.content) files.push({ path: FLUID_CONFIG, content: next.fluidConfig });
+      await putTextFilesAtomic(files, 'update site settings', {
+        expectedFiles: [
+          { path: SITE_CONFIG, sha: siteFile.sha },
+          { path: FLUID_CONFIG, sha: fluidFile.sha }
+        ]
+      });
 
       return sendJson(res, 200, {
         success: true,

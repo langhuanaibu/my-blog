@@ -2337,14 +2337,6 @@ window.NEWS_ALL["2026-07-15"] = {
    "score": 64
   },
   {
-   "t": "中国机器人技术热潮下，被抛弃的蓝领工人",
-   "u": "https://cn.nytimes.com/china/20260713/china-workers-robots-factories/?utm_source=RSS",
-   "s": "纽约时报中文网",
-   "c": "mixed",
-   "time": "2026-07-14T01:00:41+00:00",
-   "score": 77
-  },
-  {
    "t": "商汤开源 SenseNova-Vision-7B-MoT 多任务视觉模型",
    "u": "https://x.com/SenseTime_AI/status/2076828658531262619",
    "s": "AI HOT · X：商汤 SenseTime (@SenseTime_AI)",

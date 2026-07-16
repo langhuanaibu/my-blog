@@ -1,4 +1,5 @@
 (function () {
+  try { localStorage.removeItem('aoiblog_admin_token'); } catch (_) {}
   var mount = document.querySelector('[data-twikoo-path]');
   if (!mount) return;
 

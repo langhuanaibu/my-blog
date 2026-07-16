@@ -12,13 +12,29 @@ import { createStorage, STORAGE_KEYS } from "./storage.js";
 import { createTimelineState, renderTimeline } from "./timeline-view.js";
 import { installTopicInteractions, renderTopics } from "./topics-view.js";
 
+export async function resolvePersonalSession(fetchFn, setTimeoutFn = setTimeout, clearTimeoutFn = clearTimeout, timeoutMs = 800) {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve()
+        .then(() => fetchFn("/api/adminSession", { credentials: "same-origin" }))
+        .then((response) => response.ok)
+        .catch(() => false),
+      new Promise((resolve) => { timer = setTimeoutFn(() => resolve(false), timeoutMs); }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeoutFn(timer);
+  }
+}
+
 export function createNewsApp(options) {
   const win = options.window; const doc = options.document; const dataApi = options.dataApi || browserDataApi;
+  try { win.localStorage.removeItem("aoiblog_admin_token"); } catch (_) {}
   const dailyManifest = options.manifests?.daily ?? win.NEWS_MANIFEST ?? [];
-  const token = win.localStorage.getItem("aoiblog_admin_token") || ""; const personal = Boolean(token);
+  const personal = Boolean(options.personal);
   const timelineApi = options.timelineApi || win.NewsTimeline;
   const storage = createStorage(win.localStorage); const fetchFn = options.fetch || win.fetch?.bind(win) || globalThis.fetch;
-  const api = createApiClient({ fetch: fetchFn, token }); const app = doc.getElementById("app"); const itemIndex = new Map();
+  const api = createApiClient({ fetch: fetchFn }); const app = doc.getElementById("app"); const itemIndex = new Map();
   let pending = Promise.resolve(); let started = false; let currentRoute = null;
   const timelineState = createTimelineState(); const allState = createAllState(); const favoritesState = { type: "all" };
   let renderRequest = 0; let timelineSearchTimer = null; let timelineCaret = 0; let restoreTimelineFocus = false;
@@ -121,6 +137,7 @@ export function createNewsApp(options) {
 }
 
 if (typeof window !== "undefined" && typeof document !== "undefined") {
-  const newsApp = createNewsApp({ window, document });
-  newsApp.start();
+  try { window.localStorage.removeItem("aoiblog_admin_token"); } catch (_) {}
+  resolvePersonalSession(window.fetch.bind(window), window.setTimeout.bind(window), window.clearTimeout.bind(window))
+    .then((personal) => createNewsApp({ window, document, personal }).start());
 }

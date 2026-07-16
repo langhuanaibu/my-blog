@@ -4,10 +4,11 @@ const { pinyin } = require('pinyin-pro');
 const POSTS_DIR = 'source/_posts';
 const COVER_MAP_PATH = 'source/_data/category-covers.json';
 const FALLBACK_COVER = '/images/covers/defaults/fallback.webp';
+const ADMIN_SESSION_COOKIE = 'aoiblog_admin_session';
+const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 function setCors(res) {
-  // 鉴权走 Bearer 头不依赖 Cookie，不设 Allow-Credentials（与 * 组合本身非法）
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // 管理接口仅允许同源调用；不返回 Allow-Origin，避免第三方站点探测认证状态。
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST,DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
@@ -35,6 +36,46 @@ function requireAdmin(req) {
   }
 
   if (!timingSafeEqual(req.headers.authorization || '', `Bearer ${expected}`)) {
+    throw createHttpError(401, 'Unauthorized');
+  }
+}
+
+function createAdminSession(secret, now = Date.now()) {
+  const expires = now + ADMIN_SESSION_TTL_MS;
+  const payload = String(expires);
+  const signature = crypto
+    .createHmac('sha256', secret)
+    .update(`admin-session:${payload}`)
+    .digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function verifyAdminSession(value, secret, now = Date.now()) {
+  const [expiresText, signature, ...rest] = String(value || '').split('.');
+  const expires = Number(expiresText);
+  if (rest.length || !Number.isSafeInteger(expires) || expires <= now || expires > now + ADMIN_SESSION_TTL_MS) {
+    return false;
+  }
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(`admin-session:${expiresText}`)
+    .digest('base64url');
+  return timingSafeEqual(signature, expected);
+}
+
+function readCookie(req, name) {
+  const cookie = String(req.headers?.cookie || '');
+  for (const part of cookie.split(';')) {
+    const [key, ...value] = part.trim().split('=');
+    if (key === name) return decodeURIComponent(value.join('='));
+  }
+  return '';
+}
+
+function requireAdminSession(req, now = Date.now()) {
+  const expected = process.env.ADMIN_TOKEN;
+  if (!expected) throw createHttpError(500, 'ADMIN_TOKEN is not configured');
+  if (!verifyAdminSession(readCookie(req, ADMIN_SESSION_COOKIE), expected, now)) {
     throw createHttpError(401, 'Unauthorized');
   }
 }
@@ -100,6 +141,69 @@ async function githubRequest(filePath, options = {}) {
   }
 
   return data;
+}
+
+async function githubApiRequest(endpoint, options = {}) {
+  const { token, owner, repo } = repoConfig();
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/${endpoint}`, {
+    method: options.method || 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+      'User-Agent': 'aoiblog-admin'
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+  const text = await response.text();
+  let data = null;
+  if (text) {
+    try { data = JSON.parse(text); } catch { data = null; }
+  }
+  if (!response.ok) {
+    throw createHttpError(response.status, data?.message || `GitHub request failed: ${response.status}`);
+  }
+  if (text && data === null) throw createHttpError(502, 'GitHub returned a non-JSON response');
+  return data;
+}
+
+async function putTextFilesAtomic(files, message, options = {}) {
+  if (!files.length) return null;
+  const { branch } = repoConfig();
+  const refPath = `git/ref/heads/${encodePath(branch)}`;
+  const updateRefPath = `git/refs/heads/${encodePath(branch)}`;
+  const ref = await githubApiRequest(refPath);
+  const headSha = ref.object?.sha;
+  const head = await githubApiRequest(`git/commits/${headSha}`);
+  if (options.expectedFiles?.length) {
+    const currentTree = await githubApiRequest(`git/trees/${head.tree?.sha}?recursive=1`);
+    const blobs = new Map((currentTree.tree || [])
+      .filter((entry) => entry.type === 'blob')
+      .map((entry) => [entry.path, entry.sha]));
+    const stale = options.expectedFiles.some((file) => blobs.get(file.path) !== file.sha);
+    if (stale) throw createHttpError(409, 'Repository changed since settings were opened; reload before saving');
+  }
+  const entries = await Promise.all(files.map(async (file) => {
+    const blob = await githubApiRequest('git/blobs', {
+      method: 'POST',
+      body: { content: file.content, encoding: 'utf-8' }
+    });
+    return { path: file.path, mode: '100644', type: 'blob', sha: blob.sha };
+  }));
+  const tree = await githubApiRequest('git/trees', {
+    method: 'POST',
+    body: { base_tree: head.tree?.sha, tree: entries }
+  });
+  const commit = await githubApiRequest('git/commits', {
+    method: 'POST',
+    body: { message, tree: tree.sha, parents: [headSha] }
+  });
+  await githubApiRequest(updateRefPath, {
+    method: 'PATCH',
+    body: { sha: commit.sha, force: false }
+  });
+  return commit;
 }
 
 async function readJsonBody(req) {
@@ -338,11 +442,16 @@ module.exports = {
   sendJson,
   createHttpError,
   requireAdmin,
+  requireAdminSession,
+  createAdminSession,
+  verifyAdminSession,
+  ADMIN_SESSION_COOKIE,
   readJsonBody,
   listDirectory,
   readTextFile,
   putTextFile,
   putBase64File,
+  putTextFilesAtomic,
   deleteFile,
   validatePostPath,
   parsePost,

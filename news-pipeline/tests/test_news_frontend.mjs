@@ -78,6 +78,14 @@ test("时间线卡片保留事实状态徽标", () => {
   assert.match(html, /有争议/);
 });
 
+test("重大更新在卡片和详情中明确标注首次收录日期", () => {
+  const item = { ...daily.items[0], is_update: true, first_seen: "2026-07-14" };
+  assert.match(dailyCard(item, daily.date), /重大更新/);
+  const detail = renderDetail(item, "news", daily.date);
+  assert.match(detail, /重大更新/);
+  assert.match(detail, /首次收录：2026-07-14/);
+});
+
 test("详情保留完整扩展字段", () => {
   const html = renderDetail({ ...daily.items[0], why: "单独的判断价值" }, "news", daily.date);
   assert.match(html, /detail-wrap reading-view/);

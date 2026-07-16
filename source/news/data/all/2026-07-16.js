@@ -2212,14 +2212,6 @@ window.NEWS_ALL["2026-07-16"] = {
    "score": 76
   },
   {
-   "t": "中国机器人技术热潮下，被抛弃的蓝领工人",
-   "u": "https://cn.nytimes.com/china/20260713/china-workers-robots-factories/?utm_source=RSS",
-   "s": "纽约时报中文网",
-   "c": "mixed",
-   "time": "2026-07-15T03:47:25+00:00",
-   "score": 80
-  },
-  {
    "t": "二维材料赋能神经形态计算——从原子级器件到低功耗自适应系统",
    "u": "http://blog.sciencenet.cn/blog-3411509-1543544.html",
    "s": "科学网博客",

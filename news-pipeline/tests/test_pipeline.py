@@ -25,6 +25,113 @@ def check(name, cond):
         failures.append(name)
 
 
+# ----------------------------------------------------------------
+# 0. 普通新闻跨日去重（URL 身份 + 内容增量）
+# ----------------------------------------------------------------
+
+DEDUP_API = ("canonical_news_url", "news_content_fingerprint",
+             "filter_cross_day_news", "load_news_seen", "save_news_seen")
+if not all(hasattr(dn, name) for name in DEDUP_API):
+    check("跨日去重 API 已实现", False)
+else:
+    target_url = ("https://cn.nytimes.com/china/20260713/"
+                  "china-workers-robots-factories/?utm_source=RSS#top")
+    canonical = dn.canonical_news_url(target_url)
+    check("新闻 URL 去查询参数和片段",
+          canonical == "https://cn.nytimes.com/china/20260713/china-workers-robots-factories/")
+
+    def news_item(title="旧报道", desc="原始摘要", url=target_url):
+        return {
+            "title": title, "desc": desc, "url": url,
+            "time": "2026-07-15T03:47:25+00:00", "source": "纽约时报中文网",
+            "source_id": "nyt-cn", "source_type": "analysis", "tier": "T1",
+            "credibility": 8,
+        }
+
+    prior = {
+        canonical: {
+            "url": canonical, "first_seen": "2026-07-14", "last_seen": "2026-07-14",
+            "title": "旧报道", "desc": "原始摘要",
+            "fingerprint": dn.news_content_fingerprint("旧报道", "原始摘要"),
+        }
+    }
+
+    class UpdateJudge:
+        def __init__(self, material):
+            self.material = material
+            self.calls = 0
+
+        def json_call(self, _system, _user):
+            self.calls += 1
+            return {"updates": [{"index": 0, "material": self.material}]}
+
+    q = dn.new_quality_stats()
+    judge = UpdateJudge(True)
+    kept = dn.filter_cross_day_news(judge, [news_item()], prior, "2026-07-16", q)
+    check("同 URL 相同内容跨日过滤", kept == [] and judge.calls == 0)
+    check("跨日重复计入质量统计", q["cross_day_duplicates"] == 1)
+
+    q = dn.new_quality_stats()
+    kept = dn.filter_cross_day_news(UpdateJudge(False),
+                                    [news_item(desc="仅编辑了措辞")], prior,
+                                    "2026-07-16", q)
+    check("非实质内容变化仍过滤", kept == [] and q["cross_day_duplicates"] == 1)
+
+    q = dn.new_quality_stats()
+    kept = dn.filter_cross_day_news(UpdateJudge(True),
+                                    [news_item(desc="官方公布最终调查结论")], prior,
+                                    "2026-07-16", q)
+    check("重大更新允许跨日重收",
+          len(kept) == 1 and kept[0]["is_update"] is True
+          and kept[0]["first_seen"] == "2026-07-14"
+          and q["material_updates"] == 1)
+
+    class BrokenJudge:
+        def json_call(self, _system, _user):
+            raise RuntimeError("judge unavailable")
+
+    q = dn.new_quality_stats()
+    kept = dn.filter_cross_day_news(BrokenJudge(),
+                                    [news_item(desc="疑似新增内容")], prior,
+                                    "2026-07-16", q)
+    check("更新判定失败时按重复过滤",
+          kept == [] and q["update_judge_failures"] == 1)
+
+    q = dn.new_quality_stats()
+    kept = dn.filter_cross_day_news(UpdateJudge(False), [news_item()], prior,
+                                    "2026-07-14", q)
+    check("同日重跑保持幂等", len(kept) == 1 and q["cross_day_duplicates"] == 0)
+
+    tmp_seen = Path(tempfile.mkdtemp(prefix="news_seen_test_"))
+    try:
+        accepted = [news_item()]
+        dn.save_news_seen(tmp_seen, "2026-07-14", accepted, {}, keep_days=90)
+        loaded = dn.load_news_seen(tmp_seen, "2026-07-15", keep_days=90)
+        check("去重账本按日分片持久化", canonical in loaded)
+        check("去重账本保留首次日期", loaded[canonical]["first_seen"] == "2026-07-14")
+
+        all_dir = tmp_seen / "all"
+        all_dir.mkdir(parents=True)
+        payload = {"date": "2026-07-13", "items": [{"t": "历史标题", "u": target_url}]}
+        (all_dir / "2026-07-13.js").write_text(
+            "window.NEWS_ALL = window.NEWS_ALL || {};\n"
+            f'window.NEWS_ALL["2026-07-13"] = {json.dumps(payload, ensure_ascii=False)};\n',
+            encoding="utf-8")
+        other_url = "https://example.com/pre-deploy-story?utm_source=rss"
+        payload["items"].append({"t": "部署前报道", "u": other_url})
+        (all_dir / "2026-07-13.js").write_text(
+            "window.NEWS_ALL = window.NEWS_ALL || {};\n"
+            f'window.NEWS_ALL["2026-07-13"] = {json.dumps(payload, ensure_ascii=False)};\n',
+            encoding="utf-8")
+        merged = dn.load_news_seen(tmp_seen, "2026-07-15", keep_days=90)
+        check("已有新分片时仍合并部署前历史", dn.canonical_news_url(other_url) in merged)
+        shutil.rmtree(tmp_seen / "news-seen")
+        rebuilt = dn.load_news_seen(tmp_seen, "2026-07-15", keep_days=90)
+        check("账本缺失时从全部动态冷启动", rebuilt[canonical]["first_seen"] == "2026-07-13")
+    finally:
+        shutil.rmtree(tmp_seen, ignore_errors=True)
+
+
 # 深读软配额：三栏优先各取一篇，空栏名额按总分释放
 quota_rows = [
     (9.5, 0, {"channel": "ai_engineering"}),
@@ -1528,6 +1635,88 @@ finally:
         os.environ.pop("DATA_DIR", None)
     else:
         os.environ["DATA_DIR"] = _qo_old
+
+_sync_tmp = Path(tempfile.mkdtemp(prefix="news-sync-"))
+try:
+    _sync_src = _sync_tmp / "source"
+    _sync_dst = _sync_tmp / "blog" / "source" / "news" / "data"
+    (_sync_src / "daily").mkdir(parents=True)
+    (_sync_src / "all").mkdir(parents=True)
+    (_sync_src / "news-seen").mkdir(parents=True)
+    (_sync_src / "daily" / "2026-07-17.js").write_text("daily", encoding="utf-8")
+    (_sync_src / "all" / "2026-07-17.js").write_text("all", encoding="utf-8")
+    (_sync_src / "news-seen" / "2026-07-17.json").write_text("{}", encoding="utf-8")
+    (_sync_src / "feed.xml").write_text("<rss/>", encoding="utf-8")
+    _sync_dst.mkdir(parents=True)
+    (_sync_dst / "stale.js").write_text("stale", encoding="utf-8")
+    if hasattr(dn, "sync_news_data"):
+        dn.sync_news_data(_sync_src, _sync_dst)
+        check("发布同步复制完整数据树",
+              (_sync_dst / "daily" / "2026-07-17.js").exists()
+              and (_sync_dst / "all" / "2026-07-17.js").exists()
+              and (_sync_dst / "news-seen" / "2026-07-17.json").exists()
+              and (_sync_dst / "feed.xml").exists())
+        check("发布同步清理目标陈旧文件", not (_sync_dst / "stale.js").exists())
+    else:
+        check("发布同步复制完整数据树", False)
+        check("发布同步清理目标陈旧文件", False)
+finally:
+    shutil.rmtree(_sync_tmp, ignore_errors=True)
+
+_rollback_tmp = Path(tempfile.mkdtemp(prefix="news-sync-rollback-"))
+_original_replace = Path.replace
+try:
+    _rollback_src = _rollback_tmp / "source"
+    _rollback_dst = _rollback_tmp / "data"
+    _rollback_src.mkdir()
+    _rollback_dst.mkdir()
+    (_rollback_src / "new.js").write_text("new", encoding="utf-8")
+    (_rollback_dst / "old.js").write_text("old", encoding="utf-8")
+    _replace_calls = 0
+
+    def _failing_replace(path, target):
+        global _replace_calls
+        _replace_calls += 1
+        if _replace_calls >= 2:
+            raise OSError("simulated rename failure")
+        return _original_replace(path, target)
+
+    Path.replace = _failing_replace
+    try:
+        dn.sync_news_data(_rollback_src, _rollback_dst)
+    except OSError:
+        pass
+    _rollback_backup = _rollback_dst.with_name(".data.backup")
+    check("发布同步回滚失败时保留旧数据备份",
+          (_rollback_backup / "old.js").exists())
+finally:
+    Path.replace = _original_replace
+    shutil.rmtree(_rollback_tmp, ignore_errors=True)
+
+_recovery_tmp = Path(tempfile.mkdtemp(prefix="news-sync-recovery-"))
+_original_copytree = shutil.copytree
+try:
+    _recovery_src = _recovery_tmp / "source"
+    _recovery_dst = _recovery_tmp / "data"
+    _recovery_backup = _recovery_tmp / ".data.backup"
+    _recovery_src.mkdir()
+    _recovery_backup.mkdir()
+    (_recovery_src / "new.js").write_text("new", encoding="utf-8")
+    (_recovery_backup / "old.js").write_text("old", encoding="utf-8")
+
+    def _failing_copytree(*_args, **_kwargs):
+        raise OSError("simulated copy failure")
+
+    shutil.copytree = _failing_copytree
+    try:
+        dn.sync_news_data(_recovery_src, _recovery_dst)
+    except OSError:
+        pass
+    check("发布同步下次运行先恢复遗留备份",
+          (_recovery_dst / "old.js").exists())
+finally:
+    shutil.copytree = _original_copytree
+    shutil.rmtree(_recovery_tmp, ignore_errors=True)
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")

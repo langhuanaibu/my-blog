@@ -161,7 +161,7 @@
     var panel = document.createElement('div');
     panel.className = 'aoi-toc-panel';
     panel.id = 'aoi-toc-panel';
-    panel.innerHTML = '<div class="aoi-toc-panel__header"><span class="aoi-toc-panel__title">����Ŀ¼</span><button class="aoi-toc-panel__close" id="aoi-toc-close" aria-label="�ر�Ŀ¼">\u2715</button></div><div class="aoi-toc-panel__body" id="aoi-toc-panel-body"></div>';
+    panel.innerHTML = '<div class="aoi-toc-panel__header"><span class="aoi-toc-panel__title">文章目录</span><button class="aoi-toc-panel__close" id="aoi-toc-close" aria-label="关闭目录">\u2715</button></div><div class="aoi-toc-panel__body" id="aoi-toc-panel-body"></div>';
     document.body.appendChild(panel);
 
     // Clone TOC content into panel
@@ -172,7 +172,7 @@
     var btn = document.createElement('button');
     btn.className = 'aoi-mobile-toc-btn';
     btn.id = 'aoi-toc-btn';
-    btn.setAttribute('aria-label', '����Ŀ¼');
+    btn.setAttribute('aria-label', '文章目录');
     btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
     document.body.appendChild(btn);
 

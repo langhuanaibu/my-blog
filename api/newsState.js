@@ -2,14 +2,14 @@ const {
   setCors,
   sendJson,
   createHttpError,
-  requireAdmin,
+  requireAdminSession,
   readJsonBody,
   readTextFile,
   putTextFile
 } = require('./_github');
 
 // 新闻驾驶舱用户状态写回通道：反馈 / 稍后读 / 收藏，追加写入仓库数据文件。
-// 仅本人（ADMIN_TOKEN）可用；管线在次日运行时读取 feedback/read_later（favorites 暂不消费）。
+// 仅本人（由 ADMIN_TOKEN 换取的签名会话）可用；管线在次日运行时读取 feedback/read_later。
 const STATE_FILES = {
   feedback: 'source/news/data/feedback.json',
   read_later: 'source/news/data/read_later.json',
@@ -193,7 +193,7 @@ async function handler(req, res) {
   }
 
   try {
-    requireAdmin(req);
+    requireAdminSession(req);
 
     if (req.method === 'GET') {
       const type = String(req.query?.type || '');

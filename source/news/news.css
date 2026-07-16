@@ -257,7 +257,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .toggle-more{margin:14px auto 0;display:block;background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 26px;border-radius:20px;cursor:pointer;font-size:13px}
 .toggle-more:hover{border-color:var(--accent);color:var(--text)}
 
-/* ---------- 反馈操作（仅持 token 可见） ---------- */
+/* ---------- 反馈操作（仅有效个人会话可见） ---------- */
 .acts{display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px dashed var(--border)}
 .act{font-size:12px;color:var(--text3);cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:2px 10px;user-select:none}
 .act:hover{color:var(--text);border-color:var(--accent)}

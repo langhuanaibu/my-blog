@@ -44,7 +44,7 @@
 ### 2.3 后端接口文件 (camelCase)
 - **规则**：小驼峰命名法，清晰表达接口意图。
 - **适用范围**：`/api/` 目录下的 Serverless 函数。
-- **示例**：`adminArticles.js`、`adminSettings.js`、`adminUpload.js`、`newsState.js`、`vocab.js`。
+- **示例**：`adminArticles.js`、`adminSettings.js`、`adminUpload.js`、`adminSession.js`、`newsState.js`、`vocab.js`。
 - **特殊约定**：内部共享的工具模块，使用下划线前缀以区分对外接口，如 `_github.js`。
 
 ### 2.4 文档与配置文件

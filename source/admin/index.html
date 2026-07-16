@@ -515,8 +515,9 @@
   <input id="markdownFile" class="hidden" type="file" accept=".md,.markdown,text/markdown,text/plain">
 
   <script>
+    try { localStorage.removeItem('aoiblog_admin_token'); } catch (_) {}
     const state = {
-      token: localStorage.getItem('aoiblog_admin_token') || '',
+      token: '',
       articles: [],
       categories: [],
       coverMap: {},
@@ -540,7 +541,7 @@
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${state.token}`,
+          ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
           ...(options.headers || {})
         }
       });
@@ -821,6 +822,7 @@
       try {
         const article = {
           filePath: $('filePath').value,
+          sha: state.current?.sha || '',
           title: $('title').value.trim(),
           date: $('date').value,
           category: $('category').value.trim(),
@@ -854,7 +856,7 @@
       try {
         await api('/api/adminArticles', {
           method: 'DELETE',
-          body: JSON.stringify({ filePath: state.current.filePath })
+          body: JSON.stringify({ filePath: state.current.filePath, sha: state.current.sha })
         });
         hideEditor();
         await loadAll();
@@ -869,23 +871,29 @@
     $('loginForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       state.token = $('adminToken').value.trim();
-      localStorage.setItem('aoiblog_admin_token', state.token);
       setStatus('正在登录...', $('loginStatus'));
 
       try {
+        const sessionResponse = await fetch('/api/adminSession', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: state.token })
+        });
+        if (!sessionResponse.ok) throw new Error('后台口令错误');
+        $('adminToken').value = '';
         showAdmin();
         await loadAll();
         setStatus('', $('loginStatus'));
       } catch (error) {
-        localStorage.removeItem('aoiblog_admin_token');
         state.token = '';
         showLogin();
         setStatus(error.message, $('loginStatus'));
       }
     });
 
-    $('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('aoiblog_admin_token');
+    $('logoutBtn').addEventListener('click', async () => {
+      await fetch('/api/adminSession', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
       state.token = '';
       showLogin();
     });
@@ -970,15 +978,7 @@
       event.target.value = '';
     });
 
-    if (state.token) {
-      $('adminToken').value = state.token;
-      showAdmin();
-      loadAll().catch((error) => {
-        setStatus(error.message);
-      });
-    } else {
-      showLogin();
-    }
+    showLogin();
   </script>
 </body>
 </html>

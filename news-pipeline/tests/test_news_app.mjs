@@ -121,8 +121,7 @@ test("weekly archive, browser Back and old week route are integrated", async () 
 
 test("personal not-interested stays in module layout and deep/paper details retain type fields", async () => {
   const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
-  dom.window.localStorage.setItem("aoiblog_admin_token", "token");
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: async () => ({ ok: true, json: async () => ({ success: true, data: {} }) }) });
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: async () => ({ ok: true, json: async () => ({ success: true, data: {} }) }) });
   await app.start();
   const hide = dom.window.document.querySelector('[data-action="not-interested"][data-ref="pick-1"]');
   hide.click();
@@ -148,9 +147,8 @@ test("empty manifest degrades and rendered interactions use native controls", as
 
 test("personal actions preserve newsState storage and API contracts", async () => {
   const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
-  dom.window.localStorage.setItem("aoiblog_admin_token", "token");
   const requests = [];
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: async (_url, init) => { requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) }; } });
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: async (_url, init) => { requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) }; } });
   await app.start();
   dom.window.document.querySelector('[data-action="like"][data-ref="pick-1"]').click();
   dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-1"]').click();
@@ -217,8 +215,8 @@ test("timeline labels missing and invalid publication times as uncertain", async
 test("timeline marks continuations and keeps card links separate from external and personal actions", async () => {
   const dates = ["2026-07-15", "2026-07-14"];
   const api = dataApi(); api.daily = async (date) => ({ date, items: [{ id: `pick-${date}`, tier: "pick", category: "ai", event_id: "evt", title: date === dates[0] ? "事件新进展" : "事件起点", summary: date, why: "重要", time: `${date}T01:00:00Z`, sources: [{ name: "来源", url: "https://example.com/story" }] }] });
-  const dom = shell("https://example.test/news/?view=timeline"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates }, timelineApi: TimelineCore, fetch: async () => ({ ok: true, json: async () => ({ success: true, data: {} }) }) }); await app.start();
+  const dom = shell("https://example.test/news/?view=timeline");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates }, timelineApi: TimelineCore, personal: true, fetch: async () => ({ ok: true, json: async () => ({ success: true, data: {} }) }) }); await app.start();
   const continuation = dom.window.document.querySelector(".timeline-entry.is-continuation");
   assert.ok(continuation?.querySelector(".continuation-mark"));
   assert.ok(continuation.querySelector('h3 a[data-route]'));
@@ -331,8 +329,8 @@ test("topics restores groups/map and local tracked override has stable direction
     { event_id: "run", title: "进行主题", status: "active", pinned: false, history: [{ date: day.date, summary: "A" }, { date: "2026-07-14", summary: "B" }] },
     { event_id: "arc", title: "归档主题", status: "archived", history: [{ date: day.date, summary: "A" }, { date: "2026-07-14", summary: "B" }] },
   ] }); api.index = async () => [[day.date, "pick-1", "pick", "ai", "新闻", "Agent|模型"], [day.date, "deep-1", "deep", "ai", "深读", "不应统计"]]; api.daily = async () => ({ ...structuredClone(day), items: day.items.map((item) => ({ ...item, tags: ["Agent"] })) });
-  const requests = []; const dom = shell("https://example.test/news/?view=topics"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] }, fetch: async (_url, init) => { requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) }; } }); await app.start();
+  const requests = []; const dom = shell("https://example.test/news/?view=topics");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] }, personal: true, fetch: async (_url, init) => { requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) }; } }); await app.start();
   assert.match(dom.window.document.querySelector("main").textContent, /追踪中|进行中|已归档|题材地图/);
   const untrack = dom.window.document.querySelector('[data-event="pin"]'); assert.match(untrack.textContent, /取消追踪/); untrack.click(); await app.idle();
   assert.equal(JSON.parse(dom.window.localStorage.getItem("news_tracked")).pin, false);
@@ -344,14 +342,14 @@ test("topics restores groups/map and local tracked override has stable direction
 });
 
 test("favorites uses server truth, backfills local/index, and read-later supports done/remove", async () => {
-  const dom = shell("https://example.test/news/?view=favs"); dom.window.document.body.insertAdjacentHTML("beforeend", '<button id="readLaterBtn" hidden></button><aside id="rlDrawer" hidden inert></aside>'); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
+  const dom = shell("https://example.test/news/?view=favs"); dom.window.document.body.insertAdjacentHTML("beforeend", '<button id="readLaterBtn" hidden></button><aside id="rlDrawer" hidden inert></aside>');
   const requests = [];
   const fetchStub = async (url, init = {}) => {
     if (!init.method && String(url).includes("type=favorites")) return { ok: true, json: async () => ({ success: true, data: { items: [{ date: day.date, item_id: "pick-2", title: "保留新闻", category: "tech" }] } }) };
     if (!init.method && String(url).includes("type=read_later")) return { ok: true, json: async () => ({ success: true, data: { items: [{ date: day.date, item_id: "deep-1", title: "深读", url: "https://example.com/deep", done: false }] } }) };
     requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) };
   };
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: fetchStub }); await app.start();
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: fetchStub }); await app.start();
   assert.match(dom.window.document.querySelector("main").textContent, /保留新闻/); assert.equal(JSON.parse(dom.window.localStorage.getItem("news_fav"))[`${day.date}:pick-2`], 1);
   dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-2"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "favorites" && request.payload.item_id === "pick-2")); assert.doesNotMatch(dom.window.document.querySelector("main").textContent, /保留新闻/);
   dom.window.document.querySelector("#readLaterBtn").click(); await app.idle(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, false); assert.ok(dom.window.document.querySelector('[data-read-later-op="done"]')); dom.window.document.querySelector('[data-read-later-op="done"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "done")); dom.window.document.querySelector('[data-read-later-op="remove"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "remove")); dom.window.document.querySelector("[data-close-drawer]").click(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, true); assert.equal(dom.window.document.activeElement.id, "readLaterBtn");
@@ -368,13 +366,13 @@ test("logged-out favorites route keeps its URL and renders a clear fallback", as
 });
 
 test("favorites sorts by saved time and filters news deep and paper through app state", async () => {
-  const dom = shell("https://example.test/news/?view=favs"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
+  const dom = shell("https://example.test/news/?view=favs");
   const fetchStub = async (url) => String(url).includes("type=favorites") ? { ok: true, json: async () => ({ success: true, data: { items: [
     { date: day.date, item_id: "pick-2", title: "保留新闻", ts: "2026-07-15T01:00:00Z" },
     { date: day.date, item_id: "deep-1", title: "深读", ts: "2026-07-15T03:00:00Z" },
     { date: day.date, item_id: "paper-1", title: "论文", ts: "2026-07-15T02:00:00Z" },
   ] } }) } : { ok: true, json: async () => ({ success: true, data: {} }) };
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: fetchStub }); await app.start();
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: fetchStub }); await app.start();
   assert.deepEqual([...dom.window.document.querySelectorAll(".favorites-list > article h3")].map((node) => node.textContent.trim()), ["深读", "论文", "保留新闻"]);
   dom.window.document.querySelector('[data-favorites-action="type"][data-value="paper"]').click(); await app.idle();
   assert.match(dom.window.document.querySelector(".favorites-list").textContent, /论文/); assert.doesNotMatch(dom.window.document.querySelector(".favorites-list").textContent, /深读|保留新闻/);
@@ -395,12 +393,11 @@ test("route load errors render malicious week values as text", async () => {
 test("read-later rejects unsafe URLs and escapes quoted data attributes", async () => {
   const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
   dom.window.document.body.insertAdjacentHTML("beforeend", '<button id="readLaterBtn" hidden></button><aside id="rlDrawer" hidden inert></aside>');
-  dom.window.localStorage.setItem("aoiblog_admin_token", "token");
   const malicious = { date: '2026-07-15" autofocus="', item_id: 'deep-1" data-evil="1', title: "<b>标题</b>", url: "javascript:alert(1)", done: false };
   const fetchStub = async (url) => String(url).includes("type=read_later")
     ? { ok: true, json: async () => ({ success: true, data: { items: [malicious] } }) }
     : { ok: true, json: async () => ({ success: true, data: {} }) };
-  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: fetchStub });
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: fetchStub });
   await app.start();
   dom.window.document.querySelector("#readLaterBtn").click();
   await app.idle();

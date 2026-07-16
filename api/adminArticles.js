@@ -2,6 +2,7 @@ const {
   POSTS_DIR,
   setCors,
   sendJson,
+  createHttpError,
   requireAdmin,
   readJsonBody,
   listDirectory,
@@ -108,6 +109,9 @@ module.exports = async (req, res) => {
 
       if (filePath) {
         const current = await readTextFile(filePath);
+        if (!article.sha || article.sha !== current.sha) {
+          throw createHttpError(409, 'Article changed since it was opened; reload before saving');
+        }
         sha = current.sha;
         existing = parsePost(filePath, current.content, sha, true);
       } else {
@@ -115,14 +119,14 @@ module.exports = async (req, res) => {
       }
 
       const next = composePost(article, coverMap, existing);
-      await putTextFile(
+      const result = await putTextFile(
         filePath,
         next.content,
         `${existing ? 'update' : 'publish'} post: ${next.title}`,
         sha || undefined
       );
 
-      const saved = parsePost(filePath, next.content, undefined, true);
+      const saved = parsePost(filePath, next.content, result?.content?.sha, true);
       return sendJson(res, 200, { success: true, data: saved });
     }
 
@@ -130,6 +134,9 @@ module.exports = async (req, res) => {
       const body = await readJsonBody(req);
       const filePath = validatePostPath(body.filePath || req.query?.filePath);
       const { sha } = await readTextFile(filePath);
+      if (!body.sha || body.sha !== sha) {
+        throw createHttpError(409, 'Article changed since it was opened; reload before deleting');
+      }
       await deleteFile(filePath, `delete post: ${filePath.split('/').pop()}`, sha);
       return sendJson(res, 200, { success: true });
     }

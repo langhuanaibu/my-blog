@@ -31,7 +31,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import feedparser
 import requests
@@ -66,6 +66,9 @@ def new_quality_stats():
         "audited_events": 0,
         "split_events": 0,
         "removed_fields": 0,
+        "cross_day_duplicates": 0,
+        "material_updates": 0,
+        "update_judge_failures": 0,
         "degraded": False,
     }
 
@@ -360,6 +363,198 @@ def fetch_all(sources, cfg):
         deduped.append(it)
     log(f"共抓取 {len(results)} 条，URL 去重后 {len(deduped)} 条")
     return deduped, fetch_stats
+
+
+# ----------------------------------------------------------------
+# 1.1 普通新闻跨日去重
+# ----------------------------------------------------------------
+
+NEWS_SEEN_DIR = "news-seen"
+UPDATE_JUDGE_SYSTEM = """你是新闻更新审计员。比较同一 URL 上次与本次的标题和摘要。
+只有官方确认、事件结果、关键数字、影响范围或政策结论出现实质新增，material 才为 true。
+措辞润色、翻译变化、标题改写、时间戳刷新和背景补充均为 false。
+严格返回 JSON：{"updates":[{"index":0,"material":false}]}，每个输入 index 恰好一项。"""
+
+
+def canonical_news_url(url):
+    """URL 身份：保留路径，移除查询参数和片段。"""
+    try:
+        parts = urlsplit(str(url or "").strip())
+        if not parts.scheme or not parts.netloc:
+            return str(url or "").split("?", 1)[0].split("#", 1)[0]
+        return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path, "", ""))
+    except ValueError:
+        return str(url or "").split("?", 1)[0].split("#", 1)[0]
+
+
+def _normalized_news_text(value):
+    return re.sub(r"\s+", " ", str(value or "")).strip().lower()
+
+
+def news_content_fingerprint(title, desc):
+    raw = _normalized_news_text(title) + "\n" + _normalized_news_text(desc)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
+
+
+def _read_all_payload(path):
+    try:
+        raw = Path(path).read_text(encoding="utf-8")
+        match = re.search(r"window\.NEWS_ALL\[[^\]]+\] = (\{.*\});\s*$", raw, re.S)
+        return json.loads(match.group(1)) if match else None
+    except (OSError, ValueError):
+        return None
+
+
+def _bootstrap_news_seen(data_dir, cutoff, date_str):
+    seen = {}
+    for path in sorted((Path(data_dir) / "all").glob("*.js")):
+        if path.stem == "manifest" or path.stem < cutoff or path.stem > date_str:
+            continue
+        payload = _read_all_payload(path)
+        if not payload:
+            continue
+        report_date = str(payload.get("date") or path.stem)
+        for row in payload.get("items") or []:
+            url = canonical_news_url(row.get("u"))
+            if not url:
+                continue
+            title = str(row.get("t") or "")
+            old = seen.get(url)
+            first_seen = min(old.get("first_seen", report_date), report_date) if old else report_date
+            seen[url] = {
+                "url": url, "first_seen": first_seen, "last_seen": report_date,
+                "title": title, "desc": "",
+                "fingerprint": news_content_fingerprint(title, ""), "legacy": True,
+            }
+    if seen:
+        log(f"  新闻去重账本冷启动：从全部动态恢复 {len(seen)} 个 URL")
+    return seen
+
+
+def load_news_seen(data_dir, date_str, keep_days=90):
+    data_dir = Path(data_dir)
+    cutoff = (datetime.strptime(date_str, "%Y-%m-%d")
+              - timedelta(days=int(keep_days))).strftime("%Y-%m-%d")
+    # 历史 all 档是部署前底账；新分片补充摘要与指纹，不能因出现首个分片就丢掉旧历史。
+    seen = _bootstrap_news_seen(data_dir, cutoff, date_str)
+    shard_dir = data_dir / NEWS_SEEN_DIR
+    paths = sorted(shard_dir.glob("*.json")) if shard_dir.exists() else []
+    for path in paths:
+        if path.stem < cutoff or path.stem > date_str:
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            rows = payload.get("items") if isinstance(payload, dict) else None
+            if not isinstance(rows, list):
+                continue
+        except (OSError, ValueError):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            url = canonical_news_url(row.get("url"))
+            if not url:
+                continue
+            old = seen.get(url)
+            if old and str(old.get("last_seen", "")) > str(row.get("last_seen", "")):
+                continue
+            merged = dict(row)
+            merged["url"] = url
+            if old:
+                merged["first_seen"] = min(str(old.get("first_seen") or date_str),
+                                           str(row.get("first_seen") or date_str))
+            seen[url] = merged
+    return seen
+
+
+def filter_cross_day_news(llm, items, seen, date_str, quality=None):
+    """过滤旧 URL；内容变化时才批量语义判断是否为重大更新。"""
+    quality = quality if quality is not None else new_quality_stats()
+    kept, changed = [], []
+    for item in items:
+        url = canonical_news_url(item.get("url"))
+        prior = seen.get(url)
+        if not prior or prior.get("last_seen") == date_str:
+            kept.append(item)
+            continue
+        fingerprint = news_content_fingerprint(item.get("title"), item.get("desc"))
+        legacy_same_title = (prior.get("legacy")
+                             and _normalized_news_text(prior.get("title"))
+                             == _normalized_news_text(item.get("title")))
+        if prior.get("fingerprint") == fingerprint or legacy_same_title:
+            quality["cross_day_duplicates"] += 1
+            continue
+        changed.append((item, prior))
+
+    if not changed:
+        return kept
+    request_rows = [{
+        "index": i,
+        "previous": {"title": prior.get("title", ""), "summary": prior.get("desc", "")},
+        "current": {"title": item.get("title", ""), "summary": item.get("desc", "")},
+    } for i, (item, prior) in enumerate(changed)]
+    decisions = {}
+    try:
+        raw = llm.json_call(UPDATE_JUDGE_SYSTEM,
+                            json.dumps(request_rows, ensure_ascii=False))
+        rows = raw.get("updates") if isinstance(raw, dict) else None
+        if not isinstance(rows, list):
+            raise ValueError("updates must be a list")
+        for row in rows:
+            if (not isinstance(row, dict) or isinstance(row.get("index"), bool)
+                    or not isinstance(row.get("index"), int)
+                    or not isinstance(row.get("material"), bool)):
+                continue
+            idx = row["index"]
+            if 0 <= idx < len(changed) and idx not in decisions:
+                decisions[idx] = row["material"]
+    except Exception as exc:
+        log(f"  重大更新判定失败，按跨日重复过滤: {exc}")
+        quality["degraded"] = True
+
+    for idx, (item, prior) in enumerate(changed):
+        if decisions.get(idx) is True:
+            item["is_update"] = True
+            item["first_seen"] = prior.get("first_seen") or prior.get("last_seen")
+            kept.append(item)
+            quality["material_updates"] += 1
+        else:
+            quality["cross_day_duplicates"] += 1
+            if idx not in decisions:
+                quality["update_judge_failures"] += 1
+                quality["degraded"] = True
+    return kept
+
+
+def save_news_seen(data_dir, date_str, items, seen, keep_days=90):
+    """成功生成日报后写当天分片；同日重跑覆盖，避免整本账本每日重写。"""
+    data_dir = Path(data_dir)
+    shard_dir = data_dir / NEWS_SEEN_DIR
+    shard_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for item in items:
+        url = canonical_news_url(item.get("url"))
+        if not url:
+            continue
+        prior = seen.get(url) or {}
+        rows.append({
+            "url": url,
+            "first_seen": item.get("first_seen") or prior.get("first_seen") or date_str,
+            "last_seen": date_str,
+            "title": str(item.get("title") or "")[:300],
+            "desc": str(item.get("desc") or "")[:500],
+            "fingerprint": news_content_fingerprint(item.get("title"), item.get("desc")),
+        })
+    rows.sort(key=lambda row: row["url"])
+    payload = {"version": 1, "date": date_str, "items": rows}
+    (shard_dir / f"{date_str}.json").write_text(
+        json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    cutoff = (datetime.strptime(date_str, "%Y-%m-%d")
+              - timedelta(days=int(keep_days))).strftime("%Y-%m-%d")
+    for path in shard_dir.glob("*.json"):
+        if path.stem < cutoff:
+            path.unlink()
+    log(f"  新闻去重账本：写入 {len(rows)} 个 URL（保留 {keep_days} 天）")
 
 
 # ----------------------------------------------------------------
@@ -1932,6 +2127,12 @@ def event_to_item(ev, items, tier):
         "time": primary["time"],
         "sources": sources[:5],
     }
+    update_sources = [items[i] for i in ids if items[i].get("is_update")]
+    if update_sources:
+        item["is_update"] = True
+        first_dates = [it.get("first_seen") for it in update_sources if it.get("first_seen")]
+        if first_dates:
+            item["first_seen"] = min(first_dates)
     # 精选恒带 event_id（前端"继续追踪"按钮需要）；
     # 跨天延续字段（第 2 天起）才带 day_count/history，文件保持干净
     if ev.get("event_id"):
@@ -2292,6 +2493,11 @@ def validate_daily_payload(payload):
         for field in ("audited_events", "split_events", "removed_fields"):
             value = quality.get(field)
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                errors.append(f"quality.{field} must be a non-negative integer")
+        for field in ("cross_day_duplicates", "material_updates", "update_judge_failures"):
+            value = quality.get(field)
+            if value is not None and (not isinstance(value, int)
+                                      or isinstance(value, bool) or value < 0):
                 errors.append(f"quality.{field} must be a non-negative integer")
         if not isinstance(quality.get("degraded"), bool):
             errors.append("quality.degraded must be boolean")
@@ -3003,8 +3209,41 @@ def update_source_health(fetch_stats, date_str):
 # 7. 同步发布到博客（可选，永不自动 push）
 # ----------------------------------------------------------------
 
-def publish_to_blog(cfg, date_str):
+def sync_news_data(src_data, dst_data):
+    """以完整源目录替换目标数据树，避免保留已过期的派生文件。"""
     import shutil
+    src_data = Path(src_data)
+    dst_data = Path(dst_data)
+    if not src_data.is_dir():
+        raise FileNotFoundError(f"新闻数据目录不存在: {src_data}")
+
+    staging = dst_data.with_name(f".{dst_data.name}.sync")
+    backup = dst_data.with_name(f".{dst_data.name}.backup")
+    shutil.rmtree(staging, ignore_errors=True)
+    dst_data.parent.mkdir(parents=True, exist_ok=True)
+    if backup.exists() and not dst_data.exists():
+        backup.replace(dst_data)
+    if backup.exists() and dst_data.exists():
+        shutil.rmtree(backup, ignore_errors=True)
+    shutil.copytree(src_data, staging)
+    switched = False
+    try:
+        if dst_data.exists():
+            dst_data.replace(backup)
+        staging.replace(dst_data)
+        switched = True
+    except Exception:
+        if backup.exists() and not dst_data.exists():
+            backup.replace(dst_data)
+        raise
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
+        if switched or dst_data.exists():
+            shutil.rmtree(backup, ignore_errors=True)
+    return sum(1 for path in dst_data.rglob("*") if path.is_file())
+
+
+def publish_to_blog(cfg, date_str):
     import subprocess
     pub = cfg.get("publish") or {}
     blog_dir = (pub.get("blog_dir") or "").strip()
@@ -3016,13 +3255,8 @@ def publish_to_blog(cfg, date_str):
         log(f"发布跳过：博客目录不存在 {blog}")
         return
     dst_data = news_dir / "data"
-    (dst_data / "daily").mkdir(parents=True, exist_ok=True)
     src_data = ROOT / "data"
-    shutil.copy2(src_data / "manifest.js", dst_data / "manifest.js")
-    n = 0
-    for f in (src_data / "daily").glob("*.js"):
-        shutil.copy2(f, dst_data / "daily" / f.name)
-        n += 1
+    n = sync_news_data(src_data, dst_data)
     log(f"已同步 {n} 个数据文件到博客 source/news/data/")
 
     if pub.get("git_commit"):
@@ -3116,13 +3350,6 @@ def main():
                 print(f"    [热榜] {s.get('name', s['type'])}: {n} 条词条")
         return
 
-    # 全量轻档（不经 LLM，独立故障域）：写失败只记日志，不阻断主管线
-    try:
-        write_all_archive(items, sources, date_str,
-                          min_score=int(cfg.get("all_view_min_score", 40)))
-    except Exception as e:
-        log(f"  全量轻档写入失败（不影响主管线）: {e}")
-
     if "在这里填" in cfg["llm"]["api_key"]:
         log("错误：请先在 config.yaml 里填写 llm.api_key")
         sys.exit(1)
@@ -3131,6 +3358,25 @@ def main():
 
     # ---- 偏好学习输入：反馈与稍后读（缺失/损坏一律安全忽略） ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    dedup_cfg = cfg.get("news_dedup") or {}
+    dedup_keep_days = int(dedup_cfg.get("seen_keep_days", 90))
+    quality = new_quality_stats()
+    news_seen = load_news_seen(_data_dir, date_str, dedup_keep_days)
+    items = filter_cross_day_news(llm, items, news_seen, date_str, quality)
+    if not items:
+        log("跨日去重后没有新内容，退出。")
+        return
+    accepted_items = list(items)
+    log(f"跨日去重：过滤 {quality['cross_day_duplicates']} 条，"
+        f"重大更新 {quality['material_updates']} 条")
+
+    # 全量轻档使用去重后的候选，重复旧闻不会出现在任何当日视图。
+    try:
+        write_all_archive(items, sources, date_str,
+                          min_score=int(cfg.get("all_view_min_score", 40)))
+    except Exception as e:
+        log(f"  全量轻档写入失败（不影响主管线）: {e}")
+
     feedback = load_state_list(_data_dir, "feedback.json", "entries")
     read_later = load_state_list(_data_dir, "read_later.json", "items")
     pens = source_penalties(feedback, date_str)
@@ -3158,7 +3404,7 @@ def main():
     events = triage(llm, items)
     log(f"  聚成 {len(events)} 个事件")
     log("质量审计：复核多来源事件凝聚度 ...")
-    events, quality = audit_event_cohesion(llm, events, items)
+    events, quality = audit_event_cohesion(llm, events, items, quality)
     log(f"  审计 {quality['audited_events']} 个事件，拆分 {quality['split_events']} 个")
 
     log("偏好学习：画像蒸馏 + 兴趣拟合 ...")
@@ -3232,6 +3478,7 @@ def main():
         log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
         sys.exit(2)
 
+    save_news_seen(_data_dir, date_str, accepted_items, news_seen, dedup_keep_days)
     publish_to_blog(cfg, date_str)
     log("完成 ✓  访问 /news/ 查看今日日报")
 
