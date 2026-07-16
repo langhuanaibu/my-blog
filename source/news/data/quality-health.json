@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "records": [
+    {
+      "date": "2026-07-16",
+      "audited_events": 33,
+      "split_events": 12,
+      "removed_fields": 40,
+      "degraded": true
+    }
+  ],
+  "summary": {
+    "days": 1,
+    "audited_events": 33,
+    "split_events": 12,
+    "split_rate": 0.3636
+  }
+}
