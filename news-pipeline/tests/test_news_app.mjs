@@ -23,6 +23,50 @@ function shell(url = "https://example.test/news/?view=day&date=2026-07-15") {
   return new JSDOM(`<!doctype html><body><a data-view="timeline"></a><a data-view="all"></a><a data-view="reports"></a><a data-view="topics"></a><a id="favoritesNav" data-view="favs" hidden></a><div id="reportControls"><a data-period="day"></a><a data-period="week"></a><div id="dayArchive"><select id="dateSel"></select></div><div id="weekArchive"><select id="weekSel"></select></div></div><span id="dayCtrls"><button id="prevBtn"></button><button id="nextBtn"></button></span><input id="searchInput"><div id="searchRes"></div><main id="app"></main><div id="liveStatus"></div></body>`, { url, pretendToBeVisual: true });
 }
 
+test("mobile search toggle opens, focuses and closes its overlay", async () => {
+  const dom = new JSDOM(`<!doctype html><body><button id="mobileSearchToggle" aria-controls="mobileSearchPanel" aria-expanded="false"></button><div id="mobileSearchPanel" hidden><input id="searchInput"><button id="mobileSearchClose"></button></div><main id="app"></main></body>`, { pretendToBeVisual: true });
+  const { installMobileSearch } = await import("../../source/news/js/accessibility.js");
+  installMobileSearch(dom.window.document);
+  const toggle = dom.window.document.querySelector("#mobileSearchToggle");
+  toggle.click();
+  assert.equal(toggle.getAttribute("aria-expanded"), "true");
+  assert.equal(dom.window.document.querySelector("#mobileSearchPanel").hidden, false);
+  assert.equal(dom.window.document.activeElement.id, "searchInput");
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  assert.equal(toggle.getAttribute("aria-expanded"), "false");
+  assert.equal(dom.window.document.querySelector("#mobileSearchPanel").hidden, true);
+  assert.equal(dom.window.document.activeElement, toggle);
+});
+
+test("desktop search ignores Escape and remains available", async () => {
+  const dom = new JSDOM(`<!doctype html><body><button id="mobileSearchToggle" aria-controls="mobileSearchPanel" aria-expanded="false"></button><div id="mobileSearchPanel" role="dialog" aria-modal="true" hidden><input id="searchInput"><button id="mobileSearchClose"></button></div></body>`, { pretendToBeVisual: true });
+  dom.window.matchMedia = () => ({ matches: true, addEventListener() {} });
+  const { installMobileSearch } = await import("../../source/news/js/accessibility.js");
+  installMobileSearch(dom.window.document);
+  const panel = dom.window.document.querySelector("#mobileSearchPanel");
+  const input = dom.window.document.querySelector("#searchInput");
+  input.focus();
+  dom.window.document.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  assert.equal(panel.hidden, false);
+  assert.equal(dom.window.document.activeElement, input);
+  assert.equal(panel.getAttribute("role"), null);
+  assert.equal(panel.getAttribute("aria-modal"), null);
+});
+
+test("mobile search is a labelled modal dialog and traps Tab in its controls", async () => {
+  const dom = new JSDOM(`<!doctype html><body><button id="mobileSearchToggle" aria-controls="mobileSearchPanel" aria-expanded="false"></button><div id="mobileSearchPanel" aria-label="搜索历史条目" hidden><input id="searchInput"><button id="mobileSearchClose"></button><div id="searchRes"><a id="resultOne" href="#one">一</a><a id="resultTwo" href="#two">二</a></div><button id="hiddenTheme" style="display:none">主题</button></div><a id="outside" href="#">外部</a></body>`, { pretendToBeVisual: true });
+  const { installMobileSearch } = await import("../../source/news/js/accessibility.js"); installMobileSearch(dom.window.document);
+  const toggle = dom.window.document.querySelector("#mobileSearchToggle"); const input = dom.window.document.querySelector("#searchInput"); const close = dom.window.document.querySelector("#mobileSearchClose");
+  toggle.click();
+  assert.equal(dom.window.document.querySelector("#mobileSearchPanel").getAttribute("role"), "dialog");
+  assert.equal(dom.window.document.querySelector("#mobileSearchPanel").getAttribute("aria-modal"), "true");
+  const lastResult = dom.window.document.querySelector("#resultTwo");
+  close.focus(); const middleTab = new dom.window.KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }); close.dispatchEvent(middleTab); assert.equal(middleTab.defaultPrevented, false); assert.notEqual(dom.window.document.activeElement, input);
+  lastResult.focus(); lastResult.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true })); assert.equal(dom.window.document.activeElement, input); assert.notEqual(dom.window.document.activeElement?.id, "hiddenTheme");
+  input.focus(); input.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Tab", shiftKey: true, bubbles: true, cancelable: true })); assert.equal(dom.window.document.activeElement, lastResult);
+  close.click(); assert.equal(dom.window.document.activeElement, toggle); assert.equal(dom.window.document.querySelector("#mobileSearchPanel").getAttribute("role"), null); assert.equal(dom.window.document.querySelector("#mobileSearchPanel").getAttribute("aria-modal"), null);
+});
+
 function dataApi() {
   return {
     daily: async (date) => date === day.date ? structuredClone(day) : null,
@@ -47,6 +91,15 @@ test("app rewrites old route, marks seen and respects hidden state", async () =>
   assert.ok(dom.window.document.querySelector("main h1"));
   assert.equal(dom.window.document.querySelector("#weekArchive").hidden, true);
   assert.equal(dom.window.document.querySelectorAll('div[role="button"],span[onclick],div[onclick]').length, 0);
+});
+
+test("report route exposes a stable shell state and removes it after navigation", async () => {
+  const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi() });
+  await app.start();
+  assert.equal(dom.window.document.body.classList.contains("reports-view"), true);
+  await app.go({ view: "timeline" });
+  assert.equal(dom.window.document.body.classList.contains("reports-view"), false);
 });
 
 test("weekly archive, browser Back and old week route are integrated", async () => {
@@ -112,14 +165,17 @@ test("personal actions preserve newsState storage and API contracts", async () =
   assert.equal(JSON.parse(dom.window.localStorage.getItem("news_like"))["2026-07-15:pick-1"], true);
 });
 
-test("timeline restores hot list, folding, filters, tags, search and older loading", async () => {
+test("timeline renders a continuous Beijing-time stream with a light mainline and filters", async () => {
   const dates = Array.from({ length: 7 }, (_, index) => `2026-07-${String(15 - index).padStart(2, "0")}`);
   const api = dataApi(); api.daily = async (date) => ({ ...structuredClone(day), date, items: day.items.map((item) => ({ ...item, score: 82, time: `${date}T01:00:00Z`, tags: item.id === "pick-2" ? ["Agent"] : ["模型"] })) });
   const dom = shell("https://example.test/news/?view=timeline");
   const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates } });
   await app.start();
-  assert.ok(dom.window.document.querySelector(".hotbox"));
-  assert.ok(dom.window.document.querySelector('[data-timeline-action="toggle-day"]'));
+  assert.ok(dom.window.document.querySelector(".timeline-mainline"));
+  assert.equal(dom.window.document.querySelector(".hotbox"), null);
+  assert.equal(dom.window.document.querySelector('[data-timeline-action="toggle-day"]'), null);
+  assert.equal(dom.window.document.querySelector(".timeline-day .grid"), null);
+  assert.ok(dom.window.document.querySelector(".timeline-stream"));
   assert.ok(dom.window.document.querySelector('[data-timeline-action="set-cat"]'));
   assert.ok(dom.window.document.querySelector('[data-timeline-action="set-tag"]'));
   const older = dom.window.document.querySelector('[data-timeline-action="more"]'); older.click(); await app.idle();
@@ -134,8 +190,40 @@ test("timeline uses production timeline helpers for publish-day grouping, contin
   const dom = shell("https://example.test/news/?view=timeline"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates }, timelineApi: TimelineCore, now: new Date("2026-07-15T02:00:00Z").getTime() }); await app.start();
   assert.equal(dom.window.document.querySelectorAll(".timeline-day .report-card").length, 1);
   assert.match(dom.window.document.querySelector(".timeline-day").textContent, /2026-07-15/);
-  assert.equal(dom.window.document.querySelectorAll(".hotbox .hot-row").length, 1);
-  assert.match(dom.window.document.querySelector(".hotbox").textContent, /2 个独立信源/);
+  assert.equal(dom.window.document.querySelectorAll(".timeline-mainline a").length, 1);
+  assert.match(dom.window.document.querySelector(".timeline-mainline").textContent, /2 个独立信源/);
+});
+
+test("timeline mainline only uses events from the newest report day", async () => {
+  const dates = ["2026-07-15", "2026-07-14", "2026-07-13"];
+  const api = dataApi(); api.daily = async (date) => ({ date, items: date === dates[0]
+    ? [{ id: "today", tier: "pick", category: "ai", title: "今日普通进展", score: 50, time: "2026-07-15T01:00:00Z", sources: [] }]
+    : [{ id: `old-${date}`, tier: "pick", category: "ai", title: `旧日高分 ${date}`, score: 99, time: `${date}T01:00:00Z`, sources: [{ name: "A", url: "https://a.example.com/x" }, { name: "B", url: "https://b.example.com/x" }] }] });
+  const dom = shell("https://example.test/news/?view=timeline"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates }, timelineApi: TimelineCore, now: new Date("2026-07-15T02:00:00Z").getTime() }); await app.start();
+  assert.doesNotMatch(dom.window.document.querySelector(".timeline-mainline")?.textContent || "", /旧日高分/);
+});
+
+test("timeline labels missing and invalid publication times as uncertain", async () => {
+  const api = dataApi(); api.daily = async (date) => ({ date, items: [
+    { id: "missing-time", tier: "pick", category: "ai", title: "缺失时间", summary: "A" },
+    { id: "invalid-time", tier: "pick", category: "ai", title: "非法时间", summary: "B", time: "not-a-time" },
+  ] });
+  const dom = shell("https://example.test/news/?view=timeline"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } }); await app.start();
+  const times = [...dom.window.document.querySelectorAll(".timeline-time")].map((node) => node.textContent);
+  assert.deepEqual(times, ["时间待确认", "时间待确认"]);
+  assert.doesNotMatch(times.join(" "), /08:00/);
+});
+
+test("timeline marks continuations and keeps card links separate from external and personal actions", async () => {
+  const dates = ["2026-07-15", "2026-07-14"];
+  const api = dataApi(); api.daily = async (date) => ({ date, items: [{ id: `pick-${date}`, tier: "pick", category: "ai", event_id: "evt", title: date === dates[0] ? "事件新进展" : "事件起点", summary: date, why: "重要", time: `${date}T01:00:00Z`, sources: [{ name: "来源", url: "https://example.com/story" }] }] });
+  const dom = shell("https://example.test/news/?view=timeline"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: dates }, timelineApi: TimelineCore, fetch: async () => ({ ok: true, json: async () => ({ success: true, data: {} }) }) }); await app.start();
+  const continuation = dom.window.document.querySelector(".timeline-entry.is-continuation");
+  assert.ok(continuation?.querySelector(".continuation-mark"));
+  assert.ok(continuation.querySelector('h3 a[data-route]'));
+  assert.ok(continuation.querySelector('.srcs a[target="_blank"]'));
+  assert.ok(continuation.querySelector('button[data-action="favorite"]'));
 });
 
 test("timeline renders actual published-date groups even when they differ from selected report dates", async () => {
@@ -154,11 +242,87 @@ test("timeline search debounces typing, restores focus/caret and rejects stale a
 });
 
 test("all dynamics restores score threshold, category, show-all and older loading", async () => {
-  const api = dataApi(); api.allManifest = async () => Array.from({ length: 8 }, (_, index) => `2026-07-${String(15 - index).padStart(2, "0")}`); api.allDay = async (date) => ({ date, min_score: 40, items: [{ id: "high", c: "ai", t: "高分", score: 60 }, { id: "low", c: "world", t: "低分", score: 20 }] });
+  const api = dataApi(); api.allManifest = async () => Array.from({ length: 8 }, (_, index) => `2026-07-${String(15 - index).padStart(2, "0")}`); api.allDay = async (date) => ({ date, min_score: 40, items: [{ id: "high", c: "ai", t: "高分", sn: "模型发布", source: "官方", score: 60 }, { id: "low", c: "world", t: "低分", source: "媒体", score: 20 }] });
   const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api }); await app.start();
   assert.match(dom.window.document.querySelector("main").textContent, /高分/); assert.doesNotMatch([...dom.window.document.querySelectorAll("main article strong")].map((node) => node.textContent).join(" "), /低分/);
   dom.window.document.querySelector('[data-all-action="show-all"]').click(); await app.idle(); assert.match([...dom.window.document.querySelectorAll("main article strong")].map((node) => node.textContent).join(" "), /低分/);
   assert.ok(dom.window.document.querySelector('[data-all-action="set-cat"]')); dom.window.document.querySelector('[data-all-action="more"]').click(); await app.idle(); assert.match(dom.window.document.querySelector("main").textContent, /2026-07-08/);
+  assert.ok(dom.window.document.querySelector(".all-timeline"));
+  assert.equal(dom.window.document.querySelector(".all-timeline .more-list"), null);
+  let search = dom.window.document.querySelector('[data-all-action="search"]'); search.value = "不存在"; search.dispatchEvent(new dom.window.Event("input", { bubbles: true })); await app.idle(); assert.doesNotMatch(dom.window.document.querySelector("main").textContent, /高分/);
+  search = dom.window.document.querySelector('[data-all-action="search"]'); search.value = ""; search.dispatchEvent(new dom.window.Event("input", { bubbles: true })); await app.idle();
+  const source = dom.window.document.querySelector('[data-all-action="source"]'); source.value = "官方"; source.dispatchEvent(new dom.window.Event("change", { bubbles: true })); await app.idle(); assert.doesNotMatch([...dom.window.document.querySelectorAll(".all-entry")].map((node) => node.textContent).join(" "), /低分/);
+});
+
+test("all dynamics search debounces typing and restores focus and caret", async () => {
+  const api = dataApi(); api.allDay = async () => ({ date: day.date, min_score: 40, items: [{ id: "one", c: "ai", t: "模型发布", sn: "逐字检索", source: "官方", score: 60 }] });
+  const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api }); await app.start();
+  let input = dom.window.document.querySelector('[data-all-action="search"]'); input.focus(); input.value = "模"; input.setSelectionRange(1, 1); input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  assert.equal(dom.window.document.activeElement, input);
+  input.value = "模型"; input.setSelectionRange(2, 2); input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 160)); await app.idle();
+  input = dom.window.document.querySelector('[data-all-action="search"]');
+  assert.equal(dom.window.document.activeElement, input); assert.equal(input.selectionStart, 2); assert.equal(input.value, "模型");
+});
+
+test("stale all search response cannot overwrite a newer route or restore stale focus", async () => {
+  let releaseStale; let allDayCalls = 0;
+  const stale = new Promise((resolve) => { releaseStale = resolve; });
+  const api = dataApi(); api.allDay = async () => {
+    allDayCalls++;
+    if (allDayCalls === 1) return { date: day.date, min_score: 40, items: [{ id: "initial", c: "ai", t: "初始动态", score: 60 }] };
+    return stale;
+  };
+  const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } }); await app.start();
+  const input = dom.window.document.querySelector('[data-all-action="search"]'); input.focus(); input.value = "旧"; input.setSelectionRange(1, 1); input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 140));
+  await app.go({ view: "timeline" });
+  assert.ok(dom.window.document.querySelector(".timeline-view"));
+  releaseStale({ date: day.date, min_score: 40, items: [{ id: "stale", c: "ai", t: "旧请求结果", score: 60 }] });
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 0));
+  assert.ok(dom.window.document.querySelector(".timeline-view"));
+  assert.equal(dom.window.document.querySelector('[data-all-action="search"]'), null);
+  assert.notEqual(dom.window.document.activeElement?.getAttribute("data-all-action"), "search");
+});
+
+test("stale all search rejection cannot replace a newer route with an error", async () => {
+  let rejectStale; let allDayCalls = 0;
+  const stale = new Promise((_resolve, reject) => { rejectStale = reject; });
+  const api = dataApi(); api.allDay = async () => {
+    allDayCalls++;
+    if (allDayCalls === 1) return { date: day.date, min_score: 40, items: [{ id: "initial", c: "ai", t: "初始动态", score: 60 }] };
+    return stale;
+  };
+  const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } }); await app.start();
+  const input = dom.window.document.querySelector('[data-all-action="search"]'); input.value = "旧"; input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 140));
+  await app.go({ view: "timeline" });
+  rejectStale(new Error("旧请求失败"));
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 0));
+  assert.ok(dom.window.document.querySelector(".timeline-view"));
+  assert.doesNotMatch(dom.window.document.querySelector("main").textContent, /加载失败|旧请求失败/);
+});
+
+test("stale daily request cannot mark seen, mutate archive or overwrite a newer page", async () => {
+  let releaseDaily; const slowDaily = new Promise((resolve) => { releaseDaily = resolve; });
+  const api = dataApi(); api.daily = async () => slowDaily;
+  const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } }); await app.start();
+  const slowNavigation = app.go({ view: "reports", period: "day", date: day.date });
+  await new Promise((resolve) => dom.window.setTimeout(resolve, 0));
+  await app.go({ view: "all" });
+  releaseDaily(structuredClone(day)); await slowNavigation;
+  assert.equal(JSON.parse(dom.window.localStorage.getItem("news_seen_days") || "{}")[day.date], undefined);
+  assert.doesNotMatch(dom.window.document.querySelector("#dateSel").textContent, /✓/);
+  assert.match(dom.window.document.querySelector("main").textContent, /全部动态/);
+});
+
+test("stale topics request cannot overwrite a newer timeline", async () => {
+  let releaseEvents; const events = new Promise((resolve) => { releaseEvents = resolve; });
+  const api = dataApi(); api.events = async () => events;
+  const dom = shell("https://example.test/news/?view=all"); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } }); await app.start();
+  const slowNavigation = app.go({ view: "topics" }); await new Promise((resolve) => dom.window.setTimeout(resolve, 0));
+  await app.go({ view: "timeline" }); releaseEvents({ events: [{ event_id: "late", title: "迟到主题", status: "active", history: [] }] }); await slowNavigation;
+  assert.ok(dom.window.document.querySelector(".timeline-view")); assert.doesNotMatch(dom.window.document.querySelector("main").textContent, /迟到主题/);
 });
 
 test("topics restores groups/map and local tracked override has stable direction", async () => {
@@ -191,6 +355,19 @@ test("favorites uses server truth, backfills local/index, and read-later support
   assert.match(dom.window.document.querySelector("main").textContent, /保留新闻/); assert.equal(JSON.parse(dom.window.localStorage.getItem("news_fav"))[`${day.date}:pick-2`], 1);
   dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-2"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "favorites" && request.payload.item_id === "pick-2")); assert.doesNotMatch(dom.window.document.querySelector("main").textContent, /保留新闻/);
   dom.window.document.querySelector("#readLaterBtn").click(); await app.idle(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, false); assert.ok(dom.window.document.querySelector('[data-read-later-op="done"]')); dom.window.document.querySelector('[data-read-later-op="done"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "done")); dom.window.document.querySelector('[data-read-later-op="remove"]').click(); await app.idle(); assert.ok(requests.some((request) => request.type === "read_later" && request.payload.op === "remove")); dom.window.document.querySelector("[data-close-drawer]").click(); assert.equal(dom.window.document.querySelector("#rlDrawer").hidden, true); assert.equal(dom.window.document.activeElement.id, "readLaterBtn");
+});
+
+test("favorites sorts by saved time and filters news deep and paper through app state", async () => {
+  const dom = shell("https://example.test/news/?view=favs"); dom.window.localStorage.setItem("aoiblog_admin_token", "token");
+  const fetchStub = async (url) => String(url).includes("type=favorites") ? { ok: true, json: async () => ({ success: true, data: { items: [
+    { date: day.date, item_id: "pick-2", title: "保留新闻", ts: "2026-07-15T01:00:00Z" },
+    { date: day.date, item_id: "deep-1", title: "深读", ts: "2026-07-15T03:00:00Z" },
+    { date: day.date, item_id: "paper-1", title: "论文", ts: "2026-07-15T02:00:00Z" },
+  ] } }) } : { ok: true, json: async () => ({ success: true, data: {} }) };
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), fetch: fetchStub }); await app.start();
+  assert.deepEqual([...dom.window.document.querySelectorAll(".favorites-list > article h3")].map((node) => node.textContent.trim()), ["深读", "论文", "保留新闻"]);
+  dom.window.document.querySelector('[data-favorites-action="type"][data-value="paper"]').click(); await app.idle();
+  assert.match(dom.window.document.querySelector(".favorites-list").textContent, /论文/); assert.doesNotMatch(dom.window.document.querySelector(".favorites-list").textContent, /深读|保留新闻/);
 });
 
 test("route load errors render malicious week values as text", async () => {

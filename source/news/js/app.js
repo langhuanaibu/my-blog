@@ -1,4 +1,4 @@
-import { announce, updateNavigation } from "./accessibility.js";
+import { announce, installMobileSearch, installThemeToggles, updateNavigation } from "./accessibility.js";
 import { createAllState, renderAllDynamics } from "./all-view.js";
 import { createApiClient } from "./api-client.js";
 import { browserDataApi } from "./data-loader.js";
@@ -20,9 +20,11 @@ export function createNewsApp(options) {
   const storage = createStorage(win.localStorage); const fetchFn = options.fetch || win.fetch?.bind(win) || globalThis.fetch;
   const api = createApiClient({ fetch: fetchFn, token }); const app = doc.getElementById("app"); const itemIndex = new Map();
   let pending = Promise.resolve(); let started = false; let currentRoute = null;
-  const timelineState = createTimelineState(); const allState = createAllState();
+  const timelineState = createTimelineState(); const allState = createAllState(); const favoritesState = { type: "all" };
   let renderRequest = 0; let timelineSearchTimer = null; let timelineCaret = 0; let restoreTimelineFocus = false;
+  let allSearchTimer = null; let allCaret = 0; let restoreAllFocus = false;
   const trackPromise = (promise) => { pending = Promise.resolve(promise); return pending; };
+  const isCurrent = (requestId) => requestId === renderRequest;
   const idle = async () => { await pending; await Promise.resolve(); };
   const toast = (message, error = false) => { const node = doc.createElement("div"); node.className = `toast${error ? " err" : ""}`; node.textContent = message; doc.body.appendChild(node); win.setTimeout(() => node.remove(), 2600); };
 
@@ -39,6 +41,7 @@ export function createNewsApp(options) {
 
   function syncChrome(route) {
     const active = route.view === "detail" ? "reports" : route.view;
+    doc.body?.classList.toggle("reports-view", route.view === "reports");
     updateNavigation(doc, active);
     const controls = doc.getElementById("reportControls"); if (controls) controls.hidden = route.view !== "reports";
     const dayArchive = doc.getElementById("dayArchive"); if (dayArchive) dayArchive.hidden = route.view !== "reports" || route.period === "week";
@@ -55,26 +58,27 @@ export function createNewsApp(options) {
         const date = route.date || dailyManifest[0];
         if (!date) { app.innerHTML = '<div class="empty" role="status">还没有任何日报数据。</div>'; return; }
         if (!route.date || win.location.search !== routeUrl({ ...route, date })) win.history.replaceState({}, "", routeUrl({ ...route, date }));
-        const data = await dataApi.daily(date); indexData(data, date); storage.markSeen(date);
+        const data = await dataApi.daily(date); if (!isCurrent(requestId)) return; indexData(data, date); storage.markSeen(date);
         const select = doc.getElementById("dateSel"); if (select) { select.value = date; const option = [...select.options].find((node) => node.value === date); if (option && !option.textContent.startsWith("✓ ")) option.textContent = `✓ ${date}`; }
         app.innerHTML = renderDailyReport(data, { personal, hidden: storage.get(STORAGE_KEYS.hidden), ...personalState() }); announce(`已加载 ${date} 日报`, doc); currentRoute = { ...route, date }; return;
       }
       if (route.view === "reports" && route.period === "week") {
-        const weeks = await dataApi.weeklyManifest(); const select = doc.getElementById("weekSel"); if (select) { select.innerHTML = weeks.map((week) => `<option value="${week}">${week}</option>`).join(""); }
+        const weeks = await dataApi.weeklyManifest(); if (!isCurrent(requestId)) return; const select = doc.getElementById("weekSel"); if (select) { select.innerHTML = weeks.map((week) => `<option value="${week}">${week}</option>`).join(""); }
         const week = route.week || weeks[0]; if (!week) { app.innerHTML = '<div class="empty" role="status">暂无周报数据</div>'; return; }
         if (!route.week || win.location.search !== routeUrl({ ...route, week })) win.history.replaceState({}, "", routeUrl({ ...route, week }));
-        if (select) select.value = week; app.innerHTML = renderWeeklyReport(await dataApi.weekly(week)); announce(`已加载 ${week} 周报`, doc); currentRoute = { ...route, week }; return;
+        const weekly = await dataApi.weekly(week); if (!isCurrent(requestId)) return; if (select) select.value = week; app.innerHTML = renderWeeklyReport(weekly); announce(`已加载 ${week} 周报`, doc); currentRoute = { ...route, week }; return;
       }
       if (route.view === "detail") {
-        const data = await dataApi.daily(route.date); indexData(data, route.date); const bucket = route.type === "deep" ? "deep" : route.type === "paper" ? "papers" : "items"; const item = (data?.[bucket] || []).find((row) => row.id === route.item);
+        const data = await dataApi.daily(route.date); if (!isCurrent(requestId)) return; indexData(data, route.date); const bucket = route.type === "deep" ? "deep" : route.type === "paper" ? "papers" : "items"; const item = (data?.[bucket] || []).find((row) => row.id === route.item);
         app.innerHTML = renderDetail(item, route.type, route.date, { personal, ...personalState() }); announce(item ? `已打开 ${item.title_zh || item.title}` : "找不到这条内容", doc); return;
       }
-      if (route.view === "timeline") { const tag = new URLSearchParams(win.location.search).get("tag"); if (tag) timelineState.tag = tag; const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: indexData, timelineApi, now: options.now, ...personalState() }); if (requestId !== renderRequest) return; app.innerHTML = html; if (restoreTimelineFocus) { const input = doc.getElementById("timelineSearch"); input?.focus(); input?.setSelectionRange(timelineCaret, timelineCaret); restoreTimelineFocus = false; } }
-      else if (route.view === "all") app.innerHTML = await renderAllDynamics({ dataApi, state: allState });
-      else if (route.view === "topics") app.innerHTML = await renderTopics({ dataApi, personal, tracked: storage.get(STORAGE_KEYS.tracked) });
-      else if (route.view === "favs" && personal) app.innerHTML = await renderFavorites({ storage, dataApi, api, personal, onData: indexData, ...personalState() });
+      if (route.view === "timeline") { const tag = new URLSearchParams(win.location.search).get("tag"); if (tag) timelineState.tag = tag; const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: (data, date) => { if (isCurrent(requestId)) indexData(data, date); }, timelineApi, now: options.now, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreTimelineFocus) { const input = doc.getElementById("timelineSearch"); input?.focus(); input?.setSelectionRange(timelineCaret, timelineCaret); restoreTimelineFocus = false; } }
+      else if (route.view === "all") { const html = await renderAllDynamics({ dataApi, state: allState }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreAllFocus) { const input = app.querySelector('[data-all-action="search"]'); input?.focus(); input?.setSelectionRange(allCaret, allCaret); restoreAllFocus = false; } }
+      else if (route.view === "topics") { const html = await renderTopics({ dataApi, personal, tracked: storage.get(STORAGE_KEYS.tracked) }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
+      else if (route.view === "favs" && personal) { const html = await renderFavorites({ storage, dataApi, api, personal, state: favoritesState, isCurrent: () => isCurrent(requestId), onData: indexData, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
       else { win.history.replaceState({}, "", routeUrl({ view: "timeline" })); const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: indexData, timelineApi, now: options.now, ...personalState() }); if (requestId === renderRequest) app.innerHTML = html; }
     } catch (error) {
+      if (!isCurrent(requestId)) return;
       app.innerHTML = '<div class="empty" role="alert"></div>';
       app.firstElementChild.textContent = `加载失败：${String(error?.message || error)}`;
     }
@@ -85,6 +89,8 @@ export function createNewsApp(options) {
 
   function install() {
     if (started) return; started = true;
+    installMobileSearch(doc);
+    installThemeToggles(doc, win);
     const dateSelect = doc.getElementById("dateSel"); if (dateSelect) { dateSelect.innerHTML = dailyManifest.map((date) => `<option value="${date}">${storage.get(STORAGE_KEYS.seenDays)[date] ? "✓ " : ""}${date}</option>`).join(""); dateSelect.addEventListener("change", () => go({ view: "reports", period: "day", date: dateSelect.value })); }
     doc.getElementById("weekSel")?.addEventListener("change", (event) => go({ view: "reports", period: "week", week: event.target.value }));
     doc.getElementById("prevBtn")?.addEventListener("click", () => { const index = dailyManifest.indexOf(currentRoute?.date); if (index < dailyManifest.length - 1) go({ view: "reports", period: "day", date: dailyManifest[index + 1] }); });
@@ -92,16 +98,19 @@ export function createNewsApp(options) {
     doc.addEventListener("click", (event) => { const link = event.target.closest("a[data-route]"); if (!link) return; event.preventDefault(); const url = new URL(link.href, win.location.href); win.history.pushState({}, "", `${url.pathname}${url.search}`); rerender(); });
     app.addEventListener("click", (event) => {
       const timeline = event.target.closest("button[data-timeline-action]");
-      if (timeline) { const action = timeline.dataset.timelineAction; if (action === "more") timelineState.days += 5; if (action === "set-cat") { timelineState.cat = timeline.dataset.value; timelineState.tag = null; } if (action === "set-tag") timelineState.tag = timelineState.tag === timeline.dataset.value ? null : timeline.dataset.value; if (action === "toggle-day") timelineState.open[timeline.dataset.value] = timeline.getAttribute("aria-expanded") !== "true"; rerender(); return; }
+      if (timeline) { const action = timeline.dataset.timelineAction; if (action === "more") timelineState.days += 5; if (action === "set-cat") { timelineState.cat = timeline.dataset.value; timelineState.tag = null; } if (action === "set-tag") timelineState.tag = timelineState.tag === timeline.dataset.value ? null : timeline.dataset.value; rerender(); return; }
       const all = event.target.closest("button[data-all-action]");
       if (all) { const action = all.dataset.allAction; if (action === "more") allState.days += 7; if (action === "show-all") allState.showAll = !allState.showAll; if (action === "set-cat") allState.cat = all.dataset.value; rerender(); }
+      const favorite = event.target.closest("button[data-favorites-action]");
+      if (favorite) { favoritesState.type = favorite.dataset.value; rerender(); }
     });
-    app.addEventListener("input", (event) => { if (event.target.matches('[data-timeline-action="search"]')) { timelineState.query = event.target.value.trim(); timelineCaret = event.target.selectionStart ?? timelineState.query.length; restoreTimelineFocus = true; renderRequest++; win.clearTimeout(timelineSearchTimer); const delayed = new Promise((resolve) => { timelineSearchTimer = win.setTimeout(() => Promise.resolve(renderRoute()).finally(resolve), 120); }); trackPromise(delayed); } });
+    app.addEventListener("input", (event) => { if (event.target.matches('[data-timeline-action="search"]')) { timelineState.query = event.target.value.trim(); timelineCaret = event.target.selectionStart ?? timelineState.query.length; restoreTimelineFocus = true; renderRequest++; win.clearTimeout(timelineSearchTimer); const delayed = new Promise((resolve) => { timelineSearchTimer = win.setTimeout(() => Promise.resolve(renderRoute()).finally(resolve), 120); }); trackPromise(delayed); } else if (event.target.matches('[data-all-action="search"]')) { allState.query = event.target.value.trim(); allCaret = event.target.selectionStart ?? allState.query.length; restoreAllFocus = true; renderRequest++; win.clearTimeout(allSearchTimer); const delayed = new Promise((resolve) => { allSearchTimer = win.setTimeout(() => Promise.resolve(renderRoute()).finally(resolve), 120); }); trackPromise(delayed); } });
+    app.addEventListener("change", (event) => { if (event.target.matches('[data-all-action="source"]')) { allState.source = event.target.value; rerender(); } });
     win.addEventListener("popstate", () => rerender());
     installPersonalActions(app, { storage, api, resolveItem, rerender, trackPromise, toast, onFavoriteChange: ({ removed, button }) => { if (removed && currentRoute?.view === "favs") button.closest("article")?.remove(); } });
     installTopicInteractions(app, { onTrack: (eventId, next, date) => { const tracked = storage.get(STORAGE_KEYS.tracked); tracked[eventId] = next; storage.set(STORAGE_KEYS.tracked, tracked); trackPromise(api.postFeedback({ date, item_id: eventId, title: "", category: "", action: next ? "track" : "untrack", event_id: eventId }).then(() => rerender()).catch((error) => toast(error.message, true))); } });
     installSearch({ input: doc.getElementById("searchInput"), results: doc.getElementById("searchRes"), dataApi, trackPromise });
-    if (personal) { const fav = doc.getElementById("favoritesNav"); if (fav) fav.hidden = false; const read = doc.getElementById("readLaterBtn"); if (read) read.hidden = false; installReadLater({ button: read, drawer: doc.getElementById("rlDrawer"), api, storage, trackPromise }); }
+    if (personal) { doc.querySelectorAll("[data-personal-nav]").forEach((fav) => { fav.hidden = false; }); const read = doc.getElementById("readLaterBtn"); if (read) read.hidden = false; installReadLater({ button: read, drawer: doc.getElementById("rlDrawer"), api, storage, trackPromise }); }
   }
 
   async function start() { install(); const parsed = parseRoute(win.location.search); const canonical = routeUrl(parsed); if (win.location.search !== canonical && !["reports", "detail"].includes(parsed.view)) win.history.replaceState({}, "", canonical); await rerender(); }

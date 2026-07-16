@@ -10,30 +10,32 @@
 </head>
 <body>
   <a class="skip-link" href="#app">跳转正文</a>
-  <header class="site-header">
-    <div class="hbar">
-      <a class="logo" href="?view=timeline" data-route><span>每日驾驶舱</span> <small>Daily Briefing</small></a>
-      <div class="searchbox" role="search">
-        <label class="sr-only" for="searchInput">搜索历史条目</label>
-        <input id="searchInput" type="search" placeholder="🔍 搜索历史条目" autocomplete="off" aria-controls="searchRes">
-        <div id="searchRes" class="search-res" aria-live="polite"></div>
-      </div>
-      <div class="datenav">
-        <button id="readLaterBtn" type="button" aria-controls="rlDrawer" aria-expanded="false" hidden>📥 稍后读</button>
-        <span id="dayCtrls">
-          <button id="prevBtn" type="button" aria-label="前一天">◀ 前一天</button>
-          <button id="nextBtn" type="button" aria-label="后一天">后一天 ▶</button>
-        </span>
-      </div>
-    </div>
-    <nav class="tabs-main" aria-label="主导航">
+  <aside class="desktop-sidebar" aria-label="站点导航">
+    <a class="logo" href="?view=timeline" data-route><span>每日驾驶舱</span> <small>Daily Briefing</small></a>
+    <nav class="sidebar-nav" aria-label="主导航">
       <a class="mtab" data-v="picks" data-view="timeline" data-route href="?view=timeline">时间线</a>
       <a class="mtab" data-v="all" data-view="all" data-route href="?view=all">全部动态</a>
       <a class="mtab" data-v="day" data-view="reports" data-route href="?view=reports&amp;period=day">报告</a>
       <a class="mtab" data-v="topics" data-view="topics" data-route href="?view=topics">主题</a>
-      <a id="favoritesNav" class="mtab" data-v="favs" data-view="favs" data-route href="?view=favs" hidden>收藏</a>
+      <a id="favoritesNav" class="mtab" data-personal-nav data-v="favs" data-view="favs" data-route href="?view=favs" hidden>收藏</a>
     </nav>
-    <div id="reportControls" class="report-controls" hidden>
+  </aside>
+  <header class="site-header">
+    <div class="mobile-primary">
+      <a class="logo" href="?view=timeline" data-route><span>每日驾驶舱</span> <small>Daily Briefing</small></a>
+      <span class="mobile-actions">
+        <button id="mobileSearchToggle" class="icon-button" type="button" aria-label="搜索" aria-controls="mobileSearchPanel" aria-expanded="false">⌕</button>
+        <button class="icon-button" data-theme-toggle type="button" aria-label="切换主题">◐</button>
+      </span>
+    </div>
+    <nav class="mobile-nav tabs-main" aria-label="主导航">
+      <a class="mtab" data-v="picks" data-view="timeline" data-route href="?view=timeline">时间线</a>
+      <a class="mtab" data-v="all" data-view="all" data-route href="?view=all">全部动态</a>
+      <a class="mtab" data-v="day" data-view="reports" data-route href="?view=reports&amp;period=day">报告</a>
+      <a class="mtab" data-v="topics" data-view="topics" data-route href="?view=topics">主题</a>
+      <a class="mtab" data-personal-nav data-v="favs" data-view="favs" data-route href="?view=favs" hidden>收藏</a>
+    </nav>
+    <div id="reportControls" class="mobile-report-controls report-controls" hidden>
       <nav class="period-tabs" aria-label="报告周期">
         <a data-period="day" href="?view=reports&amp;period=day">日报</a>
         <a data-period="week" href="?view=reports&amp;period=week">周报</a>
@@ -46,10 +48,27 @@
         <label for="weekSel">周报归档</label>
         <select id="weekSel"></select>
       </div>
+      <span id="dayCtrls">
+        <button id="prevBtn" type="button" aria-label="前一天">◀ 前一天</button>
+        <button id="nextBtn" type="button" aria-label="后一天">后一天 ▶</button>
+      </span>
     </div>
   </header>
 
-  <div class="wrap">
+  <div class="content-column">
+    <div class="content-toolbar">
+      <div id="mobileSearchPanel" class="content-search" aria-label="搜索历史条目" hidden>
+        <div class="searchbox" role="search">
+          <label class="sr-only" for="searchInput">搜索历史条目</label>
+          <input id="searchInput" type="search" placeholder="🔍 搜索历史条目" autocomplete="off" aria-controls="searchRes">
+          <button id="mobileSearchClose" class="search-close" type="button" aria-label="关闭搜索">×</button>
+          <div id="searchRes" class="search-res" aria-live="polite"></div>
+        </div>
+        <button class="desktop-theme-toggle" data-theme-toggle type="button" aria-label="切换主题">◐</button>
+      </div>
+      <button id="readLaterBtn" class="shell-read-later" type="button" aria-label="稍后读" aria-controls="rlDrawer" aria-expanded="false" hidden>📥 稍后读</button>
+    </div>
+    <div class="wrap">
     <main id="app" tabindex="-1"><div class="empty" role="status">加载中…</div></main>
     <div id="liveStatus" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <footer>
@@ -62,6 +81,7 @@
       </div>
       <div>个人信息筛选驾驶舱 · 数据由 daily_news.py 每日生成 · 所有条目保留原文链接 · <a href="data/feed.xml">RSS 订阅</a></div>
     </footer>
+    </div>
   </div>
   <aside id="rlDrawer" class="drawer" aria-label="稍后读"></aside>
 

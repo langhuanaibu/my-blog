@@ -18,7 +18,7 @@ export async function renderTopics({ dataApi, personal, tracked = {} }) {
   if (!events.length) return '<div class="empty" role="status">暂无主题数据</div>';
   const pinned = events.filter((event) => isPinned(event, tracked)); const running = events.filter((event) => !isPinned(event, tracked) && event.status === "active" && dayCount(event) >= 2); const archived = events.filter((event) => !isPinned(event, tracked) && event.status === "archived" && dayCount(event) >= 2);
   const counts = {}; for (const row of index) { if (row[2] !== "pick") continue; const tags = Array.isArray(row[5]) ? row[5] : String(row[5] || "").split(/[|,，]/); for (const tag of tags.map((value) => value.trim()).filter(Boolean)) counts[tag] = (counts[tag] || 0) + 1; }
-  let sequence = 0; const group = (title, rows) => rows.length ? `<section><h2 class="sec-title">${title} (${rows.length})</h2>${rows.map((event) => eventCard(event, tracked, sequence++, personal)).join("")}</section>` : "";
+  let sequence = 0; const group = (title, rows) => rows.length ? `<section class="topic-event-group"><h2 class="sec-title">${title} (${rows.length})</h2>${rows.map((event) => eventCard(event, tracked, sequence++, personal)).join("")}</section>` : "";
   return `<section><h1>主题</h1>${group("📌 追踪中", pinned)}${group("🔥 进行中", running)}${group("🗄 已归档", archived)}<section><h2 class="sec-title">题材地图</h2><div class="topic-grid">${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([tag, count]) => `<a class="topic-card" href="?view=timeline&amp;tag=${encodeURIComponent(tag)}" data-route><b>${escapeHtml(tag)}</b><span>${count} 条精选</span></a>`).join("") || '<p class="section-empty">暂无标签</p>'}</div></section></section>`;
 }
 
