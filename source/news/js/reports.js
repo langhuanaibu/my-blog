@@ -6,6 +6,23 @@ const STATUS_CLASSES = new Set(["已确认", "发展中", "有争议", "仅传�
 export const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 export const safeUrl = (value) => /^https?:\/\//i.test(value || "") ? escapeHtml(value) : "#";
 
+function annualIssue(date) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date || "");
+  if (!match) return "";
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText); const month = Number(monthText); const day = Number(dayText);
+  const stamp = Date.UTC(year, month - 1, day);
+  const parsed = new Date(stamp);
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return "";
+  const issue = Math.floor((stamp - Date.UTC(year, 0, 1)) / 86400000) + 1;
+  return `${year} · 第${issue}期`;
+}
+
+function displayDate(date) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date || "");
+  return match ? `${Number(match[2])}月${Number(match[3])}日` : "今日日报";
+}
+
 export function sourceLinks(item) {
   const sources = item.sources?.length ? item.sources : (item.url ? [{ name: item.source || "原文", url: item.url }] : []);
   return sources.map((source) => `<a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.name || "原文")}</a>`).join("");
@@ -27,7 +44,7 @@ export function actionButtons(item, options = {}) {
 export function dailyCard(item, date, options = {}) {
   const timeline = options.timeline || null;
   return `<article class="card report-card${timeline ? ` timeline-entry${timeline.continuation ? " is-continuation" : ""}` : ""}" data-item-id="${escapeHtml(item.id)}">
-    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}</div>
+    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}${Number.isFinite(item.score) ? `<span class="score-num">${item.score}</span>` : ""}</div>
     <h3><a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>${escapeHtml(item.title)}</a></h3>
     ${item.summary ? `<p class="sum">${escapeHtml(item.summary)}</p>` : ""}
     ${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}
@@ -76,13 +93,14 @@ export function renderDailyReport(data, options = {}) {
   }).join("");
   const themes = (data.themes || []).slice(0, 3);
   const supplementary = [
-    ["追踪中", (data.tracking || []).map((item) => trackingCard(item, data.date, options))],
-    ["深度阅读", (data.deep || []).map((item) => contentCard(item, "deep", data.date, options))],
-    ["今日论文", (data.papers || []).map((item) => contentCard(item, "paper", data.date, options))],
-    ["舆论观察", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options))],
-    ["更多资讯", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date))],
-  ].filter(([, rows]) => rows.length).map(([title, rows]) => `<section class="supplemental"><h2 class="sec-title">${title}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
-  return `<article class="daily-report"><header class="brief"><div class="bt">${escapeHtml(data.date || "今日日报")}</div><h1>${escapeHtml(data.lead || data.brief || "今日日报")}</h1><div class="brief-delta">约 ${readMinutes(data)} 分钟 · 今日新事件 <b>${picks.length - continued}</b> · 延续事件 <b>${continued}</b></div></header>${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
+    ["追踪中", "tracking", (data.tracking || []).map((item) => trackingCard(item, data.date, options))],
+    ["深度阅读", "deep", (data.deep || []).map((item) => contentCard(item, "deep", data.date, options))],
+    ["今日论文", "papers", (data.papers || []).map((item) => contentCard(item, "paper", data.date, options))],
+    ["舆论观察", "opinion", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options))],
+    ["更多资讯", "more", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date))],
+  ].filter(([, , rows]) => rows.length).map(([title, kind, rows]) => `<section class="supplemental" data-kind="${kind}"><h2 class="sec-title">${title}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
+  const dateLabel = displayDate(data.date); const issue = annualIssue(data.date);
+  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
 }
 
 function claimsHtml(item) {

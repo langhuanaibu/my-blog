@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { JSDOM } from "jsdom";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 
 import { parseRoute, routeUrl } from "../../source/news/js/router.js";
 import { daily as loadDaily, weekly as loadWeekly } from "../../source/news/js/data-loader.js";
@@ -49,6 +49,8 @@ test("新闻页共享外壳提供桌面侧栏和移动三层导航", async () =>
   assert.equal(doc.querySelector("#mobileSearchPanel").contains(readLater), false);
   assert.match(readLater.className, /shell-read-later/);
   assert.match(css, /@media\(max-width:899px\)[\s\S]*\.shell-read-later\{/);
+  assert.match(css, /@media\(max-width:899px\)[\s\S]*\.mobile-report-controls\{[^}]*scrollbar-width:none/);
+  assert.match(css, /\.mobile-report-controls::-webkit-scrollbar\{display:none\}/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.report-controls\{[^}]*position:fixed;[^}]*left:240px;/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.site-header\{[^}]*position:static;[^}]*backdrop-filter:none;[^}]*-webkit-backdrop-filter:none;/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.content-column\{[^}]*margin-left:460px/);
@@ -72,6 +74,40 @@ test("日报固定五类全部展开，精选卡只直出摘要和为什么重�
   assert.match(card.textContent, /摘要/);
   assert.match(card.textContent, /为什么重要/);
   assert.doesNotMatch(card.textContent, /背景机制|对我的意义|后续关注|长叙述|事实/);
+});
+
+test("日报卡片只显示有限数字分数", () => {
+  const scored = new JSDOM(`<main>${dailyCard({ ...daily.items[0], score: 88 }, daily.date)}</main>`);
+  assert.equal(scored.window.document.querySelector(".card-top .score-num")?.textContent, "88");
+  const unscored = new JSDOM(`<main>${dailyCard({ ...daily.items[0], score: "88" }, daily.date)}</main>`);
+  assert.equal(unscored.window.document.querySelector(".score-num"), null);
+});
+
+test("日报刊头使用稳定年度期号和单一主标题语义", () => {
+  const dom = new JSDOM(`<main>${renderDailyReport(daily)}</main>`);
+  const masthead = dom.window.document.querySelector(".masthead");
+  assert.ok(masthead);
+  assert.equal(dom.window.document.querySelectorAll("main h1").length, 1);
+  assert.equal(dom.window.document.querySelector("main h1")?.textContent, daily.lead);
+  assert.equal(masthead.querySelector("time")?.getAttribute("datetime"), daily.date);
+  assert.equal(masthead.querySelector(".date-seal")?.getAttribute("aria-hidden"), "true");
+  assert.match(masthead.querySelector(".mast-issue")?.textContent || "", /2026\s*·\s*第196期/);
+});
+
+test("日报 supplementary 暴露稳定的版式种类", () => {
+  const html = renderDailyReport({
+    ...daily,
+    tracking: [{ title: "追踪", event_id: "event-1", history: [] }],
+    deep: [{ id: "deep-1", title_zh: "深读" }],
+    papers: [{ id: "paper-1", title_zh: "论文" }],
+    opinion: [{ id: "opinion-1", title: "舆论" }],
+    items: [...daily.items, { id: "more-1", tier: "more", category: "ai", title: "更多" }],
+  });
+  const dom = new JSDOM(`<main>${html}</main>`);
+  assert.deepEqual(
+    [...dom.window.document.querySelectorAll(".supplemental")].map((node) => node.dataset.kind),
+    ["tracking", "deep", "papers", "opinion", "more"],
+  );
 });
 
 test("时间线卡片保留事实状态徽标", () => {
@@ -179,4 +215,33 @@ test("日报视觉 token 区分阅读表面、浮层和触屏 hover", async () =
   assert.match(css, /\.vcard\s*\{[^}]*box-shadow\s*:\s*var\(--vocab-shadow\)/s);
   assert.match(css, /\.all-tools input\s*,\s*\.all-tools select\s*\{width\s*:\s*100%;min-height\s*:\s*44px\}/);
   assert.match(css, /\.datenav button\s*,\s*#dayCtrls button\s*\{[^}]*background\s*:\s*var\(--card-h\)[^}]*color\s*:\s*var\(--text\)/s);
+  assert.match(css, /\.daily-report\s*\{[^}]*container-type\s*:\s*inline-size/s);
+  assert.match(css, /@container\s*\(min-width\s*:\s*740px\)[\s\S]*\.supplemental:is\(\[data-kind="more"\],\[data-kind="papers"\],\[data-kind="tracking"\]\)\s+\.more-list/s);
+});
+
+test("日报自托管衬线字体包含样式入口与许可证", async () => {
+  const html = await readFile(new URL("../../source/news/index.html", import.meta.url), "utf8");
+  assert.match(html, /fonts\/noto-serif-sc-700\/result\.css/);
+  const fontCss = await readFile(new URL("../../source/news/fonts/noto-serif-sc-700/result.css", import.meta.url), "utf8");
+  const license = await readFile(new URL("../../source/news/fonts/noto-serif-sc-700/OFL.txt", import.meta.url), "utf8");
+  assert.match(fontCss, /font-family:\s*["']Noto Serif SC["']/);
+  assert.match(fontCss, /font-weight:\s*700/);
+  assert.match(fontCss, /font-display:\s*swap/);
+  assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/);
+  const fontDir = new URL("../../source/news/fonts/noto-serif-sc-700/", import.meta.url);
+  const files = (await readdir(fontDir)).filter((name) => name.endsWith(".woff2"));
+  const transferBytes = (await Promise.all(files.map((name) => stat(new URL(name, fontDir))))).reduce((sum, item) => sum + item.size, 0);
+  assert.ok(transferBytes <= 500_000, `cold font budget exceeded: ${transferBytes} bytes`);
+});
+
+test("报刊改版不保留已确认无引用的旧样式", async () => {
+  const css = await readFile(new URL("../../source/news/news.css", import.meta.url), "utf8");
+  for (const selector of [
+    ".feed-clear", ".hotbox", ".hot-row", ".tl-item", ".tl-time", ".tl-badge",
+    ".topic-group", ".grid", ".tag.topic", ".tag.day", ".ev-history", ".toc",
+    ".readmore", ".card h3.clk", ".detail-fallback-note", ".detail-list",
+    ".detail-link", ".detail-source-toggle", ".detail-actions-card", ".detail-kind",
+    ".detail-topbar", ".detail-export", ".tag.mins", ".tag.code",
+    ".wk-day", ".wk-date", ".wk-syn", ".wk-sub", ".wk-outlook",
+  ]) assert.equal(css.includes(selector), false, `dead selector remains: ${selector}`);
 });

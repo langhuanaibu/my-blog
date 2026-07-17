@@ -17,12 +17,12 @@
 | ├── `/source/about` | 关于页面 | 存放 `index.md`。 |
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
-| ├── `/source/news` | 每日日报静态页 | `index.html` 只保留语义页面骨架，`news.css` 存放独立样式，`js/` 存放原生 ES Modules，`data/` 主要由管线和页面 API 产出。可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
+| ├── `/source/news` | 每日日报静态页 | `index.html` 只保留语义页面骨架，`news.css` 存放独立样式，`js/` 存放原生 ES Modules，`fonts/` 只存上线所需的 WOFF2、生成 CSS 和字体许可证，`data/` 主要由管线和页面 API 产出。可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、稍后读写回接口；`vocab.js` 仅为停用功能保留，非接口逻辑不要放进这里。 |
-| **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs` 等一次性或维护脚本。 |
+| **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs`、字体字符清单与生成脚本等一次性或维护工具；字体源 OTF 和工具中间产物不得入库。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
 | **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如 `daily-news.yml`。 |
-| **`/docs`** | 项目维护文档 | 根层存现行维护规范；`archive/` 只存仍有兼容、迁移或排障价值的历史记录。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
+| **`/docs`** | 项目维护文档 | 根层存现行维护规范；`archive/` 只存仍有兼容、迁移或排障价值的历史记录；`visual-baselines/` 存页面回归基准图。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
 
 ---
 
@@ -80,3 +80,6 @@
 
 **场景 8：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。
+
+**场景 9：我要更新日报衬线字体**
+👉 **动作**：先按 `tools/font-subsets/README.md` 重新生成并提交确定性字符清单，再使用固定版本工具运行 `tools/generate-news-font.cjs`。`source/news/fonts/` 只保留 WOFF2、`result.css` 与 `OFL.txt`；不得提交 OTF、`index.proto`、预览页或临时依赖目录。
