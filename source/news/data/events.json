@@ -97,7 +97,7 @@
    "event_id": "evt-20260706-89ee6d",
    "title": "哈梅内伊灵柩在伊拉克圣地巡游，中国派代表出席葬礼",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-09",
@@ -211,7 +211,7 @@
    "event_id": "evt-20260706-65010c",
    "title": "微软Xbox大规模重组：裁员3200人并调整游戏项目",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-09",
@@ -513,7 +513,7 @@
    "event_id": "evt-20260708-edf7d0",
    "title": "北约盟国宣布370亿英镑新导弹项目",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-09",
@@ -713,7 +713,7 @@
    "event_id": "evt-20260708-bf1fe9",
    "title": "同方威视遭欧盟调查，或引发中欧贸易战",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-09",
@@ -753,7 +753,7 @@
    "event_id": "evt-20260708-892fb0",
    "title": "美伊紧张局势升级推动油价大幅上涨",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-09",
@@ -895,7 +895,7 @@
    "event_id": "evt-20260709-f1b66f",
    "title": "特朗普称将授权海外生产爱国者导弹供乌克兰使用",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -912,7 +912,7 @@
    "event_id": "evt-20260709-bfc0e2",
    "title": "OpenAI发布实时语音模型GPT-Live，可同声传译",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -929,7 +929,7 @@
    "event_id": "evt-20260709-671c8b",
    "title": "SpaceXAI发布Grok 4.5，主打低成本高效能",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -946,7 +946,7 @@
    "event_id": "evt-20260709-0717b4",
    "title": "OpenAI公布政府与国家安全合作原则",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -963,7 +963,7 @@
    "event_id": "evt-20260709-f84cda",
    "title": "OpenAI分析揭示SWE-Bench Pro编码基准可靠性问题",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -980,7 +980,7 @@
    "event_id": "evt-20260709-aaf246",
    "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -997,7 +997,7 @@
    "event_id": "evt-20260709-578936",
    "title": "中国实施信访新规，学者指旨在减少进京上访",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1014,7 +1014,7 @@
    "event_id": "evt-20260709-02213f",
    "title": "Cloudflare研究团队推出全球共识服务Meerkat",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1031,7 +1031,7 @@
    "event_id": "evt-20260709-872556",
    "title": "美国保险巨头遭网络攻击致数百万驾照号码泄露",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1048,7 +1048,7 @@
    "event_id": "evt-20260709-40c11a",
    "title": "特朗普多项法律挑战受挫：需支付赔偿并移除姓名",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1065,7 +1065,7 @@
    "event_id": "evt-20260709-8e1d6d",
    "title": "GitHub发布内部源安全公告与跨仓库文档自动化功能",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1082,7 +1082,7 @@
    "event_id": "evt-20260709-975ab6",
    "title": "谷歌为Linux虚拟机逃逸漏洞支付25万美元赏金",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1099,7 +1099,7 @@
    "event_id": "evt-20260709-e149e3",
    "title": "世界杯决赛推动谷歌搜索创每秒查询量历史纪录",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1116,7 +1116,7 @@
    "event_id": "evt-20260709-0fa159",
    "title": "孟加拉国山体滑坡致女子学校8人死亡",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1133,7 +1133,7 @@
    "event_id": "evt-20260709-df8d8b",
    "title": "俄罗斯燃料短缺加剧，普京面临战争策略抉择",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1150,7 +1150,7 @@
    "event_id": "evt-20260709-e64dc9",
    "title": "美联储会议纪要显示官员对利率方向存在分歧",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -1167,7 +1167,7 @@
    "event_id": "evt-20260709-8593fb",
    "title": "蓝色起源首次寻求私募融资100亿美元",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-09",
    "last_seen": "2026-07-09",
@@ -3041,17 +3041,23 @@
   },
   {
    "event_id": "evt-20260716-884049",
-   "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
+   "title": "前OpenAI CTO创立的Thinking Machines发布9750亿参数模型Inkling",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-16",
-   "last_seen": "2026-07-16",
+   "last_seen": "2026-07-17",
    "history": [
     {
      "date": "2026-07-16",
      "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
      "summary": "OpenAI前CTO米拉·穆拉蒂创立的Thinking Machines Lab发布首款AI模型Inkling，采用开放权重模式。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-17",
+     "title": "前OpenAI CTO创立的Thinking Machines发布9750亿参数模型Inkling",
+     "summary": "Mira Murati创立的Thinking Machines Lab发布9750亿参数多模态开源权重模型Inkling，在美国开源模型中领先但落后于中国模型。",
      "news_status": "已确认"
     }
    ]
@@ -3273,6 +3279,397 @@
      "date": "2026-07-16",
      "title": "数据中心需求致美国公众电费增加230亿美元",
      "summary": "数据中心电力需求已导致美国公众电费增加230亿美元，涨价将持续至2028年底，监管机构面临成本分摊挑战。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-5f7d8d",
+   "title": "月之暗面发布2.8万亿参数开源模型Kimi K3",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "月之暗面发布2.8万亿参数开源模型Kimi K3",
+     "summary": "月之暗面发布2.8万亿参数开源模型Kimi K3，支持100万token上下文窗口和原生视觉理解，同步上线API服务。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-4a0136",
+   "title": "欧盟依据DMA命令谷歌向AI和搜索竞争对手开放安卓系统",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "欧盟依据DMA命令谷歌向AI和搜索竞争对手开放安卓系统",
+     "summary": "欧盟依据《数字市场法案》裁定谷歌必须向竞争对手开放安卓和搜索关键部分，允许第三方AI助手和搜索引擎获得更大访问权限。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-6c023c",
+   "title": "世界人工智能合作组织协定在上海签署",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "世界人工智能合作组织协定在上海签署",
+     "summary": "29个国家代表在上海签署成立世界人工智能合作组织协定，总部设在上海，旨在促进AI国际合作与全球治理。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-82fd62",
+   "title": "SpaceX第二次Starship V3发射在点火后突然中止",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "SpaceX第二次Starship V3发射在点火后突然中止",
+     "summary": "SpaceX第二次Starship V3发射在点火后突然中止，公司未立即说明原因，股价盘后一度下跌超4%。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-d6135b",
+   "title": "Google DeepMind和Isomorphic Labs发布生物韧性联合方法",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Google DeepMind和Isomorphic Labs发布生物韧性联合方法",
+     "summary": "Google DeepMind和Isomorphic Labs发布其生物韧性联合方法，旨在利用AI模型应对生物威胁。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-57c8aa",
+   "title": "Hugging Face披露2026年7月安全事件",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Hugging Face披露2026年7月安全事件",
+     "summary": "Hugging Face披露2026年7月发生安全事件，具体细节待公布。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-015d7e",
+   "title": "WAIC 2026探馆：华为昇腾950超节点首秀",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "WAIC 2026探馆：华为昇腾950超节点首秀",
+     "summary": "2026世界人工智能大会明日开幕，华为昇腾950超节点（1024卡）首次公开亮相，具身智能与AI算力成焦点。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-1c8aa2",
+   "title": "NVIDIA Nemotron 3 嵌入模型登顶RTEB基准",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "NVIDIA Nemotron 3 嵌入模型登顶RTEB基准",
+     "summary": "NVIDIA 发布的 Nemotron 3 嵌入模型在 RTEB 基准测试中综合排名第一，专为智能体检索场景优化。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-321ffc",
+   "title": "调查：54%企业已遭遇AI智能体安全事件",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "调查：54%企业已遭遇AI智能体安全事件",
+     "summary": "VentureBeat调查107家企业发现，54%已遭遇AI智能体安全事件，仅32%为每个智能体分配独立身份凭证。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-385494",
+   "title": "半数企业曾部署通过内测但导致客户故障的AI智能体",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "半数企业曾部署通过内测但导致客户故障的AI智能体",
+     "summary": "调查显示50%组织过去一年曾部署通过内部评估但导致客户故障的AI智能体，仅5%完全信任自动化评估。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-104eff",
+   "title": "Anthropic发布最强通用模型Claude Fable 5",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Anthropic发布最强通用模型Claude Fable 5",
+     "summary": "Anthropic发布最强通用模型Claude Fable 5，专为长时间、多步骤复杂异步任务设计，可在Claude Cowork中自主执行深度研究。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-eed7b9",
+   "title": "GitHub Projects高级搜索功能正式上线",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "GitHub Projects高级搜索功能正式上线",
+     "summary": "GitHub Projects视图的筛选栏现已支持高级搜索，可使用逻辑AND和OR构建精确视图，无需维护多个独立视图。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-f0fcb3",
+   "title": "德国首次将AI搜索摘要纳入媒体法监管",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "德国首次将AI搜索摘要纳入媒体法监管",
+     "summary": "德国媒体监管机构裁定，Google AI Overviews和Perplexity的AI摘要属于自有内容而非中立搜索结果，并发布首批裁决。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-260e19",
+   "title": "xAI开源Grok-Build后被曝代码含SSH密钥等敏感数据",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "xAI开源Grok-Build后被曝代码含SSH密钥等敏感数据",
+     "summary": "xAI开源命令行工具Grok-Build被发现会静默上传整个目录至Google Cloud，包括SSH密钥和密码数据库，引发安全争议。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-75d1b2",
+   "title": "Anthropic用Claude Code两周内将Bun百万行Zig代码迁移至Rust",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Anthropic用Claude Code两周内将Bun百万行Zig代码迁移至Rust",
+     "summary": "Anthropic工程师用Claude Code在两周内将Bun的百万行Zig代码迁移至Rust，100%测试通过，API成本约16.5万美元。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-ff85bd",
+   "title": "Roblox在移动应用中推出AI游戏创建功能",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Roblox在移动应用中推出AI游戏创建功能",
+     "summary": "Roblox在移动应用中推出AI驱动的\"Build\"功能，用户只需输入文本提示即可生成基础游戏。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-76207a",
+   "title": "xAI首次起诉Grok用户制作儿童性虐待内容",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "xAI首次起诉Grok用户制作儿童性虐待内容",
+     "summary": "xAI首次对一名Grok用户提起诉讼，指控其利用该模型制作儿童性虐待图像（CSAM），标志着其立场转变。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-41ca2e",
+   "title": "Kimi发布2.8万亿参数开源多模态模型K3",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Kimi发布2.8万亿参数开源多模态模型K3",
+     "summary": "Kimi发布2.8万亿参数开源多模态模型K3，支持百万token上下文，基准测试接近GPT-5.6和Claude Fable 5。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-eb732c",
+   "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
+     "summary": "阿根廷球员在世界杯半决赛后展示支持福克兰群岛主权的横幅，国际足联（FIFA）已启动纪律调查。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-1b38e8",
+   "title": "台积电上调2026年资本支出至600-640亿美元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "台积电上调2026年资本支出至600-640亿美元",
+     "summary": "台积电将2026年资本支出预测上调至600-640亿美元，并称A14（1.4nm）制程进展顺利，客户兴趣强烈。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-3835ff",
+   "title": "白宫读稿机操作员因利用特朗普演讲内幕下注被停职",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "白宫读稿机操作员因利用特朗普演讲内幕下注被停职",
+     "summary": "白宫一名读稿机操作员被指控利用提前掌握的总统演讲内容，在预测平台Kalshi下注获利近10万美元，已被停职。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-e5fe77",
+   "title": "意大利热那亚大桥坍塌案前高管被判12年监禁",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "意大利热那亚大桥坍塌案前高管被判12年监禁",
+     "summary": "意大利热那亚莫兰迪大桥2018年坍塌致43人死亡，前高速公路运营商CEO等高管被判12年监禁。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260717-bd46c1",
+   "title": "Uber以148亿美元全股票交易收购Delivery Hero",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-17",
+   "last_seen": "2026-07-17",
+   "history": [
+    {
+     "date": "2026-07-17",
+     "title": "Uber以148亿美元全股票交易收购Delivery Hero",
+     "summary": "Uber宣布以148亿美元全股票交易收购外卖平台Delivery Hero，交易将使其全球业务版图几乎翻倍。",
      "news_status": "已确认"
     }
    ]
