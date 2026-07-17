@@ -490,7 +490,7 @@
    "event_id": "evt-20260708-44f08d",
    "title": "Meta发布付费大模型Muse Spark 1.1，定价仅为Anthropic四分之一",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-10",
@@ -1184,7 +1184,7 @@
    "event_id": "evt-20260710-07fcc7",
    "title": "OpenAI二号人物Fidji Simo因健康原因离职",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1201,7 +1201,7 @@
    "event_id": "evt-20260710-afd287",
    "title": "OpenAI推出跨应用自主AI智能体ChatGPT Work",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1216,18 +1216,24 @@
   },
   {
    "event_id": "evt-20260710-f36fd2",
-   "title": "OpenAI关闭AI浏览器Atlas，功能迁移至桌面应用",
+   "title": "Anthropic与Meta洽谈百亿美元算力租用",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-10",
      "title": "OpenAI关闭AI浏览器Atlas，功能迁移至桌面应用",
      "summary": "OpenAI关停AI浏览器Atlas（上线不足一年），将代理浏览功能迁移至桌面应用和Chrome扩展。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "Anthropic与Meta洽谈百亿美元算力租用",
+     "summary": "Anthropic正与Meta初步谈判，拟租用其算力，潜在交易规模约100亿美元。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -1235,7 +1241,7 @@
    "event_id": "evt-20260710-b2ea0d",
    "title": "GPT-5.6成为Microsoft 365 Copilot首选模型",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1252,7 +1258,7 @@
    "event_id": "evt-20260710-d33941",
    "title": "Anthropic发现Claude内部概念处理隐藏空间",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1269,7 +1275,7 @@
    "event_id": "evt-20260710-8b8017",
    "title": "前美联储主席伯南克加入Anthropic监督信托",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1286,7 +1292,7 @@
    "event_id": "evt-20260710-635694",
    "title": "Sequoia合伙人：AI基础设施需3万亿美元收入回本",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1332,7 +1338,7 @@
    "event_id": "evt-20260710-1c4307",
    "title": "GitHub为所有仓库指定持久所有者",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1349,7 +1355,7 @@
    "event_id": "evt-20260710-2abf37",
    "title": "GitHub Code Quality支持组织级仓库选择",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1395,7 +1401,7 @@
    "event_id": "evt-20260710-e47e6f",
    "title": "AI代理初创公司Lyzr用自家AI代理完成1亿美元融资",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1412,7 +1418,7 @@
    "event_id": "evt-20260710-f5b940",
    "title": "政府如何决定OpenAI前沿模型安全可发布",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1429,7 +1435,7 @@
    "event_id": "evt-20260710-377553",
    "title": "Google Research推出可穿戴健康数据基础模型SensorFM",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1469,7 +1475,7 @@
    "event_id": "evt-20260710-5caebb",
    "title": "特朗普华盛顿拱门计划获关键规划批准",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1484,17 +1490,23 @@
   },
   {
    "event_id": "evt-20260710-d1137c",
-   "title": "GitHub Copilot新增仓库概览查询功能",
+   "title": "GitHub Copilot仓库级用量指标与应用接入API上线",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-10",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-10",
      "title": "GitHub Copilot新增仓库概览查询功能",
      "summary": "GitHub Copilot现在可为用户提供首次访问仓库的高层概览，帮助快速了解项目结构。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "GitHub Copilot仓库级用量指标与应用接入API上线",
+     "summary": "GitHub Copilot用量指标API新增仓库级活动报告，并支持Copilot应用使用情况查询，提供每日和28天报告。",
      "news_status": "已确认"
     }
    ]
@@ -1503,7 +1515,7 @@
    "event_id": "evt-20260710-b7a11b",
    "title": "巴黎AI语音初创Gradium获1亿美元种子轮融资",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1520,7 +1532,7 @@
    "event_id": "evt-20260710-937a7d",
    "title": "针对AI生成儿童性虐待材料的集体诉讼扩大",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1560,7 +1572,7 @@
    "event_id": "evt-20260710-ab50db",
    "title": "马斯克承诺不会切断Anthropic模型访问",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-10",
@@ -1791,17 +1803,23 @@
   },
   {
    "event_id": "evt-20260712-b7edf4",
-   "title": "OpenAI承认ChatGPT Work发布存在严重问题并紧急修复",
+   "title": "OpenAI GPT-5.6意外删除用户文件",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-12",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-12",
      "title": "OpenAI承认ChatGPT Work发布存在严重问题并紧急修复",
      "summary": "OpenAI承认ChatGPT Work发布存在计算资源消耗过大、桌面界面混乱等严重问题，正紧急修复。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "OpenAI GPT-5.6意外删除用户文件",
+     "summary": "OpenAI的GPT-5.6在“完全访问模式”下意外删除用户整个主目录文件，OpenAI承认问题但表示不应发生。",
      "news_status": "已确认"
     }
    ]
@@ -1950,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美伊对峙升级，伊朗威胁封锁霍尔木兹海峡",
+   "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-16",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-12",
@@ -1979,6 +1997,12 @@
      "date": "2026-07-16",
      "title": "美伊对峙升级，伊朗威胁封锁霍尔木兹海峡",
      "summary": "伊朗威胁封锁霍尔木兹海峡并停止中东能源出口，以回应美国的海上封锁。特朗普则威胁攻击伊朗核设施。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
+     "summary": "美军连续第七晚空袭伊朗，打击桥梁、能源设施等民用目标，伊朗反击美舰，霍尔木兹海峡通行量下降。",
      "news_status": "发展中"
     }
    ]
@@ -2445,17 +2469,23 @@
   },
   {
    "event_id": "evt-20260714-ab3185",
-   "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
+   "title": "习近平首现世界AI大会，开源成中国AI战略核心",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-14",
-   "last_seen": "2026-07-14",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-14",
      "title": "2026世界人工智能大会下周上海开幕，习近平将出席",
      "summary": "2026世界人工智能大会将于7月17日至20日在上海举行，国家主席习近平将出席开幕式并发表主旨讲话。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "习近平首现世界AI大会，开源成中国AI战略核心",
+     "summary": "习近平首次出席世界人工智能大会，将“开源”置于中国AI战略核心，应对美中AI竞争。",
      "news_status": "已确认"
     }
    ]
@@ -3285,17 +3315,23 @@
   },
   {
    "event_id": "evt-20260717-5f7d8d",
-   "title": "月之暗面发布2.8万亿参数开源模型Kimi K3",
+   "title": "中国AI公司Moonshot发布Kimi K3模型，性能逼近西方前沿",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-17",
      "title": "月之暗面发布2.8万亿参数开源模型Kimi K3",
      "summary": "月之暗面发布2.8万亿参数开源模型Kimi K3，支持100万token上下文窗口和原生视觉理解，同步上线API服务。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "中国AI公司Moonshot发布Kimi K3模型，性能逼近西方前沿",
+     "summary": "Moonshot AI发布Kimi K3模型，早期评估性能接近Anthropic的Opus 4.8，团队仅300人。",
      "news_status": "已确认"
     }
    ]
@@ -3455,17 +3491,23 @@
   },
   {
    "event_id": "evt-20260717-104eff",
-   "title": "Anthropic发布最强通用模型Claude Fable 5",
+   "title": "Schema Harness在ARC-AGI-3公开集上取得约99%成绩",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
+   "last_seen": "2026-07-18",
    "history": [
     {
      "date": "2026-07-17",
      "title": "Anthropic发布最强通用模型Claude Fable 5",
      "summary": "Anthropic发布最强通用模型Claude Fable 5，专为长时间、多步骤复杂异步任务设计，可在Claude Cowork中自主执行深度研究。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "Schema Harness在ARC-AGI-3公开集上取得约99%成绩",
+     "summary": "Schema框架在ARC-AGI-3公开集上，使用Claude Opus 4.8和Fable 5达到99% RHAE分数，使用GPT-5.6 Sol达到95.35%。",
      "news_status": "已确认"
     }
    ]
@@ -3670,6 +3712,295 @@
      "date": "2026-07-17",
      "title": "Uber以148亿美元全股票交易收购Delivery Hero",
      "summary": "Uber宣布以148亿美元全股票交易收购外卖平台Delivery Hero，交易将使其全球业务版图几乎翻倍。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-2a0b0e",
+   "title": "2026世界人工智能大会开幕，逾300台人形机器人同台竞技",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "2026世界人工智能大会开幕，逾300台人形机器人同台竞技",
+     "summary": "2026世界人工智能大会在上海开幕，展示超4400款展品，包括208款、逾300台人形机器人。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-04909d",
+   "title": "SpaceX拟向五角大楼提供数十亿美元AI算力",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "SpaceX拟向五角大楼提供数十亿美元AI算力",
+     "summary": "SpaceX正与美国国防部谈判，拟提供价值数十亿美元的数据中心算力，用于运行AI模型。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-38ffc6",
+   "title": "白宫拟控制前沿AI模型访问权限，权力从科技巨头转移",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "白宫拟控制前沿AI模型访问权限，权力从科技巨头转移",
+     "summary": "特朗普政府正采取措施控制前沿AI模型的访问权限，将权力从科技巨头转移至政府。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-b5da94",
+   "title": "美国拟设独立AI监管机构，仿金融业监管模式",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "美国拟设独立AI监管机构，仿金融业监管模式",
+     "summary": "特朗普政府考虑设立独立AI监管机构，仿照金融业监管局模式，对顶级AI模型进行安全审查，提案正由白宫幕僚长审议。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-d0b5d9",
+   "title": "Meta拟向Anthropic出租算力，合同或达100亿美元",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "Meta拟向Anthropic出租算力，合同或达100亿美元",
+     "summary": "Meta正与Anthropic初步谈判，计划出租数据中心算力，两年合同价值最高可达100亿美元，成为Meta算力变现的首位大客户。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-3e6b4e",
+   "title": "Anthropic与Meta洽谈租用AI算力",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "Anthropic与Meta洽谈租用AI算力",
+     "summary": "Anthropic正与Meta早期谈判租用算力，此前已与SpaceX达成类似协议，使用其Colossus 1数据中心。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-3896f8",
+   "title": "特朗普因加拿大山火烟雾威胁加征关税",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "特朗普因加拿大山火烟雾威胁加征关税",
+     "summary": "特朗普指责加拿大山火烟雾影响美国空气质量，威胁将污染成本计入对加关税。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-7688b8",
+   "title": "OpenAI提出“有用智能每美元”衡量AI投资回报",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "OpenAI提出“有用智能每美元”衡量AI投资回报",
+     "summary": "OpenAI提出“有用智能每美元”指标，从完成工作量、实际成本和结果可靠性三个维度评估AI投资回报。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-d43f99",
+   "title": "Taco Bell生菜引发5州环孢子虫疫情",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "Taco Bell生菜引发5州环孢子虫疫情",
+     "summary": "美国CDC和FDA确认，Taco Bell餐厅使用的墨西哥生菜导致5州环孢子虫疫情爆发。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-efab5d",
+   "title": "诺兰新片《奥德赛》看点与剧组专访",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "诺兰新片《奥德赛》看点与剧组专访",
+     "summary": "诺兰执导的史诗电影《奥德赛》将上映，是全球首部全程IMAX拍摄的电影，马特·达蒙等主演。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-a2396c",
+   "title": "Netflix在约300个制作项目中应用AI",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "Netflix在约300个制作项目中应用AI",
+     "summary": "Netflix联合CEO透露，公司已在约300个制作项目中应用AI，主要用于后期制作。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-152e0b",
+   "title": "共和党威胁因山火烟雾制裁加拿大",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "共和党威胁因山火烟雾制裁加拿大",
+     "summary": "美国共和党人威胁因加拿大山火烟雾飘散至美国而制裁加拿大政府官员。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-2f7e40",
+   "title": "英国钢铁国有化引发中国强烈反对",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "英国钢铁国有化引发中国强烈反对",
+     "summary": "英国政府将英国钢铁公司收归国有，中国外交部表示“坚决反对”侵犯华资权益。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-930b3b",
+   "title": "也门附近三个月内第二艘油轮被海盗劫持",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "也门附近三个月内第二艘油轮被海盗劫持",
+     "summary": "疑似索马里海盗在也门附近劫持油轮，为三个月内第二起类似事件，亚丁湾海盗活动激增。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-ce33dd",
+   "title": "Linus Torvalds力挺AI工具用于内核开发",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "Linus Torvalds力挺AI工具用于内核开发",
+     "summary": "Linus Torvalds在Linux内核邮件列表上表态支持AI工具，称Linux不是反AI项目。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-dff95b",
+   "title": "特朗普社交媒体拟向交易员收10万美元/月抢先看帖费",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "特朗普社交媒体拟向交易员收10万美元/月抢先看帖费",
+     "summary": "特朗普旗下Truth Social拟推出付费服务，交易员每月支付最高10万美元可抢先获取特朗普帖文。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260718-ce0ea2",
+   "title": "费城半导体指数跌入技术性熊市",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-18",
+   "last_seen": "2026-07-18",
+   "history": [
+    {
+     "date": "2026-07-18",
+     "title": "费城半导体指数跌入技术性熊市",
+     "summary": "费城半导体指数较6月高点回撤超20%，跌入技术性熊市，英伟达等芯片股承压。",
      "news_status": "已确认"
     }
    ]
