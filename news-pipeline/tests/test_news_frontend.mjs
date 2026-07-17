@@ -36,7 +36,16 @@ test("新闻页共享外壳提供桌面侧栏和移动三层导航", async () =>
   const sidebar = doc.querySelector(".desktop-sidebar");
   assert.ok(sidebar?.querySelector(".logo"));
   assert.deepEqual([...sidebar.querySelectorAll("[data-view]")].map((node) => node.dataset.view), ["timeline", "all", "reports", "topics", "favs"]);
+  const desktopBlogHome = sidebar.querySelector(".desktop-blog-home");
+  assert.equal(desktopBlogHome?.getAttribute("href"), "/");
+  assert.equal(desktopBlogHome?.hasAttribute("data-route"), false);
   assert.ok(doc.querySelector(".mobile-primary"));
+  const mobileBlogHome = doc.querySelector(".mobile-blog-home");
+  assert.equal(mobileBlogHome?.getAttribute("href"), "/");
+  assert.equal(mobileBlogHome?.getAttribute("aria-label"), "返回博客");
+  assert.equal(mobileBlogHome?.getAttribute("title"), "返回博客");
+  assert.equal(mobileBlogHome?.hasAttribute("data-route"), false);
+  assert.equal(mobileBlogHome?.getAttribute("target"), null);
   assert.ok(doc.querySelector(".mobile-nav"));
   assert.ok(doc.querySelector(".mobile-report-controls#reportControls"));
   assert.equal(doc.querySelector("#mobileSearchToggle").getAttribute("aria-controls"), "mobileSearchPanel");
@@ -48,13 +57,15 @@ test("新闻页共享外壳提供桌面侧栏和移动三层导航", async () =>
   assert.ok(doc.querySelector(".content-toolbar")?.contains(readLater));
   assert.equal(doc.querySelector("#mobileSearchPanel").contains(readLater), false);
   assert.match(readLater.className, /shell-read-later/);
-  assert.match(css, /@media\(max-width:899px\)[\s\S]*\.shell-read-later\{/);
-  assert.match(css, /@media\(max-width:899px\)[\s\S]*\.mobile-report-controls\{[^}]*scrollbar-width:none/);
+  assert.match(css, /@media\(max-width:899\.98px\)[\s\S]*\.shell-read-later\{/);
+  assert.match(css, /\.desktop-blog-home\{[^}]*margin-top:auto/);
+  assert.match(css, /@media\(max-width:899\.98px\)[\s\S]*\.mobile-blog-home\{[^}]*display:inline-flex/);
+  assert.match(css, /@media\(max-width:899\.98px\)[\s\S]*\.mobile-report-controls\{[^}]*scrollbar-width:none/);
   assert.match(css, /\.mobile-report-controls::-webkit-scrollbar\{display:none\}/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.report-controls\{[^}]*position:fixed;[^}]*left:240px;/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.site-header\{[^}]*position:static;[^}]*backdrop-filter:none;[^}]*-webkit-backdrop-filter:none;/);
   assert.match(css, /@media\(min-width:900px\)[\s\S]*\.reports-view \.content-column\{[^}]*margin-left:460px/);
-  assert.match(css, /@media\(max-width:899px\)[\s\S]*\.reports-view \.content-column\{[^}]*margin-left:0/);
+  assert.match(css, /@media\(max-width:899\.98px\)[\s\S]*\.reports-view \.content-column\{[^}]*margin-left:0/);
 });
 
 test("数据加载器拒绝把 URL 标识解释为任意脚本路径", async () => {
@@ -211,7 +222,7 @@ test("日报视觉 token 区分阅读表面、浮层和触屏 hover", async () =
   assert.match(css, /#backTop\s*\{[^}]*box-shadow\s*:\s*var\(--shadow2\)/s);
   assert.match(css, /\.toast\s*\{[^}]*box-shadow\s*:\s*var\(--shadow2\)/s);
   assert.match(css, /@media\s*\(hover:hover\)\s*and\s*\(pointer:fine\)\s*\{[^}]*\.card:not\(\.timeline-entry\):hover/s);
-  assert.match(css, /@media\s*\(max-width:899px\)[\s\S]*min-height\s*:\s*44px/);
+  assert.match(css, /@media\s*\(max-width:899\.98px\)[\s\S]*min-height\s*:\s*44px/);
   assert.match(css, /\.vcard\s*\{[^}]*box-shadow\s*:\s*var\(--vocab-shadow\)/s);
   assert.match(css, /\.all-tools input\s*,\s*\.all-tools select\s*\{width\s*:\s*100%;min-height\s*:\s*44px\}/);
   assert.match(css, /\.datenav button\s*,\s*#dayCtrls button\s*\{[^}]*background\s*:\s*var\(--card-h\)[^}]*color\s*:\s*var\(--text\)/s);
