@@ -434,6 +434,31 @@ sources:
   #  - 不加清单：Google AI blog / Chrome DevRel（AI 收缩定位相悖或过于边缘）；
   #    DW德国之声中文 / RFI法广中文 / 台湾报道者 / New Yorker（feed 均实证可达，
   #    但 world/深度分析方向用户明确未选——world 已 39% 过剩）；AP News（feed 已死）。
+  #
+  # ---------- 第五轮定案追加（2026-07-17 盘问，参照 AIHOT 源体系，防重议） ----------
+  #  依据数据：AIHOT 实测 500 条/96 去重源的类型学（X KOL ~60%、媒体 RSS、官方博客/
+  #  网页适配器、GitHub Releases、个人博客、公众号 12+）；本站精选构成 07-11~16
+  #  world 41% 过剩 / finance 10.7% 最薄 / tech 14.8% 次薄。
+  #  - 总边界：AI 类不加源。日报 AI＝头条提醒器，AI 深度用户每天直接读 AIHOT 本体；
+  #    照搬其 AI 源（X KOL/厂商博客/AI 媒体）＝自建缩水版 AIHOT，纯重复。
+  #    AIHOT 的「一手信源+人肉策展」方法论只移植到非 AI 四类。
+  #  - 公众号：维持判死，但事实前提更新——07-10 尾注引用的「AIHOT 168 源里公众号
+  #    仅 1 个」已失效（2026-07-17 实测其主 feed 公众号源 12+，厂商官号+创作者号，
+  #    卡兹克有常驻服务解决中继）。判死如今唯一支柱是基础设施不兼容：wewe-rss 类
+  #    中继需常驻服务+微信读书账号人肉续期，本站是 Vercel Serverless + GitHub
+  #    Actions，无常驻环境。未来若重议，论据应从这里出发，别再引旧数据。
+  #    替代路线＝公众号型作者的网站镜像（晚点官网适配器等，见 roadmap #9）。
+  #  - buzzing.cc 财经中转（Bloomberg/WSJ 标题中文翻译 RSS，AIHOT 用它中转 HN）：
+  #    明确不接。标题-only 无正文、第三方单点依赖、T2 可信度，用户未选。
+  #  - 雪球·今日话题（RSSHub 路由）：明确不接。散户观点流噪音高于已有源，用户未选。
+  #  - society/world 维持现状：society 17.2% 健康且候选（人物/三联/端传媒）多在
+  #    判死路径或付费墙；world 41% 过剩，任何 world 向新源默认拒。
+  #  - 三项都进深读、不动主管线，且按阮一峰 → 晚点 → 英文财经单源的
+  #    顺序分批晋级。英文财经只保留 Noahpinion/Marginal Revolution/Apricitas/
+  #    Kyla 四个官方 feed，用 topic_filter: finance 拦截 AI/泛政治偏题文章。
+  #    Money Stuff 无官方 RSS，不接第三方镜像；FT Alphaville 与 ftcn 同因排除。
+  #    晚点已验证公开 /news/get-news-data JSON 端点，专用适配器固定取 programa=4。
+  #    待办细节与验收口径见 docs/news_source_roadmap.md #8-#10。
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
@@ -466,9 +491,9 @@ pulse_sources:
 
 # ============================================================
 # 深度阅读长文源（独立频道，不进新闻管线）
-# 字段：id/name/url/lang(en|zh)/enabled；参数在 config.yaml 的 deep 块
-# 财经深度方向暂无可用免费 RSS（财新/晚点无 RSS、FT 全文付费墙），
-# 先复用新闻源里的华尔街见闻/MarketWatch 长文，缺口后续补。
+# 字段：id/name/url/lang(en|zh)/enabled/channel；type 默认 rss，专用适配器
+# 填 daily_news.py FETCHERS 里的类型；topic_filter 可选，当前仅 finance，
+# 用于拦截综合评论源里的 AI/泛政治偏题文章。参数在 config.yaml deep 块。
 # ============================================================
 deep_sources:
   # ---------- AI/LLM 深度 ----------
@@ -540,24 +565,77 @@ deep_sources:
     name: 少数派
     url: https://sspai.com/feed
     lang: zh
-    channel: zh_society_finance
+    channel: society_finance
     enabled: true
   - id: jiqizhixin
     name: 机器之心
     url: https://www.jiqizhixin.com/rss
     lang: zh
-    channel: zh_society_finance
+    channel: society_finance
     enabled: true
   - id: chinanews-dxw
     name: 中国新闻网·东西问
     url: https://www.chinanews.com.cn/rss/dxw.xml
     lang: zh
-    channel: zh_society_finance
+    channel: society_finance
     # 2026-07-12 冒烟：可抓且时间正常，但摘要均长仅 29 字，未过深读摘要门槛。
     enabled: false
   - id: cna-finance
     name: 中央社·产经证券
     url: https://feeds.feedburner.com/rsscna/finance
     lang: zh
-    channel: zh_society_finance
+    channel: society_finance
     enabled: true
+
+  # ---------- 第一阶段：中文策展层（2026-07-17 启用，观察 14 天） ----------
+  - id: ruanyifeng-weekly
+    name: 科技爱好者周刊
+    type: rss
+    url: https://www.ruanyifeng.com/blog/atom.xml
+    lang: zh
+    channel: tech_business
+    enabled: true
+
+  # ---------- 第二阶段：晚点长报道（适配器已就绪，待第一阶段验收） ----------
+  - id: latepost
+    name: 晚点 LatePost
+    type: latepost
+    url: https://www.latepost.com
+    lang: zh
+    channel: tech_business
+    enabled: false
+
+  # ---------- 第三阶段：英文财经（顺序单源启用） ----------
+  - id: noahpinion
+    name: Noahpinion
+    type: rss
+    url: https://noahpinion.substack.com/feed
+    lang: en
+    channel: society_finance
+    topic_filter: finance
+    enabled: false
+  - id: marginal-revolution
+    name: Marginal Revolution
+    type: rss
+    url: https://marginalrevolution.com/feed
+    lang: en
+    channel: society_finance
+    topic_filter: finance
+    enabled: false
+  # 低频源：历史文章只做资格审查，生产仍用 deep.window_hours 窗口。
+  - id: apricitas
+    name: Apricitas Economics
+    type: rss
+    url: https://www.apricitas.io/feed
+    lang: en
+    channel: society_finance
+    topic_filter: finance
+    enabled: false
+  - id: kyla-scanlon
+    name: Kyla's Newsletter
+    type: rss
+    url: https://kyla.substack.com/feed
+    lang: en
+    channel: society_finance
+    topic_filter: finance
+    enabled: false

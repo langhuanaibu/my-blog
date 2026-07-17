@@ -137,12 +137,26 @@ quota_rows = [
     (9.5, 0, {"channel": "ai_engineering"}),
     (9.0, 1, {"channel": "ai_engineering"}),
     (8.5, 2, {"channel": "tech_business"}),
-    (8.0, 3, {"channel": "zh_society_finance"}),
+    (8.0, 3, {"channel": "society_finance"}),
 ]
 check("deep三栏软配额",
       [row[1] for row in dn.select_deep_soft_quota(quota_rows, 3)] == [0, 2, 3])
 check("deep空栏释放名额",
       [row[1] for row in dn.select_deep_soft_quota(quota_rows[:3], 3)] == [0, 2, 1])
+check("deep旧栏目名映射到新名",
+      dn.deep_source_channel({"channel": "zh_society_finance", "lang": "zh"})
+      == "society_finance")
+check("deep中文源默认进社会财经栏",
+      dn.deep_source_channel({"lang": "zh"}) == "society_finance")
+check("deep按 type 分派专用适配器",
+      hasattr(dn, "deep_fetcher")
+      and dn.deep_fetcher({"type": "latepost"}) is getattr(dn, "fetch_latepost", None))
+check("deep财经主题过滤接受匹配文章",
+      hasattr(dn, "deep_topic_matches")
+      and dn.deep_topic_matches({"topic_filter": "finance"}, {"topic_fit": True}))
+check("deep财经主题过滤拒绝偏题文章",
+      hasattr(dn, "deep_topic_matches")
+      and not dn.deep_topic_matches({"topic_filter": "finance"}, {"topic_fit": False}))
 
 
 # ----------------------------------------------------------------
@@ -641,17 +655,37 @@ try:
     seen = json.loads((tmp / "deep_seen.json").read_text(encoding="utf-8"))
     check("deep推荐写回seen", seen["urls"].get("https://a.com/3") == "2026-07-05")
     deep_health = json.loads((tmp / "deep_health.json").read_text(encoding="utf-8"))
-    check("deep健康统计记录来源候选与入选", deep_health["days"]["2026-07-05"]["sources"]["simonwillison"]
-          == {"candidates": 2, "picked": 1})
-    check("deep健康统计记录栏目候选与入选", deep_health["days"]["2026-07-05"]["channels"]["ai_engineering"]
-          == {"candidates": 2, "picked": 1})
+    simon_health = deep_health["days"]["2026-07-05"]["sources"]["simonwillison"]
+    check("deep健康统计升级为 v2", deep_health["version"] == 2)
+    check("deep健康区分抓取与去重候选",
+          simon_health["fetch_ok"] is True and simon_health["fetch_error"] == ""
+          and simon_health["fetched"] == 3 and simon_health["candidates"] == 2)
+    check("deep健康记录评分、主题、过线与入选",
+          simon_health["scored"] == 2 and simon_health["topic_matched"] == 2
+          and simon_health["above_threshold"] == 1 and simon_health["picked"] == 1)
+    check("deep健康统计使用新栏目名",
+          "society_finance" in deep_health["days"]["2026-07-05"]["channels"])
+
+    # 即使所有源都没有窗口内文章，也要写健康记录。
+    dn.fetch_rss = lambda src, ws, mx: ([], src["id"] == "simonwillison")
+    empty_day = dn.deep_channel(DeepStub(), {"deep": {"enabled": True}}, "2026-07-06")
+    empty_health = json.loads((tmp / "deep_health.json").read_text(encoding="utf-8"))
+    empty_simon = empty_health["days"]["2026-07-06"]["sources"]["simonwillison"]
+    check("deep空候选仍写健康记录", empty_day == []
+          and empty_simon["fetch_ok"] is False and empty_simon["fetched"] == 0
+          and empty_simon["candidates"] == 0 and empty_simon["picked"] == 0)
 
     class DeepBoom:
         def json_call(self, system, user):
             raise RuntimeError("boom")
 
+    dn.fetch_rss = lambda src, ws, mx: (list(fake_articles) if src["id"] == "simonwillison" else [], False)
     check("deep LLM失败返回空", dn.deep_channel(DeepBoom(), {"deep": {"enabled": True}},
-                                                "2026-07-05") == [])
+                                                "2026-07-07") == [])
+    boom_health = json.loads((tmp / "deep_health.json").read_text(encoding="utf-8"))
+    check("deep LLM失败仍保留抓取健康记录",
+          boom_health["days"]["2026-07-07"]["sources"]["simonwillison"]["fetched"] == 3
+          and boom_health["days"]["2026-07-07"]["sources"]["simonwillison"]["scored"] == 0)
     check("deep禁用返回空", dn.deep_channel(DeepStub(), {"deep": {"enabled": False}},
                                             "2026-07-05") == [])
 
@@ -808,6 +842,63 @@ try:
     check("thepaper_list 抓取失败返回 error", got2 == [] and err2 is True)
 finally:
     dn.http_get = orig_http_get
+
+# --- fetch_latepost：公开 JSON 列表 / 相对日期 / 详情正文补全 ---
+if not all(hasattr(dn, name) for name in ("fetch_latepost", "parse_latepost_time", "http_post")):
+    check("latepost 适配器 API 已实现", False)
+else:
+    _ref = dn.datetime(2026, 7, 17, 3, 0, tzinfo=dn.timezone.utc)
+    check("latepost 解析昨天",
+          dn.parse_latepost_time("昨天", _ref).date().isoformat() == "2026-07-16")
+    check("latepost 解析当年无年份日期",
+          dn.parse_latepost_time("07月15日", _ref).date().isoformat() == "2026-07-15")
+    check("latepost 解析完整日期",
+          dn.parse_latepost_time("2025年09月29日", _ref).date().isoformat() == "2025-09-29")
+    check("latepost 不可靠日期丢弃", dn.parse_latepost_time("上周", _ref) is None)
+
+    _late_rows = {"code": 1, "data": [
+        {"id": "1", "title": "值得深读", "release_time": "07月15日",
+         "intro": "过短摘要", "abstract": "", "answer": "", "detail_url": "/news/dj_detail?id=1"},
+        {"id": "2", "title": "旧文", "release_time": "2025年09月29日",
+         "intro": "旧", "detail_url": "/news/dj_detail?id=2"},
+        {"id": "3", "title": "无法定日期", "release_time": "上周",
+         "intro": "x", "detail_url": "/news/dj_detail?id=3"},
+    ]}
+    _late_html = ('<html><div class="article-body ql-editor">' + '正文内容' * 120
+                  + '</div></html>')
+    _orig_post, _orig_get = dn.http_post, dn.http_get
+    dn.http_post = lambda url, **kw: _FakeResp(data=_late_rows)
+    dn.http_get = lambda url, **kw: _FakeResp(text=_late_html)
+    try:
+        _late_src = {"id": "latepost", "name": "晚点 LatePost", "type": "latepost",
+                     "url": "https://www.latepost.com", "source_type": "analysis",
+                     "tier": "T1.5", "credibility": 8}
+        _late, _late_err = dn.fetch_latepost(
+            _late_src, dn.datetime(2026, 7, 14, tzinfo=dn.timezone.utc), 5, now=_ref)
+        check("latepost 只保留窗口内可定日期文章",
+              not _late_err and [x["title"] for x in _late] == ["值得深读"])
+        check("latepost 详情页补全摘要与正文长度",
+              _late[0]["desc"].startswith("正文内容")
+              and _late[0]["content_chars"] >= 400
+              and _late[0]["url"] == "https://www.latepost.com/news/dj_detail?id=1")
+
+        _many_rows = {"code": 1, "data": [
+            {"id": str(i), "title": f"新文{i}", "release_time": f"07月{16 - i}日",
+             "intro": "短", "detail_url": f"/news/dj_detail?id={i}"}
+            for i in range(3)
+        ]}
+        _detail_calls = {"n": 0}
+        dn.http_post = lambda url, **kw: _FakeResp(data=_many_rows)
+        def _counted_detail(url, **kw):
+            _detail_calls["n"] += 1
+            return _FakeResp(text=_late_html)
+        dn.http_get = _counted_detail
+        _limited, _limited_err = dn.fetch_latepost(
+            _late_src, dn.datetime(2026, 7, 12, tzinfo=dn.timezone.utc), 1, now=_ref)
+        check("latepost 只为最终限额内文章抓详情",
+              not _limited_err and len(_limited) == 1 and _detail_calls["n"] == 1)
+    finally:
+        dn.http_post, dn.http_get = _orig_post, _orig_get
 
 # --- fetch_bilibili_hot（monkeypatch http_get）---
 dn.http_get = lambda url, **kw: _FakeResp(data={"data": {"trending": {"list": [
@@ -1179,7 +1270,7 @@ try:
           and not dn.validate_weekly_references(cross_payload,
           [dn.read_daily_payload(p) for p in sorted((cross / "daily").glob("*.js"))]))
 
-    # ---- http_get 重试兜底（stub requests.get + time.sleep，不联网）----
+    # ---- http_get/http_post 重试兜底（stub requests + time.sleep，不联网）----
     class _Resp:
         def raise_for_status(self):
             pass
@@ -1209,6 +1300,21 @@ try:
         check("http_get 始终失败则抛且共尝试 retries+1 次", raised and calls["n"] == 3)
     finally:
         dn.requests.get, dn.time.sleep = orig_get, orig_sleep
+
+    post_calls = {"n": 0}
+    orig_post, orig_sleep = dn.requests.post, dn.time.sleep
+    dn.time.sleep = lambda *a, **k: None
+    try:
+        def _flaky_post(url, **kw):
+            post_calls["n"] += 1
+            if post_calls["n"] < 2:
+                raise IOError("reset")
+            return _Resp()
+        dn.requests.post = _flaky_post
+        r = dn.http_post("http://x", data={"page": 1}, retries=2)
+        check("http_post 失败后重试成功", isinstance(r, _Resp) and post_calls["n"] == 2)
+    finally:
+        dn.requests.post, dn.time.sleep = orig_post, orig_sleep
 
     # ---- 画像"学习参考系"段：切分 + 熬过蒸馏（stub LLM 返回丢掉参考系段的结果）----
     rest, blk = dn.split_section(

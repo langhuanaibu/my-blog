@@ -191,7 +191,7 @@ GITHUB_BRANCH=main
 - `feedback.json` / `read_later.json` / `favorites.json`：由 `api/newsState.js` 写入，分别保存反馈、稍后读和 ⭐ 收藏状态，各封顶 1000 条。稍后读/收藏按 `item_id + date` 去重；收藏只存 `date + item_id` 引用（外加 title/category/url 兜底字段，url 可缺省），收藏页凭引用从 `daily/*.js` 重渲染完整卡片，管线暂不消费 favorites。反馈支持删除式撤销：payload 带 `op: "remove"` 时删除最后一条同 `date + item_id + action` 的记录（页面「更多类似」再点一次即撤销）；管线当晚已蒸馏进画像的部分不回滚，需手改 `interest_profile.md`。
 - `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行（也可一次性手写丰富的种子画像），但偏好要写成以 `- ` 开头的要点。画像既影响精选排序（兴趣契合分），也用于生成每条精选的"对我的意义"。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
-- `deep_health.json`：最近 14 天深度阅读来源与栏目候选/入选统计，用于识别失效、垄断和长期零贡献源。
+- `deep_health.json`：最近 14 天深度阅读健康度（v2），按源区分抓取成功/失败、窗口内抓取量、去重后候选、已评分、主题匹配、过线和入选；即使当日零候选也会留记录，避免把低频源误判为失效源。
 - `papers_seen.json`：今日论文（HF Daily Papers）推荐去重记录，按 `config.yaml` 的 `papers.seen_keep_days` 保留。
 - `vocab/YYYY-MM-DD.js` / `vocab-book.json`：**单词本功能已于 2026-07-10 停用**（`config.yaml` 的 `vocab.enabled: false`，管线不再每日挑词；前端界面已移除）。历史数据文件与 `api/vocab.js` 接口原地保留，想恢复时把 enabled 改回 true、前端从 git 历史找回单词本界面即可。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。
@@ -215,7 +215,7 @@ GITHUB_BRANCH=main
 - 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录。
 - ⭐ 收藏（仅个人会话）：独立于稍后读的永久精华库——稍后读是待读队列（读完沉底），收藏是"觉得最有价值就存"。精选、深度阅读、今日论文三类卡片上都有 ⭐ 按钮（再点取消）；收藏页按收藏时间倒序使用单列阅读流，并提供全部、新闻、深读、论文类型筛选。条目凭 `date + item_id` 引用从对应 daily 文件懒加载并重渲染完整卡片，跨天引用沿用 `日期:id` 复合键；服务端列表会并入本地高亮缓存（`news_fav`，永久不清理），换设备后卡片 ★ 状态一致。
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
-- 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`，每个源归入 `ai_engineering`、`tech_business`、`zh_society_finance` 三栏。每天先从各栏选一篇过线文章，空栏名额再按总分释放，仍最多 3 篇且不降低 7 分门槛；`deep_health.json` 滚动记录近 14 天各来源/栏目的候选与入选量。深读失败只丢当天深读推荐，不影响新闻日报产出。
+- 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`，每个源归入 `ai_engineering`、`tech_business`、`society_finance` 三栏（旧配置名 `zh_society_finance` 仍可读，新数据只写新名）。每天先从各栏选一篇过线文章，空栏名额再按总分释放，仍最多 3 篇且不降低 7 分门槛。`deep_sources.type` 可切换专用适配器；综合评论源可用 `topic_filter: finance` 仅保留宏观、商业、市场、劳动和公共经济政策文章。深读失败只丢当天深读推荐，不影响新闻日报产出。
 - 今日论文频道同样独立于新闻主管线：抓 **Hugging Face Daily Papers**（社区精选 + 点赞，公开接口无需 key），LLM 按 `interest_profile.md` 的学习坐标（前端/全栈/AI 应用/自动化）从当天几十篇里挑 3-4 篇，产出中文标题、"该读什么/该补什么概念"，带点赞数与"是否有开源代码"标记。写进 daily js 的 `papers` 字段，前端日视图「今日论文」板块渲染（紫色左边框区别于深读）。论文不是新闻——不进精选评分、不占五类名额。参数在 `config.yaml` 的 `papers` 段（`enabled`/`lookback_days`/`max_candidates`/`pick_threshold`/`pick_max`/`seen_keep_days`），失败只记日志、不阻断每日产出。
 - 舆论观察：微博/B站热榜（`sources.yaml` 的 `pulse_sources`，直连公开接口）只作两个用途，热榜词条本身永不成为新闻条目——①`opinion_pulse` 用 LLM 挑 2-3 个值得说的传播现象，讲"为何热/群体情绪/平台机制"（滤纯明星八卦），写 daily js 的 `opinion` 字段，前端「舆论观察」板块渲染（琥珀色左边框）；②co-occurrence 暗排序：热榜词条与真新闻事件文本重合（4 字连片或二元组覆盖 ≥0.5）时，该事件最终分乘 `opinion.cooccur_bonus`（默认 1.08）。参数在 `config.yaml` 的 `opinion` 段；热榜抓取或 LLM 失败只丢当天舆论板块，不阻断日报。
 - 周综述按周一至周日的自然周生成：主管线每次日报运行都会幂等检查最近一个已结束周，覆盖至少 **5/7** 天且报告尚不存在时才合成，低于门槛则跳过；报告会列出覆盖期数与缺失日期。新版静态数据为兼容型 v2，包含周主线、数字盘点、3-6 个动态主题、代表报道复合引用（`date:item_id`）、上周判断回收、下周信号，以及单列的深读/论文引用；写入前会校验全部引用存在。旧周报不改写，低于 5/7 的旧报告不进入新版归档。**失败只记日志、不阻断每日产出，也不进发布校验**；不新增 workflow。

@@ -116,6 +116,23 @@ def http_get(url, timeout=20, retries=2, backoff=1.5):
     raise last
 
 
+def http_post(url, data=None, timeout=20, retries=2, backoff=1.5, headers=None):
+    """带指数退避的 POST，仅用于读取公开数据端点。"""
+    last = None
+    req_headers = {"User-Agent": UA}
+    req_headers.update(headers or {})
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.post(url, data=data, headers=req_headers, timeout=timeout)
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            last = e
+            if attempt < retries:
+                time.sleep(backoff * (attempt + 1))
+    raise last
+
+
 def fetch_rss(src, window_start, max_items):
     """返回 (items, fetch_error)。fetch_error=True 表示抓取本身失败，
     与"源正常但窗口内无新文章"（items 为空、error=False）区分开。"""
@@ -251,6 +268,107 @@ def fetch_thepaper_list(src, window_start, max_items):
     return items[:max_items], False
 
 
+LATEPOST_TZ = timezone(timedelta(hours=8))
+
+
+def parse_latepost_time(value, now=None):
+    """解析晚点列表的中国时区日期。无法可靠推断年份时返回 None。"""
+    text = str(value or "").strip()
+    if not text:
+        return None
+    ref = now or datetime.now(timezone.utc)
+    local_now = ref.astimezone(LATEPOST_TZ)
+    if text == "昨天":
+        target = local_now.date() - timedelta(days=1)
+        return datetime(target.year, target.month, target.day, tzinfo=LATEPOST_TZ)
+    full = re.fullmatch(r"(20\d{2})年(\d{1,2})月(\d{1,2})日", text)
+    short = re.fullmatch(r"(\d{1,2})月(\d{1,2})日", text)
+    try:
+        if full:
+            return datetime(int(full.group(1)), int(full.group(2)), int(full.group(3)),
+                            tzinfo=LATEPOST_TZ)
+        if short:
+            month, day = int(short.group(1)), int(short.group(2))
+            candidate = datetime(local_now.year, month, day, tzinfo=LATEPOST_TZ)
+            if candidate.date() <= local_now.date():
+                return candidate
+            # 跨年初可以可靠判定 11/12 月属于上一年；其他未来日期丢弃。
+            if local_now.month == 1 and month >= 11:
+                return datetime(local_now.year - 1, month, day, tzinfo=LATEPOST_TZ)
+    except ValueError:
+        return None
+    return None
+
+
+def extract_latepost_content(page_html):
+    """从晚点详情页提取正文；选择器失效时不用全页导航充当正文。"""
+    for class_hint in ("article-body", "detail-content", "detail-con",
+                       "article-content", "news-content"):
+        m = re.search(
+            rf'<(?:div|article)[^>]*class=["\'][^"\']*{class_hint}[^"\']*["\'][^>]*>'
+            r'(.*?)</(?:div|article)>', page_html or "", re.I | re.S)
+        if m:
+            return strip_html(m.group(1))
+    return ""
+
+
+def fetch_latepost(src, window_start, max_items, now=None):
+    """晚点长报道适配器：公开 JSON 列表 + 服务端详情页，无浏览器依赖。"""
+    base = str(src.get("url") or "https://www.latepost.com").rstrip("/")
+    endpoint = base + "/news/get-news-data"
+    try:
+        resp = http_post(
+            endpoint,
+            data={"page": 1, "limit": max(max_items * 2, 10), "programa": 4},
+            headers={"Referer": base + "/news/index?proma=4"})
+        payload = resp.json()
+        rows = payload.get("data", []) if payload.get("code") == 1 else []
+    except Exception as e:
+        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        return [], True
+
+    pending = []
+    reference = now or datetime.now(timezone.utc)
+    for row in rows:
+        title = strip_html(row.get("title", ""))
+        detail_url = str(row.get("detail_url") or "")
+        pub = parse_latepost_time(row.get("release_time"), reference)
+        if not title or not detail_url or pub is None or pub < window_start:
+            continue
+        url = detail_url if detail_url.startswith("http") else base + "/" + detail_url.lstrip("/")
+        summary = strip_html(" ".join(str(row.get(k) or "")
+                                      for k in ("intro", "abstract", "problem", "answer")))
+        pending.append({"title": title, "url": url, "summary": summary, "pub": pub})
+
+    pending.sort(key=lambda x: x["pub"], reverse=True)
+    items = []
+    for row in pending[:max_items]:
+        title, url, summary, pub = (row["title"], row["url"], row["summary"], row["pub"])
+        content = ""
+        if len(summary) < 80:
+            try:
+                content = extract_latepost_content(http_get(url).text)
+            except Exception as e:
+                log(f"  ⚠ {src['name']}: 详情页读取失败 ({e})")
+        if not content:
+            content = summary
+        desc = content[:400] if content and len(summary) < 80 else (summary or content[:400])
+        items.append({
+            "title": title,
+            "url": url,
+            "desc": desc[:400],
+            "content_chars": len(re.sub(r"\s", "", content)),
+            "content_words": len(content.split()),
+            "time": pub.isoformat(),
+            "source": src["name"],
+            "source_id": src["id"],
+            "source_type": src.get("source_type", "analysis"),
+            "tier": src.get("tier", "T1.5"),
+            "credibility": src.get("credibility", 8),
+        })
+    return items, False
+
+
 # ----------------------------------------------------------------
 # 1.1 舆论热榜适配器（直连公开接口，无 RSSHub / 无浏览器）
 #   热榜词条只作两个用途，本身永不成为新闻条目：
@@ -325,7 +443,8 @@ def fetch_pulse_all(src_cfg):
     return pulse
 
 
-FETCHERS = {"aihot": fetch_aihot, "thepaper_list": fetch_thepaper_list}
+FETCHERS = {"aihot": fetch_aihot, "thepaper_list": fetch_thepaper_list,
+            "latepost": fetch_latepost}
 
 
 def fetch_all(sources, cfg):
@@ -1637,11 +1756,14 @@ DEEP_SYSTEM = """你为个人读者筛选"今天值得花时间深读的长文"�
 - 独到洞察：提供新框架、方法论或反直觉结论
 - 持久价值：一周后再读仍有价值
 显著契合兴趣画像可 +1，明确落在画像"不关注"里的 -2。宁缺毋滥，平庸的给低分。
+候选行若标有 filter=finance，还要判断文章核心是否属于宏观经济、商业/产业、市场、
+劳动就业或公共经济政策。普通 AI/科技/政治评论不算，除非经济或商业分析是主体。
 对每篇输出：
 {"idx": 编号, "score": 0-10, "title_zh": "中文标题（中文原题则原样保留，≤30字）",
  "brief": "一句话讲这篇是什么（≤40字）", "why": "为什么值得花时间读（≤60字）",
  "key_points": ["核心观点，最多3条，每条≤60字"], "audience": "适合谁读（≤50字）",
- "takeaway": "读完最该带走的一句话（≤80字）"}
+ "takeaway": "读完最该带走的一句话（≤80字）", "topic_fit": true|false}
+未标 filter 的候选，topic_fit 一律输出 true。
 只输出 JSON 数组，不要其他文字。"""
 
 
@@ -1671,18 +1793,36 @@ def load_deep_seen(data_dir, date_str, filename="deep_seen.json"):
     return seen
 
 
-DEEP_CHANNELS = ("ai_engineering", "tech_business", "zh_society_finance")
+DEEP_CHANNELS = ("ai_engineering", "tech_business", "society_finance")
+
+
+def normalize_deep_channel(channel):
+    """兼容旧配置名；新数据统一写 society_finance。"""
+    return "society_finance" if channel == "zh_society_finance" else channel
 
 
 def deep_source_channel(source):
     """旧配置兼容映射；新源应在 sources.yaml 显式声明 channel。"""
-    if source.get("channel") in DEEP_CHANNELS:
-        return source["channel"]
+    configured = normalize_deep_channel(source.get("channel"))
+    if configured in DEEP_CHANNELS:
+        return configured
     if source.get("lang") == "zh":
-        return "zh_society_finance"
+        return "society_finance"
     if source.get("id") in {"stratechery", "pragmaticengineer"}:
         return "tech_business"
     return "ai_engineering"
+
+
+def deep_fetcher(source):
+    """深读源与主抓取线共用同一 type -> fetcher 协议。"""
+    return FETCHERS.get(source.get("type", "rss"), fetch_rss)
+
+
+def deep_topic_matches(source, result):
+    """只对声明了主题过滤的综合源启用严格匹配。"""
+    if not source.get("topic_filter"):
+        return True
+    return result.get("topic_fit") is True
 
 
 def select_deep_soft_quota(scored, pick_max):
@@ -1704,30 +1844,58 @@ def select_deep_soft_quota(scored, pick_max):
     return selected
 
 
-def update_deep_health(data_dir, date_str, sources, candidates, picked):
-    """记录最近 14 天深读来源/栏目的候选与入选量，供后续健康审计。"""
+def update_deep_health(data_dir, date_str, sources, fetch_stats, candidates,
+                       score_stats, picked):
+    """记录最近 14 天深读抓取、去重、评分、主题匹配与入选。"""
     path = data_dir / "deep_health.json"
-    health = {"version": 1, "days": {}}
+    health = {"version": 2, "days": {}}
     if path.exists():
         try:
             loaded = json.loads(path.read_text(encoding="utf-8"))
             if isinstance(loaded.get("days"), dict):
-                health = loaded
+                health["days"] = loaded["days"]
         except Exception as e:
             log(f"  deep_health.json 读取失败，重建: {e}")
-    source_rows = {s["id"]: {"candidates": 0, "picked": 0} for s in sources}
-    channel_rows = {c: {"candidates": 0, "picked": 0} for c in DEEP_CHANNELS}
+    source_rows = {}
+    source_by_id = {s["id"]: s for s in sources}
+    for source in sources:
+        stat = fetch_stats.get(source["id"], {})
+        source_rows[source["id"]] = {
+            "fetch_ok": not bool(stat.get("error", False)),
+            "fetch_error": "fetch_failed" if stat.get("error", False) else "",
+            "fetched": int(stat.get("count", 0)),
+            "candidates": 0,
+            "scored": 0,
+            "topic_matched": 0,
+            "above_threshold": 0,
+            "picked": 0,
+        }
+    channel_rows = {c: {"candidates": 0, "scored": 0, "topic_matched": 0,
+                        "above_threshold": 0, "picked": 0}
+                    for c in DEEP_CHANNELS}
     for item in candidates:
-        sid, channel = item.get("source_id"), item.get("channel", "ai_engineering")
-        source_rows.setdefault(sid, {"candidates": 0, "picked": 0})["candidates"] += 1
-        channel_rows.setdefault(channel, {"candidates": 0, "picked": 0})["candidates"] += 1
+        sid = item.get("source_id")
+        channel = normalize_deep_channel(item.get("channel", "ai_engineering"))
+        if sid in source_rows:
+            source_rows[sid]["candidates"] += 1
+        channel_rows[channel]["candidates"] += 1
+    for sid, metrics in score_stats.items():
+        if sid not in source_rows:
+            continue
+        channel = deep_source_channel(source_by_id[sid])
+        for key in ("scored", "topic_matched", "above_threshold"):
+            value = int(metrics.get(key, 0))
+            source_rows[sid][key] = value
+            channel_rows[channel][key] += value
     picked_urls = {item.get("url") for item in picked}
     for item in candidates:
         if item.get("url") not in picked_urls:
             continue
-        sid, channel = item.get("source_id"), item.get("channel", "ai_engineering")
-        source_rows.setdefault(sid, {"candidates": 0, "picked": 0})["picked"] += 1
-        channel_rows.setdefault(channel, {"candidates": 0, "picked": 0})["picked"] += 1
+        sid = item.get("source_id")
+        channel = normalize_deep_channel(item.get("channel", "ai_engineering"))
+        if sid in source_rows:
+            source_rows[sid]["picked"] += 1
+        channel_rows[channel]["picked"] += 1
     health["days"][date_str] = {"sources": source_rows, "channels": channel_rows}
     cutoff = (datetime.strptime(date_str, "%Y-%m-%d") - timedelta(days=13)).strftime("%Y-%m-%d")
     health["days"] = {d: v for d, v in health["days"].items() if d >= cutoff}
@@ -1751,42 +1919,66 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         window_start = datetime.now(timezone.utc) - timedelta(
             hours=int(dcfg.get("window_hours", 78)))
         max_per = int(dcfg.get("max_per_source", 5))
-        candidates = []
+        fetched_candidates = []
+        fetch_stats = {}
         for s in deep_sources:
             src = dict(s, source_type="analysis", credibility=7)
-            fetched, _err = fetch_rss(src, window_start, max_per)
+            fetched, err = deep_fetcher(src)(src, window_start, max_per)
+            fetch_stats[s["id"]] = {"count": len(fetched), "error": err}
             for it in fetched:
                 it["source_id"] = s["id"]
                 it["source"] = s["name"]
                 it["lang"] = s.get("lang", "en")
                 it["channel"] = deep_source_channel(s)
-            candidates += fetched
+                it["topic_filter"] = s.get("topic_filter", "")
+            fetched_candidates += fetched
 
         data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
         seen = load_deep_seen(data_dir, date_str)
-        candidates = [c for c in candidates if c["url"] not in seen["urls"]]
+        candidates = [c for c in fetched_candidates if c["url"] not in seen["urls"]]
         log(f"  深读候选：{len(candidates)} 篇（去重后）")
         if not candidates:
+            update_deep_health(data_dir, date_str, deep_sources, fetch_stats,
+                               candidates, {}, [])
             return []
 
-        lines = [f"[{i}] ({c['source']}/{c['lang']}) {c['title']}\n    {c['desc'][:200]}"
+        lines = [f"[{i}] ({c['source']}/{c['lang']}"
+                 f"{'; filter=' + c['topic_filter'] if c.get('topic_filter') else ''}) "
+                 f"{c['title']}\n    {c['desc'][:200]}"
                  for i, c in enumerate(candidates)]
         user = ""
         if profile_has_content(profile_text):
             user = "【兴趣画像】\n" + profile_text + "\n\n"
         user += "【候选文章】\n" + "\n".join(lines)
-        result = llm.json_call(DEEP_SYSTEM, user)
+        try:
+            result = llm.json_call(DEEP_SYSTEM, user)
+        except Exception:
+            update_deep_health(data_dir, date_str, deep_sources, fetch_stats,
+                               candidates, {}, [])
+            raise
 
         scored = []
+        score_stats = {}
+        source_by_id = {s["id"]: s for s in deep_sources}
+        threshold = float(dcfg.get("pick_threshold", 7))
         for r in (result if isinstance(result, list) else []):
             try:
                 i, score = int(r["idx"]), float(r["score"])
             except Exception:
                 continue
             if 0 <= i < len(candidates):
+                sid = candidates[i].get("source_id")
+                metrics = score_stats.setdefault(
+                    sid, {"scored": 0, "topic_matched": 0, "above_threshold": 0})
+                metrics["scored"] += 1
+                if deep_topic_matches(source_by_id.get(sid, {}), r):
+                    metrics["topic_matched"] += 1
+                    if score >= threshold:
+                        metrics["above_threshold"] += 1
+                else:
+                    continue
                 r["channel"] = candidates[i].get("channel", "ai_engineering")
                 scored.append((max(0.0, min(10.0, score)), i, r))
-        threshold = float(dcfg.get("pick_threshold", 7))
         pick_max = int(dcfg.get("pick_max", 3))
         scored = select_deep_soft_quota([t for t in scored if t[0] >= threshold], pick_max)
 
@@ -1832,7 +2024,8 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         (data_dir / "deep_seen.json").write_text(
             json.dumps(seen, ensure_ascii=False, indent=1), encoding="utf-8")
         try:
-            update_deep_health(data_dir, date_str, deep_sources, candidates, deep)
+            update_deep_health(data_dir, date_str, deep_sources, fetch_stats,
+                               candidates, score_stats, deep)
         except Exception as e:
             log(f"  深读健康统计写入失败: {e}")
         log(f"  深读推荐：{len(deep)} 篇（阈值 {threshold} 分）")
