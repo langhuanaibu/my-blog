@@ -2,6 +2,7 @@ import { routeUrl } from "./router.js";
 
 export const CATEGORY_LABELS = { ai: "AI", tech: "互联网/科技", finance: "财经", society: "社会", world: "国际" };
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
+const STATUS_CLASSES = new Set(["已确认", "发展中", "有争议", "仅传言"]);
 export const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 export const safeUrl = (value) => /^https?:\/\//i.test(value || "") ? escapeHtml(value) : "#";
 
@@ -26,7 +27,7 @@ export function actionButtons(item, options = {}) {
 export function dailyCard(item, date, options = {}) {
   const timeline = options.timeline || null;
   return `<article class="card report-card${timeline ? ` timeline-entry${timeline.continuation ? " is-continuation" : ""}` : ""}" data-item-id="${escapeHtml(item.id)}">
-    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag">${escapeHtml(item.status)}</span>` : ""}</div>
+    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}</div>
     <h3><a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>${escapeHtml(item.title)}</a></h3>
     ${item.summary ? `<p class="sum">${escapeHtml(item.summary)}</p>` : ""}
     ${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}

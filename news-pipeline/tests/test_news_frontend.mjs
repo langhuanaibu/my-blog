@@ -6,6 +6,7 @@ import { readFile } from "node:fs/promises";
 import { parseRoute, routeUrl } from "../../source/news/js/router.js";
 import { daily as loadDaily, weekly as loadWeekly } from "../../source/news/js/data-loader.js";
 import { dailyCard, renderDailyReport, renderDetail, renderWeeklyReport } from "../../source/news/js/reports.js";
+import * as TimelineView from "../../source/news/js/timeline-view.js";
 import { updateNavigation } from "../../source/news/js/accessibility.js";
 
 const daily = {
@@ -74,8 +75,20 @@ test("日报固定五类全部展开，精选卡只直出摘要和为什么重�
 });
 
 test("时间线卡片保留事实状态徽标", () => {
-  const html = dailyCard({ ...daily.items[0], status: "有争议" }, daily.date, { timeline: { time: "09:00" } });
-  assert.match(html, /有争议/);
+  for (const status of ["已确认", "发展中", "有争议", "仅传言"]) {
+    const dom = new JSDOM(`<main>${dailyCard({ ...daily.items[0], status }, daily.date, { timeline: { time: "09:00" } })}</main>`);
+    const tag = [...dom.window.document.querySelectorAll(".card-top .tag")].find((node) => node.textContent === status);
+    assert.ok(tag?.classList.contains(`st-${status}`), `${status} 应输出语义状态类`);
+  }
+});
+
+test("时间线日期按北京时间统一格式并标记今天昨天", () => {
+  const now = new Date("2026-07-16T16:30:00Z").getTime();
+  assert.equal(TimelineView.formatTimelineDate("2026-07-17", now), "今天 · 7月17日 周五");
+  assert.equal(TimelineView.formatTimelineDate("2026-07-16", now), "昨天 · 7月16日 周四");
+  assert.equal(TimelineView.formatTimelineDate("2026-07-15", now), "7月15日 周三");
+  const nextBeijingDay = new Date("2026-07-17T16:30:00Z").getTime();
+  assert.equal(TimelineView.formatTimelineDate("2026-07-17", nextBeijingDay), "昨天 · 7月17日 周五");
 });
 
 test("重大更新在卡片和详情中明确标注首次收录日期", () => {
@@ -152,4 +165,18 @@ test("hidden attribute wins over component display styles", async () => {
   assert.match(css, /(?:^|\})\s*\[hidden\]\s*\{\s*display\s*:\s*none\s*!important\s*\}/);
   const dom = new JSDOM(`<style>${css}</style><div class="archive-controls" hidden>周报归档</div>`, { pretendToBeVisual: true });
   assert.equal(dom.window.getComputedStyle(dom.window.document.querySelector(".archive-controls")).display, "none");
+});
+
+test("日报视觉 token 区分阅读表面、浮层和触屏 hover", async () => {
+  const css = await readFile(new URL("../../source/news/news.css", import.meta.url), "utf8");
+  assert.match(css, /--reading-col\s*:\s*780px/);
+  assert.match(css, /--card-border\s*:/);
+  assert.match(css, /\.daily-report\s*,\s*\.weekly-report\s*\{[^}]*max-width\s*:\s*var\(--reading-col\)/s);
+  assert.match(css, /#backTop\s*\{[^}]*box-shadow\s*:\s*var\(--shadow2\)/s);
+  assert.match(css, /\.toast\s*\{[^}]*box-shadow\s*:\s*var\(--shadow2\)/s);
+  assert.match(css, /@media\s*\(hover:hover\)\s*and\s*\(pointer:fine\)\s*\{[^}]*\.card:not\(\.timeline-entry\):hover/s);
+  assert.match(css, /@media\s*\(max-width:899px\)[\s\S]*min-height\s*:\s*44px/);
+  assert.match(css, /\.vcard\s*\{[^}]*box-shadow\s*:\s*var\(--vocab-shadow\)/s);
+  assert.match(css, /\.all-tools input\s*,\s*\.all-tools select\s*\{width\s*:\s*100%;min-height\s*:\s*44px\}/);
+  assert.match(css, /\.datenav button\s*,\s*#dayCtrls button\s*\{[^}]*background\s*:\s*var\(--card-h\)[^}]*color\s*:\s*var\(--text\)/s);
 });

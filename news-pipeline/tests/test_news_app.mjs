@@ -177,7 +177,8 @@ test("timeline renders a continuous Beijing-time stream with a light mainline an
   assert.ok(dom.window.document.querySelector('[data-timeline-action="set-cat"]'));
   assert.ok(dom.window.document.querySelector('[data-timeline-action="set-tag"]'));
   const older = dom.window.document.querySelector('[data-timeline-action="more"]'); older.click(); await app.idle();
-  assert.match(dom.window.document.querySelector("main").textContent, /2026-07-09/);
+  const olderDate = dom.window.document.querySelector('time[datetime="2026-07-09"]');
+  assert.equal(olderDate?.textContent, "7月9日 周四");
   const search = dom.window.document.querySelector("#timelineSearch"); search.value = "保留"; search.dispatchEvent(new dom.window.Event("input", { bubbles: true })); await app.idle();
   assert.match(dom.window.document.querySelector("main").textContent, /保留新闻/);
 });
@@ -227,8 +228,8 @@ test("timeline marks continuations and keeps card links separate from external a
 test("timeline renders actual published-date groups even when they differ from selected report dates", async () => {
   const api = dataApi(); api.daily = async () => ({ date: day.date, items: [{ id: "pick-old", tier: "pick", category: "ai", title: "前日发布", summary: "摘要", score: 80, time: "2026-07-13T16:30:00Z", sources: [] }] }); api.index = async () => [[day.date, "pick-old", "pick", "ai", "前日发布", "模型"]];
   const make = async (url) => { const dom = shell(url); const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] }, timelineApi: TimelineCore }); await app.start(); return { dom, app }; };
-  const ordinary = await make("https://example.test/news/?view=timeline"); assert.match(ordinary.dom.window.document.querySelector(".timeline-day").textContent, /2026-07-14/); assert.match(ordinary.dom.window.document.querySelector(".timeline-day").textContent, /前日发布/);
-  const searched = await make("https://example.test/news/?view=timeline"); const input = searched.dom.window.document.querySelector("#timelineSearch"); input.value = "前日"; input.dispatchEvent(new searched.dom.window.Event("input", { bubbles: true })); await new Promise((resolve) => setTimeout(resolve, 160)); await searched.app.idle(); assert.match(searched.dom.window.document.querySelector(".timeline-day").textContent, /2026-07-14/); assert.match(searched.dom.window.document.querySelector(".timeline-day").textContent, /前日发布/);
+  const ordinary = await make("https://example.test/news/?view=timeline"); assert.equal(ordinary.dom.window.document.querySelector('.timeline-day time[datetime="2026-07-14"]')?.textContent, "7月14日 周二"); assert.match(ordinary.dom.window.document.querySelector(".timeline-day").textContent, /前日发布/);
+  const searched = await make("https://example.test/news/?view=timeline"); const input = searched.dom.window.document.querySelector("#timelineSearch"); input.value = "前日"; input.dispatchEvent(new searched.dom.window.Event("input", { bubbles: true })); await new Promise((resolve) => setTimeout(resolve, 160)); await searched.app.idle(); assert.equal(searched.dom.window.document.querySelector('.timeline-day time[datetime="2026-07-14"]')?.textContent, "7月14日 周二"); assert.match(searched.dom.window.document.querySelector(".timeline-day").textContent, /前日发布/);
 });
 
 test("timeline search debounces typing, restores focus/caret and rejects stale async results", async () => {
