@@ -21,21 +21,32 @@
 """
 import argparse
 import concurrent.futures
+from contextlib import contextmanager
 import hashlib
 import html
+import ipaddress
 import json
+import queue
 from email.utils import format_datetime
 import os
 import re
+import shutil
+import socket
 import sys
+import tempfile
+import threading
 import time
+import unicodedata
 from datetime import datetime, timedelta, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 
 import feedparser
 import requests
 import yaml
+from requests.adapters import HTTPAdapter
+from urllib3.util import Timeout
 
 # Windows 控制台中文输出
 if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
@@ -58,6 +69,45 @@ TIER_ORDER = {"T1": 0, "T1.5": 1, "T2": 2}
 DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
 QUALITY_NEUTRAL_EVIDENCE = 5.0
 QUALITY_EXTENSION_FIELDS = ("why", "context", "significance", "watch", "detail", "claims")
+OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "significance", "watch", "detail")
+OBJECTIVITY_FIELD_LIMITS = {
+    "title": 30,
+    "summary": 100,
+    "why": 80,
+    "context": 80,
+    "significance": 70,
+    "watch": 60,
+    "detail": 800,
+}
+OBJECTIVITY_COPY_MIN_LENGTHS = {
+    "title": 24,
+    "summary": 48,
+    "why": 48,
+    "context": 48,
+    "significance": 48,
+    "watch": 40,
+    "detail": 80,
+    "claims": 60,
+}
+EVIDENCE_RISK_FLAGS = (
+    "politics_geopolitics", "armed_conflict", "allegation_legal",
+    "public_safety_health", "high_impact_numbers",
+)
+TRUSTED_PROVENANCE = {"original", "official", "first_party"}
+ARTICLE_MAX_BYTES = 2 * 1024 * 1024
+ARTICLE_MAX_CHARS = 4000
+ARTICLE_MIN_CHARS = 200
+ARTICLE_ATTEMPT_TIMEOUT = 10.0
+ARTICLE_ATTEMPT_WORKERS = 6
+_ARTICLE_ATTEMPT_SLOTS = threading.BoundedSemaphore(ARTICLE_ATTEMPT_WORKERS)
+_ARTICLE_CLEANUP_SLOTS = threading.BoundedSemaphore(ARTICLE_ATTEMPT_WORKERS)
+ROLLOUT_QUALITY_FIELDS = {
+    "article_fetch_attempts", "article_fetch_successes", "article_fetch_retries",
+    "article_http_requests", "evidence_fulltext_sources", "evidence_snippet_sources",
+    "high_risk_single_publisher", "corroboration_candidates", "corroboration_matches",
+    "objectivity_audited", "objectivity_repaired", "objectivity_degraded",
+    "high_risk_demoted",
+}
 
 
 def new_quality_stats():
@@ -69,12 +119,201 @@ def new_quality_stats():
         "cross_day_duplicates": 0,
         "material_updates": 0,
         "update_judge_failures": 0,
+        "article_fetch_attempts": 0,
+        "article_fetch_successes": 0,
+        "article_fetch_retries": 0,
+        "article_http_requests": 0,
+        "evidence_fulltext_sources": 0,
+        "evidence_snippet_sources": 0,
+        "high_risk_single_publisher": 0,
+        "corroboration_candidates": 0,
+        "corroboration_matches": 0,
+        "objectivity_audited": 0,
+        "objectivity_repaired": 0,
+        "objectivity_degraded": 0,
+        "high_risk_demoted": 0,
         "degraded": False,
     }
 
 
 def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+def parse_cli_args(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true", help="只抓取，不调 LLM")
+    parser.add_argument("--date", default=None, help="输出日期 YYYY-MM-DD，默认今天")
+    parser.add_argument(
+        "--objectivity-shadow", action="store_true",
+        help="运行完整证据/客观性路径，但不写入公开数据",
+    )
+    return parser.parse_args(argv)
+
+
+def resolve_run_policy(cfg, args):
+    """Resolve the explicit rollout gate without mutating configuration."""
+    configured = str((cfg.get("objectivity") or {}).get("mode") or "interim").strip().lower()
+    if configured not in {"interim", "active"}:
+        raise ValueError("objectivity.mode must be interim or active")
+    mode = "shadow" if bool(getattr(args, "objectivity_shadow", False)) else configured
+    return {
+        "mode": mode,
+        "full_objectivity": mode in {"shadow", "active"},
+        "writes_public_data": mode != "shadow",
+    }
+
+
+def prepare_run_data_dir(policy, environ=None):
+    """Return the public directory or an owned snapshot directory for shadow."""
+    environ = os.environ if environ is None else environ
+    configured = str(environ.get("DATA_DIR") or "").strip()
+    public_dir = Path(configured) if configured else ROOT / "data"
+    if not policy["writes_public_data"]:
+        owner = tempfile.TemporaryDirectory(prefix="news-objectivity-shadow-")
+        shadow_dir = Path(owner.name)
+        try:
+            if public_dir.exists():
+                shutil.copytree(public_dir, shadow_dir, dirs_exist_ok=True)
+        except Exception:
+            owner.cleanup()
+            raise
+        return shadow_dir, owner
+    return public_dir, None
+
+
+@contextmanager
+def managed_run_data_dir(policy, environ=None):
+    """Install a shadow snapshot for the whole run and always restore/clean it."""
+    environ = os.environ if environ is None else environ
+    run_dir, owner = prepare_run_data_dir(policy, environ)
+    if owner is None:
+        yield run_dir
+        return
+    existed = "DATA_DIR" in environ
+    previous = environ.get("DATA_DIR")
+    environ["DATA_DIR"] = str(run_dir)
+    try:
+        yield run_dir
+    finally:
+        if existed:
+            environ["DATA_DIR"] = previous
+        else:
+            environ.pop("DATA_DIR", None)
+        owner.cleanup()
+
+
+def _rollout_output_enabled(cfg):
+    mode = str(cfg.get("_objectivity_runtime_mode")
+               or (cfg.get("objectivity") or {}).get("mode") or "interim").lower()
+    return mode in {"shadow", "active"}
+
+
+def _quality_for_output(quality, include_rollout):
+    result = {**new_quality_stats(), **(quality or {})}
+    if not include_rollout:
+        for field in ROLLOUT_QUALITY_FIELDS:
+            result.pop(field, None)
+    return result
+
+
+def _strip_rollout_item_fields(rows):
+    for row in rows:
+        row.pop("evidence", None)
+        for source in row.get("sources") or []:
+            if isinstance(source, dict):
+                source.pop("evidence_basis", None)
+                source.pop("evidence_chain", None)
+    return rows
+
+
+def build_shadow_summary(selected_before, selected_after, items, quality, runtime_seconds):
+    """Build an allow-listed aggregate; article text and configuration never enter it."""
+    basis_counts = {"fulltext": 0, "mixed": 0, "snippet": 0}
+    chain_counts = {}
+    source_counts = {}
+    high_risk = 0
+    single_source = 0
+    for event in selected_before:
+        if _event_is_high_risk(event):
+            high_risk += 1
+        evidence = event.get("evidence") if isinstance(event.get("evidence"), dict) else {}
+        basis = evidence.get("basis") if evidence.get("basis") in basis_counts else "snippet"
+        basis_counts[basis] += 1
+        publishers = evidence.get("publisher_count", 0)
+        if isinstance(publishers, int) and not isinstance(publishers, bool) and publishers <= 1:
+            single_source += 1
+        chains = evidence.get("independent_chain_count", 0)
+        if not isinstance(chains, int) or isinstance(chains, bool) or chains < 0:
+            chains = 0
+        chain_counts[str(chains)] = chain_counts.get(str(chains), 0) + 1
+        for index in _serialized_source_ids(event, items, limit=4):
+            source = str(items[index].get("source") or "unknown").strip() or "unknown"
+            source_counts[source] = source_counts.get(source, 0) + 1
+    total_sources = sum(source_counts.values())
+    concentration = [
+        {"source": source, "reference_count": count,
+         "reference_share": round(count / total_sources, 4) if total_sources else 0.0}
+        for source, count in sorted(source_counts.items(), key=lambda row: (-row[1], row[0]))[:10]
+    ]
+    selected_after_ids = {id(event) for event in selected_after}
+    return {
+        "mode": "shadow",
+        "runtime_seconds": round(float(runtime_seconds), 3),
+        "selected_before_audit": len(selected_before),
+        "selected_after_audit": len(selected_after),
+        "audited_candidate_count": int(quality.get("objectivity_audited", 0)),
+        "demoted_from_selected": sum(
+            1 for event in selected_before if id(event) not in selected_after_ids),
+        "high_risk_selected_before_audit": high_risk,
+        "single_source_selected_before_audit": single_source,
+        "evidence_basis": basis_counts,
+        "fetch": {
+            "attempts": int(quality.get("article_fetch_attempts", 0)),
+            "successes": int(quality.get("article_fetch_successes", 0)),
+            "retries": int(quality.get("article_fetch_retries", 0)),
+        },
+        "objectivity": {
+            "repaired": int(quality.get("objectivity_repaired", 0)),
+            "degraded": int(quality.get("objectivity_degraded", 0)),
+        },
+        "independent_chain_distribution": dict(sorted(chain_counts.items(), key=lambda row: int(row[0]))),
+        "source_reference_concentration": concentration,
+    }
+
+
+def append_github_shadow_summary(summary, environ=None):
+    environ = os.environ if environ is None else environ
+    target = str(environ.get("GITHUB_STEP_SUMMARY") or "").strip()
+    if not target:
+        return False
+    basis = summary["evidence_basis"]
+    fetch = summary["fetch"]
+    audit = summary["objectivity"]
+    lines = [
+        "## Objectivity shadow",
+        "",
+        f"- runtime: {summary['runtime_seconds']:.3f}s",
+        (f"- selected before/after audit: {summary['selected_before_audit']}/"
+         f"{summary['selected_after_audit']}"),
+        (f"- audited candidates/demoted from selected: {summary['audited_candidate_count']}/"
+         f"{summary['demoted_from_selected']}"),
+        (f"- high-risk/single-source selected before audit: "
+         f"{summary['high_risk_selected_before_audit']}/"
+         f"{summary['single_source_selected_before_audit']}"),
+        f"- fulltext/mixed/snippet: {basis['fulltext']}/{basis['mixed']}/{basis['snippet']}",
+        f"- fetch attempts/successes/retries: {fetch['attempts']}/{fetch['successes']}/{fetch['retries']}",
+        f"- repaired/degraded: {audit['repaired']}/{audit['degraded']}",
+        "- independent chains: " + json.dumps(
+            summary["independent_chain_distribution"], ensure_ascii=False, sort_keys=True),
+        "- source reference concentration: " + ", ".join(
+            f"{row['source']}={row['reference_count']} ({row['reference_share']:.1%})"
+            for row in summary["source_reference_concentration"]),
+        "",
+    ]
+    with Path(target).open("a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+    return True
 
 
 # ----------------------------------------------------------------
@@ -131,6 +370,284 @@ def http_post(url, data=None, timeout=20, retries=2, backoff=1.5, headers=None):
             if attempt < retries:
                 time.sleep(backoff * (attempt + 1))
     raise last
+
+
+class ArticleEvidenceError(ValueError):
+    """Permanent article validation/extraction failure; callers use RSS fallback."""
+
+
+def _public_article_target(url, resolver=socket.getaddrinfo):
+    """Return a normalized URL and a validated IP that the transport must pin."""
+    parts = urlsplit(str(url or ""))
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise ArticleEvidenceError("article URL must be public HTTP/HTTPS")
+    try:
+        addresses = [ipaddress.ip_address(parts.hostname)]
+    except ValueError:
+        try:
+            rows = resolver(parts.hostname, parts.port or (443 if parts.scheme == "https" else 80),
+                            type=socket.SOCK_STREAM)
+            addresses = [ipaddress.ip_address(row[4][0]) for row in rows]
+        except Exception as exc:
+            raise ArticleEvidenceError("article hostname did not resolve") from exc
+    if not addresses or any(not addr.is_global for addr in addresses):
+        raise ArticleEvidenceError("article target is not public")
+    return urlunsplit(parts), str(addresses[0])
+
+
+def _public_article_url(url, resolver=socket.getaddrinfo):
+    """Compatibility helper for callers that only need URL validation."""
+    return _public_article_target(url, resolver)[0]
+
+
+def _schedule_article_cleanup(closer):
+    """Schedule best-effort cleanup without ever blocking or raising to the caller."""
+    if closer is None or not _ARTICLE_CLEANUP_SLOTS.acquire(blocking=False):
+        return False
+
+    def cleanup():
+        try:
+            closer()
+        except BaseException:
+            pass
+        finally:
+            _ARTICLE_CLEANUP_SLOTS.release()
+
+    worker = threading.Thread(
+        target=cleanup, name="article-evidence-cleanup", daemon=True)
+    try:
+        worker.start()
+    except BaseException:
+        _ARTICLE_CLEANUP_SLOTS.release()
+        return False
+    return True
+
+
+class _ArticleAttemptControl:
+    """Thread-safe cancellation and live transport cleanup for one attempt."""
+
+    def __init__(self):
+        self.cancelled = threading.Event()
+        self._lock = threading.Lock()
+        self._closer = None
+
+    def register_closer(self, closer):
+        close_now = False
+        with self._lock:
+            if self.cancelled.is_set():
+                close_now = True
+            else:
+                self._closer = closer
+        if close_now:
+            _schedule_article_cleanup(closer)
+
+    def cancel_and_schedule_close(self):
+        self.cancelled.set()
+        with self._lock:
+            closer = self._closer
+            self._closer = None
+        _schedule_article_cleanup(closer)
+
+
+class PinnedIPAdapter(HTTPAdapter):
+    """Connect to a validated IP while authenticating the original HTTPS host."""
+
+    def __init__(self, pinned_ip, original_hostname, *args, **kwargs):
+        self.pinned_ip = str(pinned_ip)
+        self.original_hostname = str(original_hostname)
+        super().__init__(*args, **kwargs)
+
+    def get_connection_with_tls_context(self, request, verify, proxies=None, cert=None):
+        host_params, pool_kwargs = self.build_connection_pool_key_attributes(
+            request, verify, cert)
+        host_params["host"] = self.pinned_ip
+        if host_params.get("scheme") == "https":
+            pool_kwargs["server_hostname"] = self.original_hostname
+            pool_kwargs["assert_hostname"] = self.original_hostname
+        return self.poolmanager.connection_from_host(**host_params, pool_kwargs=pool_kwargs)
+
+
+def _pinned_article_get(url, pinned_ip, attempt_control=None, **kwargs):
+    """Issue one direct request through a pool connected only to ``pinned_ip``."""
+    parts = urlsplit(url)
+    hostname = parts.hostname or ""
+    default_port = 443 if parts.scheme == "https" else 80
+    host_header = hostname if not parts.port or parts.port == default_port else f"{hostname}:{parts.port}"
+    headers = dict(kwargs.pop("headers", {}) or {})
+    headers.setdefault("Host", host_header)
+    session = requests.Session()
+    session.trust_env = False
+    session.mount(f"{parts.scheme}://", PinnedIPAdapter(pinned_ip, hostname))
+    if attempt_control is not None:
+        attempt_control.register_closer(session.close)
+    try:
+        response = session.get(url, headers=headers, **kwargs)
+    except Exception:
+        session.close()
+        raise
+    original_close = response.close
+
+    def close():
+        try:
+            original_close()
+        finally:
+            session.close()
+
+    response.close = close
+    if attempt_control is not None:
+        attempt_control.register_closer(response.close)
+    return response
+
+
+def _extract_static_article(page_html):
+    """Extract main text from static HTML using the declared generic extractor."""
+    import trafilatura
+    return trafilatura.extract(page_html, include_comments=False, include_tables=False,
+                               favor_precision=True) or ""
+
+
+def _rss_evidence(item):
+    text = "\n".join(part for part in (
+        str(item.get("title") or "").strip(), str(item.get("desc") or "").strip()) if part)
+    return re.sub(r"\s+", " ", text).strip()[:ARTICLE_MAX_CHARS]
+
+
+def fetch_article_evidence(item, request_get=None, extractor=None, resolver=None, sleep=None,
+                           clock=None, attempt_timeout=ARTICLE_ATTEMPT_TIMEOUT,
+                           max_attempts=3):
+    """Fetch one public static-HTML article, returning transient bounded evidence text.
+
+    Redirects are followed manually so every target is revalidated. Permanent safety,
+    media-type and size failures immediately fall back; transient HTTP failures get
+    two retries (three total attempts).
+    """
+    request_get = request_get or _pinned_article_get
+    extractor = extractor or _extract_static_article
+    resolver = resolver or socket.getaddrinfo
+    sleep = sleep or time.sleep
+    clock = clock or time.monotonic
+    if isinstance(attempt_timeout, bool) or not isinstance(attempt_timeout, (int, float)):
+        raise ValueError("attempt_timeout must be a positive number")
+    attempt_timeout = float(attempt_timeout)
+    if attempt_timeout <= 0:
+        raise ValueError("attempt_timeout must be a positive number")
+    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts <= 0:
+        raise ValueError("max_attempts must be a positive integer")
+    fallback = {"evidence_basis": "snippet", "evidence_text": _rss_evidence(item),
+                "attempts": 0, "retries": 0}
+    initial_url = str(item.get("url") or "")
+
+    attempts = 0
+    retries_used = 0
+    for retry in range(max_attempts):
+        deadline = clock() + attempt_timeout
+        request_count = [0]
+        control = _ArticleAttemptControl()
+
+        def require_time_remaining():
+            remaining = deadline - clock()
+            if control.cancelled.is_set() or remaining <= 0:
+                raise requests.Timeout("article attempt exceeded wall-clock deadline")
+            return remaining
+
+        def operation():
+            current_url = initial_url
+            response = None
+            try:
+                for _redirect in range(6):
+                    require_time_remaining()
+                    current_url, pinned_ip = _public_article_target(current_url, resolver)
+                    remaining = require_time_remaining()
+                    request_count[0] += 1
+                    request_timeout = Timeout(
+                        total=remaining,
+                        connect=min(3.0, remaining),
+                        read=min(1.0, remaining),
+                    )
+                    response = request_get(
+                        current_url, headers={"User-Agent": UA},
+                        timeout=request_timeout, stream=True,
+                        allow_redirects=False, pinned_ip=pinned_ip,
+                        attempt_control=control)
+                    control.register_closer(response.close)
+                    require_time_remaining()
+                    status = int(getattr(response, "status_code", 200))
+                    if status in (301, 302, 303, 307, 308):
+                        location = (getattr(response, "headers", {}) or {}).get("Location")
+                        if not location:
+                            raise ArticleEvidenceError("redirect without Location")
+                        current_url = urljoin(current_url, location)
+                        response.close()
+                        response = None
+                        continue
+                    if status >= 400:
+                        raise requests.HTTPError(f"article HTTP {status}")
+                    headers = getattr(response, "headers", {}) or {}
+                    content_type = str(headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+                    if content_type not in ("text/html", "application/xhtml+xml"):
+                        raise ArticleEvidenceError("article response is not HTML")
+                    length = headers.get("Content-Length")
+                    if length and int(length) > ARTICLE_MAX_BYTES:
+                        raise ArticleEvidenceError("article response exceeds 2 MiB")
+                    body = bytearray()
+                    for chunk in response.iter_content(chunk_size=65536):
+                        require_time_remaining()
+                        if not chunk:
+                            continue
+                        body.extend(chunk)
+                        if len(body) > ARTICLE_MAX_BYTES:
+                            raise ArticleEvidenceError("article response exceeds 2 MiB")
+                    page_html = bytes(body).decode("utf-8", errors="replace")
+                    require_time_remaining()
+                    text = re.sub(r"\s+", " ", str(extractor(page_html) or "")).strip()
+                    require_time_remaining()
+                    if len(text) < ARTICLE_MIN_CHARS:
+                        raise ArticleEvidenceError("article extraction was too short")
+                    return {"evidence_basis": "fulltext",
+                            "evidence_text": text[:ARTICLE_MAX_CHARS]}
+                raise ArticleEvidenceError("too many article redirects")
+            finally:
+                if response is not None:
+                    response.close()
+
+        result_queue = queue.Queue(maxsize=1)
+        acquired = _ARTICLE_ATTEMPT_SLOTS.acquire(blocking=False)
+        if acquired:
+            def run_attempt():
+                try:
+                    result_queue.put((True, operation()))
+                except BaseException as exc:
+                    result_queue.put((False, exc))
+                finally:
+                    _ARTICLE_ATTEMPT_SLOTS.release()
+
+            worker = threading.Thread(
+                target=run_attempt, name="article-evidence-attempt", daemon=True)
+            worker.start()
+            try:
+                wait_timeout = max(0.0, deadline - clock())
+                succeeded, result = result_queue.get(timeout=wait_timeout)
+            except queue.Empty:
+                control.cancel_and_schedule_close()
+                succeeded, result = False, requests.Timeout(
+                    "article attempt exceeded wall-clock deadline")
+        else:
+            succeeded, result = False, requests.Timeout(
+                "article attempt worker capacity exhausted")
+
+        attempts += request_count[0]
+        if succeeded:
+            return {**result, "attempts": attempts, "retries": retries_used}
+        if isinstance(result, ArticleEvidenceError):
+            fallback["attempts"] = attempts
+            fallback["retries"] = retries_used
+            return fallback
+        if retry < max_attempts - 1:
+            retries_used += 1
+            sleep(retry + 1)
+    fallback["attempts"] = attempts
+    fallback["retries"] = retries_used
+    return fallback
 
 
 def fetch_rss(src, window_start, max_items):
@@ -469,6 +986,11 @@ def fetch_all(sources, cfg):
                 items, err = [], True
             fetch_stats[src["id"]] = {"name": src["name"],
                                       "count": len(items), "error": err}
+            for item in items:
+                if src.get("source_family"):
+                    item.setdefault("source_family", src["source_family"])
+                if src.get("provenance"):
+                    item.setdefault("provenance", src["provenance"])
             if items:
                 log(f"  ✓ {src['name']}: {len(items)} 条")
             results.extend(items)
@@ -679,6 +1201,25 @@ def save_news_seen(data_dir, date_str, items, seen, keep_days=90):
 # ----------------------------------------------------------------
 # 2. LLM 客户端
 # ----------------------------------------------------------------
+
+def resolve_llm_config(cfg, section="llm"):
+    """Resolve an OpenAI-compatible role config against the primary LLM.
+
+    Empty connection identity fields inherit from ``llm``. ``extra_body`` is
+    special: omission inherits it, while an explicitly supplied mapping (even
+    an empty one) replaces it as a complete provider-specific request body.
+    """
+    primary = dict(cfg.get("llm") or {})
+    if section == "llm":
+        return primary
+    override = cfg.get(section) or {}
+    merged = dict(primary)
+    for key, value in override.items():
+        if key in ("base_url", "api_key", "model") and not str(value or "").strip():
+            continue
+        if value is not None:
+            merged[key] = value
+    return merged
 
 class LLM:
     def __init__(self, cfg):
@@ -969,6 +1510,219 @@ def audit_event_cohesion(llm, events, items, quality=None):
     return audited, quality
 
 
+def detect_evidence_risks(event, event_items):
+    """Return all fixed evidence-risk flags without an additional model call."""
+    text = " ".join(str(value or "") for value in (
+        event.get("title"), event.get("summary"), event.get("status"),
+        *(it.get("title") for it in event_items), *(it.get("desc") for it in event_items),
+    )).lower()
+
+    def has(*terms):
+        return any(term in text for term in terms)
+
+    politics = event.get("category") == "world" or has(
+        "政府", "总统", "首相", "选举", "制裁", "外交", "领土", "地缘", "政变",
+        "government", "president", "election", "sanction", "diplomatic")
+    conflict = has("战争", "冲突", "袭击", "空袭", "导弹", "军队", "武装", "停火",
+                   "war", "armed conflict", "attack", "airstrike", "missile", "ceasefire")
+    legal = event.get("status") in ("有争议", "仅传言") or has(
+        "指控", "起诉", "检方", "涉嫌", "诉讼", "调查", "allegation", "accused",
+        "charged", "lawsuit", "prosecutor", "investigation")
+    safety = has("死亡", "受伤", "坍塌", "事故", "地震", "火灾", "疫情", "疾病", "药品",
+                 "公共安全", "health", "killed", "death", "injured", "collapse", "earthquake",
+                 "fire", "outbreak", "disease", "public safety")
+    has_number = bool(re.search(
+        r"(?<!\w)\d[\d,.]*(?:\s*%|\s*(?:亿|万|人|名|美元|元|billion|million))?", text))
+    number = has_number and (safety or has(
+        "%", "亿美元", "亿元", "万人", "营收", "市值", "损失", "影响", "占比",
+        "billion", "million", "revenue", "gdp", "market value", "affected"))
+    return dict(zip(EVIDENCE_RISK_FLAGS, (politics, conflict, legal, safety, number)))
+
+
+def _event_is_high_risk(event):
+    return any(bool((event.get("risk_flags") or {}).get(name))
+               for name in EVIDENCE_RISK_FLAGS)
+
+
+def _title_tokens(value):
+    return set(re.findall(r"[a-z0-9]+|[\u3400-\u9fff]{2,}", str(value or "").lower()))
+
+
+def _text_similarity(left_value, right_value):
+    left = _title_tokens(left_value)
+    right = _title_tokens(right_value)
+    overlap = len(left & right) / max(len(left | right), 1)
+    sequence = SequenceMatcher(None, str(left_value or "").lower(),
+                               str(right_value or "").lower()).ratio()
+    return max(overlap, sequence)
+
+
+def _candidate_similarity(event, event_items, candidate):
+    candidate_text = str(candidate.get("title") or "")
+    selected_texts = [event.get("title", "")]
+    selected_texts.extend(str(item.get("title") or "") for item in event_items)
+    return max((_text_similarity(text, candidate_text) for text in selected_texts), default=0.0)
+
+
+def _within_corroboration_window(event_items, candidate, hours=48):
+    try:
+        candidate_time = datetime.fromisoformat(str(candidate.get("time") or "").replace("Z", "+00:00"))
+        known_times = [datetime.fromisoformat(str(it.get("time") or "").replace("Z", "+00:00"))
+                       for it in event_items if it.get("time")]
+        return not known_times or min(abs((candidate_time - known).total_seconds())
+                                      for known in known_times) <= hours * 3600
+    except (TypeError, ValueError):
+        return False
+
+
+def corroborate_high_risk_events(events, items, raw_pool, quality=None):
+    """Merge deterministic, credible matches from the already-fetched prefilter pool."""
+    quality = quality if quality is not None else new_quality_stats()
+    for event in events:
+        event_items = [items[i] for i in event.get("ids", []) if 0 <= i < len(items)]
+        event["risk_flags"] = detect_evidence_risks(event, event_items)
+        publishers = {it.get("source_id") for it in event_items if it.get("source_id")}
+        known_chains = {
+            chain for chain in (_trusted_evidence_chain(item) for item in event_items)
+            if chain
+        }
+        if not _event_is_high_risk(event) or len(known_chains) != 1:
+            continue
+        quality["high_risk_single_publisher"] += 1
+        known_urls = {canonical_news_url(it.get("url")) for it in event_items}
+        known_source_ids = set(publishers)
+        known_publishers = {
+            str(item.get("source") or "").strip().casefold()
+            for item in event_items if str(item.get("source") or "").strip()
+        }
+        ranked = []
+        for position, candidate in enumerate(raw_pool):
+            candidate_chain = _trusted_evidence_chain(candidate)
+            candidate_publisher = str(candidate.get("source") or "").strip().casefold()
+            if (not known_chains
+                    or not candidate_chain
+                    or candidate_chain in known_chains
+                    or candidate.get("source_id") in known_source_ids
+                    or not candidate_publisher
+                    or candidate_publisher in known_publishers
+                    or canonical_news_url(candidate.get("url")) in known_urls
+                    or candidate.get("source_type") == "opinion"
+                    or float(candidate.get("credibility", 0)) < 7
+                    or not _within_corroboration_window(event_items, candidate)):
+                continue
+            quality["corroboration_candidates"] += 1
+            similarity = _candidate_similarity(event, event_items, candidate)
+            if similarity >= 0.58:
+                ranked.append((-similarity, position, candidate))
+        for _score, _position, candidate in sorted(ranked)[:3]:
+            candidate_chain = _trusted_evidence_chain(candidate)
+            candidate_source_id = candidate.get("source_id")
+            candidate_publisher = str(candidate.get("source") or "").strip().casefold()
+            candidate_url = canonical_news_url(candidate.get("url"))
+            if (not candidate_chain
+                    or candidate_chain in known_chains
+                    or candidate_source_id in known_source_ids
+                    or not candidate_publisher
+                    or candidate_publisher in known_publishers
+                    or candidate_url in known_urls):
+                continue
+            items.append(dict(candidate))
+            event["ids"].append(len(items) - 1)
+            known_source_ids.add(candidate_source_id)
+            known_publishers.add(candidate_publisher)
+            known_urls.add(candidate_url)
+            known_chains.add(candidate_chain)
+            quality["corroboration_matches"] += 1
+            if len(event["ids"]) >= 4:
+                break
+    return events
+
+
+def _serialized_source_ids(event, items, limit=5):
+    """Return the exact stable source order shared by acquisition and output."""
+    ids = [i for i in event.get("ids", []) if isinstance(i, int) and 0 <= i < len(items)]
+    ids.sort(key=lambda i: (
+        items[i].get("source_type") != "fact",
+        -float(items[i].get("credibility", 0)),
+        str(items[i].get("source_id") or "").strip().casefold(),
+        canonical_news_url(items[i].get("url")),
+        str(items[i].get("source") or "").strip().casefold(),
+        i,
+    ))
+    selected, seen_urls, seen_publishers = [], set(), set()
+    for index in ids:
+        url = items[index].get("url", "")
+        publisher = str(items[index].get("source") or "").strip().casefold()
+        if not publisher or url in seen_urls or publisher in seen_publishers:
+            continue
+        seen_urls.add(url)
+        seen_publishers.add(publisher)
+        selected.append(index)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def _trusted_evidence_chain(item):
+    provenance = str(item.get("provenance") or "").strip().lower()
+    family = str(item.get("source_family") or "").strip().casefold()
+    return family if family and provenance in TRUSTED_PROVENANCE else None
+
+
+def apply_evidence_contract(event, items):
+    """Attach the public evidence summary while conservatively counting chains."""
+    event_items = [items[i] for i in _serialized_source_ids(event, items, limit=4)]
+    bases = [it.get("evidence_basis", "snippet") for it in event_items]
+    if bases and all(basis == "fulltext" for basis in bases):
+        basis = "fulltext"
+    elif bases and any(value == "fulltext" for value in bases):
+        basis = "mixed"
+    else:
+        basis = "snippet"
+    publishers = {str(it.get("source") or "").strip().casefold() for it in event_items
+                  if str(it.get("source") or "").strip()}
+    independent = set()
+    for item in event_items:
+        chain = _trusted_evidence_chain(item)
+        if chain:
+            independent.add(chain)
+    event["evidence"] = {
+        "basis": basis,
+        "publisher_count": len(publishers),
+        "independent_chain_count": len(independent),
+        "degraded": basis != "fulltext",
+    }
+    return event["evidence"]
+
+
+def acquire_event_evidence(events, items, quality=None, request_get=None,
+                           extractor=None, resolver=None):
+    """Fetch at most four sources per event with a global concurrency ceiling of six."""
+    quality = quality if quality is not None else new_quality_stats()
+    source_ids = list(dict.fromkeys(
+        i for event in events for i in _serialized_source_ids(event, items, limit=4)))
+
+    def fetch(index):
+        return index, fetch_article_evidence(
+            items[index], request_get=request_get, extractor=extractor, resolver=resolver)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        for index, result in pool.map(fetch, source_ids):
+            items[index]["evidence_basis"] = result["evidence_basis"]
+            items[index]["evidence_text"] = result["evidence_text"]
+            quality["article_fetch_attempts"] += 1
+            quality["article_http_requests"] += result["attempts"]
+            quality["article_fetch_retries"] += result.get("retries", 0)
+            if result["evidence_basis"] == "fulltext":
+                quality["article_fetch_successes"] += 1
+                quality["evidence_fulltext_sources"] += 1
+            else:
+                quality["evidence_snippet_sources"] += 1
+    for event in events:
+        apply_evidence_contract(event, items)
+    return events, quality
+
+
 # ----------------------------------------------------------------
 # 5. 评分（代码合成最终分）+ 阈值制精选
 # ----------------------------------------------------------------
@@ -1102,6 +1856,14 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - tags: 从下面的词表里选 1-2 个最贴切的主题标签，只能用词表里的词，不得自创：
     {tag_list}
 
+客观性规范（适用于 title/summary/why/context/detail 全部文字字段）：
+- 总纲：只陈述可追溯的事实，主张归属于提出者，争议和不确定性显式保留，不粉饰也不放大。
+- 归因：来源媒体的定性判断、推断、立场性表述不得直接写成事实，必须显式归因（"X 报道称/X 评论认为"），地缘政治和涉及国家形象的定性尤其如此。检方提交起诉书/公诉文件是可报道的程序性事实；文件内指控仍须归因给检方或文件，起诉不等于定罪，不得写成已定罪事实。
+- 跨源印证：事件有多个来源时，优先写各来源共同证实的事实；仅单一来源支撑的立场性内容必须归因到该来源。
+- 逐项剥离或改写：情绪化煽动性形容词；未归属的价值判断；无来源依据的动机推断（"意在/旨在/企图"类措辞需原始报道有依据，否则归因或删除）；把相关性暗示成因果；数字缺分母或比较基准时不做程度渲染。
+- 禁止为"平衡"补充原始报道中不存在的对立观点或说法；素材只有单一来源立场时，归因后照写即可，宁缺毋造。
+- 立场性判断优先归入 claims（kind 用 analysis）并标 source_indexes，不要写进正文的叙述语气里。
+
 只输出 JSON 数组，每个元素：
 {{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "significance": "...", "watch": "...", "claims": [{{"text":"...","kind":"fact","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
@@ -1134,16 +1896,113 @@ def sanitize_claims(raw_claims, source_names):
     return claims
 
 
+def _clip_objectivity_field(field, value):
+    limit = OBJECTIVITY_FIELD_LIMITS[field]
+    return str(value or "").strip()[:limit]
+
+
+def _normalized_copy_text(value):
+    normalized = unicodedata.normalize("NFKC", str(value or "")).casefold()
+    return "".join(character for character in normalized if character.isalnum())
+
+
+def _is_direct_evidence_copy(field, value, evidence_texts):
+    candidate = _normalized_copy_text(value)
+    minimum = OBJECTIVITY_COPY_MIN_LENGTHS[field]
+    if len(candidate) < minimum:
+        return False
+    for evidence in evidence_texts:
+        if len(evidence) < minimum:
+            continue
+        if candidate in evidence:
+            return True
+        overlap = SequenceMatcher(
+            None, candidate, evidence, autojunk=False).find_longest_match().size
+        if overlap >= minimum and overlap / len(candidate) >= 0.65:
+            return True
+    return False
+
+
+def sanitize_objectivity_event(event, items=None, quality=None):
+    """Cap reader fields and fail closed on direct long full-text copies."""
+    quality = quality if quality is not None else new_quality_stats()
+    for field in OBJECTIVITY_FIELDS:
+        if field in event:
+            event[field] = _clip_objectivity_field(field, event[field])
+    claims = []
+    for claim in event.get("claims") or []:
+        if not isinstance(claim, dict):
+            continue
+        text = str(claim.get("text") or "").strip()[:120]
+        if text:
+            claims.append({**claim, "text": text})
+    if claims:
+        event["claims"] = claims
+    else:
+        event.pop("claims", None)
+    if not items:
+        return event
+
+    ids = _serialized_source_ids(event, items, limit=4)
+    evidence_texts = [
+        _normalized_copy_text(items[index].get("evidence_text"))
+        for index in ids
+        if (items[index].get("evidence_basis") == "fulltext"
+            and items[index].get("evidence_text"))
+    ]
+    if not evidence_texts:
+        return event
+
+    primary = items[ids[0]] if ids else {}
+    source_name = str(primary.get("source") or "Source").strip()
+    source_title = str(primary.get("title") or "").strip()
+    source_desc = str(primary.get("desc") or "").strip()
+    safe_title = _clip_objectivity_field(
+        "title", f"{source_name}: {source_title}" if source_title else source_name)
+    safe_summary = _clip_objectivity_field(
+        "summary",
+        (f"{source_name} reported: {source_desc}"
+         if source_desc else f"{source_name} reported the item."),
+    )
+    if _is_direct_evidence_copy("title", safe_title, evidence_texts):
+        safe_title = _clip_objectivity_field("title", source_name)
+    if _is_direct_evidence_copy("summary", safe_summary, evidence_texts):
+        safe_summary = _clip_objectivity_field(
+            "summary", f"{source_name} reported the item.")
+    if _is_direct_evidence_copy("title", event.get("title"), evidence_texts):
+        event["title"] = safe_title
+    if _is_direct_evidence_copy("summary", event.get("summary"), evidence_texts):
+        event["summary"] = safe_summary
+    for field in OBJECTIVITY_FIELDS[2:]:
+        if field in event and _is_direct_evidence_copy(
+                field, event.get(field), evidence_texts):
+            event.pop(field, None)
+            quality["removed_fields"] = int(quality.get("removed_fields", 0)) + 1
+    kept_claims = []
+    for claim in event.get("claims") or []:
+        if _is_direct_evidence_copy("claims", claim.get("text"), evidence_texts):
+            quality["removed_fields"] = int(quality.get("removed_fields", 0)) + 1
+            continue
+        kept_claims.append(claim)
+    if kept_claims:
+        event["claims"] = kept_claims
+    else:
+        event.pop("claims", None)
+    return event
+
+
 def enrich(llm, picked, items, cfg, profile_text=""):
     tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
     tag_set = set(tag_vocab)
     dcfg = cfg.get("detail") or {}
     detail_on = dcfg.get("enabled", True)
     detail_chars = int(dcfg.get("max_chars", 600) or 600)
+    full_objectivity = _rollout_output_enabled(cfg)
     detail_field = (
         f"- detail: 中文长叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
         "按\"背景→具体发生了什么→为什么重要→接下来看什么\"讲清整件事，让没读过原文的人也能看懂；"
-        "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；素材不足就写多少算多少，宁短毋凑）\n"
+        "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；"
+        "来源媒体的立场性定性须显式归因（如\"BBC 称\"），不得写成客观事实；素材不足就写多少算多少，宁短毋凑）\n"
     ) if detail_on else ""
     detail_json = ', "detail": "..."' if detail_on else ""
     system = ENRICH_SYSTEM.format(
@@ -1158,10 +2017,15 @@ def enrich(llm, picked, items, cfg, profile_text=""):
         blocks = []
         for j, ev in enumerate(batch):
             srcs = []
-            for source_index, i in enumerate(ev["ids"][:4]):
+            source_ids = _serialized_source_ids(ev, items, limit=4)
+            for source_index, i in enumerate(source_ids):
                 it = items[i]
+                evidence_text = (
+                    (it.get("evidence_text") or it.get("desc", ""))[:ARTICLE_MAX_CHARS]
+                    if full_objectivity else str(it.get("desc") or "")[:200]
+                )
                 srcs.append(f"  - [{source_index}] [{it['source']}|{TYPE_NAMES[it['source_type']]}] "
-                            f"{it['title']}：{it['desc'][:200]}")
+                            f"{it['title']}：{evidence_text}")
             hints = list(dict.fromkeys(items[i].get("tag_hint") for i in ev["ids"]
                                        if items[i].get("tag_hint") in tag_set))
             hint_line = ("\n  （来源分类提示，若贴切请优先选为标签："
@@ -1174,16 +2038,32 @@ def enrich(llm, picked, items, cfg, profile_text=""):
             if not isinstance(k, int) or not (0 <= k < len(picked)):
                 continue
             ev = picked[k]
-            ev["title"] = r.get("title", ev["title"])
-            ev["summary"] = r.get("summary", "")
-            ev["why"] = r.get("why", "")
-            ev["context"] = str(r.get("context", ""))[:80]
-            ev["significance"] = str(r.get("significance", ""))[:70]
-            ev["watch"] = r.get("watch", "")
+            if full_objectivity:
+                ev["title"] = _clip_objectivity_field("title", r.get("title", ev["title"]))
+                ev["summary"] = _clip_objectivity_field("summary", r.get("summary", ""))
+                ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
+                ev["context"] = _clip_objectivity_field("context", r.get("context", ""))
+                ev["significance"] = _clip_objectivity_field(
+                    "significance", r.get("significance", ""))
+                ev["watch"] = _clip_objectivity_field("watch", r.get("watch", ""))
+            else:
+                ev["title"] = r.get("title", ev["title"])
+                ev["summary"] = r.get("summary", "")
+                ev["why"] = r.get("why", "")
+                ev["context"] = str(r.get("context", ""))[:80]
+                ev["significance"] = str(r.get("significance", ""))[:70]
+                ev["watch"] = r.get("watch", "")
             ev["claims"] = sanitize_claims(
-                r.get("claims"), [items[i]["source"] for i in ev["ids"][:4]])
+                r.get("claims"), [
+                    items[i]["source"]
+                    for i in _serialized_source_ids(ev, items, limit=4)
+                ])
             if detail_on:
-                ev["detail"] = str(r.get("detail", "")).strip()[:detail_chars + 200]
+                ev["detail"] = (
+                    _clip_objectivity_field("detail", r.get("detail", ""))
+                    if full_objectivity
+                    else str(r.get("detail", "")).strip()[:detail_chars + 200]
+                )
             ev["status"] = r.get("status") if r.get("status") in STATUS_SET else "发展中"
             raw_tags = r.get("tags") or []
             if not isinstance(raw_tags, list):
@@ -1194,9 +2074,30 @@ def enrich(llm, picked, items, cfg, profile_text=""):
                 if h in tag_set and h not in tags:
                     tags.insert(0, h)
             ev["tags"] = tags[:2]
+            if full_objectivity:
+                sanitize_objectivity_event(ev, items)
     return picked
 
 
+OBJECTIVITY_AUDIT_SYSTEM = """你是新闻证据与客观性审计员。输入报道是唯一可用证据，不得用常识补证据。
+逐项检查 title、summary、why、context、significance、watch、detail 以及每条 claim：
+1. 是否有来源支撑；2. fact/analysis/uncertain 类型是否正确；3. 主张、评价和指控是否正确归因；
+4. 是否加入来源没有的动机或因果推断；5. 是否使用缺少基准的幅度/程度语言；
+6. 是否为追求平衡而虚构反方观点或反诉。
+检方提交起诉书/公诉文件本身是可报道的程序性事实；其中指控仍须归因，起诉不等于定罪。
+只输出 JSON 对象：
+{"fields":{"title":true,"summary":true,"why":true,"context":true,
+"significance":true,"watch":true,"detail":true},"claims":[true]}
+fields 只列输入中存在的字段；claims 布尔数组必须与输入 claims 等长。任一检查不通过即为 false。"""
+
+OBJECTIVITY_REPAIR_SYSTEM = """你是新闻客观性修复编辑。只能修改输入列出的 failed_fields 和
+failed_claim_indexes，其他内容不得改动。严格依据 reports 修复；无法安全修复的字段给空字符串，
+claim 可用 {"index":编号,"drop":true} 删除。只输出 JSON：
+{"fields":{"字段":"修复后文字"},
+"claims":[{"index":0,"text":"...","kind":"fact|analysis|uncertain","sources":["来源名"]}]}。
+不得创造来源、事实、动机、因果、幅度或所谓平衡观点。"""
+
+# Historical name kept for callers that import the prompt constant.
 SUPPORT_AUDIT_SYSTEM = """你是新闻事实支撑质检员。原始报道是唯一可用证据。
 检查编辑扩展字段是否只讨论当前事件且能由原始报道支撑；不要凭常识补证据。
 对 why/context/significance/watch/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
@@ -1234,8 +2135,8 @@ def _validated_support_result(raw, event):
     return fields, indexes
 
 
-def audit_enrichment_support(llm, picked, items, quality=None):
-    """Remove enriched prose/claims that cannot be traced to this event's sources."""
+def audit_enrichment_support_interim(llm, picked, items, quality=None):
+    """Retain the pre-rollout support-only audit for interim public runs."""
     quality = quality if quality is not None else new_quality_stats()
     for event in picked:
         ids = event.get("ids") or []
@@ -1244,7 +2145,7 @@ def audit_enrichment_support(llm, picked, items, quality=None):
             "title": items[i].get("title", ""),
             "summary": items[i].get("desc", ""),
             "source": items[i].get("source", ""),
-        } for i in ids]
+        } for i in ids if isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(items)]
         extension = {field: event.get(field) for field in QUALITY_EXTENSION_FIELDS
                      if field in event}
         try:
@@ -1261,20 +2162,18 @@ def audit_enrichment_support(llm, picked, items, quality=None):
             quality["degraded"] = True
             _strip_extensions(event, quality)
             continue
-
         fields, supported_indexes = checked
         for field in QUALITY_EXTENSION_FIELDS[:-1]:
             if field in event and not fields.get(field, False):
                 _remove_extension(event, field, quality)
-
         claims = event.get("claims") or []
-        valid_sources = {items[i].get("source", "") for i in ids}
+        valid_sources = {items[i].get("source", "") for i in ids
+                         if isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(items)}
         kept = []
         for index, claim in enumerate(claims):
             claim_sources = claim.get("sources") if isinstance(claim, dict) else None
             if (index in supported_indexes and isinstance(claim_sources, list)
-                    and bool(claim_sources)
-                    and set(claim_sources).issubset(valid_sources)):
+                    and claim_sources and set(claim_sources).issubset(valid_sources)):
                 kept.append(claim)
             else:
                 quality["removed_fields"] += 1
@@ -1283,6 +2182,206 @@ def audit_enrichment_support(llm, picked, items, quality=None):
         else:
             event.pop("claims", None)
     return picked
+
+
+def _validated_objectivity_result(raw, event):
+    if not isinstance(raw, dict) or not isinstance(raw.get("fields"), dict):
+        return None
+    fields = raw["fields"]
+    for field in OBJECTIVITY_FIELDS:
+        if field not in event:
+            continue
+        if not isinstance(fields.get(field), bool):
+            return None
+    claims = event.get("claims") or []
+    claim_checks = raw.get("claims")
+    if (not isinstance(claim_checks, list) or len(claim_checks) != len(claims)
+            or any(not isinstance(value, bool) for value in claim_checks)):
+        return None
+    return fields, claim_checks
+
+
+def _objectivity_failures(checked, event, valid_sources):
+    if checked is None:
+        return ([field for field in OBJECTIVITY_FIELDS if field in event],
+                list(range(len(event.get("claims") or []))))
+    fields, claim_checks = checked
+    failed_fields = [field for field in OBJECTIVITY_FIELDS
+                     if field in event and not fields.get(field, False)]
+    failed_claims = []
+    for index, claim in enumerate(event.get("claims") or []):
+        sources = claim.get("sources") if isinstance(claim, dict) else None
+        kind = claim.get("kind") if isinstance(claim, dict) else None
+        if (not claim_checks[index] or kind not in {"fact", "analysis", "uncertain"}
+                or not isinstance(sources, list) or not sources
+                or not set(sources).issubset(valid_sources)):
+            failed_claims.append(index)
+    return failed_fields, failed_claims
+
+
+def _apply_objectivity_repair(event, raw, failed_fields, failed_claims, valid_sources):
+    if not isinstance(raw, dict):
+        return
+    field_repairs = raw.get("fields") if isinstance(raw.get("fields"), dict) else {}
+    for field in failed_fields:
+        if field in field_repairs:
+            event[field] = _clip_objectivity_field(field, field_repairs[field])
+    claims = list(event.get("claims") or [])
+    repairs = raw.get("claims") if isinstance(raw.get("claims"), list) else []
+    for repair in repairs:
+        if not isinstance(repair, dict):
+            continue
+        index = repair.get("index")
+        if (not isinstance(index, int) or isinstance(index, bool)
+                or index not in failed_claims or not 0 <= index < len(claims)):
+            continue
+        if repair.get("drop") is True:
+            claims[index] = None
+            continue
+        sources = repair.get("sources")
+        kind = repair.get("kind")
+        text = str(repair.get("text") or "").strip()[:120]
+        if (text and kind in {"fact", "analysis", "uncertain"}
+                and isinstance(sources, list) and sources
+                and set(sources).issubset(valid_sources)):
+            claims[index] = {"text": text, "kind": kind,
+                             "sources": list(dict.fromkeys(sources))}
+    event["claims"] = [claim for claim in claims if claim is not None]
+    if not event["claims"]:
+        event.pop("claims", None)
+
+
+def _conservative_event_fallback(event, items, quality):
+    ids = _serialized_source_ids(event, items, limit=1)
+    if not ids:
+        raise ValueError("audited event has no valid source mapping")
+    source = items[ids[0]]
+    source_name = str(source.get("source") or "来源").strip()
+    source_title = str(source.get("title") or "").strip()
+    source_desc = str(source.get("desc") or "").strip()
+    event["title"] = f"{source_name}：{source_title}"
+    event["summary"] = f"{source_name} 报道：{source_desc}"
+    event["title"] = _clip_objectivity_field("title", event.get("title"))
+    event["summary"] = _clip_objectivity_field("summary", event.get("summary"))
+    _strip_extensions(event, quality)
+    evidence = event.get("evidence") if isinstance(event.get("evidence"), dict) else {}
+    event["evidence"] = {**evidence, "degraded": True}
+    quality["degraded"] = True
+    quality["objectivity_degraded"] += 1
+    sanitize_objectivity_event(event, items, quality)
+
+
+def _materialize_reader_projection(event, items):
+    """Populate the exact title/summary defaults that ``event_to_item`` would expose."""
+    ids = _serialized_source_ids(event, items, limit=1)
+    if not ids:
+        raise ValueError("audited event has no valid source mapping")
+    primary = items[ids[0]]
+    if "title" not in event:
+        event["title"] = primary.get("title", "")
+    if "summary" not in event:
+        event["summary"] = str(primary.get("desc") or "")[:100]
+    return event
+
+
+def audit_enrichment_support(llm, picked, items, quality=None, secondary=None):
+    """Audit every reader-facing event field, repairing once then failing closed."""
+    quality = quality if quality is not None else new_quality_stats()
+    demoted = []
+    picked_ids = {id(event) for event in picked}
+    candidates = list(picked)
+    if secondary is not None:
+        candidates.extend(event for event in secondary
+                          if not any(event is existing for existing in candidates))
+    for event in candidates:
+        _materialize_reader_projection(event, items)
+        sanitize_objectivity_event(event, items, quality)
+        quality["objectivity_audited"] += 1
+        ids = _serialized_source_ids(event, items, limit=4)
+        reports = [{
+            "id": i,
+            "title": items[i].get("title", ""),
+            "summary": items[i].get("evidence_text") or items[i].get("desc", ""),
+            "source": items[i].get("source", ""),
+            "source_type": items[i].get("source_type", ""),
+        } for i in ids if isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(items)]
+        valid_sources = {report["source"] for report in reports if report["source"]}
+        content = {field: event.get(field) for field in OBJECTIVITY_FIELDS if field in event}
+        content["claims"] = event.get("claims") or []
+        audit_payload = {"reports": reports, "content": content}
+        raw = None
+        try:
+            raw = llm.json_call(OBJECTIVITY_AUDIT_SYSTEM,
+                                json.dumps(audit_payload, ensure_ascii=False))
+            checked = _validated_objectivity_result(raw, event)
+        except Exception as exc:
+            log(f"  客观性初审失败，进入定向修复: {exc}")
+            checked = None
+            if secondary is None:
+                quality["degraded"] = True
+                _strip_extensions(event, quality)
+                continue
+
+        failed_fields, failed_claims = _objectivity_failures(
+            checked, event, valid_sources)
+        if not failed_fields and not failed_claims:
+            continue
+
+        repair_payload = {
+            **audit_payload,
+            "failed_fields": failed_fields,
+            "failed_claim_indexes": failed_claims,
+        }
+        try:
+            repaired = llm.json_call(OBJECTIVITY_REPAIR_SYSTEM,
+                                     json.dumps(repair_payload, ensure_ascii=False))
+            _apply_objectivity_repair(
+                event, repaired, failed_fields, failed_claims, valid_sources)
+            sanitize_objectivity_event(event, items, quality)
+        except Exception as exc:
+            log(f"  客观性定向修复失败，继续复审并保守降级: {exc}")
+
+        content = {field: event.get(field) for field in OBJECTIVITY_FIELDS if field in event}
+        content["claims"] = event.get("claims") or []
+        try:
+            raw = llm.json_call(OBJECTIVITY_AUDIT_SYSTEM, json.dumps({
+                "reports": reports, "content": content,
+            }, ensure_ascii=False))
+            checked = _validated_objectivity_result(raw, event)
+        except Exception as exc:
+            log(f"  客观性复审失败，使用来源保守降级: {exc}")
+            checked = None
+        failed_fields, failed_claims = _objectivity_failures(
+            checked, event, valid_sources)
+        if not failed_fields and not failed_claims:
+            quality["objectivity_repaired"] += 1
+            continue
+
+        _conservative_event_fallback(event, items, quality)
+        if id(event) in picked_ids and _event_is_high_risk(event):
+            demoted.append(event)
+            quality["high_risk_demoted"] += 1
+
+    if secondary is not None and demoted:
+        demoted_ids = {id(event) for event in demoted}
+        picked[:] = [event for event in picked if id(event) not in demoted_ids]
+        for event in demoted:
+            if not any(existing is event for existing in secondary):
+                secondary.append(event)
+    return picked
+
+
+def run_audit_enrichment_support_stage(
+        policy, audit_llm, picked, secondary, items, quality):
+    """Dispatch the rollout-gated audit while preserving interim behavior."""
+    if policy["full_objectivity"]:
+        return audit_enrichment_support(
+            audit_llm, picked, items, quality, secondary=secondary)
+    return audit_enrichment_support_interim(audit_llm, picked, items, quality)
+
+
+# Concise compatibility name used by focused rollout tests and external callers.
+run_objectivity_stage = run_audit_enrichment_support_stage
 
 
 BRIEF_SYSTEM = """你是新闻主编。用户给你今天的条目列表（每条带 id、类目、标题、可能有要点）。
@@ -1294,11 +2393,140 @@ BRIEF_SYSTEM = """你是新闻主编。用户给你今天的条目列表（每�
 规则：
 - themes 最多 3 条，宁缺毋滥；每条主线必须有 ≥2 个成员 id（单个孤立事件不算主线，除非是压倒性头条可破例给 1 个）。
 - member_ids 只能从用户给出的 id 里选，禁止自造 id；一条可以跨类目（如极端天气可同时含国际和社会的条目）。
+- 措辞中性：synthesis 与 one_liner 只陈述事实，媒体的立场性定性不得写成事实——归因（"X 称"）或略去。
 - 今天若确实没有能归拢的主线，themes 给空数组，synthesis 照常写。
 只输出 JSON，不要其他文字。"""
 
 
-def write_brief(llm, picked, secondary=None):
+BRIEF_AUDIT_SYSTEM = """你是日报导语客观性审计员。whole_day_evidence 是 synthesis 的唯一证据；
+每条 theme 只能使用 theme_evidence 中同 index 的 items，不能使用当天其他条目。
+检查 synthesis，以及每条 theme 的 title/one_liner：是否受对应范围事实支撑、归因正确，且没有
+无依据动机/因果/幅度语言或虚构平衡说法。只输出：
+{"synthesis":true,"themes":[{"index":0,"title":true,"one_liner":true}]}。
+themes 必须逐条按 index 返回。"""
+
+BRIEF_REPAIR_SYSTEM = """只修复 failed 中列出的日报导语字段；synthesis 严格依据 whole_day_evidence，
+每条 theme 严格依据 theme_evidence 中同 index 的 items；
+其他字段不得改。只输出 {"synthesis":"可选修复", "themes":[{"index":0,
+"title":"可选修复","one_liner":"可选修复"}]}。"""
+
+
+def _validated_brief_audit(raw, themes):
+    if not isinstance(raw, dict) or not isinstance(raw.get("synthesis"), bool):
+        return None
+    rows = raw.get("themes")
+    if not isinstance(rows, list) or len(rows) != len(themes):
+        return None
+    checked = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            return None
+        index = row.get("index")
+        if (not isinstance(index, int) or isinstance(index, bool) or index in checked
+                or not 0 <= index < len(themes)
+                or not isinstance(row.get("title"), bool)
+                or not isinstance(row.get("one_liner"), bool)):
+            return None
+        checked[index] = (row["title"], row["one_liner"])
+    if len(checked) != len(themes):
+        return None
+    return raw["synthesis"], checked
+
+
+def _brief_failures(checked, themes):
+    if checked is None:
+        return False, {index: {"title", "one_liner"} for index in range(len(themes))}
+    synthesis_ok, rows = checked
+    failed = {}
+    for index, (title_ok, one_liner_ok) in rows.items():
+        names = set()
+        if not title_ok:
+            names.add("title")
+        if not one_liner_ok:
+            names.add("one_liner")
+        if names:
+            failed[index] = names
+    return synthesis_ok, failed
+
+
+def _audit_brief(audit_llm, synthesis, themes, member_items):
+    whole_day_evidence = {
+        str(item.get("id")): {
+            key: value for key, value in item.items() if key != "id"
+        }
+        for item in member_items
+        if isinstance(item, dict) and str(item.get("id") or "").strip()
+    }
+    theme_evidence = []
+    for index, theme in enumerate(themes):
+        member_ids = [
+            member_id for member_id in (theme.get("member_ids") or [])
+            if member_id in whole_day_evidence
+        ]
+        theme_evidence.append({
+            "index": index,
+            "member_ids": member_ids,
+            "items": {
+                member_id: whole_day_evidence[member_id]
+                for member_id in member_ids
+            },
+        })
+    payload = {
+        "whole_day_evidence": whole_day_evidence,
+        "theme_evidence": theme_evidence,
+        "brief": {"synthesis": synthesis, "themes": themes},
+    }
+    try:
+        checked = _validated_brief_audit(
+            audit_llm.json_call(BRIEF_AUDIT_SYSTEM,
+                                json.dumps(payload, ensure_ascii=False)), themes)
+    except Exception as exc:
+        log(f"  导语客观性初审失败，进入修复: {exc}")
+        checked = None
+    synthesis_ok, failed = _brief_failures(checked, themes)
+    if synthesis_ok and not failed:
+        return synthesis, themes
+
+    failed_payload = {
+        **payload,
+        "failed": {"synthesis": not synthesis_ok,
+                   "themes": [{"index": index, "fields": sorted(fields)}
+                              for index, fields in failed.items()]},
+    }
+    try:
+        repair = audit_llm.json_call(
+            BRIEF_REPAIR_SYSTEM, json.dumps(failed_payload, ensure_ascii=False))
+        if isinstance(repair, dict):
+            if not synthesis_ok and "synthesis" in repair:
+                synthesis = str(repair.get("synthesis") or "").strip()[:80]
+            for row in repair.get("themes") or []:
+                if not isinstance(row, dict):
+                    continue
+                index = row.get("index")
+                if not isinstance(index, int) or isinstance(index, bool) or index not in failed:
+                    continue
+                for field in failed[index]:
+                    if field in row:
+                        themes[index][field] = str(row.get(field) or "").strip()[:60]
+    except Exception as exc:
+        log(f"  导语客观性修复失败，继续复审: {exc}")
+
+    payload["brief"] = {"synthesis": synthesis, "themes": themes}
+    try:
+        checked = _validated_brief_audit(
+            audit_llm.json_call(BRIEF_AUDIT_SYSTEM,
+                                json.dumps(payload, ensure_ascii=False)), themes)
+    except Exception as exc:
+        log(f"  导语客观性复审失败，移除不安全内容: {exc}")
+        checked = None
+    synthesis_ok, failed = _brief_failures(checked, themes)
+    if not synthesis_ok:
+        synthesis = ""
+    themes = [theme for index, theme in enumerate(themes) if index not in failed]
+    return synthesis, themes
+
+
+def write_brief(llm, picked, secondary=None, audit_llm=None):
     """产出结构化今日主线：返回 (synthesis, themes)。
     themes 里的 member_ids 用最终输出 id（pick-N/more-N），与 event_to_item 保持一致。"""
     entries = ([("pick", e) for e in picked] +
@@ -1329,6 +2557,14 @@ def write_brief(llm, picked, secondary=None):
             })
             if len(themes) >= 3:
                 break
+        if audit_llm is not None:
+            member_items = [{
+                "id": item_id,
+                **{field: event.get(field) for field in
+                   ("title", "summary", "why", "context", "claims") if event.get(field)},
+            } for item_id, event in id_of.items()]
+            synthesis, themes = _audit_brief(
+                audit_llm, synthesis, themes, member_items)
         return synthesis, themes
     except Exception as e:
         log(f"  导语/主线生成失败: {e}")
@@ -2285,11 +3521,20 @@ def opinion_pulse(llm, cfg, pulse, profile_text=""):
 # 6. 输出
 # ----------------------------------------------------------------
 
-def event_to_item(ev, items, tier):
+def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5):
     ids = ev["ids"]
     # 主链接：可信度最高的事实源优先
-    sorted_ids = sorted(ids, key=lambda i: (
-        items[i]["source_type"] != "fact", -items[i]["credibility"]))
+    if (not isinstance(source_limit, int) or isinstance(source_limit, bool)
+            or source_limit < 1):
+        raise ValueError("source_limit must be a positive integer")
+    sorted_ids = _serialized_source_ids(ev, items, limit=source_limit)
+    primary = items[sorted_ids[0]]
+    if "title" not in ev:
+        ev["title"] = primary["title"]
+    if "summary" not in ev:
+        ev["summary"] = primary["desc"][:100]
+    if full_objectivity:
+        sanitize_objectivity_event(ev, items)
     sources = []
     seen_urls = set()
     for i in sorted_ids:
@@ -2297,9 +3542,16 @@ def event_to_item(ev, items, tier):
         if it["url"] in seen_urls:
             continue
         seen_urls.add(it["url"])
-        sources.append({"name": it["source"], "url": it["url"],
-                        "type": TYPE_NAMES[it["source_type"]]})
-    primary = items[sorted_ids[0]]
+        source = {"name": it["source"], "url": it["url"],
+                  "type": TYPE_NAMES[it["source_type"]]}
+        if full_objectivity:
+            source["evidence_basis"] = (
+                it.get("evidence_basis") if it.get("evidence_basis") in ("fulltext", "snippet")
+                else "snippet")
+            chain = _trusted_evidence_chain(it)
+            if chain:
+                source["evidence_chain"] = chain
+        sources.append(source)
     item = {
         "id": f"{tier}-{ids[0]}",
         "tier": tier,
@@ -2318,8 +3570,16 @@ def event_to_item(ev, items, tier):
         "src_tier": ev.get("tier", ""),
         "source_type": TYPE_NAMES[primary["source_type"]],
         "time": primary["time"],
-        "sources": sources[:5],
+        "sources": sources,
     }
+    if full_objectivity:
+        evidence = ev.get("evidence") if isinstance(ev.get("evidence"), dict) else {}
+        item["evidence"] = {
+            "basis": evidence.get("basis", "snippet"),
+            "publisher_count": int(evidence.get("publisher_count", 0)),
+            "independent_chain_count": int(evidence.get("independent_chain_count", 0)),
+            "degraded": bool(evidence.get("degraded", False)),
+        }
     update_sources = [items[i] for i in ids if items[i].get("is_update")]
     if update_sources:
         item["is_update"] = True
@@ -2692,6 +3952,12 @@ def validate_daily_payload(payload):
             if value is not None and (not isinstance(value, int)
                                       or isinstance(value, bool) or value < 0):
                 errors.append(f"quality.{field} must be a non-negative integer")
+        for field in ("objectivity_audited", "objectivity_repaired",
+                      "objectivity_degraded", "high_risk_demoted"):
+            value = quality.get(field)
+            if value is not None and (not isinstance(value, int)
+                                      or isinstance(value, bool) or value < 0):
+                errors.append(f"quality.{field} must be a non-negative integer")
         if not isinstance(quality.get("degraded"), bool):
             errors.append("quality.degraded must be boolean")
 
@@ -2707,6 +3973,70 @@ def validate_daily_payload(payload):
             continue
         source_names = {source.get("name") for source in (row.get("sources") or [])
                         if isinstance(source, dict) and source.get("name")}
+        evidence = row.get("evidence")
+        if evidence is not None:
+            sources = row.get("sources")
+            if not isinstance(sources, list) or not sources:
+                errors.append(f"item {row.get('id')} evidence requires sources")
+            if not isinstance(evidence, dict):
+                errors.append(f"item {row.get('id')} evidence must be an object")
+            else:
+                basis = evidence.get("basis")
+                publisher_count = evidence.get("publisher_count")
+                chain_count = evidence.get("independent_chain_count")
+                if basis not in {"fulltext", "mixed", "snippet"}:
+                    errors.append(f"item {row.get('id')} evidence basis is invalid")
+                for name, value in (("publisher_count", publisher_count),
+                                    ("independent_chain_count", chain_count)):
+                    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                        errors.append(f"item {row.get('id')} evidence {name} is invalid")
+                if (isinstance(publisher_count, int) and not isinstance(publisher_count, bool)
+                        and isinstance(chain_count, int) and not isinstance(chain_count, bool)
+                        and chain_count > publisher_count):
+                    errors.append(
+                        f"item {row.get('id')} evidence independent_chain_count "
+                        "cannot exceed publisher_count")
+                if not isinstance(evidence.get("degraded"), bool):
+                    errors.append(f"item {row.get('id')} evidence degraded must be boolean")
+                source_mapping_valid = isinstance(sources, list) and bool(sources) and all(
+                    isinstance(source, dict)
+                    and isinstance(source.get("name"), str)
+                    and source["name"].strip()
+                    and isinstance(source.get("url"), str)
+                    and source["url"].strip()
+                    and source.get("evidence_basis") in {"fulltext", "snippet"}
+                    and ("evidence_chain" not in source
+                         or (isinstance(source.get("evidence_chain"), str)
+                             and bool(source["evidence_chain"].strip())))
+                    for source in (sources or []))
+                if not source_mapping_valid:
+                    errors.append(f"item {row.get('id')} evidence source mapping is invalid")
+                else:
+                    source_urls = [str(source["url"]).strip() for source in sources]
+                    publisher_keys = [
+                        str(source["name"]).strip().casefold() for source in sources]
+                    if (len(source_urls) != len(set(source_urls))
+                            or len(publisher_keys) != len(set(publisher_keys))):
+                        errors.append(f"item {row.get('id')} evidence sources are not unique")
+                    derived_publishers = set(publisher_keys)
+                    if (isinstance(publisher_count, int)
+                            and not isinstance(publisher_count, bool)
+                            and publisher_count != len(derived_publishers)):
+                        errors.append(
+                            f"item {row.get('id')} evidence publisher mapping is invalid")
+                    bases = [source["evidence_basis"] for source in sources]
+                    derived_basis = (
+                        "fulltext" if all(value == "fulltext" for value in bases)
+                        else "mixed" if any(value == "fulltext" for value in bases)
+                        else "snippet")
+                    if basis in {"fulltext", "mixed", "snippet"} and basis != derived_basis:
+                        errors.append(f"item {row.get('id')} evidence basis mapping is invalid")
+                    derived_chains = {
+                        str(source.get("evidence_chain") or "").strip().casefold()
+                        for source in sources if source.get("evidence_chain")}
+                    if (isinstance(chain_count, int) and not isinstance(chain_count, bool)
+                            and chain_count != len(derived_chains)):
+                        errors.append(f"item {row.get('id')} evidence chain mapping is invalid")
         claims = row.get("claims") or []
         if not isinstance(claims, list):
             errors.append(f"item {row.get('id')} claims must be an array")
@@ -2723,7 +4053,7 @@ def validate_daily_payload(payload):
     return errors
 
 
-def update_quality_health(data_dir, date_str, quality, keep_days=90):
+def update_quality_health(data_dir, date_str, quality, keep_days=90, include_rollout=True):
     """Upsert a rolling, non-daily-file quality health record."""
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -2734,7 +4064,8 @@ def update_quality_health(data_dir, date_str, quality, keep_days=90):
         current = {}
     records = [row for row in (current.get("records") or [])
                if isinstance(row, dict) and row.get("date") != date_str]
-    records.append({"date": date_str, **new_quality_stats(), **quality})
+    records.append({"date": date_str,
+                    **_quality_for_output(quality, include_rollout)})
     records.sort(key=lambda row: row.get("date", ""))
     records = records[-max(1, int(keep_days)):]
     audited = sum(int(row.get("audited_events", 0)) for row in records)
@@ -2779,8 +4110,19 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     daily_dir = data_dir / "daily"
     daily_dir.mkdir(parents=True, exist_ok=True)
 
-    out_items = ([event_to_item(e, items, "pick") for e in picked] +
-                 [event_to_item(e, items, "more") for e in secondary])
+    rollout_output = _rollout_output_enabled(cfg)
+    source_limit = 4 if rollout_output else 5
+    if rollout_output:
+        for event in [*picked, *secondary]:
+            apply_evidence_contract(event, items)
+    out_items = ([event_to_item(
+                    e, items, "pick", full_objectivity=rollout_output,
+                    source_limit=source_limit) for e in picked] +
+                 [event_to_item(
+                    e, items, "more", full_objectivity=rollout_output,
+                    source_limit=source_limit) for e in secondary])
+    if not rollout_output:
+        _strip_rollout_item_fields(out_items)
     payload = {
         "date": date_str,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -2791,7 +4133,7 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
             "pick_count": len(picked),
             "more_count": len(secondary),
         },
-        "quality": {**new_quality_stats(), **(quality or {})},
+        "quality": _quality_for_output(quality, rollout_output),
         "items": out_items,
     }
     if themes:
@@ -2840,6 +4182,144 @@ WEEKLY_SYSTEM = """你是资深主编，把一个完整自然周的日报压缩�
  "watch_recap":[{"prior":"≤40字","status":"兑现|部分兑现|未兑现|反转",
  "note":"≤60字","evidence_refs":["复合键"]}],"outlook":["≤50字"]}。
 不得创造输入中不存在的引用；只输出 JSON。"""
+
+WEEKLY_AUDIT_SYSTEM = """你是周报客观性审计员。输入证据有严格作用域：
+- lead 和 outlook 只能使用明确命名的 whole_week_evidence；
+- 每条 thread 只能使用同 index 的 thread_evidence.items，不得用其他周内条目补证；
+- 每条 watch_recap 只能使用同 index 的 watch_recap_evidence.items。
+检查各字段是否受对应作用域证据支撑、归因正确，且没有无依据的动机、因果、幅度语言或
+虚构平衡说法。只输出：
+{"lead":true,"threads":[true],"watch_recap":[true],"outlook":[true]}。
+各布尔数组必须与候选内容等长。"""
+
+WEEKLY_REPAIR_SYSTEM = """只修复 failed 指定的周报文字：
+lead/outlook 严格依据 whole_week_evidence，threads 严格依据同 index 的
+thread_evidence，watch_recap 严格依据同 index 的 watch_recap_evidence；不得改变任何引用。
+只输出 {"lead":{"title":"...","summary":"..."},
+"threads":[{"index":0,"title":"...","one_liner":"...","detail":"..."}],
+"watch_recap":[{"index":0,"prior":"...","status":"...","note":"..."}],
+"outlook":[{"index":0,"text":"..."}]}。未失败的部分不要返回。"""
+
+
+def _validated_weekly_audit(raw, payload):
+    if not isinstance(raw, dict) or not isinstance(raw.get("lead"), bool):
+        return None
+    checked = {"lead": raw["lead"]}
+    for key in ("threads", "watch_recap", "outlook"):
+        values = raw.get(key)
+        expected = payload.get(key) or []
+        if (not isinstance(values, list) or len(values) != len(expected)
+                or any(not isinstance(value, bool) for value in values)):
+            return None
+        checked[key] = values
+    return checked
+
+
+def _weekly_failures(checked, payload):
+    if checked is None:
+        return {
+            "lead": True,
+            "threads": list(range(len(payload.get("threads") or []))),
+            "watch_recap": list(range(len(payload.get("watch_recap") or []))),
+            "outlook": list(range(len(payload.get("outlook") or []))),
+        }
+    return {
+        "lead": not checked["lead"],
+        "threads": [i for i, ok in enumerate(checked["threads"]) if not ok],
+        "watch_recap": [i for i, ok in enumerate(checked["watch_recap"]) if not ok],
+        "outlook": [i for i, ok in enumerate(checked["outlook"]) if not ok],
+    }
+
+
+def _weekly_has_failures(failed):
+    return bool(failed["lead"] or failed["threads"]
+                or failed["watch_recap"] or failed["outlook"])
+
+
+def _apply_weekly_repair(payload, repair, failed):
+    if not isinstance(repair, dict):
+        return
+    if failed["lead"] and isinstance(repair.get("lead"), dict):
+        for field, limit in (("title", 18), ("summary", 100)):
+            if field in repair["lead"]:
+                payload["lead"][field] = str(repair["lead"].get(field) or "")[:limit]
+    specs = {
+        "threads": (("title", 16), ("one_liner", 60), ("detail", 100)),
+        "watch_recap": (("prior", 40), ("note", 60)),
+    }
+    for key, fields in specs.items():
+        for row in repair.get(key) or []:
+            if not isinstance(row, dict):
+                continue
+            index = row.get("index")
+            if (not isinstance(index, int) or isinstance(index, bool)
+                    or index not in failed[key] or not 0 <= index < len(payload[key])):
+                continue
+            for field, limit in fields:
+                if field in row:
+                    payload[key][index][field] = str(row.get(field) or "")[:limit]
+            if (key == "watch_recap" and row.get("status") in WEEKLY_STATUS):
+                payload[key][index]["status"] = row["status"]
+    for row in repair.get("outlook") or []:
+        if not isinstance(row, dict):
+            continue
+        index = row.get("index")
+        if (isinstance(index, int) and not isinstance(index, bool)
+                and index in failed["outlook"] and 0 <= index < len(payload["outlook"])):
+            payload["outlook"][index] = str(row.get("text") or "")[:50]
+
+
+def _audit_weekly(audit_llm, payload, refs):
+    cited = {ref: item for ref, (kind, item) in refs.items() if kind == "item"}
+
+    def scoped_evidence(rows, ref_fields):
+        scoped = []
+        for index, row in enumerate(rows or []):
+            local_refs = []
+            for field in ref_fields:
+                for ref in row.get(field) or []:
+                    if ref in cited and ref not in local_refs:
+                        local_refs.append(ref)
+            scoped.append({"index": index, "refs": local_refs,
+                           "items": {ref: cited[ref] for ref in local_refs}})
+        return scoped
+
+    request = {
+        "whole_week_evidence": cited,
+        "thread_evidence": scoped_evidence(
+            payload.get("threads"), ("member_refs", "representative_refs")),
+        "watch_recap_evidence": scoped_evidence(
+            payload.get("watch_recap"), ("evidence_refs",)),
+        "candidate": {
+            key: payload.get(key) for key in ("lead", "threads", "watch_recap", "outlook")},
+    }
+    try:
+        checked = _validated_weekly_audit(
+            audit_llm.json_call(WEEKLY_AUDIT_SYSTEM,
+                                json.dumps(request, ensure_ascii=False)), payload)
+    except Exception as exc:
+        log(f"  周综述客观性初审失败，进入修复: {exc}")
+        checked = None
+    failed = _weekly_failures(checked, payload)
+    if not _weekly_has_failures(failed):
+        return True
+    request["failed"] = failed
+    try:
+        repair = audit_llm.json_call(
+            WEEKLY_REPAIR_SYSTEM, json.dumps(request, ensure_ascii=False))
+        _apply_weekly_repair(payload, repair, failed)
+    except Exception as exc:
+        log(f"  周综述客观性修复失败，继续复审: {exc}")
+    request["candidate"] = {
+        key: payload.get(key) for key in ("lead", "threads", "watch_recap", "outlook")}
+    try:
+        checked = _validated_weekly_audit(
+            audit_llm.json_call(WEEKLY_AUDIT_SYSTEM,
+                                json.dumps(request, ensure_ascii=False)), payload)
+    except Exception as exc:
+        log(f"  周综述客观性复审失败: {exc}")
+        checked = None
+    return not _weekly_has_failures(_weekly_failures(checked, payload))
 
 
 def iso_week_key(d):
@@ -3019,7 +4499,8 @@ def weekly_pick_material(days, max_total=100):
     return selected
 
 
-def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
+def write_weekly(llm, date_str, cfg, data_dir, profile_text="", audit_llm=None,
+                 force=False):
     """Idempotently create v2 report for the most recent fully closed ISO week."""
     wcfg = cfg.get("weekly") or {}
     keep = int(wcfg.get("keep_weeks", 26))
@@ -3027,7 +4508,7 @@ def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
     start, end, week_key = latest_closed_iso_week(date_str)
     data_dir = Path(data_dir)
     target = data_dir / "weekly" / f"{week_key}.js"
-    if target.exists():
+    if target.exists() and not force:
         write_weekly_manifest(data_dir, keep)
         log(f"  周综述：{week_key} 已存在，跳过（幂等）")
         return read_weekly_payload(target)
@@ -3197,6 +4678,9 @@ def write_weekly(llm, date_str, cfg, data_dir, profile_text=""):
     errors = validate_weekly_references(payload, days)
     if errors:
         log("  周综述：引用校验失败，跳过写文件：" + "; ".join(errors))
+        return None
+    if audit_llm is not None and not _audit_weekly(audit_llm, payload, refs):
+        log("  周综述：客观性复审未通过，跳过写文件")
         return None
     wdir = data_dir / "weekly"
     wdir.mkdir(parents=True, exist_ok=True)
@@ -3500,12 +4984,22 @@ def resolve_rsshub_sources(sources):
 # ----------------------------------------------------------------
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dry-run", action="store_true", help="只抓取，不调 LLM")
-    ap.add_argument("--date", default=None, help="输出日期 YYYY-MM-DD，默认今天")
-    args = ap.parse_args()
+    """Run the managed pipeline.
+
+    Ordering inside ``_run_pipeline`` is intentionally:
+    audit_enrichment_support -> track_events -> write_brief -> write_output -> write_weekly.
+    """
+    started_at = time.perf_counter()
+    args = parse_cli_args()
 
     cfg = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
+    policy = resolve_run_policy(cfg, args)
+    cfg["_objectivity_runtime_mode"] = policy["mode"]
+    with managed_run_data_dir(policy):
+        return _run_pipeline(started_at, args, cfg, policy)
+
+
+def _run_pipeline(started_at, args, cfg, policy):
 
     # ---- 环境变量覆盖（供云端 CI 使用，本地运行无感知） ----
     if os.environ.get("LLM_API_KEY", "").strip():
@@ -3547,7 +5041,8 @@ def main():
         log("错误：请先在 config.yaml 里填写 llm.api_key")
         sys.exit(1)
 
-    llm = LLM(cfg["llm"])
+    llm = LLM(resolve_llm_config(cfg, "llm"))
+    audit_llm = LLM(resolve_llm_config(cfg, "audit_llm"))
 
     # ---- 偏好学习输入：反馈与稍后读（缺失/损坏一律安全忽略） ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -3597,7 +5092,7 @@ def main():
     events = triage(llm, items)
     log(f"  聚成 {len(events)} 个事件")
     log("质量审计：复核多来源事件凝聚度 ...")
-    events, quality = audit_event_cohesion(llm, events, items, quality)
+    events, quality = audit_event_cohesion(audit_llm, events, items, quality)
     log(f"  审计 {quality['audited_events']} 个事件，拆分 {quality['split_events']} 个")
 
     log("偏好学习：画像蒸馏 + 兴趣拟合 ...")
@@ -3611,6 +5106,21 @@ def main():
         log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
 
     picked, secondary = score_and_select(events, items, cfg)
+    shadow_selected = None
+
+    if policy["full_objectivity"]:
+        # 高风险单发布者事件只在本次已抓取、预筛前的原始池中寻找佐证；不开放搜索。
+        corroborate_high_risk_events(picked, items, accepted_items, quality)
+        log("证据采集：读取精选事件公开文章正文 ...")
+        acquire_event_evidence(picked, items, quality)
+        if quality["corroboration_matches"]:
+            log(f"  原始池佐证：合并 {quality['corroboration_matches']} 条可信候选")
+        log(f"  正文抓取：成功 {quality['article_fetch_successes']} / "
+            f"尝试 {quality['article_fetch_attempts']}")
+        if policy["mode"] == "shadow":
+            # Snapshot membership before high-risk demotion; event objects remain live
+            # so the summary still observes later repair/degradation results.
+            shadow_selected = list(picked)
 
     # 评分回填全量档（独立故障域）：让「全部动态」能按分数过滤
     try:
@@ -3621,13 +5131,16 @@ def main():
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
     enrich(llm, picked, items, cfg, profile)
     log("质量审计：核对精加工内容的事实支撑 ...")
-    audit_enrichment_support(llm, picked, items, quality)
+    run_audit_enrichment_support_stage(
+        policy, audit_llm, picked, secondary, items, quality)
     for ev in secondary:
         ev.setdefault("status", "")
     log("事件登记表：跨天延续性匹配 ...")
     registry = track_events(llm, picked, date_str, cfg,
                             secondary=secondary, feedback=feedback)
-    brief, themes = write_brief(llm, picked, secondary)
+    brief, themes = write_brief(
+        llm, picked, secondary,
+        audit_llm=audit_llm if policy["full_objectivity"] else None)
 
     log("深读频道：长文筛选 ...")
     deep = deep_channel(llm, cfg, date_str, profile)
@@ -3642,7 +5155,9 @@ def main():
                  registry=registry, deep=deep, themes=themes, papers=papers,
                  opinion=opinion, quality=quality)
     try:
-        update_quality_health(_data_dir, date_str, quality)
+        update_quality_health(
+            _data_dir, date_str, quality,
+            include_rollout=policy["full_objectivity"])
     except Exception as e:
         log(f"  质量健康记录写入失败（不影响当日日报）: {e}")
     log("英语单词本：挑词 + 补全手动词 ...")
@@ -3653,7 +5168,10 @@ def main():
     if wk.get("enabled"):
         log("周综述：趋势连线 + 待验证回收 ...")
         try:
-            write_weekly(llm, date_str, cfg, _data_dir, profile)
+            write_weekly(
+                llm, date_str, cfg, _data_dir, profile,
+                audit_llm=audit_llm if policy["full_objectivity"] else None,
+                force=policy["mode"] == "shadow")
         except Exception as e:
             log(f"  周综述失败（不影响每日产出）: {e}")
 
@@ -3670,6 +5188,14 @@ def main():
     if publish_errors:
         log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
         sys.exit(2)
+
+    if not policy["writes_public_data"]:
+        summary = build_shadow_summary(
+            shadow_selected or [], picked, items, quality,
+            runtime_seconds=time.perf_counter() - started_at)
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True), flush=True)
+        append_github_shadow_summary(summary)
+        return
 
     save_news_seen(_data_dir, date_str, accepted_items, news_seen, dedup_keep_days)
     publish_to_blog(cfg, date_str)

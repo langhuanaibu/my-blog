@@ -105,7 +105,46 @@ export function renderDailyReport(data, options = {}) {
 
 function claimsHtml(item) {
   const claims = (item.claims || []).filter((claim) => claim?.text);
-  return claims.length ? `<section><h2 class="detail-sec-t">事实与判断</h2><ul class="detail-claims">${claims.map((claim) => `<li class="detail-claim kind-${escapeHtml(claim.kind || "uncertain")}">${escapeHtml(claim.text)}</li>`).join("")}</ul></section>` : "";
+  const kindLabels = { fact: "事实", analysis: "分析", uncertain: "待核实" };
+  return claims.length ? `<section><h2 class="detail-sec-t">事实与判断</h2><ul class="detail-claims">${claims.map((claim) => {
+    const kind = Object.hasOwn(kindLabels, claim.kind) ? claim.kind : "uncertain";
+    const sources = Array.isArray(claim.sources) ? claim.sources.filter((source) => typeof source === "string" && source.trim()) : [];
+    return `<li class="detail-claim kind-${kind}"><span class="claim-kind">${kindLabels[kind]}</span>${escapeHtml(claim.text)}${sources.length ? `<div class="claim-sources">来源：${sources.map(escapeHtml).join("、")}</div>` : ""}</li>`;
+  }).join("")}</ul></section>` : "";
+}
+
+function evidenceHtml(item) {
+  const evidence = item.evidence;
+  const basisLabels = { fulltext: "全文证据", mixed: "混合证据", snippet: "摘要证据" };
+  const sources = item.sources;
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)
+    || !Object.hasOwn(basisLabels, evidence.basis)
+    || typeof evidence.degraded !== "boolean"
+    || !Number.isInteger(evidence.publisher_count) || evidence.publisher_count < 1
+    || !Number.isInteger(evidence.independent_chain_count) || evidence.independent_chain_count < 0
+    || evidence.independent_chain_count > evidence.publisher_count
+    || !Array.isArray(sources) || sources.length === 0) return "";
+  const mappingValid = sources.every((source) => source && typeof source === "object" && !Array.isArray(source)
+    && typeof source.name === "string" && source.name.trim()
+    && typeof source.url === "string" && source.url.trim()
+    && (source.evidence_basis === "fulltext" || source.evidence_basis === "snippet")
+    && (!Object.hasOwn(source, "evidence_chain")
+      || (typeof source.evidence_chain === "string" && source.evidence_chain.trim())));
+  if (!mappingValid) return "";
+  const publisherKeys = sources.map((source) => source.name.trim().toLocaleLowerCase());
+  const sourceUrls = sources.map((source) => source.url.trim());
+  if (new Set(publisherKeys).size !== sources.length || new Set(sourceUrls).size !== sources.length) return "";
+  const chainKeys = new Set(sources
+    .filter((source) => Object.hasOwn(source, "evidence_chain"))
+    .map((source) => source.evidence_chain.trim().toLocaleLowerCase()));
+  const sourceBases = sources.map((source) => source.evidence_basis);
+  const derivedBasis = sourceBases.every((basis) => basis === "fulltext")
+    ? "fulltext" : sourceBases.some((basis) => basis === "fulltext") ? "mixed" : "snippet";
+  if (evidence.publisher_count !== publisherKeys.length
+    || evidence.independent_chain_count !== chainKeys.size
+    || evidence.basis !== derivedBasis) return "";
+  const publishers = evidence.publisher_count === 1 ? "单一发布源" : `${evidence.publisher_count} 个发布源`;
+  return `<section class="detail-evidence" aria-label="证据概览"><h2 class="detail-sec-t">证据概览</h2><div class="evidence-meta"><span>${publishers}</span><span>独立证据链 ${evidence.independent_chain_count} 条</span><span>${basisLabels[evidence.basis]}</span>${evidence.degraded === true ? '<span class="evidence-degraded">证据降级</span>' : ""}</div></section>`;
 }
 
 export function renderDetail(item, type = "news", date = "", options = {}) {
@@ -114,7 +153,7 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   const common = item.summary || item.brief ? `<p class="detail-lede">${escapeHtml(item.summary || item.brief)}</p>` : "";
   const update = type === "news" && item.is_update ? `<div class="detail-update"><b>重大更新</b>${item.first_seen ? ` · 首次收录：${escapeHtml(item.first_seen)}` : ""}</div>` : "";
   let body = "";
-  if (type === "news") body = `${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}<div class="detail-kv">${[["为什么重要", item.why], ["背景机制", item.context], ["对我的意义", item.significance], ["后续关注", item.watch]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}</div>${claimsHtml(item)}`;
+  if (type === "news") body = `${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}<div class="detail-kv">${[["为什么重要", item.why], ["背景机制", item.context], ["对我的意义", item.significance], ["后续关注", item.watch]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;
   return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${common}${update}${body}<div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type })}</article>`;

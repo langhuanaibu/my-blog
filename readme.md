@@ -161,10 +161,36 @@ GITHUB_BRANCH=main
 - 主管线是 `news-pipeline/daily_news.py`：抓取（RSS / AI HOT / 逐源直连适配器）→ 跨日 URL 去重与重大更新判定 → 预筛 → LLM 去重聚类、分类、五维打分 → 多条事件凝聚度审计 → 代码合成最终分（含热榜 co-occurrence 公众热度加权）→ 精选深加工与事实支撑审计 → 生成今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、舆论观察、RSS 和搜索索引。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
 - **信源接入采用"逐源直连适配器"路线**（参考 AIHOT 的做法：RSS 优先、没 RSS 就直连公开接口/网页内嵌数据，不建万能适配层）。三类接法并存：①标准 RSS（`fetch_rss`）；②自建 RSSHub 实例（Vercel）转 RSS——当前用于科学网、澎湃热门、果壳、Anthropic news/engineering 和财联社·深度等已验证路由，`url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE` + `RSSHUB_KEY` 拼真 URL（地址密钥不落公开仓库，`resolve_rsshub_sources`，主管线与 `deep_sources` 均支持；未配置则自动跳过）；③专用适配器——`fetch_aihot`（JSON API）、`fetch_thepaper_list`（澎湃频道页 `__NEXT_DATA__` 内嵌数据，各 `list_*` 频道同构可复用）、`fetch_weibo_hot`（genvisitor 访客握手，无需登录/浏览器）、`fetch_bilibili_hot`（公开接口）。**不再扩 RSSHub 路由、不上 Docker**。已关闭的信源线（原因见 `sources.yaml` 尾部终局结论注释）：微信公众号（需常驻中继+人肉续期）、知乎（无登录态全线 4xx）、中青报/界面（JS 壳站）、X 直连（AI 类经 AIHOT 二手接入），以及 2026-07-16 验收停用的 FT 中文网和第一财经。
+- 主管线在增加任何信源前，必须先观察现有源至少 **14-day source metrics
+  before adding sources**：抓取成功/零更新、候选/入选量、单源高风险、独立证据链与来源集中度。
+  观察期不加源、不回填历史数据，结论与人工审查均支持时才可重议。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在精选阈值之下，只能进"更多资讯"；有事实源或分析源交叉佐证后才解除限制。
 - 抓取健壮性：`fetch_rss`/`fetch_aihot` 统一走 `http_get`（指数退避重试），治 AIHOT 连接重置这类偶发失败——单次请求一挂整源归零。`max_per_source` 默认 18（削减 world/舆论刷屏源的 triage 噪音）；AIHOT 是 AI 深度独木、已精选噪音低，在 `fetch_aihot` 内单独放宽取量、不受该值压制。AI 一手供给以逐篇新闻站（The Decoder 等）为主，不用摘要型 newsletter（每期一条不适配事件聚类）。`source_health.json` 将抓取错误与窗口内零更新分开记录；2026-07-16 验收中，`ftcn` 连续 6 天抓取失败，`yicai` 上游头条接口停留在 2026-05-30，二者均已在 `sources.yaml` 停用。
 - 精选采用阈值制，不硬凑固定条数；同时保留类目保底、全局上限、同源封顶和受控主题标签。`config.yaml` 的 `max_per_category` 保留可选的单类封顶能力，但当前为空，AI 与其他类目一样按质量阈值和分数竞争，仅受全局 `pick_max`、类目保底及既有评分规则约束。主题标签只允许来自 `config.yaml` 的 `topic_tags`，词表外标签会被丢弃。
 - 可信度质量门分两层：跨批次聚类后，所有含两个及以上原始条目的事件都会复核凝聚度；审计输出无效或调用失败时，该事件拆回单条、取消多源加成并把证据分降为中性值。精选深加工后再核对 `why/context/significance/watch/detail/claims` 是否由当前事件来源支撑；审计失败时保守删除全部扩展字段，只保留标题、摘要、来源、分类、状态、分数和时间等基础内容，避免未经复核的叙述进入日报。
+- 面向读者的生成文字（精选 title/summary/why/context/detail 与今日主线）受 prompt 层"客观性规范"约束（2026-07-18 起）：只陈述可追溯事实，媒体的立场性定性必须显式归因（"X 报道称"）、不得写成事实，剥离情绪化措辞与无依据动机推断，禁止为"平衡"编造原文没有的对立观点；立场性判断优先进 `claims`（kind=analysis）。验收与背景见 `docs/news_objectivity_plan.md`。
+- 上述公开行为当前是 **interim wording hotfix**：`config.yaml` 的
+  `objectivity.mode` 默认 `interim`，只启用 prompt 热修和旧的 support-only 事实支撑审计。
+  完整正文取证、独立链佐证、客观性定向修复/降级/降档只在 shadow 或未来
+  `active` 模式中运行。**active mode is not enabled**，**live acceptance has not occurred**。
+- 本地 shadow 命令是 `python news-pipeline/daily_news.py --objectivity-shadow`。它先把当前
+  `DATA_DIR`（包括 feedback/profile/registry/weekly 等状态）完整复制到可清理的临时目录，
+  后续读取和写入只发生在该快照；无论空数据、提前返回、异常或校验失败都会恢复环境并删除快照。
+  stdout / GitHub step summary 只输出不含文章正文/密钥的聚合指标：
+  `selected_before_audit`、`selected_after_audit`、`audited_candidate_count`、
+  `demoted_from_selected`、`source_reference_concentration` 等字段均显式标明统计口径。
+  Actions 中 shadow job 只在公开 generate 成功后运行，重新 checkout `main` 的最新数据，限时
+  24 分钟、只读、允许失败，不 commit/push，也不改变已提交的 interim 日报。切换 active 前
+  必须通过 **7-day gate**，以及至少
+  **45-case** 合成夹具（9 类各 5 条）的 **three-run** 最差轮门槛：红线 0、归因准确率 >=95%、
+  结构合法率 100%。这些验收目前都没有被声称完成。
+- 完整模式的证据合同为 `evidence: {basis, publisher_count,
+  independent_chain_count, degraded}`，`basis` 仅为 `fulltext|mixed|snippet`；来源可带
+  `evidence_basis/evidence_chain`，claims 用 `sources` 显示归因。前端只渲染完整合法结构，
+  旧数据静默兼容；`degraded` 表示摘要退化或修复失败后的保守内容，高风险复审
+  仍失败会从精选降到更多资讯。**full text is not persisted**：每源最多 4,000 字只在
+  当次运行内存中作审计证据，不进入日/周报、feed、search、registry、profile、health 或
+  vocab。获取器不登录、不执行页面脚本、不绕过 **paywall**；取不到就降级为 RSS 摘要。
 - AI HOT 条目会带上其原生分类（模型/产品/论文/技巧）作为 `tag_hint`，在阶段 B 打标时优先入选，保证「研究论文」「技巧观点」这类内容不被大类淹没——前端现有子标签筛选即可单独筛出，无需改前端。
 - 兴趣画像影响排序：`interest_profile.md` 非空时，管线对每个事件打"兴趣契合分"换算成分数乘数，幅度由 `config.yaml` 的 `scoring.fit_span` 控制（默认 ±0.30，画像明确不关注的事件被压低、更关注的被抬高）。
 - 画像含手写的「## 学习参考系」段（长期学习方向/当前能力栈/希望积累的判断力/资讯转化偏好）：阶段B 据此把每条精选的"对我的意义"（`significance`）写成学习路线导向的**可操作参考**（该补什么概念、读什么文档/论文、试什么工具、盯什么能力趋势），无可操作关联则留空。该段每晚蒸馏时由 `split_section` 摘出、绕过 LLM、原样贴回（`update_profile`），不会被自动改写冲掉；旧的「## 我的处境」段仍会被兼容保护。
@@ -175,6 +201,13 @@ GITHUB_BRANCH=main
 - GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。自建 RSSHub 源另需两个 Secret：`RSSHUB_BASE`、`RSSHUB_KEY`（未配置则相关源自动跳过，管线不崩）。LLM 模型用显式版本名 `deepseek-v4-flash`（`deepseek-chat` 别名 2026-07-24 官方停用）；V4 裸模型名默认开 thinking 模式（temperature 静默失效、思考 token 计费），管线经 `config.yaml` 的 `llm.extra_body` 显式关闭，换供应商时删掉该配置即可。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
 - 本地手动补跑（PowerShell）：始终在仓库根目录运行 `py -3.12 -m pip install --require-hashes -r news-pipeline/requirements.txt`，再用 `$env:LLM_API_KEY="你的key"` 注入密钥并执行 `py -3.12 news-pipeline/daily_news.py`。需要抓自建 RSSHub 源时再设置 `$env:RSSHUB_BASE` 和 `$env:RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `$env:DATA_DIR` 指向 `source/news/data`。
+- 模型验收工具是 `python news-pipeline/objectivity_eval.py`；它固定读取受 canonical JSON
+  SHA-256 约束的 checked-in 45 条夹具（9 类各 5 条；LF/CRLF checkout 得到相同摘要），不能通过 CLI
+  换语料。每条证据先走生产 `enrich` 与完整客观性
+  audit/repair/fallback，再由独立 judge 仅根据证据和最终候选评分；生成模型和 judge 都拿不到
+  fixture category、expected labels/redlines 或验收阈值，候选自报的 labels/redlines 不参与评分。
+  工具仅在明确配置现网 LLM 凭证时连续运行恰好三轮，并以最差轮的 0 / 95% / 100% 门槛决定
+  非零退出码。自动测试只用本地桩，不调用付费/线上提供商。
 - 顶层 Python 依赖维护在 `news-pipeline/requirements.in`，使用与 Actions 一致的 Python 3.12 在仓库根目录运行 `py -3.12 -m piptools compile --generate-hashes --resolver=backtracking --output-file news-pipeline/requirements.txt news-pipeline/requirements.in`。`sgmllib3k` 使用 `news-pipeline/vendor/` 内受控 wheel，生成后必须保持锁文件中的仓库相对路径并运行一次 `pip install --dry-run --require-hashes`，不能退回会动态下载构建工具的源码包。
 - 排查信源抓取时先跑 `py -3.12 news-pipeline/daily_news.py --dry-run`，只抓取、不调 LLM。
 - 若通过 `publish.blog_dir` 把独立数据目录同步到博客，管线会完整镜像整个 `data/` 树并清理目标中的陈旧派生文件；切换使用临时目录和备份，失败时恢复旧目录，后续运行也会先恢复遗留备份。只有日报成功生成后才会进入发布同步。

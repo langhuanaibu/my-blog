@@ -1650,7 +1650,7 @@ _support_llm = QueueLLM([{
     "supported_claim_indexes": [0],
 }])
 _support_stats = dn.new_quality_stats()
-dn.audit_enrichment_support(_support_llm, _enriched, _qa_items, _support_stats)
+dn.audit_enrichment_support_interim(_support_llm, _enriched, _qa_items, _support_stats)
 check("长叙述污染被整段清除", "detail" not in _enriched[0])
 check("不受支持 claim 被删除",
       [c["text"] for c in _enriched[0]["claims"]] == ["OpenAI 发布模型"])
@@ -1661,7 +1661,7 @@ _empty_ref_event = [{
     "claims": [{"text": "无来源结论", "kind": "fact", "sources": []}],
 }]
 _empty_ref_stats = dn.new_quality_stats()
-dn.audit_enrichment_support(
+dn.audit_enrichment_support_interim(
     QueueLLM([{"fields": {}, "supported_claim_indexes": [0]}]),
     _empty_ref_event, _qa_items, _empty_ref_stats)
 check("事实支撑审计删除空 sources claim",
@@ -1675,7 +1675,7 @@ _bool_claim_event = [{
     ],
 }]
 _bool_claim_stats = dn.new_quality_stats()
-dn.audit_enrichment_support(
+dn.audit_enrichment_support_interim(
     QueueLLM([{"fields": {}, "supported_claim_indexes": [True]}]),
     _bool_claim_event, _qa_items, _bool_claim_stats)
 check("事实支撑审计拒绝 bool claim 编号并保守降级",
@@ -1684,8 +1684,8 @@ check("事实支撑审计拒绝 bool claim 编号并保守降级",
 _degrade_event = dict(_enriched[0], why="why", context="context", significance="sig",
                       watch="watch", detail="detail", claims=[{"text": "x", "sources": []}])
 _degrade_stats = dn.new_quality_stats()
-dn.audit_enrichment_support(QueueLLM([RuntimeError("model down")]),
-                            [_degrade_event], _qa_items, _degrade_stats)
+dn.audit_enrichment_support_interim(QueueLLM([RuntimeError("model down")]),
+                                    [_degrade_event], _qa_items, _degrade_stats)
 check("事实审计异常移除全部扩展字段",
       all(k not in _degrade_event for k in dn.QUALITY_EXTENSION_FIELDS))
 check("事实审计异常保留基础内容",
@@ -1823,6 +1823,349 @@ try:
 finally:
     shutil.copytree = _original_copytree
     shutil.rmtree(_recovery_tmp, ignore_errors=True)
+
+
+# ----------------------------------------------------------------
+# 证据透明度后端：安全正文抓取 / 风险 / 原始池佐证 / 序列化契约
+# ----------------------------------------------------------------
+class _ArticleResponse:
+    def __init__(self, body=b"", content_type="text/html; charset=utf-8",
+                 status=200, location=""):
+        self.body = body
+        self.status_code = status
+        self.headers = {"Content-Type": content_type,
+                        "Content-Length": str(len(body))}
+        if location:
+            self.headers["Location"] = location
+
+    def iter_content(self, chunk_size=65536):
+        for pos in range(0, len(self.body), chunk_size):
+            yield self.body[pos:pos + chunk_size]
+
+    def close(self):
+        pass
+
+
+def _public_dns(_host, *_args, **_kwargs):
+    return [(2, 1, 6, "", ("93.184.216.34", 0))]
+
+
+_article_item = {
+    "title": "Example launches a safer model", "desc": "RSS fallback summary",
+    "url": "https://example.com/story", "source": "Example News",
+    "source_id": "example", "source_type": "fact", "tier": "T1",
+    "credibility": 9, "time": "2026-07-18T08:00:00+00:00",
+    "source_family": "example-original", "provenance": "original",
+}
+
+if not hasattr(dn, "fetch_article_evidence"):
+    check("文章证据抓取 API 已实现", False)
+else:
+    _long_text = "Main reporting sentence. " * 250
+    _request_calls = []
+
+    def _article_get(url, **kwargs):
+        _request_calls.append((url, kwargs))
+        return _ArticleResponse(b"<html><article>body</article></html>")
+
+    _evidence = dn.fetch_article_evidence(
+        dict(_article_item), request_get=_article_get, extractor=lambda _html: _long_text,
+        resolver=_public_dns, sleep=lambda _n: None)
+    check("公开 HTML 成功提取正文并截断",
+          _evidence["evidence_basis"] == "fulltext"
+          and _evidence["evidence_text"] == _long_text[:4000]
+          and _request_calls[0][1]["timeout"].total <= 10
+          and _request_calls[0][1]["timeout"].connect_timeout <= 3
+          and _request_calls[0][1]["timeout"].read_timeout <= 1
+          and _request_calls[0][1]["allow_redirects"] is False)
+
+    _fallback = dn.fetch_article_evidence(
+        dict(_article_item), request_get=_article_get, extractor=lambda _html: "too short",
+        resolver=_public_dns, sleep=lambda _n: None)
+    check("正文过短回退 RSS 摘要并标 snippet",
+          _fallback["evidence_basis"] == "snippet"
+          and "RSS fallback summary" in _fallback["evidence_text"])
+
+    _private_called = []
+    _private = dn.fetch_article_evidence(
+        {**_article_item, "url": "http://127.0.0.1/private"},
+        request_get=lambda *_a, **_k: _private_called.append(True),
+        extractor=lambda _html: _long_text, sleep=lambda _n: None)
+    check("拒绝私网文章地址", _private["evidence_basis"] == "snippet" and not _private_called)
+
+    _oversized = dn.fetch_article_evidence(
+        dict(_article_item),
+        request_get=lambda *_a, **_k: _ArticleResponse(b"x" * (2 * 1024 * 1024 + 1)),
+        extractor=lambda _html: _long_text, resolver=_public_dns, sleep=lambda _n: None)
+    check("拒绝超过 2MiB 的文章响应", _oversized["evidence_basis"] == "snippet")
+
+    _non_html = dn.fetch_article_evidence(
+        dict(_article_item),
+        request_get=lambda *_a, **_k: _ArticleResponse(b"%PDF", "application/pdf"),
+        extractor=lambda _html: _long_text, resolver=_public_dns, sleep=lambda _n: None)
+    check("拒绝非 HTML 文章响应", _non_html["evidence_basis"] == "snippet")
+
+    _redirect_calls = []
+
+    def _redirect_get(url, **_kwargs):
+        _redirect_calls.append(url)
+        return _ArticleResponse(status=302, location="http://169.254.169.254/latest/meta-data")
+
+    _redirect = dn.fetch_article_evidence(
+        dict(_article_item), request_get=_redirect_get, extractor=lambda _html: _long_text,
+        resolver=_public_dns, sleep=lambda _n: None)
+    check("重定向目标重新校验并拒绝内网", _redirect["evidence_basis"] == "snippet"
+          and len(_redirect_calls) == 1)
+
+
+if not hasattr(dn, "detect_evidence_risks"):
+    check("确定性证据风险标记 API 已实现", False)
+else:
+    _risk_event = {"category": "world", "status": "有争议",
+                   "title": "两国武装冲突后检方指控造成 120 人死亡"}
+    _risks = dn.detect_evidence_risks(_risk_event, [_article_item])
+    check("固定风险标记由内容状态分类确定",
+          all(_risks[name] for name in (
+              "politics_geopolitics", "armed_conflict", "allegation_legal",
+              "public_safety_health", "high_impact_numbers")))
+
+
+if not hasattr(dn, "corroborate_high_risk_events"):
+    check("原始池佐证 API 已实现", False)
+else:
+    _selected_items = [{**_article_item, "title": "Alpha City bridge collapse kills 12"}]
+    _raw_pool = [
+        _selected_items[0],
+        {**_article_item, "title": "12 killed in Alpha City bridge collapse",
+         "url": "https://wire.example/alpha-bridge", "source": "Wire Service",
+         "source_id": "wire", "source_family": "wire-original", "credibility": 8},
+        {**_article_item, "title": "Alpha City football club wins",
+         "url": "https://sports.example/alpha", "source": "Sports Daily",
+         "source_id": "sports", "source_family": "sports", "credibility": 9},
+    ]
+    _risk_pick = {"ids": [0], "category": "society", "status": "发展中",
+                  "title": "Alpha City bridge collapse kills 12",
+                  "risk_flags": {"public_safety_health": True}}
+    _cq = dn.new_quality_stats()
+    dn.corroborate_high_risk_events([_risk_pick], _selected_items, _raw_pool, _cq)
+    check("高风险单发布者事件从预筛前原始池合并可信佐证",
+          len(_risk_pick["ids"]) == 2 and _selected_items[1]["source_id"] == "wire")
+    check("不合主题的原始池候选不合并", all(i.get("source_id") != "sports"
+          for i in _selected_items))
+
+
+if not hasattr(dn, "apply_evidence_contract"):
+    check("事件证据契约 API 已实现", False)
+else:
+    _contract_items = [
+        {**_article_item, "source_id": "a", "source": "Publisher A",
+         "url": "https://a.example/x", "evidence_basis": "fulltext",
+         "source_family": "origin-a", "provenance": "original"},
+        {**_article_item, "source_id": "b", "source": "Publisher B",
+         "url": "https://b.example/x", "evidence_basis": "snippet",
+         "source_family": "origin-a", "provenance": "syndicated"},
+        {**_article_item, "source_id": "c", "source": "Publisher C",
+         "url": "https://c.example/x", "evidence_basis": "fulltext",
+         "provenance": "uncertain"},
+    ]
+    _contract_event = {"ids": [0, 1, 2]}
+    dn.apply_evidence_contract(_contract_event, _contract_items)
+    check("发布者数与独立证据链数分别统计",
+          _contract_event["evidence"]["publisher_count"] == 3
+          and _contract_event["evidence"]["independent_chain_count"] == 1)
+    check("混合正文与摘要形成 mixed 降级证据",
+          _contract_event["evidence"]["basis"] == "mixed"
+          and _contract_event["evidence"]["degraded"] is True)
+
+
+_serialize_items = [{**_article_item, "evidence_basis": "fulltext",
+                     "evidence_text": "MUST NOT PERSIST"}]
+_serialize_event = {
+    "ids": [0], "category": "ai", "title": "Evidence contract", "summary": "summary",
+    "status": "已确认", "tags": [], "score": 90, "tier": "T1",
+    "evidence": {"basis": "fulltext", "publisher_count": 1,
+                 "independent_chain_count": 1, "degraded": False},
+}
+_serialized = dn.event_to_item(
+    _serialize_event, _serialize_items, "T1",
+    full_objectivity=True, source_limit=4)
+check("序列化公开 evidence 契约与来源 basis",
+      _serialized.get("evidence") == _serialize_event["evidence"]
+      and _serialized["sources"][0].get("evidence_basis") == "fulltext"
+      and "MUST NOT PERSIST" not in json.dumps(_serialized))
+
+_legacy_item = {k: v for k, v in _article_item.items()
+                if k not in ("source_family", "provenance", "evidence_basis")}
+_legacy_event = {k: v for k, v in _serialize_event.items() if k != "evidence"}
+_legacy_serialized = dn.event_to_item(_legacy_event, [_legacy_item], "T1")
+check("旧数据缺少证据字段时保持兼容",
+      "evidence" not in _legacy_serialized
+      and "evidence_basis" not in _legacy_serialized["sources"][0])
+
+_quality = dn.new_quality_stats()
+check("质量统计包含文章抓取与佐证计数器",
+      all(name in _quality for name in (
+          "article_fetch_attempts", "article_fetch_successes",
+          "corroboration_candidates", "corroboration_matches")))
+check("声明通用静态 HTML 正文提取器依赖",
+      "trafilatura==" in (Path(dn.ROOT) / "requirements.in").read_text(encoding="utf-8"))
+
+
+# ----------------------------------------------------------------
+# Task 1 review fixes: pinned transport / conservative provenance / exact contract
+# ----------------------------------------------------------------
+if not hasattr(dn, "PinnedIPAdapter"):
+    check("文章传输固定已验证 IP", False)
+else:
+    class _PoolRecorder:
+        def __init__(self):
+            self.call = None
+
+        def connection_from_host(self, host, port=None, scheme=None, pool_kwargs=None):
+            self.call = (host, port, scheme, pool_kwargs)
+            return object()
+
+    _adapter = dn.PinnedIPAdapter("93.184.216.34", "example.com")
+    _adapter.poolmanager = _PoolRecorder()
+    _prepared = dn.requests.Request("GET", "https://example.com/story").prepare()
+    _adapter.get_connection_with_tls_context(_prepared, verify=True)
+    _pool_call = _adapter.poolmanager.call
+    check("固定 IP 同时保留 SNI 与证书主机校验",
+          _pool_call[0] == "93.184.216.34"
+          and _pool_call[3]["server_hostname"] == "example.com"
+          and _pool_call[3]["assert_hostname"] == "example.com")
+
+if hasattr(dn, "fetch_article_evidence"):
+    _pin_calls = []
+
+    def _pin_get(url, **kwargs):
+        _pin_calls.append((url, kwargs))
+        return _ArticleResponse(b"<html><article>body</article></html>")
+
+    _pin_result = dn.fetch_article_evidence(
+        dict(_article_item), request_get=_pin_get, extractor=lambda _html: "x" * 300,
+        resolver=_public_dns, sleep=lambda _n: None)
+    check("抓取把 DNS 校验结果传给固定 IP 传输",
+          _pin_result["evidence_basis"] == "fulltext"
+          and _pin_calls[0][1].get("pinned_ip") == "93.184.216.34")
+
+    _mime = dn.fetch_article_evidence(
+        dict(_article_item),
+        request_get=lambda *_a, **_k: _ArticleResponse(b"html", "text/html-malicious"),
+        extractor=lambda _html: "x" * 300, resolver=_public_dns, sleep=lambda _n: None)
+    check("MIME 必须精确为 HTML 类型", _mime["evidence_basis"] == "snippet")
+
+
+if hasattr(dn, "apply_evidence_contract"):
+    _unclear_origin = [{**_article_item, "source_family": "named-family",
+                        "provenance": None, "evidence_basis": "fulltext"}]
+    _unclear_event = {"ids": [0]}
+    dn.apply_evidence_contract(_unclear_event, _unclear_origin)
+    check("缺失 provenance 的 source_family 不算独立证据链",
+          _unclear_event["evidence"]["independent_chain_count"] == 0)
+
+
+if hasattr(dn, "acquire_event_evidence"):
+    _ranked_items = []
+    for _idx, (_stype, _cred) in enumerate((
+            ("analysis", 5), ("fact", 9), ("fact", 8), ("analysis", 9), ("fact", 7))):
+        _ranked_items.append({
+            **_article_item, "source_id": f"rank-{_idx}", "source": f"Rank {_idx}",
+            "url": f"https://rank{_idx}.example/story", "source_type": _stype,
+            "credibility": _cred, "source_family": f"rank-{_idx}",
+            "provenance": "original",
+        })
+    _rank_event = {"ids": [0, 1, 2, 3, 4], "category": "ai", "title": "ranked",
+                   "summary": "summary", "status": "已确认", "tags": [], "score": 90,
+                   "tier": "T1"}
+    _rank_quality = dn.new_quality_stats()
+    dn.acquire_event_evidence(
+        [_rank_event], _ranked_items, _rank_quality,
+        request_get=lambda *_a, **_k: _ArticleResponse(b"<html>ok</html>"),
+        extractor=lambda _html: "evidence " * 50, resolver=_public_dns)
+    _rank_serialized = dn.event_to_item(
+        _rank_event, _ranked_items, "pick",
+        full_objectivity=True, source_limit=4)
+    check("证据采集与序列化使用同一排序后的四个来源",
+          len(_rank_serialized["sources"]) == 4
+          and all(s.get("evidence_basis") in ("fulltext", "snippet")
+                  for s in _rank_serialized["sources"])
+          and {s["name"] for s in _rank_serialized["sources"]}
+          == {"Rank 1", "Rank 2", "Rank 3", "Rank 4"})
+    check("文章抓取 attempts/successes 按来源计数并另记 HTTP 请求数",
+          _rank_quality["article_fetch_attempts"] == 4
+          and _rank_quality["article_fetch_successes"] == 4
+          and _rank_quality.get("article_http_requests") == 4)
+    _partial_items = [{**_article_item}, {**_article_item, "source_id": "partial-two",
+                      "source": "Partial Two", "url": "https://partial.example/two"}]
+    _partial_event = {**_rank_event, "ids": [0, 1],
+                      "evidence": {"basis": "snippet", "publisher_count": 2,
+                                   "independent_chain_count": 0, "degraded": True}}
+    _partial_serialized = dn.event_to_item(
+        _partial_event, _partial_items, "pick",
+        full_objectivity=True, source_limit=4)
+    check("证据事件序列化为缺失的来源 basis 保守补 snippet",
+          all(source.get("evidence_basis") == "snippet"
+              for source in _partial_serialized["sources"]))
+
+
+if hasattr(dn, "corroborate_high_risk_events"):
+    _bilingual_items = [{
+        **_article_item, "title": "Iran closes Strait of Hormuz after tanker attack",
+        "desc": "Shipping halted after a tanker attack", "source_id": "publisher-one",
+        "source": "Publisher One", "source_family": "publisher-one",
+        "provenance": "original",
+    }]
+    _bilingual_raw = [
+        _bilingual_items[0],
+        {**_article_item, "title": "Tanker attacked as Iran closes Strait of Hormuz",
+         "desc": "Shipping through the strait was halted", "source_id": "wire-two",
+         "source": "Wire Two", "url": "https://wire.example/hormuz",
+         "source_family": "wire-two", "provenance": "original"},
+    ]
+    _bilingual_event = {"ids": [0], "category": "world", "status": "发展中",
+                        "title": "伊朗油轮遇袭后关闭霍尔木兹海峡"}
+    dn.corroborate_high_risk_events(
+        [_bilingual_event], _bilingual_items, _bilingual_raw, dn.new_quality_stats())
+    check("中文 triage 标题通过原始英文标题匹配英文佐证",
+          len(_bilingual_event["ids"]) == 2
+          and _bilingual_items[1]["source_id"] == "wire-two")
+
+
+_persist_tmp = Path(tempfile.mkdtemp(prefix="news-evidence-persist-"))
+_persist_old = os.environ.get("DATA_DIR")
+try:
+    os.environ["DATA_DIR"] = str(_persist_tmp)
+    _sentinel = "FULLTEXT_MUST_NEVER_PERSIST_9f31"
+    _persist_items = [{**_article_item, "evidence_basis": "fulltext",
+                       "evidence_text": _sentinel, "provenance": "original"}]
+    _persist_event = {
+        "ids": [0], "category": "ai", "title": "Persistence event",
+        "summary": "safe summary", "status": "已确认", "tags": [], "score": 90,
+        "tier": "T1", "evidence_text": _sentinel,
+    }
+    dn.apply_evidence_contract(_persist_event, _persist_items)
+    _persist_registry = {"version": 1, "events": []}
+    dn.update_registry(_persist_registry, [_persist_event], [], [], "2026-07-18", {})
+    (_persist_tmp / "events.json").write_text(
+        json.dumps(_persist_registry, ensure_ascii=False), encoding="utf-8")
+    dn.write_output("2026-07-18", "brief", [_persist_event], [], _persist_items,
+                    {"objectivity": {"mode": "active"}},
+                    registry=_persist_registry, quality=dn.new_quality_stats())
+    dn.write_all_archive(_persist_items, [{"id": "example", "category": "ai"}],
+                         "2026-07-18")
+    dn.save_news_seen(_persist_tmp, "2026-07-18", _persist_items, {})
+    _persisted_text = "\n".join(
+        path.read_text(encoding="utf-8") for path in _persist_tmp.rglob("*") if path.is_file())
+    check("正文哨兵不进入日报轻档登记表或 seen",
+          _sentinel not in _persisted_text
+          and '"evidence_basis": "fulltext"' in _persisted_text)
+finally:
+    shutil.rmtree(_persist_tmp, ignore_errors=True)
+    if _persist_old is None:
+        os.environ.pop("DATA_DIR", None)
+    else:
+        os.environ["DATA_DIR"] = _persist_old
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")

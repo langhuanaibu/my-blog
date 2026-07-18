@@ -228,6 +228,9 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .detail-body p{margin:0 0 15px}
 .detail-kv{display:flex;flex-direction:column;gap:10px;margin:22px 0}
 .detail-sec-t{margin:28px 0 12px;font-size:16px;font-weight:800;color:var(--heading);letter-spacing:.5px}
+.evidence-meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--text3)}
+.evidence-meta span{padding:3px 7px;border:1px solid var(--border);border-radius:12px}
+.evidence-meta .evidence-degraded{color:var(--rumor);border-color:var(--rumor)}
 .detail-takeaway{margin:4px 4px 24px;padding:16px 18px;background:transparent;border:1px solid var(--ink-2);outline:1px solid var(--ink-2);outline-offset:3px;border-radius:0;box-shadow:none}
 .detail-takeaway .label{display:block;color:var(--accent2);font-size:12px;font-weight:700;letter-spacing:.08em;margin-bottom:7px}
 .detail-takeaway p{margin:0;font-size:17px;line-height:1.7;font-weight:650;color:var(--heading)}
