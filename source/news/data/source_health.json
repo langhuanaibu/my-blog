@@ -1,107 +1,5 @@
 {
  "days": {
-  "2026-07-04": {
-   "github-changelog": {
-    "count": 0,
-    "error": false
-   },
-   "github-blog": {
-    "count": 0,
-    "error": false
-   },
-   "huggingface": {
-    "count": 0,
-    "error": false
-   },
-   "mit-tr": {
-    "count": 3,
-    "error": false
-   },
-   "hn": {
-    "count": 20,
-    "error": false
-   },
-   "techcrunch": {
-    "count": 5,
-    "error": false
-   },
-   "deepmind": {
-    "count": 1,
-    "error": false
-   },
-   "aihot": {
-    "count": 0,
-    "error": true
-   },
-   "cloudflare": {
-    "count": 0,
-    "error": false
-   },
-   "verge": {
-    "count": 10,
-    "error": false
-   },
-   "ftcn": {
-    "count": 0,
-    "error": true
-   },
-   "ars": {
-    "count": 5,
-    "error": false
-   },
-   "cnbc": {
-    "count": 18,
-    "error": false
-   },
-   "marketwatch": {
-    "count": 10,
-    "error": false
-   },
-   "aljazeera": {
-    "count": 25,
-    "error": false
-   },
-   "openai": {
-    "count": 0,
-    "error": false
-   },
-   "guardian": {
-    "count": 24,
-    "error": false
-   },
-   "bbc-cn": {
-    "count": 10,
-    "error": false
-   },
-   "nyt-cn": {
-    "count": 1,
-    "error": false
-   },
-   "bbc-world": {
-    "count": 22,
-    "error": false
-   },
-   "npr": {
-    "count": 10,
-    "error": false
-   },
-   "atlantic": {
-    "count": 16,
-    "error": false
-   },
-   "36kr": {
-    "count": 25,
-    "error": false
-   },
-   "wscn": {
-    "count": 25,
-    "error": false
-   },
-   "vercel": {
-    "count": 0,
-    "error": false
-   }
-  },
   "2026-07-05": {
    "github-changelog": {
     "count": 0,
@@ -1721,6 +1619,132 @@
    },
    "sciencenet": {
     "count": 16,
+    "error": false
+   }
+  },
+  "2026-07-19": {
+   "github-blog": {
+    "count": 0,
+    "error": false
+   },
+   "github-changelog": {
+    "count": 2,
+    "error": false
+   },
+   "huggingface": {
+    "count": 0,
+    "error": false
+   },
+   "deepmind": {
+    "count": 0,
+    "error": false
+   },
+   "mit-tr": {
+    "count": 0,
+    "error": false
+   },
+   "techcrunch": {
+    "count": 9,
+    "error": false
+   },
+   "aihot": {
+    "count": 1,
+    "error": false
+   },
+   "verge": {
+    "count": 10,
+    "error": false
+   },
+   "openai": {
+    "count": 0,
+    "error": false
+   },
+   "cloudflare": {
+    "count": 0,
+    "error": false
+   },
+   "ars": {
+    "count": 1,
+    "error": false
+   },
+   "cnbc": {
+    "count": 18,
+    "error": false
+   },
+   "thedecoder": {
+    "count": 4,
+    "error": false
+   },
+   "hn": {
+    "count": 18,
+    "error": false
+   },
+   "bbc-world": {
+    "count": 16,
+    "error": false
+   },
+   "bbc-cn": {
+    "count": 3,
+    "error": false
+   },
+   "aljazeera": {
+    "count": 18,
+    "error": false
+   },
+   "36kr": {
+    "count": 18,
+    "error": false
+   },
+   "guardian": {
+    "count": 18,
+    "error": false
+   },
+   "npr": {
+    "count": 10,
+    "error": false
+   },
+   "nyt-cn": {
+    "count": 0,
+    "error": false
+   },
+   "ithome": {
+    "count": 18,
+    "error": false
+   },
+   "atlantic": {
+    "count": 8,
+    "error": false
+   },
+   "wscn": {
+    "count": 15,
+    "error": false
+   },
+   "vercel": {
+    "count": 0,
+    "error": false
+   },
+   "thepaper-edu": {
+    "count": 4,
+    "error": false
+   },
+   "thepaper": {
+    "count": 14,
+    "error": false
+   },
+   "guokr": {
+    "count": 5,
+    "error": false
+   },
+   "cls-depth": {
+    "count": 18,
+    "error": false
+   },
+   "sciencenet": {
+    "count": 7,
+    "error": false
+   },
+   "anthropic": {
+    "count": 0,
     "error": false
    }
   }

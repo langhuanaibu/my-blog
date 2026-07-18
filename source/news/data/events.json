@@ -39,7 +39,7 @@
    "event_id": "evt-20260706-b4191e",
    "title": "哈梅内伊下葬期间美伊互相发动攻击",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-11",
@@ -461,7 +461,7 @@
    "event_id": "evt-20260708-0fcda1",
    "title": "OpenAI发布GPT-5.6模型系列",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-11",
@@ -1452,7 +1452,7 @@
    "event_id": "evt-20260710-7f4460",
    "title": "SK海力士在美IPO融资265亿美元创纪录",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-11",
@@ -1635,7 +1635,7 @@
    "event_id": "evt-20260711-be8da3",
    "title": "西班牙南部野火致12死23失踪",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1652,7 +1652,7 @@
    "event_id": "evt-20260711-4eea36",
    "title": "比亚迪腾势N8官图发布，搭载第二代刀片电池",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1669,7 +1669,7 @@
    "event_id": "evt-20260711-d01695",
    "title": "欧盟警告Meta：Facebook和Instagram的成瘾设计或遭重罚",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1686,7 +1686,7 @@
    "event_id": "evt-20260711-621d6e",
    "title": "马斯克公布SpaceX蓝图：太空AI卫星与火星登陆计划",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1703,7 +1703,7 @@
    "event_id": "evt-20260711-ef8fa5",
    "title": "大众汽车因中国竞争拟削减一半车型",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1720,7 +1720,7 @@
    "event_id": "evt-20260711-09725e",
    "title": "纽约市将禁止欺骗性订阅续费行为",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1737,7 +1737,7 @@
    "event_id": "evt-20260711-f64c62",
    "title": "法国极右翼领袖巴尔德拉因勒庞等待而退居幕后",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1754,7 +1754,7 @@
    "event_id": "evt-20260711-db8065",
    "title": "美伊冲突暂停，加沙军事区生活状况曝光",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1771,7 +1771,7 @@
    "event_id": "evt-20260711-800d99",
    "title": "英国高等法院驳回160万车主柴油门索赔大部分诉求",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1788,7 +1788,7 @@
    "event_id": "evt-20260711-d6ba8b",
    "title": "GitHub改进Copilot代码审查，迁移至共享Unix风格工具",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-11",
@@ -1968,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
+   "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-18",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-12",
@@ -2003,6 +2003,12 @@
      "date": "2026-07-18",
      "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
      "summary": "美军连续第七晚空袭伊朗，打击桥梁、能源设施等民用目标，伊朗反击美舰，霍尔木兹海峡通行量下降。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
+     "summary": "伊朗对约旦美军基地发动导弹和无人机袭击，造成两名美军死亡、一人失踪，美军随后对伊朗目标实施打击。",
      "news_status": "发展中"
     }
    ]
@@ -2191,18 +2197,24 @@
   },
   {
    "event_id": "evt-20260713-5d13f1",
-   "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
+   "title": "乌克兰无人机袭击俄地区致8死60余伤",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-13",
-   "last_seen": "2026-07-13",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-13",
      "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
      "summary": "俄罗斯导弹袭击乌克兰东北部城市苏梅，击中一家咖啡店附近，民众惊慌逃离。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "乌克兰无人机袭击俄地区致8死60余伤",
+     "summary": "乌克兰无人机袭击俄罗斯多个地区，造成至少8人死亡、60多人受伤，目标包括能源基础设施。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -2577,17 +2589,23 @@
   },
   {
    "event_id": "evt-20260714-4e1cfd",
-   "title": "匈牙利议会投票罢免总统",
+   "title": "匈牙利总统苏廖克因议会通过修宪罢免而同意下台",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-14",
-   "last_seen": "2026-07-14",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-14",
      "title": "匈牙利议会投票罢免总统",
      "summary": "匈牙利议会投票罢免总统舒尤克·道马什，他被视为前总理欧尔班的忠诚支持者。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "匈牙利总统苏廖克因议会通过修宪罢免而同意下台",
+     "summary": "匈牙利总统苏廖克·塔马什在议会通过宪法修正案后，同意结束其任期。修正案以对其“严重失去信心”为由，实质上罢免了他。",
      "news_status": "已确认"
     }
    ]
@@ -3315,12 +3333,12 @@
   },
   {
    "event_id": "evt-20260717-5f7d8d",
-   "title": "中国AI公司Moonshot发布Kimi K3模型，性能逼近西方前沿",
+   "title": "月之暗面发布Kimi新版本，AI社区热议“全AI共产主义”",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-18",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-17",
@@ -3333,6 +3351,12 @@
      "title": "中国AI公司Moonshot发布Kimi K3模型，性能逼近西方前沿",
      "summary": "Moonshot AI发布Kimi K3模型，早期评估性能接近Anthropic的Opus 4.8，团队仅300人。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "月之暗面发布Kimi新版本，AI社区热议“全AI共产主义”",
+     "summary": "中国AI公司月之暗面发布Kimi新版本，引发Hacker News等社区关于“全AI共产主义”的讨论和担忧。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -3355,35 +3379,47 @@
   },
   {
    "event_id": "evt-20260717-6c023c",
-   "title": "世界人工智能合作组织协定在上海签署",
+   "title": "中国成立世界人工智能合作组织，习近平宣布为全球南方提供5000个AI培训名额",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-17",
      "title": "世界人工智能合作组织协定在上海签署",
      "summary": "29个国家代表在上海签署成立世界人工智能合作组织协定，总部设在上海，旨在促进AI国际合作与全球治理。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "中国成立世界人工智能合作组织，习近平宣布为全球南方提供5000个AI培训名额",
+     "summary": "习近平在WAIC上宣布成立世界人工智能合作组织，并为全球南方国家提供5000个AI培训名额，被解读为中国构建平行AI秩序的努力。",
+     "news_status": "已确认"
     }
    ]
   },
   {
    "event_id": "evt-20260717-82fd62",
-   "title": "SpaceX第二次Starship V3发射在点火后突然中止",
+   "title": "印度太空初创公司Skyroot成功发射首枚商业轨道火箭",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-17",
      "title": "SpaceX第二次Starship V3发射在点火后突然中止",
      "summary": "SpaceX第二次Starship V3发射在点火后突然中止，公司未立即说明原因，股价盘后一度下跌超4%。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "印度太空初创公司Skyroot成功发射首枚商业轨道火箭",
+     "summary": "印度航天初创公司Skyroot Aerospace成功发射了该国首枚民营轨道运载火箭“维克拉姆-1号”，从斯里哈里科塔航天中心升空。",
+     "news_status": "已确认"
     }
    ]
   },
@@ -3616,17 +3652,23 @@
   },
   {
    "event_id": "evt-20260717-41ca2e",
-   "title": "Kimi发布2.8万亿参数开源多模态模型K3",
+   "title": "高盛：Kimi K3智能达全球普及关键点，高端编程赛道竞争激烈",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-17",
      "title": "Kimi发布2.8万亿参数开源多模态模型K3",
      "summary": "Kimi发布2.8万亿参数开源多模态模型K3，支持百万token上下文，基准测试接近GPT-5.6和Claude Fable 5。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "高盛：Kimi K3智能达全球普及关键点，高端编程赛道竞争激烈",
+     "summary": "高盛报告指出，Kimi K3（2.8万亿参数）在编程和智能评分中跻身全球前沿，智能水平已达大规模普及临界点，但高端编程赛道竞争激烈。",
      "news_status": "已确认"
     }
    ]
@@ -3990,17 +4032,295 @@
   },
   {
    "event_id": "evt-20260718-ce0ea2",
-   "title": "费城半导体指数跌入技术性熊市",
+   "title": "费城半导体指数较高点回撤20%进入技术性熊市",
    "category": "finance",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-18",
-   "last_seen": "2026-07-18",
+   "last_seen": "2026-07-19",
    "history": [
     {
      "date": "2026-07-18",
      "title": "费城半导体指数跌入技术性熊市",
      "summary": "费城半导体指数较6月高点回撤超20%，跌入技术性熊市，英伟达等芯片股承压。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "费城半导体指数较高点回撤20%进入技术性熊市",
+     "summary": "费城半导体指数较6月高点累计回撤超20%，正式步入技术性熊市，单周重挫10%。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-47a9fa",
+   "title": "WAIC 2026：华为阿里发布超节点等AI新品，国产算力向系统集成延伸",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "WAIC 2026：华为阿里发布超节点等AI新品，国产算力向系统集成延伸",
+     "summary": "7月17-20日，2026世界人工智能大会在上海举行，华为、阿里等发布超节点等AI新品，国家发改委发布《人工智能合作发展行动计划》。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-4e8329",
+   "title": "英国选手乔什·克尔在伦敦打破一英里世界纪录",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "英国选手乔什·克尔在伦敦打破一英里世界纪录",
+     "summary": "英国选手乔什·克尔在伦敦钻石联赛中以3分42秒66的成绩，打破保持27年的一英里世界纪录。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-94a65e",
+   "title": "英AI安全研究所：开源模型网络能力落后前沿仅4-7个月",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "英AI安全研究所：开源模型网络能力落后前沿仅4-7个月",
+     "summary": "英国AI安全研究所警告，开源模型（如GLM-5.2、DeepSeek V4-Pro）的网络能力仅落后闭源前沿模型4-7个月，且成本极低。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-2a3de8",
+   "title": "美国海军签署新AI战略：缓慢采用比对齐风险更大",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "美国海军签署新AI战略：缓慢采用比对齐风险更大",
+     "summary": "美国海军部签署新AI战略，将“缓慢采用”视为比“不完美对齐”更大的风险，计划建设“AI优先”舰队，在军舰上运行大语言模型。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-dc5950",
+   "title": "Anthropic大幅削减Claude Fable 5在订阅计划中的使用额度",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "Anthropic大幅削减Claude Fable 5在订阅计划中的使用额度",
+     "summary": "Anthropic宣布，自7月20日起，Claude Fable 5在Max和Team Premium计划中的使用额度将削减至常规限额的50%，常规限额本身也同步下调三分之一。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-74321a",
+   "title": "德国基民盟议会党团领袖因使用代孕辞职",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "德国基民盟议会党团领袖因使用代孕辞职",
+     "summary": "德国基民盟（CDU）议会党团领袖延斯·斯潘因被曝光使用代孕生子而辞职，他曾公开批评代孕，其政党也强烈反对代孕。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-e83d71",
+   "title": "世界杯决赛：阿根廷对阵西班牙，奖金创纪录",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "世界杯决赛：阿根廷对阵西班牙，奖金创纪录",
+     "summary": "2026年世界杯决赛即将上演，阿根廷与西班牙争夺冠军，胜者将获5000万美元史上最高奖金。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-40202c",
+   "title": "加拿大野火烟雾持续影响美国多州空气质量",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "加拿大野火烟雾持续影响美国多州空气质量",
+     "summary": "加拿大野火产生的烟雾持续影响美国东北部和中西部，纽约等地空气质量恶化，部分地区同时遭遇山洪。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-b5db95",
+   "title": "乌克兰无人机袭击俄罗斯电商仓库致火灾",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "乌克兰无人机袭击俄罗斯电商仓库致火灾",
+     "summary": "乌克兰无人机袭击俄罗斯Wildberries仓库，导致莫斯科附近和坦波夫地区设施起火，造成人员伤亡。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-4dab5d",
+   "title": "印度活动家绝食20天后被强制送医",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "印度活动家绝食20天后被强制送医",
+     "summary": "印度活动家Sonam Wangchuk绝食20天后被强制送医，其所在政党Cockroach Janta Party抗议活动升级。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-1ef06f",
+   "title": "腾讯在WAIC发布具身智能全栈方案",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "腾讯在WAIC发布具身智能全栈方案",
+     "summary": "腾讯在2026世界人工智能大会上发布具身智能全栈方案，并上线企业级智能体开发平台ADP 4.0海外版。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-e5aef8",
+   "title": "阿里云：智能体重塑AI基础设施与SaaS模式",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "阿里云：智能体重塑AI基础设施与SaaS模式",
+     "summary": "阿里云在WAIC论坛提出，AI基础设施正被智能体重塑，SaaS将转向按结果付费，模型不再是唯一核心。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-752f5a",
+   "title": "全国首张脑机接口处方开出并成功植入",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "全国首张脑机接口处方开出并成功植入",
+     "summary": "植入式脑机接口系统NEO获批上市后，首张处方在上海开出，全球首例植入手术完成，帮助脊髓损伤患者恢复肢体功能。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-9c4458",
+   "title": "亚利桑那州马里科帕县减少热死亡案例的经验",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "亚利桑那州马里科帕县减少热死亡案例的经验",
+     "summary": "美国亚利桑那州马里科帕县虽气温极高，但通过有效措施减少了热相关死亡人数。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-ef4809",
+   "title": "罕见生长障碍患者低癌症发生率或提供抗癌线索",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "罕见生长障碍患者低癌症发生率或提供抗癌线索",
+     "summary": "研究人员发现，患有Laron综合征的人群癌症发生率低于普通人群，这或为癌症预防提供新线索。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260719-803203",
+   "title": "Index Ventures联合创始人预测AI财富将面临再分配",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-19",
+   "last_seen": "2026-07-19",
+   "history": [
+    {
+     "date": "2026-07-19",
+     "title": "Index Ventures联合创始人预测AI财富将面临再分配",
+     "summary": "Index Ventures联合创始人Neil Rimer预测，AI积累的巨额财富将面临自愿或强制再分配。",
      "news_status": "已确认"
     }
    ]
