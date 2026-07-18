@@ -22,6 +22,8 @@
 sources:
   # ---------- AI 官方一手源 ----------
   - id: openai
+    source_family: openai
+    provenance: first_party
     name: OpenAI News
     type: rss
     url: https://openai.com/news/rss.xml
@@ -32,6 +34,8 @@ sources:
     enabled: true
 
   - id: huggingface
+    source_family: huggingface
+    provenance: first_party
     name: Hugging Face Blog
     type: rss
     url: https://huggingface.co/blog/feed.xml
@@ -42,6 +46,8 @@ sources:
     enabled: true
 
   - id: deepmind
+    source_family: google-deepmind
+    provenance: first_party
     name: Google DeepMind Blog
     type: rss
     url: https://deepmind.google/blog/rss.xml
@@ -55,6 +61,8 @@ sources:
   # 动机：aihot 源 6 天挂 2 天，Anthropic 信号此前只能经 aihot 二手到达）。
   # 2026-07-16 验收：6 天内 1 天产出 2 条、无抓取错误；官方低频属正常，保留。
   - id: anthropic
+    source_family: anthropic
+    provenance: first_party
     name: Anthropic News
     type: rss
     url: "{rsshub}/anthropic/news"
@@ -66,6 +74,8 @@ sources:
 
   # ---------- AI ----------
   - id: aihot
+    source_family: aihot-aggregator
+    provenance: aggregated
     name: AI HOT 精选
     type: aihot
     url: https://aihot.virxact.com/api/public/items
@@ -76,6 +86,8 @@ sources:
     enabled: true
 
   - id: mit-tr
+    source_family: mit-technology-review
+    provenance: original
     name: MIT Technology Review
     type: rss
     url: https://www.technologyreview.com/feed/
@@ -88,6 +100,8 @@ sources:
   # 逐篇 AI 新闻站（实用/产品/硬件向，每篇一事件——能被聚类去重与跨源核验，
   # 不选摘要型 newsletter：那种"每期一条"在事件管线里会变成一坨速览拆不开）
   - id: thedecoder
+    source_family: the-decoder
+    provenance: original
     name: The Decoder
     type: rss
     url: https://the-decoder.com/feed/
@@ -99,6 +113,8 @@ sources:
 
   # ---------- 开发者平台官方一手源 ----------
   - id: github-blog
+    source_family: github
+    provenance: first_party
     name: GitHub Blog
     type: rss
     url: https://github.blog/feed/
@@ -109,6 +125,8 @@ sources:
     enabled: true
 
   - id: github-changelog
+    source_family: github
+    provenance: first_party
     name: GitHub Changelog
     type: rss
     url: https://github.blog/changelog/feed/
@@ -119,6 +137,8 @@ sources:
     enabled: true
 
   - id: cloudflare
+    source_family: cloudflare
+    provenance: first_party
     name: Cloudflare Blog
     type: rss
     url: https://blog.cloudflare.com/rss/
@@ -129,6 +149,8 @@ sources:
     enabled: true
 
   - id: vercel
+    source_family: vercel
+    provenance: first_party
     name: Vercel Blog
     type: rss
     url: https://vercel.com/atom
@@ -140,6 +162,8 @@ sources:
 
   # ---------- 互联网 / 科技 ----------
   - id: hn
+    source_family: hacker-news-aggregator
+    provenance: aggregated
     name: Hacker News
     type: rss
     url: https://hnrss.org/frontpage
@@ -150,6 +174,8 @@ sources:
     enabled: true
 
   - id: techcrunch
+    source_family: techcrunch
+    provenance: original
     name: TechCrunch
     type: rss
     url: https://techcrunch.com/feed/
@@ -160,6 +186,8 @@ sources:
     enabled: true
 
   - id: verge
+    source_family: the-verge
+    provenance: original
     name: The Verge
     type: rss
     url: https://www.theverge.com/rss/index.xml
@@ -170,6 +198,8 @@ sources:
     enabled: true
 
   - id: 36kr
+    source_family: 36kr
+    provenance: original
     name: 36氪
     type: rss
     url: https://36kr.com/feed
@@ -183,6 +213,8 @@ sources:
   # 实证：其内容此前借道 AIHOT 二手 6 次进精选，直订得全量一手。与 AIHOT 二手
   # 条目的重复由抓取层 URL 去重天然处理（fetch_aihot 条目 url 即原文地址）。
   - id: ithome
+    source_family: ithome
+    provenance: original
     name: IT之家
     type: rss
     url: https://www.ithome.com/rss
@@ -193,6 +225,8 @@ sources:
     enabled: true
 
   - id: ars
+    source_family: ars-technica
+    provenance: original
     name: Ars Technica
     type: rss
     url: https://feeds.arstechnica.com/arstechnica/index
@@ -209,6 +243,8 @@ sources:
   # 2026-07-16 验收：连续 6 天 0 条且 6 天均为抓取错误，确认中转出口同样不可用，
   # 按既定口径停用；中文财经深度分析缺口暂无免费等价替代。
   - id: ftcn
+    source_family: financial-times
+    provenance: original
     name: FT中文网
     type: rss
     url: "{rsshub}/ftchinese/simplified/news"
@@ -219,6 +255,8 @@ sources:
     enabled: false
 
   - id: wscn
+    source_family: wallstreetcn
+    provenance: unclear
     name: 华尔街见闻
     type: rss
     url: https://dedicated.wallstreetcn.com/rss.xml
@@ -229,6 +267,8 @@ sources:
     enabled: true
 
   - id: cnbc
+    source_family: cnbc
+    provenance: original
     name: CNBC
     type: rss
     url: https://www.cnbc.com/id/100003114/device/rss/rss.html
@@ -241,6 +281,8 @@ sources:
   # 2026-07-11 第四轮停用：6 天性价比实证 60 条抓取仅 6 次进精选，且同为
   # 美股市场事实源、被 CNBC（96→21）全面遮蔽；财经产能由下面两个新源接替。
   - id: marketwatch
+    source_family: marketwatch
+    provenance: original
     name: MarketWatch
     type: rss
     url: https://feeds.content.dowjones.io/public/rss/mw_topstories
@@ -253,6 +295,8 @@ sources:
   # 2026-07-11 第四轮补入（finance 是精选构成最薄的域，6 天仅 7%）。
   # 2026-07-16 验收：cls-depth 连续 6 天稳定产出，保留默认 /cls/depth 路由。
   - id: cls-depth
+    source_family: cls
+    provenance: original
     name: 财联社·深度
     type: rss
     url: "{rsshub}/cls/depth"
@@ -265,6 +309,8 @@ sources:
   # 2026-07-16 验收：RSSHub 路由可达、解析无错误，但其上游 headline API 最新内容
   # 停留在 2026-05-30，连续 6 天在 26 小时时窗内均为 0；停用，待上游恢复再评估。
   - id: yicai
+    source_family: yicai
+    provenance: original
     name: 第一财经·头条
     type: rss
     url: "{rsshub}/yicai/headline"
@@ -276,6 +322,8 @@ sources:
 
   # ---------- 社会 / 国际（事实源） ----------
   - id: bbc-cn
+    source_family: bbc
+    provenance: original
     name: BBC中文
     type: rss
     url: https://feeds.bbci.co.uk/zhongwen/simp/rss.xml
@@ -286,6 +334,8 @@ sources:
     enabled: true
 
   - id: bbc-world
+    source_family: bbc
+    provenance: original
     name: BBC World
     type: rss
     url: https://feeds.bbci.co.uk/news/world/rss.xml
@@ -296,6 +346,8 @@ sources:
     enabled: true
 
   - id: guardian
+    source_family: the-guardian
+    provenance: original
     name: The Guardian
     type: rss
     url: https://www.theguardian.com/world/rss
@@ -306,6 +358,8 @@ sources:
     enabled: true
 
   - id: aljazeera
+    source_family: al-jazeera
+    provenance: original
     name: Al Jazeera
     type: rss
     url: https://www.aljazeera.com/xml/rss/all.xml
@@ -316,6 +370,8 @@ sources:
     enabled: true
 
   - id: npr
+    source_family: npr
+    provenance: original
     name: NPR
     type: rss
     url: https://feeds.npr.org/1001/rss.xml
@@ -326,6 +382,8 @@ sources:
     enabled: true
 
   - id: nyt-cn
+    source_family: new-york-times
+    provenance: original
     name: 纽约时报中文网
     type: rss
     url: https://cn.nytimes.com/rss/
@@ -337,6 +395,8 @@ sources:
 
   # ---------- 分析源 ----------
   - id: atlantic
+    source_family: the-atlantic
+    provenance: original
     name: The Atlantic
     type: rss
     url: https://www.theatlantic.com/feed/all/
@@ -352,6 +412,8 @@ sources:
   # 未配置 RSSHUB_BASE 时这些源自动跳过。接入后看 source_health.json，
   # 连续为空/失败的先在浏览器直接访问该路由排查（实例挂 / 路由被目标站反爬）。
   - id: sciencenet
+    source_family: sciencenet
+    provenance: original
     name: 科学网博客
     type: rss
     url: "{rsshub}/sciencenet/blog"
@@ -362,6 +424,8 @@ sources:
     enabled: true
 
   - id: thepaper
+    source_family: thepaper
+    provenance: original
     name: 澎湃新闻·热门
     type: rss
     url: "{rsshub}/thepaper/featured"
@@ -374,6 +438,8 @@ sources:
   # 澎湃频道页直连适配器（type: thepaper_list，AIHOT 式"网页内嵌数据"，无 RSSHub 依赖）
   # 澎湃所有 list_* 频道页同构，要加别的频道直接抄这一条换 url/id 即可
   - id: thepaper-edu
+    source_family: thepaper
+    provenance: original
     name: 澎湃·教育家
     type: thepaper_list
     url: https://www.thepaper.cn/list_25487
@@ -384,6 +450,8 @@ sources:
     enabled: true
 
   - id: guokr
+    source_family: guokr
+    provenance: original
     name: 果壳·科学人
     type: rss
     url: "{rsshub}/guokr/scientific"
@@ -462,6 +530,8 @@ sources:
 
   # ---------- 舆论源（默认关闭，需要再开） ----------
   - id: reddit-worldnews
+    source_family: reddit-worldnews-aggregator
+    provenance: aggregated
     name: Reddit r/worldnews
     type: rss
     url: https://www.reddit.com/r/worldnews/.rss

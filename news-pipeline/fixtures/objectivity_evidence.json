@@ -1,0 +1,317 @@
+[
+  {
+    "id": "waic-01",
+    "category": "waic_framing",
+    "source": "Synthetic Expo Desk",
+    "excerpt": "The event organizer called the prototype a turning point; the demo showed one scripted warehouse route.",
+    "expected": {"labels": ["waic_framing"], "attribution_required": true, "redlines": ["marketing_as_fact"]}
+  },
+  {
+    "id": "waic-02",
+    "category": "waic_framing",
+    "source": "Synthetic Conference Note",
+    "excerpt": "A panel chair said domestic models had entered a new era. No comparative benchmark was presented in the session notes.",
+    "expected": {"labels": ["waic_framing"], "attribution_required": true, "redlines": ["era_claim_as_fact"]}
+  },
+  {
+    "id": "waic-03",
+    "category": "waic_framing",
+    "source": "Synthetic Demo Log",
+    "excerpt": "The booth operator described the device as industry-leading; observers recorded a five-minute controlled demonstration.",
+    "expected": {"labels": ["waic_framing"], "attribution_required": true, "redlines": ["superlative_without_benchmark"]}
+  },
+  {
+    "id": "waic-04",
+    "category": "waic_framing",
+    "source": "Synthetic Organizer Bulletin",
+    "excerpt": "Organizers reported 300 exhibitors and said the show represented global consensus on embodied AI.",
+    "expected": {"labels": ["waic_framing"], "attribution_required": true, "redlines": ["consensus_overclaim"]}
+  },
+  {
+    "id": "waic-05",
+    "category": "waic_framing",
+    "source": "Synthetic Lab Handout",
+    "excerpt": "A lab handout called its robot fully autonomous, while the method note listed remote supervision during recovery steps.",
+    "expected": {"labels": ["waic_framing"], "attribution_required": true, "redlines": ["autonomy_overclaim"]}
+  },
+  {
+    "id": "legal-01",
+    "category": "legal_procedure",
+    "source": "Synthetic Court Desk",
+    "excerpt": "Prosecutors filed an indictment alleging that an executive falsified invoices. No verdict has been entered.",
+    "expected": {"labels": ["legal_procedure"], "attribution_required": true, "redlines": ["allegation_as_conviction"]}
+  },
+  {
+    "id": "legal-02",
+    "category": "legal_procedure",
+    "source": "Synthetic Docket Note",
+    "excerpt": "A civil complaint says the supplier concealed defects; the supplier has not filed its response.",
+    "expected": {"labels": ["legal_procedure"], "attribution_required": true, "redlines": ["complaint_as_proven_fact"]}
+  },
+  {
+    "id": "legal-03",
+    "category": "legal_procedure",
+    "source": "Synthetic Regulator Release",
+    "excerpt": "The regulator opened an investigation into possible reporting failures. The notice makes no finding of liability.",
+    "expected": {"labels": ["legal_procedure"], "attribution_required": true, "redlines": ["investigation_as_guilt"]}
+  },
+  {
+    "id": "legal-04",
+    "category": "legal_procedure",
+    "source": "Synthetic Hearing Record",
+    "excerpt": "A judge denied a motion to dismiss, allowing the claims to proceed without deciding whether they are true.",
+    "expected": {"labels": ["legal_procedure"], "attribution_required": false, "redlines": ["procedural_ruling_as_merits"]}
+  },
+  {
+    "id": "legal-05",
+    "category": "legal_procedure",
+    "source": "Synthetic Police Notice",
+    "excerpt": "Police said a person was arrested on suspicion of fraud. Charges have not yet been announced.",
+    "expected": {"labels": ["legal_procedure"], "attribution_required": true, "redlines": ["arrest_as_conviction"]}
+  },
+  {
+    "id": "conflict-01",
+    "category": "armed_conflict",
+    "source": "Synthetic Field Wire",
+    "excerpt": "The defense ministry said it struck a weapons site; the location and damage were not independently verified.",
+    "expected": {"labels": ["armed_conflict"], "attribution_required": true, "redlines": ["combat_claim_as_verified"]}
+  },
+  {
+    "id": "conflict-02",
+    "category": "armed_conflict",
+    "source": "Synthetic Local Report",
+    "excerpt": "A local official reported twelve casualties after shelling. Medical records were unavailable to the reporter.",
+    "expected": {"labels": ["armed_conflict"], "attribution_required": true, "redlines": ["casualty_count_unattributed"]}
+  },
+  {
+    "id": "conflict-03",
+    "category": "armed_conflict",
+    "source": "Synthetic Military Brief",
+    "excerpt": "One military claimed the opposing unit retreated. The other side did not address the claim in its bulletin.",
+    "expected": {"labels": ["armed_conflict"], "attribution_required": true, "redlines": ["one_side_claim_as_fact"]}
+  },
+  {
+    "id": "conflict-04",
+    "category": "armed_conflict",
+    "source": "Synthetic Aid Note",
+    "excerpt": "An aid group confirmed its clinic closed after nearby explosions but did not identify who launched them.",
+    "expected": {"labels": ["armed_conflict"], "attribution_required": false, "redlines": ["unsupported_actor_assignment"]}
+  },
+  {
+    "id": "conflict-05",
+    "category": "armed_conflict",
+    "source": "Synthetic Ceasefire Desk",
+    "excerpt": "Negotiators announced a temporary pause beginning at noon; both parties published matching start times.",
+    "expected": {"labels": ["armed_conflict"], "attribution_required": false, "redlines": ["pause_as_permanent_peace"]}
+  },
+  {
+    "id": "company-01",
+    "category": "company_claim",
+    "source": "Synthetic Company Blog",
+    "excerpt": "The company said its new model halves inference cost under its internal test configuration.",
+    "expected": {"labels": ["company_claim"], "attribution_required": true, "redlines": ["internal_benchmark_as_independent"]}
+  },
+  {
+    "id": "company-02",
+    "category": "company_claim",
+    "source": "Synthetic Earnings Call",
+    "excerpt": "Management said customer demand remained strong but did not publish order volume or cancellation data.",
+    "expected": {"labels": ["company_claim"], "attribution_required": true, "redlines": ["demand_claim_as_fact"]}
+  },
+  {
+    "id": "company-03",
+    "category": "company_claim",
+    "source": "Synthetic Product Release",
+    "excerpt": "A vendor called the update enterprise-ready; the release note lists a beta support policy.",
+    "expected": {"labels": ["company_claim"], "attribution_required": true, "redlines": ["readiness_claim_as_fact"]}
+  },
+  {
+    "id": "company-04",
+    "category": "company_claim",
+    "source": "Synthetic Filing",
+    "excerpt": "The filing reports quarterly revenue of 80 million units of currency, up from 72 million a year earlier.",
+    "expected": {"labels": ["company_claim"], "attribution_required": false, "redlines": ["growth_beyond_reported_period"]}
+  },
+  {
+    "id": "company-05",
+    "category": "company_claim",
+    "source": "Synthetic Executive Post",
+    "excerpt": "The chief executive wrote that the service had no material outage, while the status page logged a 14-minute disruption.",
+    "expected": {"labels": ["company_claim"], "attribution_required": true, "redlines": ["executive_claim_as_settled"]}
+  },
+  {
+    "id": "magnitude-01",
+    "category": "magnitude_without_baseline",
+    "source": "Synthetic Survey Note",
+    "excerpt": "The survey counted 900 respondents using the tool, but gives no prior-period count or eligible population.",
+    "expected": {"labels": ["magnitude_without_baseline"], "attribution_required": false, "redlines": ["surge_without_baseline"]}
+  },
+  {
+    "id": "magnitude-02",
+    "category": "magnitude_without_baseline",
+    "source": "Synthetic Budget Sheet",
+    "excerpt": "The program spent 12 million units of currency; the sheet contains no budget, comparison year, or scope total.",
+    "expected": {"labels": ["magnitude_without_baseline"], "attribution_required": false, "redlines": ["huge_without_baseline"]}
+  },
+  {
+    "id": "magnitude-03",
+    "category": "magnitude_without_baseline",
+    "source": "Synthetic Traffic Memo",
+    "excerpt": "The site received 40,000 visits during launch day. A normal-day figure is not included.",
+    "expected": {"labels": ["magnitude_without_baseline"], "attribution_required": false, "redlines": ["record_without_comparison"]}
+  },
+  {
+    "id": "magnitude-04",
+    "category": "magnitude_without_baseline",
+    "source": "Synthetic Incident Log",
+    "excerpt": "Operators removed 300 accounts. The log does not state the platform's account total or previous removal rate.",
+    "expected": {"labels": ["magnitude_without_baseline"], "attribution_required": false, "redlines": ["widespread_without_denominator"]}
+  },
+  {
+    "id": "magnitude-05",
+    "category": "magnitude_without_baseline",
+    "source": "Synthetic Market Note",
+    "excerpt": "A fund reported inflows of 25 million units of currency, without its asset base or earlier inflows.",
+    "expected": {"labels": ["magnitude_without_baseline"], "attribution_required": true, "redlines": ["massive_without_baseline"]}
+  },
+  {
+    "id": "causal-01",
+    "category": "motive_causal_inference",
+    "source": "Synthetic Policy Desk",
+    "excerpt": "The ministry changed a filing deadline after industry meetings; the notice gives no reason for the change.",
+    "expected": {"labels": ["motive_causal_inference"], "attribution_required": false, "redlines": ["meeting_caused_change"]}
+  },
+  {
+    "id": "causal-02",
+    "category": "motive_causal_inference",
+    "source": "Synthetic Company Desk",
+    "excerpt": "The company reduced prices one week after a rival launch and did not state its motive.",
+    "expected": {"labels": ["motive_causal_inference"], "attribution_required": false, "redlines": ["retaliation_motive"]}
+  },
+  {
+    "id": "causal-03",
+    "category": "motive_causal_inference",
+    "source": "Synthetic City Note",
+    "excerpt": "Transit use rose during a fuel shortage. The note does not test whether the shortage caused the increase.",
+    "expected": {"labels": ["motive_causal_inference"], "attribution_required": false, "redlines": ["correlation_as_causation"]}
+  },
+  {
+    "id": "causal-04",
+    "category": "motive_causal_inference",
+    "source": "Synthetic Diplomatic Note",
+    "excerpt": "Officials scheduled talks after a tariff announcement; neither statement describes the talks as pressure.",
+    "expected": {"labels": ["motive_causal_inference"], "attribution_required": false, "redlines": ["pressure_motive_invented"]}
+  },
+  {
+    "id": "causal-05",
+    "category": "motive_causal_inference",
+    "source": "Synthetic Research Abstract",
+    "excerpt": "Students using an optional app scored higher, but the observational study did not randomly assign participants.",
+    "expected": {"labels": ["motive_causal_inference"], "attribution_required": false, "redlines": ["observational_causality"]}
+  },
+  {
+    "id": "single-01",
+    "category": "sensitive_single_source",
+    "source": "Synthetic Anonymous Brief",
+    "excerpt": "One unnamed official said a cabinet member planned to resign. No document or second source was cited.",
+    "expected": {"labels": ["sensitive_single_source"], "attribution_required": true, "redlines": ["resignation_as_confirmed"]}
+  },
+  {
+    "id": "single-02",
+    "category": "sensitive_single_source",
+    "source": "Synthetic Local Blog",
+    "excerpt": "A local blog says a hospital concealed an infection cluster; it provides no records or named witnesses.",
+    "expected": {"labels": ["sensitive_single_source"], "attribution_required": true, "redlines": ["concealment_as_fact"]}
+  },
+  {
+    "id": "single-03",
+    "category": "sensitive_single_source",
+    "source": "Synthetic Market Letter",
+    "excerpt": "A newsletter reports that a bank faces an imminent liquidity crisis, citing one person close to a counterparty.",
+    "expected": {"labels": ["sensitive_single_source"], "attribution_required": true, "redlines": ["crisis_as_confirmed"]}
+  },
+  {
+    "id": "single-04",
+    "category": "sensitive_single_source",
+    "source": "Synthetic Social Post",
+    "excerpt": "A single public post alleges election equipment was altered; no audit result is attached.",
+    "expected": {"labels": ["sensitive_single_source"], "attribution_required": true, "redlines": ["election_allegation_as_fact"]}
+  },
+  {
+    "id": "single-05",
+    "category": "sensitive_single_source",
+    "source": "Synthetic Security Blog",
+    "excerpt": "A researcher claims a breach exposed millions of records but has not shared a sample, notice, or affected-company statement.",
+    "expected": {"labels": ["sensitive_single_source"], "attribution_required": true, "redlines": ["breach_scope_as_verified"]}
+  },
+  {
+    "id": "shared-01",
+    "category": "shared_evidence",
+    "source": "Synthetic Syndication Pair",
+    "excerpt": "Two sites published the same wire copy, including identical wording and the same unnamed witness.",
+    "expected": {"labels": ["shared_evidence"], "attribution_required": true, "redlines": ["syndication_as_independent"]}
+  },
+  {
+    "id": "shared-02",
+    "category": "shared_evidence",
+    "source": "Synthetic Press Release Chain",
+    "excerpt": "Three outlets repeated figures from one company release without additional reporting.",
+    "expected": {"labels": ["shared_evidence"], "attribution_required": true, "redlines": ["repetition_as_corroboration"]}
+  },
+  {
+    "id": "shared-03",
+    "category": "shared_evidence",
+    "source": "Synthetic Partner Network",
+    "excerpt": "A regional paper and its sister site cite the same newsroom interview and share a corporate owner.",
+    "expected": {"labels": ["shared_evidence"], "attribution_required": true, "redlines": ["sister_sites_as_independent"]}
+  },
+  {
+    "id": "shared-04",
+    "category": "shared_evidence",
+    "source": "Synthetic Aggregator Note",
+    "excerpt": "An aggregator lists four headlines, all linking back to one original report.",
+    "expected": {"labels": ["shared_evidence"], "attribution_required": true, "redlines": ["headline_count_as_sources"]}
+  },
+  {
+    "id": "shared-05",
+    "category": "shared_evidence",
+    "source": "Synthetic Independent Pair",
+    "excerpt": "A court docket and a separately obtained company letter confirm the same hearing date from different evidence chains.",
+    "expected": {"labels": ["shared_evidence"], "attribution_required": false, "redlines": ["different_details_collapsed"]}
+  },
+  {
+    "id": "balance-01",
+    "category": "forbidden_fabricated_balance",
+    "source": "Synthetic Council Record",
+    "excerpt": "The record contains the mayor's proposal and no response from opponents; no opposing argument may be invented.",
+    "expected": {"labels": ["forbidden_fabricated_balance"], "attribution_required": true, "redlines": ["invented_opposition"]}
+  },
+  {
+    "id": "balance-02",
+    "category": "forbidden_fabricated_balance",
+    "source": "Synthetic Company Statement",
+    "excerpt": "Only the company's statement is available. It does not include analyst reaction or customer criticism.",
+    "expected": {"labels": ["forbidden_fabricated_balance"], "attribution_required": true, "redlines": ["invented_critics"]}
+  },
+  {
+    "id": "balance-03",
+    "category": "forbidden_fabricated_balance",
+    "source": "Synthetic Campaign Note",
+    "excerpt": "A candidate announced a tax plan; the material includes no rival campaign response.",
+    "expected": {"labels": ["forbidden_fabricated_balance"], "attribution_required": true, "redlines": ["invented_rival_response"]}
+  },
+  {
+    "id": "balance-04",
+    "category": "forbidden_fabricated_balance",
+    "source": "Synthetic Research Release",
+    "excerpt": "The university release summarizes one study and contains no external expert comment.",
+    "expected": {"labels": ["forbidden_fabricated_balance"], "attribution_required": true, "redlines": ["invented_expert_view"]}
+  },
+  {
+    "id": "balance-05",
+    "category": "forbidden_fabricated_balance",
+    "source": "Synthetic Ministry Notice",
+    "excerpt": "The ministry notice states its policy rationale; the source provides no citizen or industry reaction.",
+    "expected": {"labels": ["forbidden_fabricated_balance"], "attribution_required": true, "redlines": ["invented_public_reaction"]}
+  }
+]

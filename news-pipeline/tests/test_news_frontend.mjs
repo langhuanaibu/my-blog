@@ -154,6 +154,93 @@ test("详情保留完整扩展字段", () => {
   for (const text of ["背景机制", "对我的意义", "后续关注", "长叙述", "事实"]) assert.match(html, new RegExp(text));
 });
 
+test("新闻详情以可用证据概览区分发布源、独立链、证据基础与降级状态", () => {
+  const cases = [
+    [{ basis: "fulltext", publisher_count: 1, independent_chain_count: 1, degraded: false }, [{ name: "发布源 A", url: "https://a.example/1", evidence_basis: "fulltext", evidence_chain: "chain-a" }], "单一发布源", "独立证据链 1 条", "全文证据"],
+    [{ basis: "mixed", publisher_count: 2, independent_chain_count: 1, degraded: true }, [{ name: "发布源 A", url: "https://a.example/1", evidence_basis: "fulltext", evidence_chain: "chain-a" }, { name: "发布源 B", url: "https://b.example/1", evidence_basis: "snippet" }], "2 个发布源", "独立证据链 1 条", "混合证据", "证据降级"],
+    [{ basis: "snippet", publisher_count: 3, independent_chain_count: 2, degraded: true }, [{ name: "发布源 A", url: "https://a.example/1", evidence_basis: "snippet", evidence_chain: "chain-a" }, { name: "发布源 B", url: "https://b.example/1", evidence_basis: "snippet", evidence_chain: "chain-b" }, { name: "发布源 C", url: "https://c.example/1", evidence_basis: "snippet" }], "3 个发布源", "独立证据链 2 条", "摘要证据", "证据降级"],
+  ];
+  for (const [evidence, sources, ...labels] of cases) {
+    const dom = new JSDOM(`<main>${renderDetail({ ...daily.items[0], evidence, sources }, "news", daily.date)}</main>`);
+    const overview = dom.window.document.querySelector(".detail-evidence");
+    assert.ok(overview);
+    for (const label of labels) assert.match(overview.textContent, new RegExp(label));
+    if (!evidence.degraded) assert.doesNotMatch(overview.textContent, /证据降级/);
+  }
+});
+
+test("新闻详情拒绝缺失、畸形或重复且无法推导的来源映射", () => {
+  const evidence = { basis: "snippet", publisher_count: 2, independent_chain_count: 1, degraded: true };
+  const validSources = [
+    { name: "发布源 A", url: "https://a.example/1", evidence_basis: "snippet", evidence_chain: "chain-a" },
+    { name: "发布源 B", url: "https://b.example/1", evidence_basis: "snippet" },
+  ];
+  const malformedSources = [
+    undefined,
+    [],
+    [{ name: "", url: "https://a.example/1", evidence_basis: "snippet", evidence_chain: "chain-a" }, validSources[1]],
+    [{ ...validSources[0], evidence_basis: "unknown" }, validSources[1]],
+    [{ ...validSources[0], evidence_chain: "" }, validSources[1]],
+    [validSources[0], { ...validSources[1], name: "发布源 A" }],
+    [validSources[0], { ...validSources[1], url: validSources[0].url }],
+  ];
+  for (const sources of malformedSources) {
+    const dom = new JSDOM(`<main>${renderDetail({ ...daily.items[0], evidence, sources }, "news", daily.date)}</main>`);
+    assert.equal(dom.window.document.querySelector(".detail-evidence"), null);
+  }
+
+  const mismatched = [
+    { ...evidence, publisher_count: 1 },
+    { ...evidence, independent_chain_count: 0 },
+    { ...evidence, basis: "fulltext" },
+  ];
+  for (const row of mismatched) {
+    const dom = new JSDOM(`<main>${renderDetail({ ...daily.items[0], evidence: row, sources: validSources }, "news", daily.date)}</main>`);
+    assert.equal(dom.window.document.querySelector(".detail-evidence"), null);
+  }
+});
+
+test("新闻详情不为不完整或自相矛盾的证据契约渲染概览", () => {
+  const malformed = [
+    { basis: "fulltext", publisher_count: 1, independent_chain_count: 1 },
+    { basis: "fulltext", publisher_count: 1, independent_chain_count: 1, degraded: "false" },
+    { basis: "fulltext", publisher_count: 0, independent_chain_count: 0, degraded: false },
+    { basis: "fulltext", publisher_count: 1, independent_chain_count: 2, degraded: false },
+    { basis: "unknown", publisher_count: 1, independent_chain_count: 1, degraded: false },
+  ];
+  for (const evidence of malformed) {
+    const dom = new JSDOM(`<main>${renderDetail({ ...daily.items[0], evidence }, "news", daily.date)}</main>`);
+    assert.equal(dom.window.document.querySelector(".detail-evidence"), null);
+  }
+});
+
+test("新闻详情为声明显示种类与安全转义后的来源名", () => {
+  const dom = new JSDOM(`<main>${renderDetail({
+    ...daily.items[0],
+    claims: [
+      { text: "可验证声明", kind: "fact", sources: ["官方发布"] },
+      { text: "解读声明", kind: "analysis", sources: ["分析机构"] },
+      { text: "<script>alert(1)</script>未知声明", kind: "<script>alert(1)</script>", sources: ["<img src=x onerror=alert(1)>", 7, { name: "对象来源" }, ""] },
+    ],
+  }, "news", daily.date)}</main>`);
+  const claims = [...dom.window.document.querySelectorAll(".detail-claim")];
+  assert.deepEqual(claims.map((claim) => claim.querySelector(".claim-kind")?.textContent), ["事实", "分析", "待核实"]);
+  assert.deepEqual(claims.map((claim) => claim.querySelector(".claim-sources")?.textContent), ["来源：官方发布", "来源：分析机构", "来源：<img src=x onerror=alert(1)>"]);
+  assert.match(claims[2].textContent, /<script>alert\(1\)<\/script>未知声明/);
+  assert.equal(dom.window.document.querySelector(".detail-claim img"), null);
+  assert.equal(dom.window.document.querySelector(".detail-claim script"), null);
+});
+
+test("旧日报的缺失证据与旧形状声明保持静默兼容", () => {
+  const dom = new JSDOM(`<main>${renderDetail({
+    ...daily.items[0],
+    claims: [{ text: "旧声明" }],
+  }, "news", daily.date)}</main>`);
+  assert.equal(dom.window.document.querySelector(".detail-evidence"), null);
+  assert.equal(dom.window.document.querySelector(".claim-sources"), null);
+  assert.equal(dom.window.document.querySelector(".claim-kind")?.textContent, "待核实");
+});
+
 test("周报 v2 显示覆盖、缺失日期、代表报道回链和本周值得读", () => {
   const html = renderWeeklyReport({
     week: "2026-W28",

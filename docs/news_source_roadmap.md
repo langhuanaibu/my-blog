@@ -2,7 +2,32 @@
 
 > 日报信源扩展的活跃待办清单。信源终局定案写在 `news-pipeline/sources.yaml` 尾部注释，现行机制写在 `readme.md` 日报章节；本文件只记**还没做完的事**，全部完成后删除。
 >
-> 最后更新：2026-07-17
+> 最后更新：2026-07-18
+
+## 📅 客观性 shadow 验收（待完成）
+
+2026-07-18 公开路径落地的是 **interim wording hotfix**，不是已验收的完整证据系统。
+`--objectivity-shadow` 的 7-day 指标门和 45-case / three-run 夹具门都通过前，
+**active mode is not enabled**，**live acceptance has not occurred**。详细阈值与安全边界见
+`docs/news_objectivity_plan.md`。
+
+- 每天保存 GitHub step summary 中的运行时间、全文/混合/摘要分布、抓取重试、
+  修复/降级、独立链分布，以及同口径的 `selected_before_audit`、
+  `selected_after_audit`、`audited_candidate_count`、`demoted_from_selected` 和
+  `source_reference_concentration`（按入审前精选的来源引用次数计算）。
+- 达标后只是获得 active 人工评审资格，不自动切换配置。
+
+## 中文视角对冲源评估（待客观性验收后判）
+
+实证（07-11~17 精选）：涉华条目单源率 56%，其中单源=西方外媒 ≈1.3 条/天，集中在大陆媒体不报的敏感议题（仅存单一西方叙事）。评估补一个中文国际视角源做涉华事件交叉：
+
+- 候选路径：联合早报官网 RSS 已 404 判死（sources.yaml 尾注），重议只能走自建 RSSHub 的 zaobao 路由（如 `/zaobao/znews/china`），先浏览器验证路由可达再谈。
+- 论证门槛：必须正面回应尾注"world 41% 过剩、任何 world 向新源默认拒"的定案——论据是"补涉华第二叙事"而非"加 world 产能"，可考虑低 credibility + mixed 类目接入以控制增量。
+- 若路由不可达或增噪明显，明确记"不加"并销账。
+
+硬门：在增加任何主管线信源前，先收集至少 **14-day source metrics before adding sources**，
+包括抓取成功/零更新、候选量、入选量、单源高风险率、独立证据链和集中度。
+这 14 天只观测现有源，不回填历史、不同时加源；数据与人工审查都支持后才能重议。
 
 ## 📅 2026-07-22：#7 第一轮单变量调参
 

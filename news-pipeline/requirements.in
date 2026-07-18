@@ -1,5 +1,6 @@
 feedparser==6.0.12
 ./news-pipeline/vendor/sgmllib3k-1.0.0-py3-none-any.whl
 requests==2.33.1
+trafilatura==2.1.0
 PyYAML==6.0.3
 openai==2.44.0

@@ -26,6 +26,25 @@ llm:
   # 单次请求最大重试次数
   max_retries: 3
 
+# 证据/客观性审计模型。连接三项留空时继承 llm；temperature/max_retries 未写时也继承。
+# extra_body 未写时继承 llm；如需为审计模型单独覆盖，可在本块声明完整 extra_body
+# （包括声明 {} 以禁用主模型的供应商专有请求体）。
+audit_llm:
+  base_url: ""
+  api_key: ""
+  model: ""
+  # temperature: 0.0
+  # max_retries: 3
+  # extra_body:
+  #   response_format:
+  #     type: json_object
+
+# 客观性发布门控。interim 只保留 prompt 措辞热修与原有事实支撑审计；
+# active 才会把全文证据、独立链计数和客观性修复/降级写入公开数据。
+# 当前尚未启用 active；验收期请用 CLI --objectivity-shadow。
+objectivity:
+  mode: interim
+
 # 预筛模型（可选）：先用便宜模型过滤垃圾/无关条目，再交给上面的主模型评分。
 # 省钱：主模型只处理幸存者。留空 api_key 则直接复用主模型配置。
 prefilter:
