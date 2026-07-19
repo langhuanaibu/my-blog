@@ -1586,6 +1586,42 @@ _qa_events = [
     {"ids": [0, 1], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 与 Meta AI 动态"},
     {"ids": [2, 3], "category": "world", "dims": dict(_qa_dims), "title": "委内瑞拉地震与伊朗海峡"},
 ]
+
+
+class EnrichPromptStub:
+    def __init__(self):
+        self.system = ""
+        self.user = ""
+
+    def json_call(self, system, user):
+        self.system = system
+        self.user = user
+        return [{
+            "idx": 0, "title": "OpenAI 发布新模型", "summary": "OpenAI 发布模型。",
+            "why": "影响模型应用开发。", "context": "", "significance": "",
+            "watch": "关注 API 开放节点。", "detail": "来源只支持这些细节。",
+            "claims": [], "status": "已确认", "tags": [],
+        }]
+
+
+_prompt_llm = EnrichPromptStub()
+_prompt_event = [{"ids": [0], "category": "ai", "title": "OpenAI 发布新模型"}]
+dn.enrich(_prompt_llm, _prompt_event, _qa_items, {
+    "topic_tags": [], "detail": {"enabled": True, "max_chars": 600},
+    "objectivity": {"mode": "interim"},
+})
+check("enrich 输入显式携带事件类目", "类目：ai" in _prompt_llm.user)
+check("enrich prompt 划清七字段职责",
+      all(token in _prompt_llm.system for token in (
+          "事实增量", "公共影响", "最短背景", "个人学习或行动参考",
+          "未来可观察", "不复述其他字段", "分析或不确定判断")))
+check("enrich prompt 允许 claims 为空",
+      "允许空数组" in _prompt_llm.system and _prompt_event[0]["claims"] == [])
+check("enrich 深度受摘要证据约束",
+      "来源材料能够支持时" in _prompt_llm.system and "一至两项" in _prompt_llm.system)
+check("enrich 按类目区分解释层次",
+      "非 AI 类" in _prompt_llm.system and "AI 类" in _prompt_llm.system)
+
 _qa_reply = [
     {"groups": [
         {"ids": [0], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 发布新模型"},

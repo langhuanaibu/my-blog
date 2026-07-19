@@ -1840,14 +1840,16 @@ def score_and_select(events, items, cfg):
 ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾驶舱"加工精选新闻。
 用户给你若干事件，每个事件附带一条或多条原始报道（标题+简介+来源）。
 若给出了【读者兴趣画像】，请据此写 significance；没有画像则 significance 输出空字符串。
+各字段职责唯一：除实体名和理解所需的最短指代外，不得在字段之间复述同一事实、背景或判断。
+根据事件输入中的类目控制解释层次：非 AI 类面向聪明的外行，就地解释必要术语、机构和背景；AI 类不科普基础概念，直接写增量信息。
 对每个事件输出：
 - title: 精炼中文标题（≤30字，信息完整，不标题党）
-- summary: 一句话事实摘要（≤70字，只说发生了什么，含关键数字）
-- why: 为什么重要（≤80字，说清影响面和利害关系）
-- context: 背景与机制（≤60字，交代来龙去脉或它反映的运行逻辑，帮读者理解为什么会这样，没有可写就留空）
-- significance: 对我的意义（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），给一个学习路线导向的具体参考：该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势。要具体到能立刻行动，禁止"值得关注""可以了解一下"这类空话；与读者学习参考系无可操作关联就留空（宁空毋凑）
-- watch: 后续关注点（≤60字，接下来看什么信号/节点）
-- claims: 2-4 条关键结论，每条包含 text、kind 和 source_indexes。kind 只能是 fact、analysis、uncertain；source_indexes 对应输入来源前的编号，无直接来源时留空数组
+- summary: 一句话事实增量（≤70字，只说发生了什么和新在哪里；不写影响、背景或行动建议）
+- why: 公共影响及利害关系（≤80字，说明影响谁、为何重要；不复述事件经过，不写个人学习建议）
+- context: 理解事件所需的最短背景或既有机制（≤60字；不重讲当日事实和影响，没有可写就留空）
+- significance: 个人学习或行动参考（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），具体到该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势；与读者学习参考系无可操作关联就留空，禁止"值得关注""可以了解一下"类空话
+- watch: 未来可观察的节点或信号（≤60字，只写接下来用什么可验证变化判断进展）
+- claims: 0-4 条需要显式归因的分析或不确定判断，每条包含 text、kind 和 source_indexes。kind 只用 analysis 或 uncertain；source_indexes 对应输入来源前的编号。没有此类判断时允许空数组，不要把正文事实改写成 claim
 {detail_field}- status: 事件状态，只能是这四个之一：
     已确认（官方发布或多个独立可信来源证实）
     发展中（事件仍在进行，信息还在更新）
@@ -2000,7 +2002,8 @@ def enrich(llm, picked, items, cfg, profile_text=""):
     full_objectivity = _rollout_output_enabled(cfg)
     detail_field = (
         f"- detail: 中文长叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
-        "按\"背景→具体发生了什么→为什么重要→接下来看什么\"讲清整件事，让没读过原文的人也能看懂；"
+        "串联来源已提供的因果过程和关键细节，不复述其他字段，尤其不得复述 summary/why/context/significance/watch；"
+        "来源材料能够支持时，从机制或传导链、带比较锚点的数字、利益相关方变化中择最有价值的一至两项写入，不要求每条全部具备；"
         "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；"
         "来源媒体的立场性定性须显式归因（如\"BBC 称\"），不得写成客观事实；素材不足就写多少算多少，宁短毋凑）\n"
     ) if detail_on else ""
@@ -2030,7 +2033,9 @@ def enrich(llm, picked, items, cfg, profile_text=""):
                                        if items[i].get("tag_hint") in tag_set))
             hint_line = ("\n  （来源分类提示，若贴切请优先选为标签："
                          + "、".join(hints) + "）") if hints else ""
-            blocks.append(f"事件[{bi + j}] {ev['title']}\n" + "\n".join(srcs) + hint_line)
+            blocks.append(
+                f"事件[{bi + j}]（类目：{ev.get('category', 'world')}） {ev['title']}\n"
+                + "\n".join(srcs) + hint_line)
         log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
         result = llm.json_call(system, prof_block + "【今日事件】\n" + "\n\n".join(blocks))
         for r in result:

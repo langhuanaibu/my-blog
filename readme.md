@@ -134,7 +134,7 @@ GITHUB_BRANCH=main
 ## 文档维护
 
 - 当前架构、运行方式、环境变量和日报能力以本文件为准。
-- `AGENTS.md` / `CLAUDE.md` 约束 AI 修改边界；`docs/workspace_conventions.md` 说明文件分类和命名。
+- `AGENTS.md` 提供跨编码代理的通用项目规则，`CLAUDE.md` 补充 Claude 专用约束和 skill 入口；二者职责不同、允许独立维护。`docs/workspace_conventions.md` 说明文件分类和命名。
 - 完成的实施计划和一次性分析报告不长期保留；有复用价值的结论应并入本文件或对应维护文档。
 - `docs/archive/` 只保留仍有兼容、迁移或排障价值的历史记录，阅读时以文件日期为边界。
 
@@ -167,6 +167,7 @@ GITHUB_BRANCH=main
 - 精选采用阈值制，不硬凑固定条数；同时保留类目保底、全局上限、同源封顶和受控主题标签。`config.yaml` 的 `max_per_category` 保留可选的单类封顶能力，但当前为空，AI 与其他类目一样按质量阈值和分数竞争，仅受全局 `pick_max`、类目保底及既有评分规则约束。主题标签只允许来自 `config.yaml` 的 `topic_tags`，词表外标签会被丢弃。
 - 可信度质量门分两层：跨批次聚类后，所有含两个及以上原始条目的事件都会复核凝聚度；审计输出无效或调用失败时，该事件拆回单条、取消多源加成并把证据分降为中性值。精选深加工后再核对 `why/context/significance/watch/detail/claims` 是否由当前事件来源支撑；审计失败时保守删除全部扩展字段，只保留标题、摘要、来源、分类、状态、分数和时间等基础内容，避免未经复核的叙述进入日报。
 - 面向读者的生成文字（精选 title/summary/why/context/detail 与今日主线）受 prompt 层"客观性规范"约束（2026-07-18 起）：只陈述可追溯事实，媒体的立场性定性必须显式归因（"X 报道称"）、不得写成事实，剥离情绪化措辞与无依据动机推断，禁止为"平衡"编造原文没有的对立观点；立场性判断优先进 `claims`（kind=analysis）。
+- 精选深加工按字段分工生成：`summary` 写事实增量，`why` 写公共影响和利害关系，`context` 补最短背景或既有机制，`significance` 给画像相关的学习/行动参考，`watch` 写未来观察节点，`detail` 串联来源已有的因果过程和关键细节，`claims` 只承载需要显式归因的分析或不确定判断。prompt 会显式携带 `category`：非 AI 类补必要术语和机构背景，AI 类直接进入增量；机制链、数字比较和利益相关方只在来源支持时选最有价值的一至两项，不为追求深度补写来源外事实。该行为仍使用 interim 摘要输入，五日人工质量验收记在 `docs/news_source_roadmap.md`。
 - **公开路径当前只到这一层**：`config.yaml` 的 `objectivity.mode` 默认 `interim`，只启用上述 prompt 规则和原有的 support-only 事实支撑审计。完整正文取证、独立证据链佐证、客观性定向修复/降级/降档的代码已经存在，但只在 shadow 或未来的 `active` 模式下运行；**`active` 尚未启用，线上验收尚未完成**。审计模型可用 `config.yaml` 的 `audit_llm` 段单独指定，留空则继承 `llm`。
 - 完整模式的证据合同是 `evidence: {basis, publisher_count, independent_chain_count, degraded}`（`basis` 取 `fulltext|mixed|snippet`）；来源可带 `evidence_basis`/`evidence_chain`，claims 用 `sources` 标注归因，`degraded` 表示摘要退化或修复失败后的保守内容，高风险事件复审仍失败会从精选降到"更多资讯"。前端只在结构完全合法时渲染证据概览，旧数据静默降级。正文只是当次运行内存中的审计证据（每源上限 4000 字），不写入日/周报、feed、search、registry、profile、health 或 vocab 等任何数据文件；抓取器不登录、不执行页面脚本、不绕过付费墙，取不到就退回 RSS 摘要。
 - 验收门槛、安全边界和统计口径见 `docs/news_objectivity_plan.md`：切 `active` 前必须同时通过 7 天线上指标门和 45 条夹具的三轮门，并另行人工评审。
@@ -190,7 +191,7 @@ GITHUB_BRANCH=main
 
 `source/news/data/` 是线上数据目录，大多数文件由管线或后台 API 创建，不应手工改写，除非下方明确允许。
 
-- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（背景与机制）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（2-4 条关键结论，`{text, kind: fact|analysis|uncertain, sources: [来源名]}`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
+- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（背景与机制）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
 - `manifest.js`：日报日期清单。
 - `quality-health.json`：滚动保留最近 90 天的日报可信度审计统计，并汇总审计事件数、拆分数与拆分率，用于观察错误聚类趋势；同日重跑会覆盖当日记录。
 - `source_health.json`：信源健康度，滚动保留 14 天，区分"抓取失败"与"窗口内无新文章"；某源连续 3 天抓取失败时在 Actions 输出 warning。
@@ -209,7 +210,7 @@ GITHUB_BRANCH=main
 ### 页面能力
 
 - 新闻页是无前端框架、无打包步骤的原生 ES Modules 页面：`source/news/index.html` 只保留语义骨架，样式位于 `source/news/news.css`，路由、数据加载、视图和个人操作拆在 `source/news/js/`。现有 `window.NEWS_*` 全局数据脚本继续兼容；数据加载器只接受真实的 `YYYY-MM-DD` 日报日期和 `YYYY-Www` 周报编号，避免 URL 参数被解释为任意脚本路径。
-- 页面采用共享响应式外壳：桌面端使用固定左侧栏承载站点标识和 **时间线**、**全部动态**、**报告**、**主题**主导航；移动端使用站点栏、横向主导航和报告归档栏组成的多层顶部导航。默认进入时间线；有效个人会话下追加 **收藏**，并显示全局稍后读入口。规范路由为 `?view=timeline`、`?view=all`、`?view=reports&period=day&date=YYYY-MM-DD`、`?view=reports&period=week&week=YYYY-Www`、`?view=topics`、`?view=favs`，旧 `view=picks/day/week` 地址会自动映射。未登录用户直达收藏路由时保留 URL 并显示登录提示，不回退或伪装成时间线。跨天条目统一使用 `日期:id` 复合引用键，反馈、收藏、稍后读和主题追踪按条目或事件最近出现日期记账。
+- 页面采用共享响应式外壳：桌面端使用固定左侧栏承载站点标识和 **时间线**、**全部动态**、**报告**、**主题**主导航；移动端使用站点栏、横向主导航和报告归档栏组成的多层顶部导航。裸地址和未知视图默认进入 manifest 最新一期日报；有效个人会话下追加 **收藏**，并显示全局稍后读入口。规范路由为 `?view=timeline`、`?view=all`、`?view=reports&period=day&date=YYYY-MM-DD`、`?view=reports&period=week&week=YYYY-Www`、`?view=topics`、`?view=favs`，旧 `view=picks/day/week` 地址会自动映射。未登录用户直达收藏路由时保留 URL 并显示登录提示，不回退或伪装成时间线。跨天条目统一使用 `日期:id` 复合引用键，反馈、收藏、稍后读和主题追踪按条目或事件最近出现日期记账。
 - 新闻页虽然不继承 Fluid 导航，但始终保留博客出口：桌面端左侧栏底部显示“← 返回博客”，移动端站点栏显示首页图标，均以普通 `href="/"` 在当前标签页返回博客首页。该链接不带 `data-route`，避免被日报内部客户端路由接管。
 - 时间线视图：按发布时间连续倒序呈现不折叠的单列时间轴，以北京时间日期节点分隔，日期统一显示为中文月日与星期，今天和昨天增加相对前缀；条目按原文发布时间转换为北京时间后归日，日报文件日期只代表生成批次，无有效发布时间时显示「时间待确认」。跨天事件有实质新增时保留在原时间位置并标「延续」，纯重复报道合并来源。顶部「今日主线」是只取最新日报事件的轻量提示，按独立信源、分数和 36 小时时间衰减选出最多 3 条；页内检索与普通时间轴采用相同归日和去重口径。
 - 全部动态视图：按日期节点使用倒序单列时间轴，提供文本搜索、来源筛选、分类筛选和评分过滤。回填评分的日子默认只显示 `score >= min_score` 的条目，并提示已隐藏条数，可切换显示低分或未评分内容；条目同时展示来源、分类和分数。
@@ -225,8 +226,8 @@ GITHUB_BRANCH=main
 - 再生成时先在固定仓库状态运行 `node tools/font-subsets/build-news-serif-chars.cjs`，再在临时目录安装固定版本 `cn-font-split@7.4.3`，把其 `node_modules` 放入 `NODE_PATH`，然后运行 `node tools/generate-news-font.cjs <NotoSerifSC-Bold.otf> tools/font-subsets/news-serif-sc.txt source/news/fonts/noto-serif-sc-700`。生成后复制官方 `LICENSE` 为输出目录的 `OFL.txt`，并删除工具生成的 `index.proto`。该版本 CLI 的重复 `--subsets` 参数在 Windows 上存在解析问题，因此使用同版本 Node API；脚本显式结束一次性进程以避开生成完成后的 FFI 清理崩溃。
 - **统一详情页**与各列表视图共用同一套导航、搜索、主题切换和稍后读外壳，路由使用 `/news/?date=YYYY-MM-DD&type=news|deep|paper&item=<id>`，旧式无 `type` 链接仍按 news 兼容。新闻详情依次呈现摘要、长叙述、为什么重要、背景机制、对我的意义、后续关注、claims 与来源；深读呈现推荐理由、核心观点、关键点和适合读者；论文呈现阅读理由、研究结论、贡献、证据与局限。缺少新字段的历史数据按现有字段静默降级，有效个人会话下保留稍后读、收藏与新闻反馈操作；「更多资讯」同时提供原文与站内详情入口。
 - 浏览器通过不可由 JavaScript 读取的签名会话判断是否显示个人操作；普通访客看到的仍是纯阅读页。高权限后台口令不会持久化，也不会发送给日报接口。
-- 反馈包括不感兴趣、更多类似、来源质量低、追踪/取消追踪。来源质量低会在后续管线运行中按近 90 天反馈自然日机械降权，不修改 `sources.yaml`。
-- 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录。
+- 反馈包括不感兴趣、更多类似、来源质量低、追踪/取消追踪。个人新闻卡直接展示不感兴趣与收藏，稍后读、更多类似、追踪和来源反馈收进原生溢出菜单；深读与论文直接展示收藏、把稍后读收进溢出菜单。日报、时间线、详情和收藏复用同一操作布局，来源质量低仍会在后续管线运行中按近 90 天反馈自然日机械降权，不修改 `sources.yaml`。
+- 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录；操作移入菜单不改变 API、localStorage 键或同步语义。
 - ⭐ 收藏（仅个人会话）：独立于稍后读的永久精华库——稍后读是待读队列（读完沉底），收藏是"觉得最有价值就存"。精选、深度阅读、今日论文三类卡片上都有 ⭐ 按钮（再点取消）；收藏页按收藏时间倒序使用单列阅读流，并提供全部、新闻、深读、论文类型筛选。条目凭 `date + item_id` 引用从对应 daily 文件懒加载并重渲染完整卡片，跨天引用沿用 `日期:id` 复合键；服务端列表会并入本地高亮缓存（`news_fav`，永久不清理），换设备后卡片 ★ 状态一致。
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
 - 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`，每个源归入 `ai_engineering`、`tech_business`、`society_finance` 三栏（旧配置名 `zh_society_finance` 仍可读，新数据只写新名）。每天先从各栏选一篇过线文章，空栏名额再按总分释放，仍最多 3 篇且不降低 7 分门槛。`deep_sources.type` 可切换专用适配器；综合评论源可用 `topic_filter: finance` 仅保留宏观、商业、市场、劳动和公共经济政策文章。深读失败只丢当天深读推荐，不影响新闻日报产出。

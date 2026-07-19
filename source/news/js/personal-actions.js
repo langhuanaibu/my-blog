@@ -12,6 +12,7 @@ export function installPersonalActions(root, context) {
     const button = event.target.closest("button[data-action]"); if (!button) return;
     const action = button.dataset.action; const date = button.dataset.date; const item = resolveItem(date, button.dataset.ref) || {};
     const key = storage.itemKey(date, item.id || button.dataset.ref);
+    const overflow = button.closest("details.action-overflow"); if (overflow) overflow.open = false;
 
     if (action === "restore-hidden") { const hidden = storage.get(STORAGE_KEYS.hidden); for (const ref of Object.keys(hidden)) if (ref.startsWith(`${date}:`)) delete hidden[ref]; storage.set(STORAGE_KEYS.hidden, hidden); rerender(); return; }
 

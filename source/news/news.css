@@ -264,6 +264,10 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .act{font-size:12px;color:var(--text3);cursor:pointer;border:1px solid var(--border);border-radius:12px;padding:2px 10px;user-select:none}
 .act:hover{color:var(--text);border-color:var(--accent)}
 .act.done{color:var(--ok);border-color:var(--ok)}
+.action-overflow{position:relative}
+.action-overflow>summary{list-style:none}
+.action-overflow>summary::-webkit-details-marker{display:none}
+.action-menu{position:absolute;z-index:5;right:0;bottom:calc(100% + 6px);display:flex;min-width:max-content;max-width:calc(100vw - 28px);gap:6px;flex-wrap:wrap;justify-content:flex-end;padding:8px;background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow2)}
 .fb-panel:empty{display:none}
 .fb-panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
 .fb-tip{font-size:12px;color:var(--text2);margin-bottom:6px}

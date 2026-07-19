@@ -34,10 +34,13 @@ export function actionButtons(item, options = {}) {
   const ref = escapeHtml(item.id); const event = item.event_id;
   const key = `${date}:${item.id}`; const state = options;
   const readLater = Boolean(state.readLater?.[key]); const favorite = Boolean(state.favorites?.[key]); const liked = Boolean(state.liked?.[key]); const tracked = Boolean(event && state.tracked?.[event]);
+  const readLaterButton = `<button type="button" class="act ${readLater ? "done" : ""}" data-action="read-later" data-ref="${ref}" data-date="${date}" data-type="${type}">${readLater ? "✓ 已收" : "⏳ 稍后读"}</button>`;
+  const favoriteButton = `<button type="button" class="act ${favorite ? "done" : ""}" data-action="favorite" data-ref="${ref}" data-date="${date}" data-type="${type}">${favorite ? "★ 已藏" : "⭐ 收藏"}</button>`;
+  const newsMenu = type === "news" ? `<button type="button" class="act ${liked ? "done" : ""}" data-action="like" data-ref="${ref}" data-date="${date}">${liked ? "👍 已记录" : "👍 更多类似"}</button>${event ? `<button type="button" class="act ${tracked ? "done" : ""}" data-action="track" data-ref="${ref}" data-event="${escapeHtml(event)}" data-date="${date}">${tracked ? "📌 追踪中" : "📌 追踪"}</button>` : ""}<button type="button" class="act" data-action="source" data-ref="${ref}" data-date="${date}">🚫 来源</button>` : "";
   return `<div class="acts" aria-label="个人操作">
-    <button type="button" class="act ${readLater ? "done" : ""}" data-action="read-later" data-ref="${ref}" data-date="${date}" data-type="${type}">${readLater ? "✓ 已收" : "⏳ 稍后读"}</button>
-    <button type="button" class="act ${favorite ? "done" : ""}" data-action="favorite" data-ref="${ref}" data-date="${date}" data-type="${type}">${favorite ? "★ 已藏" : "⭐ 收藏"}</button>
-    ${type === "news" ? `<button type="button" class="act ${liked ? "done" : ""}" data-action="like" data-ref="${ref}" data-date="${date}">${liked ? "👍 已记录" : "👍 更多类似"}</button>${event ? `<button type="button" class="act ${tracked ? "done" : ""}" data-action="track" data-ref="${ref}" data-event="${escapeHtml(event)}" data-date="${date}">${tracked ? "📌 追踪中" : "📌 追踪"}</button>` : ""}<button type="button" class="act" data-action="source" data-ref="${ref}" data-date="${date}">🚫 来源</button><button type="button" class="act" data-action="not-interested" data-ref="${ref}" data-date="${date}">✕ 不感兴趣</button>` : ""}
+    ${type === "news" ? `<button type="button" class="act" data-action="not-interested" data-ref="${ref}" data-date="${date}">✕ 不感兴趣</button>` : ""}
+    ${favoriteButton}
+    <details class="action-overflow"><summary class="act" aria-label="更多操作">⋯</summary><div class="action-menu">${readLaterButton}${newsMenu}</div></details>
   </div><div class="fb-panel" aria-live="polite"></div>`;
 }
 

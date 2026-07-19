@@ -51,6 +51,7 @@
 - **规则**：遵循业界常规（通常为全小写）。
 - **示例**：`package.json`、`readme.md`。
 - **特殊约定**：最高约束文档保持全大写 `CLAUDE.md` / `AGENTS.md` 以示强调。
+- **代理文档分工**：`AGENTS.md` 是跨编码代理共享的项目规则；`CLAUDE.md` 可保留 Claude 专用约束与 skill 入口。两者不是同源副本，不要求软链接，但修改共享边界时应检查是否需要同步。
 - **根目录边界**：不要再新增 `memory.md`、`skill.md` 这类一次性索引；持久规则进入 `AGENTS.md` / `CLAUDE.md`，面向维护者的说明进入 `readme.md` 或 `docs/`。
 
 ---

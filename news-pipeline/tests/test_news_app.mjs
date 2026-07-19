@@ -93,6 +93,16 @@ test("app rewrites old route, marks seen and respects hidden state", async () =>
   assert.equal(dom.window.document.querySelectorAll('div[role="button"],span[onclick],div[onclick]').length, 0);
 });
 
+test("bare and unknown routes open the latest daily report", async () => {
+  for (const url of ["https://example.test/news/", "https://example.test/news/?view=unknown"]) {
+    const dom = shell(url);
+    const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), manifests: { daily: [day.date] } });
+    await app.start();
+    assert.equal(dom.window.location.search, "?view=reports&period=day&date=2026-07-15");
+    assert.match(dom.window.document.querySelector("main").textContent, /导语/);
+  }
+});
+
 test("report route exposes a stable shell state and removes it after navigation", async () => {
   const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
   const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi() });
@@ -150,10 +160,18 @@ test("personal actions preserve newsState storage and API contracts", async () =
   const requests = [];
   const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: async (_url, init) => { requests.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ success: true, data: {} }) }; } });
   await app.start();
-  dom.window.document.querySelector('[data-action="like"][data-ref="pick-1"]').click();
+  const like = dom.window.document.querySelector('[data-action="like"][data-ref="pick-1"]');
+  const menu = like.closest("details");
+  menu.open = true;
+  like.click();
+  assert.equal(menu.open, false);
   dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-1"]').click();
   dom.window.document.querySelector('[data-action="read-later"][data-ref="pick-1"]').click();
-  dom.window.document.querySelector('[data-action="source"][data-ref="pick-1"]').click();
+  const source = dom.window.document.querySelector('[data-action="source"][data-ref="pick-1"]');
+  source.closest("details").open = true;
+  source.click();
+  assert.equal(source.closest("details").open, false);
+  assert.ok(dom.window.document.querySelector('[data-action="down-source"]'));
   dom.window.document.querySelector('[data-action="down-source"]').click();
   await app.idle();
   assert.ok(requests.some((request) => request.type === "feedback" && request.payload.action === "more_like_this"));

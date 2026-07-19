@@ -5,7 +5,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 
 import { parseRoute, routeUrl } from "../../source/news/js/router.js";
 import { daily as loadDaily, weekly as loadWeekly } from "../../source/news/js/data-loader.js";
-import { dailyCard, renderDailyReport, renderDetail, renderWeeklyReport } from "../../source/news/js/reports.js";
+import { collectionCard, dailyCard, renderDailyReport, renderDetail, renderWeeklyReport } from "../../source/news/js/reports.js";
 import * as TimelineView from "../../source/news/js/timeline-view.js";
 import { updateNavigation } from "../../source/news/js/accessibility.js";
 
@@ -21,11 +21,45 @@ const daily = {
 };
 
 test("新旧路由统一为 canonical reports/timeline routes", () => {
+  assert.deepEqual(parseRoute(""), { view: "reports", period: "day" });
+  assert.deepEqual(parseRoute("?view=unknown"), { view: "reports", period: "day" });
   assert.deepEqual(parseRoute("?view=picks"), { view: "timeline" });
   assert.deepEqual(parseRoute("?view=day&date=2026-07-15"), { view: "reports", period: "day", date: "2026-07-15" });
   assert.deepEqual(parseRoute("?view=week&week=2026-W28"), { view: "reports", period: "week", week: "2026-W28" });
   assert.deepEqual(parseRoute("?date=2026-07-15&type=news&item=pick-ai"), { view: "detail", date: "2026-07-15", type: "news", item: "pick-ai" });
   assert.equal(routeUrl({ view: "reports", period: "week", week: "2026-W28" }), "?view=reports&period=week&week=2026-W28");
+});
+
+test("个人操作按内容类型分为主操作和原生溢出菜单", () => {
+  const state = { personal: true, favorites: {}, readLater: {}, liked: {}, tracked: {} };
+  const news = new JSDOM(`<main>${dailyCard({ ...daily.items[0], event_id: "evt-1" }, daily.date, state)}</main>`).window.document;
+  assert.deepEqual(
+    [...news.querySelectorAll(".acts > button[data-action]")].map((node) => node.dataset.action),
+    ["not-interested", "favorite"],
+  );
+  const newsMenu = news.querySelector(".acts details");
+  assert.equal(newsMenu?.querySelector("summary")?.getAttribute("aria-label"), "更多操作");
+  assert.deepEqual(
+    [...newsMenu.querySelectorAll("button[data-action]")].map((node) => node.dataset.action),
+    ["read-later", "like", "track", "source"],
+  );
+
+  const noEvent = new JSDOM(`<main>${dailyCard(daily.items[1], daily.date, state)}</main>`).window.document;
+  assert.equal(noEvent.querySelector('[data-action="track"]'), null);
+
+  for (const [type, item] of [["deep", { id: "deep-1", title: "深读" }], ["paper", { id: "paper-1", title: "论文" }]]) {
+    const doc = new JSDOM(`<main>${collectionCard(item, type, daily.date, state)}</main>`).window.document;
+    assert.deepEqual([...doc.querySelectorAll(".acts > button[data-action]")].map((node) => node.dataset.action), ["favorite"]);
+    assert.deepEqual([...doc.querySelectorAll(".acts details button[data-action]")].map((node) => node.dataset.action), ["read-later"]);
+  }
+
+  const loggedOut = new JSDOM(`<main>${dailyCard(daily.items[0], daily.date)}</main>`).window.document;
+  assert.equal(loggedOut.querySelector(".acts"), null);
+});
+
+test("个人操作溢出菜单向卡片内侧展开并允许窄屏换行", async () => {
+  const css = await readFile(new URL("../../source/news/news.css", import.meta.url), "utf8");
+  assert.match(css, /\.action-menu\{[^}]*right:0;[^}]*max-width:calc\(100vw - 28px\);[^}]*flex-wrap:wrap/);
 });
 
 test("新闻页共享外壳提供桌面侧栏和移动三层导航", async () => {

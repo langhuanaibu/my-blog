@@ -11,7 +11,7 @@ export function parseRoute(search = "") {
   if (oldView === "day") return { view: "reports", period: "day", ...(date ? { date } : {}) };
   if (oldView === "week") return { view: "reports", period: "week", ...(params.get("week") ? { week: params.get("week") } : {}) };
 
-  const view = VALID_VIEWS.has(oldView) ? oldView : "timeline";
+  const view = VALID_VIEWS.has(oldView) ? oldView : "reports";
   if (view !== "reports") return { view, ...(view === "timeline" && params.get("tag") ? { tag: params.get("tag") } : {}) };
   const period = params.get("period") === "week" ? "week" : "day";
   return { view, period, ...(period === "week" && params.get("week") ? { week: params.get("week") } : {}), ...(period === "day" && date ? { date } : {}) };

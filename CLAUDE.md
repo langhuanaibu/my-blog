@@ -35,3 +35,15 @@
 - **文档收口**：功能落地后把现行事实并入 `readme.md`，删除已完成计划和一次性报告。
 - **Git操作**：Commit message 用简明英文。**严禁自动 `git push`**（仅用于跨设备同步，需等待用户明确指令）。
   - **唯一例外**：GitHub Actions 的 `daily-news.yml` 每日自动 commit + push，且仅限 `source/news/data/` 路径。管线脚本内置数据校验（精选非空、文件完整），校验失败即中止、不提交。此例外经用户明确批准（2026-07-04），不得扩大到其他路径。
+
+## Agent skills
+
+工程 Skill 的仓库级配置。以下文件是这些 Skill 的读写约定来源。
+
+### Issue tracker
+
+Issue 与 PRD 存放在 GitHub Issues（`langhuanaibu/my-blog`），通过 `gh` CLI 操作。详见 `docs/agents/issue-tracker.md`。
+
+### Domain docs
+
+单上下文布局：根目录 `CONTEXT.md` + `docs/adr/`（当前均未创建，按需惰性生成）。详见 `docs/agents/domain.md`。
