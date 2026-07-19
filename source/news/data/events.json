@@ -1549,7 +1549,7 @@
    "event_id": "evt-20260710-b83b00",
    "title": "国内首个全国产十万卡AI超集群落地",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-12",
@@ -1612,7 +1612,7 @@
    "event_id": "evt-20260711-112d84",
    "title": "苹果起诉OpenAI窃取商业机密开发AI硬件",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-11",
    "last_seen": "2026-07-12",
@@ -1828,7 +1828,7 @@
    "event_id": "evt-20260712-978cee",
    "title": "委内瑞拉地震死亡人数超4300人救援工作持续",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1845,7 +1845,7 @@
    "event_id": "evt-20260712-898087",
    "title": "特朗普政府传唤纽约时报记者调查空军一号报道",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1885,7 +1885,7 @@
    "event_id": "evt-20260712-6b354c",
    "title": "研究揭示博科圣地利用主流AI聊天机器人策划袭击",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1902,7 +1902,7 @@
    "event_id": "evt-20260712-266d24",
    "title": "AI公司施压削弱澳版权法引艺术家抗议",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1919,7 +1919,7 @@
    "event_id": "evt-20260712-861624",
    "title": "英国前议员安·威德科姆谋杀案调查进展",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1936,7 +1936,7 @@
    "event_id": "evt-20260712-bbb15f",
    "title": "德国宣判华人跨国有组织性侵案核心成员",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1953,7 +1953,7 @@
    "event_id": "evt-20260712-32fa3d",
    "title": "西班牙致命野火致12人死亡，23人失踪",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -1968,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
+   "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-19",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-12",
@@ -2010,6 +2010,12 @@
      "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
      "summary": "伊朗对约旦美军基地发动导弹和无人机袭击，造成两名美军死亡、一人失踪，美军随后对伊朗目标实施打击。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
+     "summary": "美军在伊拉克和约旦遭伊朗袭击，死亡人数增至3人，美军对伊朗海岸监视和防空设施发动更多空袭。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -2017,7 +2023,7 @@
    "event_id": "evt-20260712-7fbbe9",
    "title": "美国里程碑式住房法案在特朗普反对下成为法律",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -2034,7 +2040,7 @@
    "event_id": "evt-20260712-772907",
    "title": "Meta关闭Instagram基于公开账户生成AI深度伪造功能",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -2051,7 +2057,7 @@
    "event_id": "evt-20260712-adef51",
    "title": "智能眼镜赛道2028年或成关键爆发节点",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -2068,7 +2074,7 @@
    "event_id": "evt-20260712-a7c4a7",
    "title": "高盛称AI推动内存电力和软件涨价或推高核心PCE 0.5个百分点",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -2085,7 +2091,7 @@
    "event_id": "evt-20260712-a281d8",
    "title": "科技巨头AI债券遭市场抛售，价格持续下跌",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-12",
@@ -2197,12 +2203,12 @@
   },
   {
    "event_id": "evt-20260713-5d13f1",
-   "title": "乌克兰无人机袭击俄地区致8死60余伤",
+   "title": "俄罗斯夜间对乌克兰发动大规模导弹和无人机袭击",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-13",
-   "last_seen": "2026-07-19",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-13",
@@ -2215,6 +2221,12 @@
      "title": "乌克兰无人机袭击俄地区致8死60余伤",
      "summary": "乌克兰无人机袭击俄罗斯多个地区，造成至少8人死亡、60多人受伤，目标包括能源基础设施。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "俄罗斯夜间对乌克兰发动大规模导弹和无人机袭击",
+     "summary": "俄罗斯夜间向乌克兰发射41枚导弹和125架无人机，袭击基辅等多座城市，造成8人死亡、数十人受伤。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -2794,17 +2806,23 @@
   },
   {
    "event_id": "evt-20260715-82e822",
-   "title": "特朗普宣布与伊拉克达成大规模石油协议",
+   "title": "美能源部长称对伊战争任务转向确保石油流通",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-15",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-15",
      "title": "特朗普宣布与伊拉克达成大规模石油协议",
      "summary": "特朗普宣布美伊将很快达成“大规模”石油协议，伊拉克总理同时要求美军9月底前撤离。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "美能源部长称对伊战争任务转向确保石油流通",
+     "summary": "美国能源部长克里斯·赖特表示，对伊朗的军事任务已转向确保石油流通，并承认战争持续时间超出预期。",
      "news_status": "发展中"
     }
    ]
@@ -3231,17 +3249,23 @@
   },
   {
    "event_id": "evt-20260716-a430c0",
-   "title": "阿根廷逆转英格兰，晋级2026世界杯决赛",
+   "title": "西班牙加时1-0胜阿根廷，时隔16年再夺世界杯",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-16",
-   "last_seen": "2026-07-16",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-16",
      "title": "阿根廷逆转英格兰，晋级2026世界杯决赛",
      "summary": "阿根廷在2026世界杯半决赛中2-1逆转战胜英格兰，晋级决赛将对阵西班牙。赛后阿根廷球员展示“马尔维纳斯群岛属于阿根廷”横幅。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "西班牙加时1-0胜阿根廷，时隔16年再夺世界杯",
+     "summary": "西班牙在2026年世界杯决赛中加时1-0击败阿根廷，费兰·托雷斯打入制胜球，EA连续5届成功预测冠军。",
      "news_status": "已确认"
     }
    ]
@@ -3402,12 +3426,12 @@
   },
   {
    "event_id": "evt-20260717-82fd62",
-   "title": "印度太空初创公司Skyroot成功发射首枚商业轨道火箭",
+   "title": "印度首枚私营火箭成功入轨",
    "category": "tech",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-19",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-17",
@@ -3419,6 +3443,12 @@
      "date": "2026-07-19",
      "title": "印度太空初创公司Skyroot成功发射首枚商业轨道火箭",
      "summary": "印度航天初创公司Skyroot Aerospace成功发射了该国首枚民营轨道运载火箭“维克拉姆-1号”，从斯里哈里科塔航天中心升空。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "印度首枚私营火箭成功入轨",
+     "summary": "印度私营航天公司Agnikul Cosmos的首枚火箭在首次试飞中成功将载荷送入轨道，创始人称“从未想过首次就能成功”。",
      "news_status": "已确认"
     }
    ]
@@ -3652,12 +3682,12 @@
   },
   {
    "event_id": "evt-20260717-41ca2e",
-   "title": "高盛：Kimi K3智能达全球普及关键点，高端编程赛道竞争激烈",
+   "title": "Moonshot Kimi K3登顶前端代码排名，数学能力仍落后",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-19",
+   "last_seen": "2026-07-20",
    "history": [
     {
      "date": "2026-07-17",
@@ -3669,6 +3699,12 @@
      "date": "2026-07-19",
      "title": "高盛：Kimi K3智能达全球普及关键点，高端编程赛道竞争激烈",
      "summary": "高盛报告指出，Kimi K3（2.8万亿参数）在编程和智能评分中跻身全球前沿，智能水平已达大规模普及临界点，但高端编程赛道竞争激烈。",
+     "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "Moonshot Kimi K3登顶前端代码排名，数学能力仍落后",
+     "summary": "Moonshot AI的Kimi K3模型在Code Arena前端代码排名中超越Claude Fable 5和GPT-5.6 Sol，成为首个登顶该排名的中国模型，但在复杂数学任务上差距明显。",
      "news_status": "已确认"
     }
    ]
@@ -4321,6 +4357,244 @@
      "date": "2026-07-19",
      "title": "Index Ventures联合创始人预测AI财富将面临再分配",
      "summary": "Index Ventures联合创始人Neil Rimer预测，AI积累的巨额财富将面临自愿或强制再分配。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-caa873",
+   "title": "阿里发布Qwen 3.8开源多模态模型，2.4T参数",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "阿里发布Qwen 3.8开源多模态模型，2.4T参数",
+     "summary": "阿里巴巴发布Qwen 3.8多模态AI模型，拥有2.4万亿参数，已开放预览版，即将开源权重。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-94f555",
+   "title": "安迪·伯纳姆接替斯塔默成为英国新任首相",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "安迪·伯纳姆接替斯塔默成为英国新任首相",
+     "summary": "前曼彻斯特市长安迪·伯纳姆于7月20日接替基尔·斯塔默，成为英国新任首相。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-1157b8",
+   "title": "Tate兄弟在美被捕，面临英国59项新指控",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "Tate兄弟在美被捕，面临英国59项新指控",
+     "summary": "美国法警在迈阿密逮捕Andrew和Tristan Tate兄弟，英国检方新增38项指控，总指控数达59项，并寻求引渡。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-3bba13",
+   "title": "台积电对美投资增至2650亿美元，加速亚利桑那建厂",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "台积电对美投资增至2650亿美元，加速亚利桑那建厂",
+     "summary": "台积电宣布追加1000亿美元美国投资，总额达2650亿美元，加速亚利桑那工厂建设以应对AI需求和竞争。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-63fdf5",
+   "title": "黄仁勋访日宣布Nvidia与日本合作建设AI工厂",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "黄仁勋访日宣布Nvidia与日本合作建设AI工厂",
+     "summary": "Nvidia CEO黄仁勋访日期间，宣布为日本建设配备13,750颗Vera CPU和27,500颗Rubin GPU的AI工厂，预计2028年投运。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-d7a922",
+   "title": "古巴异见艺术家奥尔特加流亡抵达美国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "古巴异见艺术家奥尔特加流亡抵达美国",
+     "summary": "古巴著名异见艺术家路易斯·曼努埃尔·奥特罗·阿尔坎塔拉在服刑五年后获释，以流亡条件离开古巴，抵达美国迈阿密。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-d62c6a",
+   "title": "首次在遥远恒星宜居带内发现类似地球行星拥有大气层",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "首次在遥远恒星宜居带内发现类似地球行星拥有大气层",
+     "summary": "研究人员首次在遥远恒星的宜居带内，发现一颗类似地球的岩质行星拥有大气层。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-5c93da",
+   "title": "Netflix以5.87亿美元收购Ben Affleck的AI电影制作公司",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "Netflix以5.87亿美元收购Ben Affleck的AI电影制作公司",
+     "summary": "Netflix披露以5.87亿美元现金收购了Ben Affleck联合创立的AI电影制作初创公司InterPositive。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-e8085a",
+   "title": "智元机器人姚卯青：具身智能GPT-3时刻最快2028年到来",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "智元机器人姚卯青：具身智能GPT-3时刻最快2028年到来",
+     "summary": "智元机器人合伙人姚卯青预测，具身智能的通用能力涌现（GPT-3.5时刻）可能在2027年底至2028年初出现，核心驱动力是数据规模。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-0c582f",
+   "title": "WAIC 2026：国产AI芯片四小龙竞逐超节点，万亿参数模型成标配",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "WAIC 2026：国产AI芯片四小龙竞逐超节点，万亿参数模型成标配",
+     "summary": "2026世界人工智能大会上，国产AI芯片厂商（沐曦、摩尔线程、燧原、壁仞）集中展示超节点产品，大模型迈入万亿参数时代。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-453856",
+   "title": "英国CEO薪酬与普通员工差距扩大至130倍",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "英国CEO薪酬与普通员工差距扩大至130倍",
+     "summary": "高薪中心报告显示，2025年富时100指数公司CEO薪酬中位数达506万英镑，创历史新高，是普通员工薪酬的130倍。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-558f0b",
+   "title": "泰晤士水务债权人寻求与新首相谈判，避免国有化",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "泰晤士水务债权人寻求与新首相谈判，避免国有化",
+     "summary": "泰晤士水务的债权人财团寻求与新任首相伯纳姆进行谈判，以避免公司被暂时国有化，并准备在必要时发起法律挑战。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-5f3b46",
+   "title": "圭亚那客轮沉没致数十人失踪",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "圭亚那客轮沉没致数十人失踪",
+     "summary": "一艘载有116人的客轮在圭亚那海岸沉没，已救起67人，包括15名儿童，数十人失踪。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260720-2016df",
+   "title": "英伟达：AI算力需求正转向后训练改进",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-20",
+   "last_seen": "2026-07-20",
+   "history": [
+    {
+     "date": "2026-07-20",
+     "title": "英伟达：AI算力需求正转向后训练改进",
+     "summary": "英伟达称，随着智能体AI兴起，模型后训练已从一次性步骤演变为持续核心工作负载，算力需求重心正从训练转向后训练。",
      "news_status": "已确认"
     }
    ]
