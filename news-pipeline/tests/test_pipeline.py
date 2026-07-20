@@ -160,6 +160,112 @@ check("deep财经主题过滤拒绝偏题文章",
 
 
 # ----------------------------------------------------------------
+# 0.5 动态精选线账本（历史日等权、冷启动与幂等）
+# ----------------------------------------------------------------
+
+_dynamic_api = ("resolve_pick_threshold", "save_score_history", "select_and_record")
+if not all(hasattr(dn, name) for name in _dynamic_api):
+    check("动态精选线 API 已实现", False)
+else:
+    _history_tmp = Path(tempfile.mkdtemp(prefix="score_history_test_"))
+    _dynamic_cfg = {
+        "pick_threshold": 68,
+        "pick_min": 0, "pick_max": 32, "secondary_count": 8,
+        "min_per_category": 0, "interest_weights": {}, "scoring": {},
+        "pick_dynamic": {
+            "enabled": True, "window_days": 14, "percentile": 75,
+            "clamp": [66, 82], "min_history_days": 5, "backfill_offset": 8,
+        },
+    }
+    try:
+        _cold = dn.resolve_pick_threshold(_dynamic_cfg, _history_tmp, "2026-07-20")
+        check("动态线历史不足回退静态阈值",
+              _cold["threshold"] == 68 and _cold["source"] == "fallback_insufficient_history")
+
+        # 每日先算 nearest-rank P75，再对日期等权取中位数；高产日不能按事件数放大权重。
+        _days = {
+            "2026-07-14": [60, 60, 60, 60, 70],       # P75=60
+            "2026-07-15": [61, 61, 61, 61, 71],       # P75=61
+            "2026-07-16": [62, 62, 62, 62, 72],       # P75=62
+            "2026-07-17": [63, 63, 63, 63, 73],       # P75=63
+            "2026-07-18": [99] * 100,                 # P75=99，单日只占一个日值
+        }
+        (_history_tmp / "score_history.json").write_text(json.dumps({
+            "version": 1,
+            "days": {day: {"eligible_scores": scores} for day, scores in _days.items()},
+        }), encoding="utf-8")
+        _resolved = dn.resolve_pick_threshold(_dynamic_cfg, _history_tmp, "2026-07-20")
+        check("动态线按日等权而非合并全部事件",
+              _resolved["threshold"] == 66 and _resolved["history_days"] == 5)
+        check("动态线下限随阈值计算", _resolved["quality_floor"] == 58)
+
+        # 当天记录不得参与当天阈值；同日重跑覆盖，纯舆论不写入历史。
+        _events_for_history = [
+            {"score": 77, "opinion_only": False},
+            {"score": 99, "opinion_only": True},
+        ]
+        check("分数账本写入成功",
+              dn.save_score_history(_history_tmp, "2026-07-20", _events_for_history))
+        dn.save_score_history(_history_tmp, "2026-07-20", [
+            {"score": 78, "opinion_only": False},
+            {"score": 79, "opinion_only": False},
+        ])
+        _saved = json.loads((_history_tmp / "score_history.json").read_text(encoding="utf-8"))
+        check("账本排除纯舆论且同日重跑覆盖",
+              _saved["days"]["2026-07-20"]["eligible_scores"] == [78, 79])
+        _same_day = dn.resolve_pick_threshold(_dynamic_cfg, _history_tmp, "2026-07-20")
+        check("当天账本不参与当天阈值", _same_day["history_days"] == 5)
+
+        _retention_tmp = Path(tempfile.mkdtemp(prefix="score_history_retention_"))
+        try:
+            for day in range(1, 32):
+                dn.save_score_history(
+                    _retention_tmp, f"2026-07-{day:02d}",
+                    [{"score": 70 + day % 5, "opinion_only": False}])
+            _retained = json.loads(
+                (_retention_tmp / "score_history.json").read_text(encoding="utf-8"))
+            check("分数账本只保留最近30个产出日",
+                  len(_retained["days"]) == dn.SCORE_HISTORY_KEEP_DAYS
+                  and "2026-07-01" not in _retained["days"])
+            check("分数账本原子写入不遗留临时文件",
+                  not list(_retention_tmp.glob(".score_history.json.*.tmp")))
+        finally:
+            shutil.rmtree(_retention_tmp, ignore_errors=True)
+
+        _original_atomic_write = dn._atomic_write_json
+        try:
+            def _fail_history_write(_path, _payload):
+                raise OSError("disk full")
+
+            dn._atomic_write_json = _fail_history_write
+            _write_fail_events = [{
+                "ids": [0], "category": "ai", "dims": {d: 10.0 for d in dn.DIMS},
+                "title": "write-fallback",
+            }]
+            _, _, _write_fail_info, _ = dn.select_and_record(
+                _write_fail_events,
+                [{"source_id": "openai", "source_type": "fact",
+                  "tier": "T1", "credibility": 9}],
+                _dynamic_cfg, _history_tmp, "2026-07-21")
+            check("账本写入失败时当日回退静态阈值",
+                  _write_fail_info["threshold"] == 68
+                  and _write_fail_info["source"] == "fallback_history_write")
+        finally:
+            dn._atomic_write_json = _original_atomic_write
+
+        (_history_tmp / "score_history.json").write_text("{broken", encoding="utf-8")
+        _broken = dn.resolve_pick_threshold(_dynamic_cfg, _history_tmp, "2026-07-21")
+        check("损坏账本回退静态阈值",
+              _broken["threshold"] == 68 and _broken["source"] == "fallback_invalid_history")
+        _disabled = dn.resolve_pick_threshold(
+            {**_dynamic_cfg, "pick_dynamic": {"enabled": False}},
+            _history_tmp, "2026-07-21")
+        check("动态线关闭时使用静态阈值", _disabled["source"] == "static_disabled")
+    finally:
+        shutil.rmtree(_history_tmp, ignore_errors=True)
+
+
+# ----------------------------------------------------------------
 # 1. 舆论源硬约束（score_and_select）
 # ----------------------------------------------------------------
 
@@ -204,6 +310,44 @@ events_low = [
 picked_low, _ = dn.score_and_select(events_low, items,
                                     dict(cfg, pick_min=2, min_per_category=0))
 check("pick_min补位跳过opinion_only", all(not e.get("opinion_only") for e in picked_low))
+
+# 热点日的合格类目保留席不得被高分大类最终截断。
+_reserve_items = [mk_item("openai", "fact", "T1", 9) for _ in range(7)]
+_reserve_events = [
+    {"ids": [i], "category": "ai", "dims": {d: 10.0 for d in dn.DIMS},
+     "title": f"ai-hot-{i}"} for i in range(6)
+]
+_reserve_events.append({
+    "ids": [6], "category": "society", "dims": {d: 7.2 for d in dn.DIMS},
+    "title": "society-floor",
+})
+_reserve_picked, _ = dn.score_and_select(
+    _reserve_events, _reserve_items,
+    dict(cfg, pick_max=6, pick_min=0, min_per_category=1),
+    effective_threshold=80)
+check("热点日类目保留席不被高分大类截断",
+      any(e["title"] == "society-floor" for e in _reserve_picked))
+check("精选严格遵守全局上限", len(_reserve_picked) == 6)
+
+# pick_min 与类目补位共用动态线减偏移的质量下限，不再无条件凑数。
+_below_floor_events = [{
+    "ids": [0], "category": "tech", "dims": {d: 7.0 for d in dn.DIMS},
+    "title": "below-floor",
+}]
+_below_floor_picked, _ = dn.score_and_select(
+    _below_floor_events, _reserve_items,
+    dict(cfg, pick_min=8, min_per_category=3,
+         pick_dynamic={"backfill_offset": 8}),
+    effective_threshold=80)
+check("pick_min 不绕过动态质量下限", _below_floor_picked == [])
+
+_opinion_dynamic = [{
+    "ids": [0], "category": "tech", "dims": {d: 10.0 for d in dn.DIMS},
+    "title": "dynamic-opinion",
+}]
+_opinion_items = [mk_item("hn", "opinion", "T1", 9)]
+dn.score_and_select(_opinion_dynamic, _opinion_items, cfg, effective_threshold=80)
+check("纯 opinion 跟随动态阈值封顶", _opinion_dynamic[0]["score"] == 79)
 
 # 长尾软边角料过滤：整条事件来源都被预筛标 soft -> 不进更多资讯（精选不受影响）
 soft_items = [
@@ -266,7 +410,14 @@ try:
     stats_ok = {"hn": {"name": "Hacker News", "count": 5, "error": False}}
     stats_err = {"hn": {"name": "Hacker News", "count": 0, "error": True}}
 
-    dn.update_source_health(stats_ok, "2026-07-01")
+    _metric_items = [
+        {"source_id": "hn"}, {"source_id": "hn"}, {"source_id": "other"},
+    ]
+    _metric_events = [{"ids": [0, 2]}, {"ids": [1]}]
+    _metric_picked = [_metric_events[0]]
+    dn.update_source_health(stats_ok, "2026-07-01",
+                            events=_metric_events, picked=_metric_picked,
+                            items=_metric_items)
     dn.update_source_health(stats_err, "2026-07-02")
     dn.update_source_health(stats_err, "2026-07-03")
     print("--- 连续第3天失败，下一行应出现 ::warning:: ↓")
@@ -274,7 +425,12 @@ try:
 
     health = json.loads((tmp / "source_health.json").read_text(encoding="utf-8"))
     check("健康度文件含4天记录", len(health["days"]) == 4)
-    check("记录结构正确", health["days"]["2026-07-04"]["hn"] == {"count": 0, "error": True})
+    check("旧调用记录结构向后兼容",
+          health["days"]["2026-07-04"]["hn"] == {"count": 0, "error": True})
+    check("逐源记录评分事件与精选事件",
+          health["days"]["2026-07-01"]["hn"] == {
+              "count": 5, "error": False, "scored_events": 2, "selected_events": 1,
+          })
 
     for i in range(5, 21):
         dn.update_source_health(stats_ok, f"2026-07-{i:02d}")
@@ -1498,6 +1654,11 @@ _repo_cfg = dn.yaml.safe_load(
     (Path(dn.__file__).resolve().parent / "config.yaml").read_text(encoding="utf-8"))
 check("当前配置未启用 ai 精选上限",
       (_repo_cfg.get("max_per_category") or {}).get("ai") is None)
+check("当前配置启用动态精选改革",
+      _repo_cfg.get("pick_max") == 32
+      and _repo_cfg.get("min_per_category") == 3
+      and (_repo_cfg.get("pick_dynamic") or {}).get("enabled") is True
+      and (_repo_cfg.get("pick_dynamic") or {}).get("backfill_offset") == 8)
 
 _cap_items = [mk_item("openai", "fact", "T1", 9) for _ in range(8)]
 _cap_dims_hi = {d: 10.0 for d in dn.DIMS}
@@ -1537,7 +1698,7 @@ _nocap_picked, _ = dn.score_and_select(_nocap_events, _cap_items,
 check("未配置上限时 ai 全数进精选",
       sum(1 for e in _nocap_picked if e["category"] == "ai") == 5)
 
-# 上限腾位后从线下补齐 pick_min（补入者也须尊重上限）
+# 上限腾位后，pick_min 也不得从质量线以下硬补
 _bf_items = [mk_item("openai", "fact", "T1", 9) for _ in range(5)] + \
             [mk_item("verge", "fact", "T1.5", 7) for _ in range(5)]
 _bf_events = [{"ids": [i], "category": "ai", "dims": dict(_cap_dims_hi),
@@ -1546,8 +1707,8 @@ _bf_events += [{"ids": [5 + i], "category": "tech", "dims": {d: 1.0 for d in dn.
                 "title": f"tech-low-{i}"} for i in range(3)]
 _bf_picked, _ = dn.score_and_select(_bf_events, _bf_items,
                                     dict(_cap_cfg, pick_min=5))
-check("腾位后从线下补齐保底",
-      len(_bf_picked) == 5 and sum(1 for e in _bf_picked if e["category"] == "ai") == 3)
+check("腾位后不从质量线以下硬补",
+      len(_bf_picked) == 3 and sum(1 for e in _bf_picked if e["category"] == "ai") == 3)
 
 # ----------------------------------------------------------------
 # 质量审计：错误聚类拆分、事实污染清除、失败保守降级

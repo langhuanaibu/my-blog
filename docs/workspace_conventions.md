@@ -74,7 +74,7 @@
 👉 **动作**：修改 `news-pipeline/config.yaml`，并运行 `python news-pipeline/tests/test_pipeline.py` 做逻辑回归。
 
 **场景 6：我要人工修正每日日报兴趣画像**
-👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。`vocab/*.js` 是已停用单词本的历史数据，也不要手工维护。
+👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`score_history.json`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。`score_history.json` 是动态精选线的内部账本，损坏时应让管线按静态线回退并重建，不要人工补历史分数。`vocab/*.js` 是已停用单词本的历史数据，也不要手工维护。
 
 **场景 7：我要维护日报反馈或稍后读**
 👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json` / `read_later.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。单词本已停用，`api/vocab.js` 与 `vocab-book.json` 仅为恢复能力保留。

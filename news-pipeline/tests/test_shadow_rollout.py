@@ -285,7 +285,8 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
         "mode", "runtime_seconds", "selected_before_audit",
         "selected_after_audit", "audited_candidate_count",
         "demoted_from_selected", "high_risk_selected_before_audit",
-        "single_source_selected_before_audit", "evidence_basis", "fetch",
+        "single_source_selected_before_audit", "high_risk_single_source_count",
+        "high_risk_single_source_rate", "evidence_basis", "fetch",
         "objectivity", "independent_chain_distribution",
         "source_reference_concentration",
     }
@@ -294,6 +295,8 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
     assert summary["selected_after_audit"] == 1
     assert summary["audited_candidate_count"] == 2
     assert summary["demoted_from_selected"] == 1
+    assert summary["high_risk_single_source_count"] == 1
+    assert summary["high_risk_single_source_rate"] == 1.0
     assert summary["evidence_basis"] == {"fulltext": 1, "mixed": 1, "snippet": 0}
     assert summary["fetch"] == {"attempts": 3, "successes": 2, "retries": 1}
     assert summary["objectivity"] == {
@@ -316,6 +319,8 @@ def test_github_summary_appends_compact_markdown(tmp_path):
         "demoted_from_selected": 1,
         "high_risk_selected_before_audit": 1,
         "single_source_selected_before_audit": 1,
+        "high_risk_single_source_count": 1,
+        "high_risk_single_source_rate": 1.0,
         "evidence_basis": {"fulltext": 2, "mixed": 1, "snippet": 1},
         "fetch": {"attempts": 5, "successes": 4, "retries": 1},
         "objectivity": {"repaired": 1, "degraded": 0},
@@ -333,6 +338,34 @@ def test_github_summary_appends_compact_markdown(tmp_path):
     assert "audited candidates/demoted from selected: 7/1" in text
     assert "source reference concentration" in text
     assert "fulltext/mixed/snippet: 2/1/1" in text
+    assert "high-risk single-source: 1 (100.0%)" in text
+    assert "ARTICLE_SENTINEL" not in text
+
+
+def test_selection_summary_appends_threshold_and_composition_without_content(tmp_path):
+    target = tmp_path / "step-summary.md"
+    summary = {
+        "threshold": 74,
+        "threshold_source": "dynamic_history",
+        "history_days": 7,
+        "quality_floor": 66,
+        "picked_count": 24,
+        "category_counts": {"ai": 8, "tech": 4, "finance": 4, "society": 4, "world": 4},
+        "qualified_supply": {"ai": 20, "tech": 6, "finance": 5, "society": 4, "world": 7},
+        "reserved_count": 15,
+        "below_threshold_reserved": 3,
+        "over_threshold_secondary": 2,
+        "detail": "ARTICLE_SENTINEL",
+    }
+
+    assert dn.append_github_selection_summary(
+        summary, {"GITHUB_STEP_SUMMARY": str(target)})
+    text = target.read_text(encoding="utf-8")
+    assert "News selection" in text
+    assert "threshold: 74 (dynamic_history; 7 history days)" in text
+    assert "quality floor: 66" in text
+    assert "reserved/below-threshold reserved: 15/3" in text
+    assert "over-threshold secondary: 2" in text
     assert "ARTICLE_SENTINEL" not in text
 
 

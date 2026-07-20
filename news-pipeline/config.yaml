@@ -75,12 +75,23 @@ news_dedup:
 # + 评分保底。AIHOT 是 AI 独木、已精选噪音低，在 fetch_aihot 内单独放宽取量、不受此值压制。
 max_per_source: 18
 
-# ---------- 精选机制：阈值制（不硬凑固定条数） ----------
-# 质量分过线才能进精选；新闻淡的日子精选少，大新闻日精选多
-pick_threshold: 68   # 精选门槛分（0-99）
-pick_min: 8          # 保底条数：过线不足时按分数补齐到这个数
-pick_max: 24         # 上限：过线太多时只取最高的这些
+# ---------- 精选机制：动态阈值 + 质量下限 + 类目保留席 ----------
+# 动态历史不足或关闭时回退 pick_threshold；新闻淡的日子允许少于 pick_min，
+# 所有补位仍须达到 effective_threshold - backfill_offset，宁缺毋滥。
+pick_threshold: 68   # 静态回退门槛（0-99）
+pick_min: 8          # 质量合格前提下尝试达到的最低条数，不硬凑
+pick_max: 32         # 每日通读预算硬顶
 secondary_count: 8   # 次级条目条数（折叠在"更多资讯"里，真·漏网提醒，宁少勿杂）
+
+# 每日先计算历史各产出日的事件分 P75，再对最近 window_days 个日值取中位数；
+# 只使用当天之前、非纯舆论事件的最终分。账本不足或异常时回退 pick_threshold。
+pick_dynamic:
+  enabled: true
+  window_days: 14
+  percentile: 75
+  clamp: [66, 82]
+  min_history_days: 5
+  backfill_offset: 8
 
 # 「全部动态」板块默认展示阈值：管线评分回填后，score 低于此值（或被预筛砍掉
 # 而无分）的条目前端默认隐藏，可一键切换显示全部。写进 all/<date>.js 的 min_score。
@@ -121,7 +132,7 @@ interest_weights:
   world: 1.0     # 国际
 
 # 每类在精选中的最低保底条数（有内容的前提下）
-min_per_category: 2
+min_per_category: 3
 
 # 单类精选上限（可选，只列需要封顶的类）。当前无类目封顶；保留通用配置能力，
 # 以后如需启用可写成 {ai: 3}。未配置上限时，各类按质量阈值和分数公平竞争。

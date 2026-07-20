@@ -26,6 +26,7 @@ import hashlib
 import html
 import ipaddress
 import json
+import math
 import queue
 from email.utils import format_datetime
 import os
@@ -37,6 +38,7 @@ import tempfile
 import threading
 import time
 import unicodedata
+from statistics import median
 from datetime import datetime, timedelta, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -234,8 +236,10 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
     source_counts = {}
     high_risk = 0
     single_source = 0
+    high_risk_single_source = 0
     for event in selected_before:
-        if _event_is_high_risk(event):
+        is_high_risk = _event_is_high_risk(event)
+        if is_high_risk:
             high_risk += 1
         evidence = event.get("evidence") if isinstance(event.get("evidence"), dict) else {}
         basis = evidence.get("basis") if evidence.get("basis") in basis_counts else "snippet"
@@ -243,6 +247,8 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
         publishers = evidence.get("publisher_count", 0)
         if isinstance(publishers, int) and not isinstance(publishers, bool) and publishers <= 1:
             single_source += 1
+            if is_high_risk:
+                high_risk_single_source += 1
         chains = evidence.get("independent_chain_count", 0)
         if not isinstance(chains, int) or isinstance(chains, bool) or chains < 0:
             chains = 0
@@ -267,6 +273,9 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
             1 for event in selected_before if id(event) not in selected_after_ids),
         "high_risk_selected_before_audit": high_risk,
         "single_source_selected_before_audit": single_source,
+        "high_risk_single_source_count": high_risk_single_source,
+        "high_risk_single_source_rate": round(
+            high_risk_single_source / high_risk, 4) if high_risk else 0.0,
         "evidence_basis": basis_counts,
         "fetch": {
             "attempts": int(quality.get("article_fetch_attempts", 0)),
@@ -301,6 +310,8 @@ def append_github_shadow_summary(summary, environ=None):
         (f"- high-risk/single-source selected before audit: "
          f"{summary['high_risk_selected_before_audit']}/"
          f"{summary['single_source_selected_before_audit']}"),
+        (f"- high-risk single-source: {summary['high_risk_single_source_count']} "
+         f"({summary['high_risk_single_source_rate']:.1%})"),
         f"- fulltext/mixed/snippet: {basis['fulltext']}/{basis['mixed']}/{basis['snippet']}",
         f"- fetch attempts/successes/retries: {fetch['attempts']}/{fetch['successes']}/{fetch['retries']}",
         f"- repaired/degraded: {audit['repaired']}/{audit['degraded']}",
@@ -309,6 +320,35 @@ def append_github_shadow_summary(summary, environ=None):
         "- source reference concentration: " + ", ".join(
             f"{row['source']}={row['reference_count']} ({row['reference_share']:.1%})"
             for row in summary["source_reference_concentration"]),
+        "",
+    ]
+    with Path(target).open("a", encoding="utf-8") as handle:
+        handle.write("\n".join(lines))
+    return True
+
+
+def append_github_selection_summary(summary, environ=None):
+    """Append allow-listed selection metrics to a GitHub Actions step summary."""
+    environ = os.environ if environ is None else environ
+    target = str(environ.get("GITHUB_STEP_SUMMARY") or "").strip()
+    if not target:
+        return False
+    category_counts = summary.get("category_counts") or {}
+    qualified_supply = summary.get("qualified_supply") or {}
+    lines = [
+        "## News selection",
+        "",
+        (f"- threshold: {int(summary['threshold'])} "
+         f"({summary['threshold_source']}; {int(summary['history_days'])} history days)"),
+        f"- quality floor: {int(summary['quality_floor'])}",
+        f"- picked: {int(summary['picked_count'])}",
+        "- categories: " + ", ".join(
+            f"{cat}={int(category_counts.get(cat, 0))}" for cat in CATEGORIES),
+        "- qualified supply: " + ", ".join(
+            f"{cat}={int(qualified_supply.get(cat, 0))}" for cat in CATEGORIES),
+        (f"- reserved/below-threshold reserved: {int(summary['reserved_count'])}/"
+         f"{int(summary['below_threshold_reserved'])}"),
+        f"- over-threshold secondary: {int(summary['over_threshold_secondary'])}",
         "",
     ]
     with Path(target).open("a", encoding="utf-8") as handle:
@@ -1727,13 +1767,159 @@ def acquire_event_evidence(events, items, quality=None, request_get=None,
 # 5. 评分（代码合成最终分）+ 阈值制精选
 # ----------------------------------------------------------------
 
-def score_and_select(events, items, cfg):
+SCORE_HISTORY_VERSION = 1
+SCORE_HISTORY_KEEP_DAYS = 30
+
+
+def _score_history_path(data_dir):
+    return Path(data_dir) / "score_history.json"
+
+
+def _nearest_rank_percentile(values, percentile):
+    ordered = sorted(float(value) for value in values)
+    if not ordered:
+        raise ValueError("percentile requires at least one value")
+    rank = max(1, math.ceil((float(percentile) / 100.0) * len(ordered)))
+    return ordered[min(rank, len(ordered)) - 1]
+
+
+def _atomic_write_json(path, payload):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_name = None
+    try:
+        with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=str(path.parent),
+                prefix=f".{path.name}.", suffix=".tmp", delete=False) as handle:
+            temp_name = handle.name
+            json.dump(payload, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+        os.replace(temp_name, path)
+        temp_name = None
+    finally:
+        if temp_name:
+            Path(temp_name).unlink(missing_ok=True)
+
+
+def _valid_history_scores(raw):
+    if not isinstance(raw, list):
+        return []
+    scores = []
+    for value in raw:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        if math.isfinite(float(value)):
+            scores.append(float(value))
+    return scores
+
+
+def resolve_pick_threshold(cfg, data_dir, date_str):
+    """Resolve today's threshold from prior production days only."""
+    static_threshold = int(cfg.get("pick_threshold", 68))
+    dynamic = cfg.get("pick_dynamic") or {}
+    offset = max(0, int(dynamic.get("backfill_offset", 8)))
+    base = {
+        "threshold": static_threshold,
+        "source": "static_disabled",
+        "history_days": 0,
+        "quality_floor": max(5, static_threshold - offset),
+    }
+    if not dynamic.get("enabled", False):
+        return base
+
+    history_file = _score_history_path(data_dir)
+    history = {"version": SCORE_HISTORY_VERSION, "days": {}}
+    invalid_history = False
+    if history_file.exists():
+        try:
+            history = json.loads(history_file.read_text(encoding="utf-8"))
+            if (not isinstance(history, dict)
+                    or history.get("version") != SCORE_HISTORY_VERSION
+                    or not isinstance(history.get("days"), dict)):
+                raise ValueError("unsupported score history schema")
+        except Exception as exc:
+            invalid_history = True
+            print(f"::warning::score_history.json 读取失败，动态精选线回退静态值: {exc}",
+                  flush=True)
+            history = {"version": SCORE_HISTORY_VERSION, "days": {}}
+
+    window_days = max(1, int(dynamic.get("window_days", 14)))
+    percentile = max(1.0, min(100.0, float(dynamic.get("percentile", 75))))
+    day_values = []
+    prior_days = [day for day in sorted(history["days"]) if day < date_str]
+    for day in prior_days[-window_days:]:
+        record = history["days"].get(day)
+        if not isinstance(record, dict):
+            continue
+        scores = _valid_history_scores(record.get("eligible_scores"))
+        if scores:
+            day_values.append(_nearest_rank_percentile(scores, percentile))
+
+    base["history_days"] = len(day_values)
+    minimum_days = max(1, int(dynamic.get("min_history_days", 5)))
+    if invalid_history:
+        base["source"] = "fallback_invalid_history"
+        return base
+    if len(day_values) < minimum_days:
+        base["source"] = "fallback_insufficient_history"
+        return base
+
+    clamp = dynamic.get("clamp") or [66, 82]
+    if not isinstance(clamp, (list, tuple)) or len(clamp) != 2:
+        clamp = [66, 82]
+    lower, upper = sorted((int(clamp[0]), int(clamp[1])))
+    threshold = int(math.floor(float(median(day_values)) + 0.5))
+    threshold = max(lower, min(upper, threshold))
+    return {
+        "threshold": threshold,
+        "source": "dynamic_history",
+        "history_days": len(day_values),
+        "quality_floor": max(5, threshold - offset),
+    }
+
+
+def save_score_history(data_dir, date_str, events, keep_days=SCORE_HISTORY_KEEP_DAYS):
+    """Persist eligible event scores idempotently; failures never block publishing."""
+    history_file = _score_history_path(data_dir)
+    history = {"version": SCORE_HISTORY_VERSION, "days": {}}
+    if history_file.exists():
+        try:
+            history = json.loads(history_file.read_text(encoding="utf-8"))
+            if (not isinstance(history, dict)
+                    or history.get("version") != SCORE_HISTORY_VERSION
+                    or not isinstance(history.get("days"), dict)):
+                raise ValueError("unsupported score history schema")
+        except Exception as exc:
+            print(f"::warning::score_history.json 读取失败，将从当天重建: {exc}", flush=True)
+            history = {"version": SCORE_HISTORY_VERSION, "days": {}}
+    scores = []
+    for event in events:
+        value = event.get("score")
+        if event.get("opinion_only") or isinstance(value, bool) \
+                or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            continue
+        scores.append(int(round(float(value))))
+    history["days"][date_str] = {"eligible_scores": scores}
+    keep_days = max(1, int(keep_days))
+    for old in sorted(history["days"])[:-keep_days]:
+        del history["days"][old]
+    try:
+        _atomic_write_json(history_file, history)
+        return True
+    except Exception as exc:
+        print(f"::warning::score_history.json 写入失败，当天选材将回退静态线: {exc}",
+              flush=True)
+        return False
+
+
+def score_and_select(events, items, cfg, effective_threshold=None, selection_stats=None):
     weights = cfg.get("interest_weights", {})
     scoring = cfg.get("scoring", {})
     dim_w = scoring.get("dim_weights", {})
     dim_w = {d: float(dim_w.get(d, 0.2)) for d in DIMS}
     tier_mult = scoring.get("tier_multipliers", {"T1": 1.0, "T1.5": 0.93, "T2": 0.83})
-    threshold = int(cfg.get("pick_threshold", 68))
+    threshold = int(effective_threshold if effective_threshold is not None
+                    else cfg.get("pick_threshold", 68))
 
     for ev in events:
         # 事件层级 = 其所有来源中最高的层级（官方/一线优先）
@@ -1761,65 +1947,72 @@ def score_and_select(events, items, cfg):
     events.sort(key=lambda e: e["score"], reverse=True)
     pick_min = int(cfg.get("pick_min", 8))
     pick_max = int(cfg.get("pick_max", 24))
-    min_per = cfg.get("min_per_category", 2)
+    min_per = max(0, int(cfg.get("min_per_category", 2)))
+    offset = max(0, int((cfg.get("pick_dynamic") or {}).get("backfill_offset", 8)))
+    quality_floor = max(5, threshold - offset)
+    max_per_cat = cfg.get("max_per_category") or {}
 
-    eligible = [e for e in events if e["score"] >= threshold]
-    rest = [e for e in events if e["score"] < threshold]
-    # 纯舆论源事件不参与任何补位，只能留在"更多资讯"
-    backfill = [e for e in rest if not e.get("opinion_only")]
+    eligible = [e for e in events
+                if e["score"] >= threshold and not e.get("opinion_only")]
+    qualified = [e for e in events
+                 if e["score"] >= quality_floor and not e.get("opinion_only")]
+    below_threshold = [e for e in qualified if e["score"] < threshold]
 
     picked = []
-    # 五类保底：优先从过线的里拿，每类不足再从线下最高分补
+    picked_ids = set()
+    category_counts = {cat: 0 for cat in CATEGORIES}
+    reserved_ids = set()
+    below_threshold_reserved = 0
+
+    def category_cap(cat):
+        cap = max_per_cat.get(cat)
+        return None if cap is None else max(0, int(cap))
+
+    def can_add(event):
+        if id(event) in picked_ids or len(picked) >= pick_max:
+            return False
+        cap = category_cap(event["category"])
+        return cap is None or category_counts[event["category"]] < cap
+
+    def add_pick(event, reserved=False):
+        nonlocal below_threshold_reserved
+        if not can_add(event):
+            return False
+        picked.append(event)
+        picked_ids.add(id(event))
+        category_counts[event["category"]] += 1
+        if reserved:
+            reserved_ids.add(id(event))
+            if event["score"] < threshold:
+                below_threshold_reserved += 1
+        return True
+
+    # 五类保留席：先取过线事件，再从质量线以上补位；后续不再截断。
     for cat in CATEGORIES:
+        cap = category_cap(cat)
+        reserve_limit = min_per if cap is None else min(min_per, cap)
         cat_pool = ([e for e in eligible if e["category"] == cat] +
-                    [e for e in backfill if e["category"] == cat])
-        for e in cat_pool[:min_per]:
-            if e not in picked:
-                picked.append(e)
-    # 过线的按分补进来
+                    [e for e in below_threshold if e["category"] == cat])
+        for event in cat_pool:
+            if category_counts[cat] >= reserve_limit:
+                break
+            add_pick(event, reserved=True)
+
+    # 剩余槽位只由过线事件按分填入，并始终尊重单类上限。
     for e in eligible:
-        if len(picked) >= pick_max:
-            break
-        if e not in picked:
-            picked.append(e)
-    # 不足保底条数时，从线下补齐
+        add_pick(e)
+
+    # 极端稀日尝试补到 pick_min，但仍不得突破统一质量下限。
     if len(picked) < pick_min:
-        for e in backfill:
+        for e in qualified:
             if len(picked) >= pick_min:
                 break
-            if e not in picked:
-                picked.append(e)
-    picked = sorted(picked, key=lambda e: e["score"], reverse=True)[:pick_max]
-
-    # 单类精选上限（可选，由 config max_per_category 按类目启用）：
-    # 该类只留最高分 N 条，超限的高分事件降级——events 按分排序，它们会
-    # 自然落到"更多资讯"头部，不丢失。腾出的位置从线下补齐到保底条数。
-    max_per_cat = cfg.get("max_per_category") or {}
-    if max_per_cat:
-        kept, counts = [], {}
-        for e in picked:
-            cat = e["category"]
-            counts[cat] = counts.get(cat, 0) + 1
-            cap = max_per_cat.get(cat)
-            if cap is not None and counts[cat] > int(cap):
-                continue
-            kept.append(e)
-        if len(kept) < len(picked):
-            log(f"  单类上限：{len(picked) - len(kept)} 条超限事件降级到更多资讯")
-            picked = kept
-            if len(picked) < pick_min:
-                for e in backfill:
-                    if len(picked) >= pick_min:
-                        break
-                    cap = max_per_cat.get(e["category"])
-                    n_cat = sum(1 for p in picked if p["category"] == e["category"])
-                    if e in picked or (cap is not None and n_cat >= int(cap)):
-                        continue
-                    picked.append(e)
-                picked = sorted(picked, key=lambda e: e["score"], reverse=True)
+            add_pick(e)
+    picked = sorted(picked, key=lambda e: e["score"], reverse=True)
 
     over = sum(1 for e in picked if e["score"] >= threshold)
-    log(f"  阈值 {threshold} 分：过线 {len(eligible)} 个事件，精选 {len(picked)} 条（其中过线 {over}）")
+    log(f"  阈值 {threshold} 分（补位线 {quality_floor}）：过线 {len(eligible)} 个事件，"
+        f"精选 {len(picked)} 条（其中过线 {over}）")
 
     # 长尾过滤：整条事件的来源都被预筛标为软边角料时，不进"更多资讯"
     # （精选不受影响——上面已选完；软事件即便分高也只是被挡在长尾外）
@@ -1830,7 +2023,58 @@ def score_and_select(events, items, cfg):
     if n_soft:
         log(f"  长尾过滤：{n_soft} 个软边角料事件挡在更多资讯外")
     secondary = remaining[:cfg["secondary_count"]]
+    if selection_stats is not None:
+        selection_stats.update({
+            "threshold": threshold,
+            "quality_floor": quality_floor,
+            "picked_count": len(picked),
+            "category_counts": {
+                cat: sum(1 for event in picked if event["category"] == cat)
+                for cat in CATEGORIES
+            },
+            "qualified_supply": {
+                cat: sum(1 for event in qualified if event["category"] == cat)
+                for cat in CATEGORIES
+            },
+            "reserved_count": len(reserved_ids),
+            "below_threshold_reserved": below_threshold_reserved,
+            "over_threshold_secondary": sum(
+                1 for event in secondary if event["score"] >= threshold),
+        })
     return picked, secondary
+
+
+def select_and_record(events, items, cfg, data_dir, date_str):
+    """Resolve the threshold, select events, and persist the score ledger.
+
+    A ledger write failure reruns the deterministic selection with the static
+    threshold so the published output never claims a dynamic line it could not record.
+    """
+    threshold_info = resolve_pick_threshold(cfg, data_dir, date_str)
+    selection_stats = {}
+    picked, secondary = score_and_select(
+        events, items, cfg,
+        effective_threshold=threshold_info["threshold"],
+        selection_stats=selection_stats)
+    if not save_score_history(data_dir, date_str, events):
+        static_threshold = int(cfg.get("pick_threshold", 68))
+        offset = max(0, int((cfg.get("pick_dynamic") or {}).get("backfill_offset", 8)))
+        threshold_info = {
+            "threshold": static_threshold,
+            "source": "fallback_history_write",
+            "history_days": threshold_info["history_days"],
+            "quality_floor": max(5, static_threshold - offset),
+        }
+        selection_stats.clear()
+        picked, secondary = score_and_select(
+            events, items, cfg,
+            effective_threshold=static_threshold,
+            selection_stats=selection_stats)
+    selection_stats.update({
+        "threshold_source": threshold_info["source"],
+        "history_days": threshold_info["history_days"],
+    })
+    return picked, secondary, threshold_info, selection_stats
 
 
 # ----------------------------------------------------------------
@@ -4856,8 +5100,9 @@ HEALTH_KEEP_DAYS = 14
 HEALTH_ALERT_DAYS = 3
 
 
-def update_source_health(fetch_stats, date_str):
+def update_source_health(fetch_stats, date_str, events=None, picked=None, items=None):
     """把当日各源抓取状态写入 source_health.json（滚动保留最近 14 天），
+    可选记录该源参与的评分事件与最终精选事件数量；多源事件分别计入各参与源。
     并对"最近 3 个记录日连续抓取失败"的源发 GitHub Actions ::warning:: 注解
     （本地运行时就是普通日志行）。"""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -4871,8 +5116,38 @@ def update_source_health(fetch_stats, date_str):
             log(f"  source_health.json 读取失败，重建: {e}")
             health = {"days": {}}
     days = health.setdefault("days", {})
-    days[date_str] = {sid: {"count": st["count"], "error": st["error"]}
-                      for sid, st in fetch_stats.items()}
+    scored_counts = {}
+    selected_counts = {}
+
+    def source_ids_for_event(event):
+        if items is None:
+            return set()
+        return {
+            items[index].get("source_id")
+            for index in event.get("ids", [])
+            if isinstance(index, int) and 0 <= index < len(items)
+            and items[index].get("source_id")
+        }
+
+    if events is not None and items is not None:
+        for event in events:
+            for sid in source_ids_for_event(event):
+                scored_counts[sid] = scored_counts.get(sid, 0) + 1
+    if picked is not None and items is not None:
+        for event in picked:
+            for sid in source_ids_for_event(event):
+                selected_counts[sid] = selected_counts.get(sid, 0) + 1
+
+    day_record = {}
+    for sid, st in fetch_stats.items():
+        row = {"count": st["count"], "error": st["error"]}
+        if events is not None and picked is not None and items is not None:
+            row.update({
+                "scored_events": scored_counts.get(sid, 0),
+                "selected_events": selected_counts.get(sid, 0),
+            })
+        day_record[sid] = row
+    days[date_str] = day_record
     for old in sorted(days)[:-HEALTH_KEEP_DAYS]:
         del days[old]
     health_file.write_text(json.dumps(health, ensure_ascii=False, indent=1),
@@ -5110,7 +5385,11 @@ def _run_pipeline(started_at, args, cfg, policy):
     if n_pulse:
         log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
 
-    picked, secondary = score_and_select(events, items, cfg)
+    picked, secondary, threshold_info, selection_stats = select_and_record(
+        events, items, cfg, _data_dir, date_str)
+    log(f"动态精选线：{threshold_info['threshold']} 分 "
+        f"（{threshold_info['source']}，历史 {threshold_info['history_days']} 天）")
+    append_github_selection_summary(selection_stats)
     shadow_selected = None
 
     if policy["full_objectivity"]:
@@ -5180,7 +5459,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         except Exception as e:
             log(f"  周综述失败（不影响每日产出）: {e}")
 
-    update_source_health(fetch_stats, date_str)
+    update_source_health(fetch_stats, date_str, events=events, picked=picked, items=items)
     write_feed(_data_dir, date_str, cfg)
     update_search_index(_data_dir, date_str, cfg)
 
