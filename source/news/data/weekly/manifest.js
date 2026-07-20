@@ -1,1 +1,1 @@
-window.WEEKLY_MANIFEST = ["2026-W28"];
+window.WEEKLY_MANIFEST = ["2026-W29", "2026-W28"];
