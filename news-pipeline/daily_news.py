@@ -21,6 +21,7 @@
 """
 import argparse
 import concurrent.futures
+import copy
 from contextlib import contextmanager
 import hashlib
 import html
@@ -2887,7 +2888,51 @@ def match_events_llm(llm, active_events, picked):
         return None
 
 
-def update_registry(registry, picked, pairs, active_events, date_str, cfg):
+def _registry_history_entry(event, date_str, cfg, items, item_kind, summary):
+    entry = {"date": date_str, "title": event.get("title", ""),
+             "summary": summary, "news_status": event.get("status", "")}
+    if event.get("watch"):
+        entry["watch"] = event["watch"]
+    if items:
+        source_limit = 4 if _rollout_output_enabled(cfg) else 5
+        source_ids = [items[i].get("source_id")
+                      for i in _serialized_source_ids(event, items, limit=source_limit)
+                      if items[i].get("source_id")]
+        if source_ids:
+            entry["sources"] = list(dict.fromkeys(source_ids))
+    if event.get("ids"):
+        entry["item_ref"] = _same_day_item_ref(event, date_str, item_kind)
+    return entry
+
+
+def _same_day_item_ref(event, date_str, item_kind="pick"):
+    ids = event.get("ids") or []
+    return f"{date_str}:{item_kind}-{ids[0]}" if ids else ""
+
+
+def _same_day_rerun_pairs(candidates, eligible, date_str, item_kind,
+                          excluded_object_ids=None):
+    excluded_object_ids = excluded_object_ids or set()
+    pairs = []
+    candidate_indexes = set()
+    matched_object_ids = set()
+    for candidate_index, event in enumerate(candidates or []):
+        item_ref = _same_day_item_ref(event, date_str, item_kind)
+        if not item_ref:
+            continue
+        matches = [registry_event for registry_event in eligible
+                   if id(registry_event) not in excluded_object_ids
+                   and any(row.get("date") == date_str
+                           and row.get("item_ref") == item_ref
+                           for row in registry_event.get("history", []))]
+        if len(matches) == 1:
+            pairs.append((candidate_index, matches[0]))
+            candidate_indexes.add(candidate_index)
+            matched_object_ids.add(id(matches[0]))
+    return pairs, candidate_indexes, matched_object_ids
+
+
+def update_registry(registry, picked, pairs, active_events, date_str, cfg, items=None):
     """纯函数：把今日精选写入登记表（续接或新建），归档与剪枝，
     并回填 picked 的 event_id / day_count / history_prev。
     pairs 为 None（LLM 失败）时全部按新事件处理。"""
@@ -2895,25 +2940,27 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg):
     archive_days = int(evcfg.get("archive_days", 7))
     prune_days = int(evcfg.get("prune_archived_days", 60))
     today = datetime.strptime(date_str, "%Y-%m-%d")
+    registry["version"] = 2
     events = registry.setdefault("events", [])
-
-    # 同日重跑幂等：先清掉本日已写入的进展；本日早前一跑新建的事件随之整个移除
-    for e in events:
-        e["history"] = [h for h in e.get("history", []) if h.get("date") != date_str]
-    events[:] = [e for e in events if e["history"]]
-    for e in events:
-        e["last_seen"] = e["history"][-1]["date"]
 
     matched = {}
     for t, r in (pairs or []):
         if 0 <= t < len(picked) and 0 <= r < len(active_events):
-            tgt = active_events[r]
-            if tgt.get("history"):  # 被幂等清理移除的目标不再续接
-                matched[t] = tgt
+            matched[t] = active_events[r]
+
+    # 同日重跑幂等：清掉本日旧进展；已由 item_ref 确认的目标即使清空也保留容器，
+    # 随后写入最终行，避免第二次 LLM 漂移导致 event_id 改变或产生重复事件。
+    matched_target_ids = {id(event) for event in matched.values()}
+    for e in events:
+        e["history"] = [h for h in e.get("history", []) if h.get("date") != date_str]
+    events[:] = [e for e in events if e["history"] or id(e) in matched_target_ids]
+    for e in events:
+        if e["history"]:
+            e["last_seen"] = e["history"][-1]["date"]
 
     for idx, ev in enumerate(picked):
-        entry = {"date": date_str, "title": ev.get("title", ""),
-                 "summary": ev.get("summary", ""), "news_status": ev.get("status", "")}
+        entry = _registry_history_entry(
+            ev, date_str, cfg, items, "pick", ev.get("summary", ""))
         tgt = matched.get(idx)
         if tgt is None:
             # 哈希掺入首条原始条目索引（当天唯一），防同日同标题撞出重复 event_id
@@ -2949,12 +2996,10 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg):
     return registry
 
 
-def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None):
-    """编排：读登记表 -> 应用钉选 -> 组活跃匹配池 -> LLM 匹配 -> 更新 ->
-    钉选事件与"更多资讯"补匹配 -> 写回。返回登记表供输出使用。"""
-    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    registry = load_registry(data_dir)
+def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
+                                 secondary=None, feedback=None, items=None):
+    """Prepare the complete registry update in memory without persisting it."""
+    registry = copy.deepcopy(registry)
     pinned_changed = apply_pins(registry, feedback or [])
     if pinned_changed:
         log(f"  钉选状态更新：{pinned_changed} 个事件")
@@ -2968,38 +3013,88 @@ def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None):
         except Exception:
             return 10 ** 6
 
-    # 活跃池：active 且 last_seen 在窗口内；只含"今天之前"就有历史的事件，
-    # 排除本日早前一跑新建的条目（同日重跑时它们会被幂等清理重建）
-    active = [e for e in registry["events"]
-              if e.get("status") == "active"
-              and 0 <= days_since(e.get("last_seen", "")) <= window
-              and any(h.get("date") != date_str for h in e.get("history", []))]
+    eligible = [e for e in registry["events"]
+                if e.get("status") == "active"
+                and 0 <= days_since(e.get("last_seen", "")) <= window]
+    rerun_pairs, rerun_today, rerun_event_object_ids = _same_day_rerun_pairs(
+        picked, eligible, date_str, "pick")
+    secondary_rerun_pairs, _, _ = \
+        _same_day_rerun_pairs(
+            secondary, [event for event in eligible if event.get("pinned")],
+            date_str, "more",
+            excluded_object_ids=rerun_event_object_ids)
 
-    pairs = match_events_llm(llm, active, picked) if (active and picked) else []
-    update_registry(registry, picked, pairs, active, date_str, cfg)
+    # LLM 只处理未由稳定 item_ref 认出的候选；今天之前没有历史的事件不进匹配池。
+    llm_active = [event for event in eligible
+                  if id(event) not in rerun_event_object_ids
+                  and any(row.get("date") != date_str for row in event.get("history", []))]
+    llm_picked_indexes = [index for index in range(len(picked)) if index not in rerun_today]
+    llm_picked = [picked[index] for index in llm_picked_indexes]
+    llm_pairs = match_events_llm(llm, llm_active, llm_picked) \
+        if (llm_active and llm_picked) else []
+    active = [event for _, event in rerun_pairs] + llm_active
+    pairs = [(today_index, active_index)
+             for active_index, (today_index, _) in enumerate(rerun_pairs)]
+    pairs.extend((llm_picked_indexes[today_index], len(rerun_pairs) + registry_index)
+                 for today_index, registry_index in (llm_pairs or []))
+    picked_target_object_ids = {
+        id(active[registry_index]) for _, registry_index in pairs
+        if 0 <= registry_index < len(active)
+    }
+    secondary_rerun_pairs = [
+        (index, event) for index, event in secondary_rerun_pairs
+        if id(event) not in picked_target_object_ids
+    ]
+    secondary_rerun_indexes = {index for index, _ in secondary_rerun_pairs}
+    secondary_rerun_event_object_ids = {
+        id(event) for _, event in secondary_rerun_pairs
+    }
+    update_registry(registry, picked, pairs, active, date_str, cfg, items=items)
 
     # 钉选事件今天没进精选时，尝试与"更多资讯"补匹配续接进展，
     # 保证追踪中的事件不因分数不过线而断档
     if secondary:
+        for secondary_index, target in secondary_rerun_pairs:
+            if not any(target is event for event in registry["events"]):
+                registry["events"].append(target)
+            event = secondary[secondary_index]
+            target["history"].append(_registry_history_entry(
+                event, date_str, cfg, items, "more",
+                event.get("summary") or event.get("title", "")))
+            target["last_seen"] = date_str
         pinned_stale = [e for e in registry["events"]
                         if e.get("pinned") and e.get("status") == "active"
                         and e.get("last_seen") != date_str
+                        and id(e) not in secondary_rerun_event_object_ids
                         and any(h.get("date") != date_str for h in e.get("history", []))]
-        if pinned_stale:
-            sec_pairs = match_events_llm(llm, pinned_stale, secondary) or []
+        unmatched_secondary_indexes = [index for index in range(len(secondary))
+                                       if index not in secondary_rerun_indexes]
+        unmatched_secondary = [secondary[index] for index in unmatched_secondary_indexes]
+        if pinned_stale and unmatched_secondary:
+            sec_pairs = match_events_llm(llm, pinned_stale, unmatched_secondary) or []
             for t, r in sec_pairs:
-                sev, tgt = secondary[t], pinned_stale[r]
-                tgt["history"].append({"date": date_str, "title": sev.get("title", ""),
-                                       "summary": sev.get("summary") or sev.get("title", ""),
-                                       "news_status": sev.get("status", "")})
+                sev, tgt = secondary[unmatched_secondary_indexes[t]], pinned_stale[r]
+                tgt["history"].append(_registry_history_entry(
+                    sev, date_str, cfg, items, "more",
+                    sev.get("summary") or sev.get("title", "")))
                 tgt["last_seen"] = date_str
             if sec_pairs:
                 log(f"  钉选补匹配：{len(sec_pairs)} 个钉选事件从'更多资讯'续上进展")
 
-    (data_dir / "events.json").write_text(
-        json.dumps(registry, ensure_ascii=False, indent=1), encoding="utf-8")
+    return registry
+
+
+def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None):
+    """Load, prepare, and persist one complete registry transaction."""
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    registry = prepare_registry_transaction(
+        llm, load_registry(data_dir), picked, date_str, cfg,
+        secondary=secondary, feedback=feedback, items=items)
+    _atomic_write_json(data_dir / "events.json", registry)
     n_cont = sum(1 for ev in picked if ev.get("day_count", 0) >= 2)
-    log(f"  事件登记表：活跃 {len(active)}，续接 {n_cont}，登记总数 {len(registry['events'])}")
+    n_active = sum(1 for event in registry["events"] if event.get("status") == "active")
+    log(f"  事件登记表：活跃 {n_active}，续接 {n_cont}，登记总数 {len(registry['events'])}")
     return registry
 
 
@@ -5421,7 +5516,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         ev.setdefault("status", "")
     log("事件登记表：跨天延续性匹配 ...")
     registry = track_events(llm, picked, date_str, cfg,
-                            secondary=secondary, feedback=feedback)
+                            secondary=secondary, feedback=feedback, items=items)
     brief, themes = write_brief(
         llm, picked, secondary,
         audit_llm=audit_llm if policy["full_objectivity"] else None)
