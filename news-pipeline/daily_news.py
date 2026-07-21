@@ -3390,6 +3390,9 @@ def _registry_history_entry(event, date_str, cfg, items, item_kind, summary):
             entry["sources"] = list(dict.fromkeys(source_ids))
     if event.get("ids"):
         entry["item_ref"] = _same_day_item_ref(event, date_str, item_kind)
+    source_keys = _same_day_source_keys(event, items or [])
+    if source_keys:
+        entry["source_keys"] = source_keys
     event_identity = _same_day_event_identity(event, items or [])
     if event_identity:
         entry["event_identity"] = event_identity
@@ -3401,12 +3404,7 @@ def _same_day_item_ref(event, date_str, item_kind="pick"):
     return f"{date_str}:{item_kind}-{ids[0]}" if ids else ""
 
 
-def _same_day_event_identity(event, items):
-    """Return a stable source identity independent of global/item-id ordering."""
-    source_indexes = _serialized_source_ids(event, items or [], limit=1)
-    if not source_indexes:
-        return ""
-    source = items[source_indexes[0]]
+def _same_day_source_key(source):
     canonical_url = canonical_news_url(source.get("url"))
     if canonical_url:
         seed = f"url:{canonical_url}"
@@ -3417,29 +3415,67 @@ def _same_day_event_identity(event, items):
     return "src-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
 
 
+def _same_day_source_keys(event, items):
+    source_indexes = _serialized_source_ids(
+        event, items or [], limit=len(event.get("ids") or []))
+    return sorted({_same_day_source_key(items[index]) for index in source_indexes})
+
+
+def _same_day_event_identity(event, items):
+    """Return the deterministic initial identity for a same-day event."""
+    source_keys = _same_day_source_keys(event, items)
+    return source_keys[0] if source_keys else ""
+
+
+def _inherit_same_day_identity(entry, prior_today):
+    if not prior_today:
+        return entry
+    if prior_today.get("event_identity"):
+        entry["event_identity"] = prior_today["event_identity"]
+    source_keys = set(prior_today.get("source_keys") or [])
+    if prior_today.get("event_identity"):
+        source_keys.add(prior_today["event_identity"])
+    source_keys.update(entry.get("source_keys") or [])
+    if source_keys:
+        entry["source_keys"] = sorted(source_keys)
+    return entry
+
+
 def _same_day_rerun_pairs(candidates, eligible, date_str, item_kind,
                           items=None, excluded_object_ids=None):
     excluded_object_ids = excluded_object_ids or set()
     pairs = []
     candidate_indexes = set()
     matched_object_ids = set()
+    proposed = []
     for candidate_index, event in enumerate(candidates or []):
         item_ref = _same_day_item_ref(event, date_str, item_kind)
-        event_identity = _same_day_event_identity(event, items or [])
-        if not item_ref and not event_identity:
+        source_keys = set(_same_day_source_keys(event, items or []))
+        if not item_ref and not source_keys:
             continue
         matches = [registry_event for registry_event in eligible
                    if id(registry_event) not in excluded_object_ids
                    and any(
-                       row.get("date") == date_str
-                       and ((event_identity and row.get("event_identity") == event_identity)
-                            or (not row.get("event_identity")
-                                and item_ref and row.get("item_ref") == item_ref))
-                       for row in registry_event.get("history", []))]
+                        row.get("date") == date_str
+                        and ((source_keys and source_keys.intersection(
+                                set(row.get("source_keys") or [])
+                                | ({row["event_identity"]}
+                                   if row.get("event_identity") else set())))
+                             or (not row.get("event_identity")
+                                 and not row.get("source_keys")
+                                 and item_ref and row.get("item_ref") == item_ref))
+                        for row in registry_event.get("history", []))]
         if len(matches) == 1:
-            pairs.append((candidate_index, matches[0]))
-            candidate_indexes.add(candidate_index)
-            matched_object_ids.add(id(matches[0]))
+            proposed.append((candidate_index, matches[0]))
+    target_counts = {}
+    for _, target in proposed:
+        target_counts[id(target)] = target_counts.get(id(target), 0) + 1
+    for candidate_index, target in proposed:
+        if target_counts[id(target)] != 1:
+            continue
+        pairs.append((candidate_index, target))
+        candidate_indexes.add(candidate_index)
+        matched_object_ids.add(id(target))
     return pairs, candidate_indexes, matched_object_ids
 
 
@@ -3463,6 +3499,12 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
     # 同日重跑幂等：清掉本日旧进展；已由 item_ref 确认的目标即使清空也保留容器，
     # 随后写入最终行，避免第二次 LLM 漂移导致 event_id 改变或产生重复事件。
     matched_target_ids = {id(event) for event in matched.values()}
+    prior_today_by_target = {
+        id(event): next(
+            (row for row in reversed(event.get("history", []))
+             if row.get("date") == date_str), None)
+        for event in matched.values()
+    }
     for e in events:
         e["history"] = [h for h in e.get("history", []) if h.get("date") != date_str]
     events[:] = [e for e in events if e["history"] or id(e) in matched_target_ids]
@@ -3488,6 +3530,8 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
                    "history": [entry]}
             events.append(tgt)
         else:
+            prior_today = prior_today_by_target.get(id(tgt))
+            _inherit_same_day_identity(entry, prior_today)
             tgt["history"].append(entry)
             tgt["last_seen"] = date_str
             tgt["title"] = ev.get("title", tgt.get("title", ""))
@@ -3590,6 +3634,12 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             secondary, [event for event in eligible if event.get("pinned")],
             date_str, "more", items=items,
             excluded_object_ids=rerun_event_object_ids)
+    secondary_prior_today = {
+        id(event): next(
+            (row for row in reversed(event.get("history", []))
+             if row.get("date") == date_str), None)
+        for _, event in secondary_rerun_pairs
+    }
 
     # LLM 只处理未由稳定 item_ref 认出的候选；今天之前没有历史的事件不进匹配池。
     llm_active = [event for event in eligible
@@ -3680,9 +3730,12 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             if not any(target is event for event in registry["events"]):
                 registry["events"].append(target)
             event = secondary[secondary_index]
-            target["history"].append(_registry_history_entry(
+            entry = _registry_history_entry(
                 event, date_str, cfg, items, "more",
-                event.get("summary") or event.get("title", "")))
+                event.get("summary") or event.get("title", ""))
+            _inherit_same_day_identity(
+                entry, secondary_prior_today.get(id(target)))
+            target["history"].append(entry)
             target["last_seen"] = date_str
         pinned_stale = [e for e in registry["events"]
                         if e.get("pinned") and e.get("status") == "active"

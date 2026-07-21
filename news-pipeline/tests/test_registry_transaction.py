@@ -177,6 +177,7 @@ def test_legacy_registry_upgrades_with_final_metadata_without_public_projection_
         "watch": "Watch whether enterprise adoption continues.",
         "sources": ["example-news"],
         "item_ref": "2026-07-21:pick-0",
+        "source_keys": dn._same_day_source_keys(picked[0], items),
         "event_identity": dn._same_day_event_identity(picked[0], items),
     }
 
@@ -397,6 +398,127 @@ def test_same_day_identity_survives_global_index_and_event_id_reordering():
     assert dn.event_to_item(rerun, rerun_items, "pick")["id"] == "pick-1"
 
 
+def test_same_day_identity_survives_higher_priority_source_addition():
+    original = _source_items()[0]
+    first = _picked_event()
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, [first], "2026-07-21",
+        {"events": {}}, items=[original])
+    event_id = first["event_id"]
+    event_identity = prepared["events"][0]["history"][-1]["event_identity"]
+    first_public = dn.event_to_item(first, [original], "pick")
+
+    higher_priority = {
+        **original,
+        "title": "Wire confirmation of the same launch",
+        "url": "https://wire.example.test/model-confirmation?edition=late",
+        "source": "Wire",
+        "source_id": "wire",
+        "credibility": 10,
+    }
+    rerun_items = [original, higher_priority]
+    rerun = {**_picked_event(), "ids": [1, 0], "title": "Updated launch title"}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [rerun], "2026-07-21", {"events": {}},
+        items=rerun_items)
+    rerun_public = dn.event_to_item(rerun, rerun_items, "pick")
+
+    assert len(prepared["events"]) == 1
+    assert rerun["event_id"] == event_id
+    assert prepared["events"][0]["history"][-1]["event_identity"] == \
+        event_identity
+    assert first_public["event_id"] == rerun_public["event_id"]
+
+
+def test_same_day_identity_survives_removing_one_of_the_prior_sources():
+    original = _source_items()[0]
+    corroborating = {
+        **original,
+        "title": "Independent confirmation of the same launch",
+        "url": "https://wire.example.test/model-confirmation",
+        "source": "Wire",
+        "source_id": "wire",
+        "credibility": 10,
+    }
+    first = _picked_event()
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, [first], "2026-07-21",
+        {"events": {}}, items=[original])
+    event_id = first["event_id"]
+    event_identity = prepared["events"][0]["history"][-1]["event_identity"]
+
+    expanded = {**_picked_event(), "ids": [1, 0]}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [expanded], "2026-07-21", {"events": {}},
+        items=[original, corroborating])
+    retained_only = {**_picked_event(), "ids": [0], "title": "Final wire title"}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [retained_only], "2026-07-21", {"events": {}},
+        items=[corroborating])
+
+    assert len(prepared["events"]) == 1
+    assert retained_only["event_id"] == event_id
+    assert prepared["events"][0]["history"][-1]["event_identity"] == \
+        event_identity
+
+
+def test_same_day_identity_does_not_merge_distinct_urls_from_one_aggregator():
+    first_item = _source_items()[0]
+    second_item = {
+        **first_item,
+        "title": "A different launch from the same aggregator",
+        "desc": "A different company launched a different model.",
+        "url": "https://example.test/other-model?ref=feed",
+    }
+    first_events = [
+        _picked_event(),
+        {**_picked_event(), "ids": [1], "title": "Other model launch"},
+    ]
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, first_events,
+        "2026-07-21", {"events": {}}, items=[first_item, second_item])
+    event_ids = {event["title"]: event["event_id"] for event in first_events}
+
+    rerun_items = [second_item, first_item]
+    rerun_events = [
+        {**_picked_event(), "ids": [0], "title": "Other model launch"},
+        {**_picked_event(), "ids": [1]},
+    ]
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, rerun_events, "2026-07-21", {"events": {}},
+        items=rerun_items)
+
+    assert len(prepared["events"]) == 2
+    assert rerun_events[0]["event_id"] == event_ids["Other model launch"]
+    assert rerun_events[1]["event_id"] == event_ids["Model launch follow-up"]
+
+
+def test_same_day_overlap_must_be_one_to_one_before_reusing_an_event():
+    first_item = _source_items()[0]
+    second_item = {
+        **first_item,
+        "title": "Corroborating report",
+        "url": "https://wire.example.test/model",
+        "source": "Wire",
+        "source_id": "wire",
+    }
+    combined = {**_picked_event(), "ids": [0, 1]}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, [combined],
+        "2026-07-21", {"events": {}}, items=[first_item, second_item])
+
+    split_events = [
+        {**_picked_event(), "ids": [0], "title": "Original report event"},
+        {**_picked_event(), "ids": [1], "title": "Separate wire event"},
+    ]
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, split_events, "2026-07-21", {"events": {}},
+        items=[first_item, second_item])
+
+    assert len(prepared["events"]) == 2
+    assert split_events[0]["event_id"] != split_events[1]["event_id"]
+
+
 def test_pinned_secondary_history_uses_final_v2_metadata():
     registry = _legacy_registry()
     registry["events"][0]["pinned"] = True
@@ -414,6 +536,8 @@ def test_pinned_secondary_history_uses_final_v2_metadata():
         "watch": "Watch whether enterprise adoption continues.",
         "sources": ["example-news"],
         "item_ref": "2026-07-21:more-0",
+        "source_keys": dn._same_day_source_keys(
+            secondary[0], _source_items()),
         "event_identity": dn._same_day_event_identity(
             secondary[0], _source_items()),
     }
@@ -439,6 +563,34 @@ def test_pinned_secondary_same_day_rerun_replaces_row_without_llm_rematch():
     assert history[-1]["summary"] == "Corrected secondary figures are available."
     assert history[-1]["watch"] == "Watch the corrected secondary trend."
     assert history[-1]["item_ref"] == "2026-07-21:more-0"
+
+
+def test_pinned_secondary_same_day_rerun_inherits_identity_after_source_addition():
+    registry = _legacy_registry()
+    registry["events"][0]["pinned"] = True
+    original = _source_items()[0]
+    first = _picked_event()
+    prepared = dn.prepare_registry_transaction(
+        MatchLLM(), registry, [], "2026-07-21", {"events": {}},
+        secondary=[first], items=[original])
+    event_identity = prepared["events"][0]["history"][-1]["event_identity"]
+
+    higher_priority = {
+        **original,
+        "url": "https://wire.example.test/model-confirmation",
+        "source": "Wire",
+        "source_id": "wire",
+        "credibility": 10,
+    }
+    rerun = {**_picked_event(), "ids": [1, 0]}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [], "2026-07-21", {"events": {}},
+        secondary=[rerun], items=[original, higher_priority])
+
+    assert len(prepared["events"]) == 1
+    assert prepared["events"][0]["event_id"] == "evt-legacy"
+    assert prepared["events"][0]["history"][-1]["event_identity"] == \
+        event_identity
 
 
 def test_secondary_rerun_target_is_not_also_matched_to_a_picked_item():
