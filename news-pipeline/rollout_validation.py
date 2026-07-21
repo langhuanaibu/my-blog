@@ -71,16 +71,53 @@ needs_review，禁止猜测通过。reason 用一句简洁理由。
 "history_support":"pass","watch_has_variable":true,
 "watch_has_landmark":true,"decision":"pass","reason":"..."}]}。"""
 
-_UNCERTAIN_RE = re.compile(
-    r"\buncertain\b|\bnot sure\b"
-    r"|\b(?:possibly|perhaps|maybe)\s+(?:supported|valid|correct|related)\b"
-    r"|\bmay\s+be\s+(?:supported|valid|correct|related)\b"
-    r"|\b(?:cannot|can't|unable\s+to)\s+(?:independently\s+)?"
-    r"(?:verify|confirm|determine|establish)\b"
-    r"|\bnot\s+(?:independently\s+)?(?:verified|confirmed)\b"
-    r"|不确定|证据不足|(?:可能|也许|或许).{0,8}(?:支持|通过|成立|相关|正确)"
-    r"|尚待(?:确认|核实|验证)|(?:无法|不能)(?:独立)?(?:确认|核实|验证|判断)",
-    re.I,
+_UNCERTAINTY_PATTERNS = (
+    re.compile(
+        r"\b(?:may|might|could|possibly|perhaps|maybe)\s+"
+        r"(?:still\s+)?(?:be\s+)?"
+        r"(?:supported|valid|correct|related|confirmed|verified)\b"
+        r"|\b(?:may|might|could)\s+(?:still\s+)?not\s+(?:be\s+)?"
+        r"(?:supported|valid|correct|related|confirmed|verified|"
+        r"verify|confirm|determine|establish)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:it|this|that|evidence|evidence\s+verification|"
+        r"relationship|support|continuation|"
+        r"the\s+(?:evidence|relationship|support|continuation))\s+"
+        r"(?:is|remains|seems|appears)\s+(?:still\s+)?"
+        r"(?:uncertain|unclear|inconclusive|unverified|unconfirmed)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:cannot|can't|unable\s+to)\s+"
+        r"(?:(?:independently|conclusively|fully)\s+)?"
+        r"(?:verify|confirm|determine|establish)\b"
+        r"|\b(?:cannot|can't)\s+be\s+"
+        r"(?:(?:independently|conclusively|fully)\s+)?"
+        r"(?:verified|confirmed|determined|established)\b"
+        r"|\bnot\s+(?:(?:independently|conclusively|fully)\s+)?"
+        r"(?:verified|confirmed)\b"
+        r"|\b(?:insufficient|inadequate)\s+evidence\s+"
+        r"(?:to|for)\s+(?:verify|confirm|determine|establish)\b",
+        re.I,
+    ),
+    re.compile(
+        r"^\s*(?:uncertain|unclear|inconclusive|unverified|unconfirmed|not\s+sure)"
+        r"\s*[.!?]?\s*$",
+        re.I,
+    ),
+    re.compile(
+        r"不确定|证据不足|(?:可能|也许|或许)(?:仍然|仍|尚)?"
+        r"(?:得到|获得)?(?:支持|通过|成立|有效|相关|属实|正确)"
+        r"|(?:目前)?(?:尚|仍|依然)?(?:不清楚|不明确)(?:是否)?"
+        r"|(?:证据|核验结果|验证结果|关系|延续|结论)(?:仍|尚|依然)?"
+        r"(?:无定论|未经核实|未获确认|未确认|不明确|不清楚)"
+        r"|证据(?:仍|尚|依然)?(?:不足|不充分)(?:以|来)?"
+        r"(?:确认|核实|验证|判断|支持)"
+        r"|(?:尚待|有待)(?:确认|核实|验证)"
+        r"|(?:无法|不能|尚不能)(?:独立|充分|最终)?(?:确认|核实|验证|判断)"
+    ),
 )
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PUBLIC_ITEM_ID_RE = re.compile(r"^(?:pick|more)-\d+$")
@@ -91,6 +128,11 @@ _FORBIDDEN_EVIDENCE_KEYS = {
     "environment", "environ", "environment_values", "env", "secret", "secrets",
     "article", "article_text", "raw_text", "evidence_text",
 }
+
+
+def _has_explicit_uncertainty(reason):
+    normalized = " ".join(str(reason).split())
+    return any(pattern.search(normalized) for pattern in _UNCERTAINTY_PATTERNS)
 
 
 def _fingerprint(paths):
@@ -442,7 +484,8 @@ def _judge_verdicts(cases, judge_llm):
               or not isinstance(row.get("reason"), str)
               or not row["reason"].strip() or len(row["reason"].strip()) > 240):
             reason = "Judge row values were malformed"
-        elif row["decision"] == "needs_review" or _UNCERTAIN_RE.search(row["reason"]):
+        elif (row["decision"] == "needs_review"
+              or _has_explicit_uncertainty(row["reason"])):
             reason = row["reason"]
         else:
             trusted = case["public"].get("trusted_continuation") is True

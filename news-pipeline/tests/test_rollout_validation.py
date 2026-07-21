@@ -456,8 +456,21 @@ def test_continuation_link_validates_exact_public_item_ref_contract(item_ref, ex
 @pytest.mark.parametrize("reason", [
     "Possibly supported; cannot verify independently.",
     "This may be supported, but it is not independently verified.",
+    "It might be supported, but the evidence is inconclusive.",
+    "It is unclear whether this continuation is supported.",
+    "The relationship could be valid, but it remains unverified.",
+    "The evidence could not confirm that the continuation is valid.",
+    "The continuation may not be supported by the available evidence.",
+    "Evidence verification remains inconclusive.",
+    "There is insufficient evidence to confirm the continuation.",
+    "The support remains unconfirmed and cannot be verified conclusively.",
     "可能支持，尚待确认。",
     "相关性无法核实。",
+    "这次延续可能成立，但证据仍无定论。",
+    "目前尚不清楚这是否属于可信延续。",
+    "这段关系仍未经核实，无法确认。",
+    "核验结果仍无定论。",
+    "证据不足以确认这次延续关系。",
 ])
 def test_explicit_multilingual_uncertainty_needs_review(reason):
     rv = rollout()
@@ -470,7 +483,12 @@ def test_explicit_multilingual_uncertainty_needs_review(reason):
 
 @pytest.mark.parametrize("reason", [
     "The watch names a possible adoption variable and a concrete quarterly report.",
+    "Verification could affect adoption decisions, so watch the next audited report.",
+    "The continuation is supported and independently verified by the filing.",
+    "Earlier evidence was inconclusive, but the new filing conclusively verifies the continuation.",
     "走向把可能影响采用率的变量写清，并给出下一份季度报告作为路标。",
+    "核验方式可能影响采用决策，因此应观察下一份审计报告。",
+    "现有证据已核实这次延续关系，下一份季度报告是明确路标。",
 ])
 def test_uncertainty_detection_does_not_misread_quoted_watch_language(reason):
     rv = rollout()
