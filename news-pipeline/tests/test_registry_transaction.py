@@ -506,6 +506,7 @@ def test_same_day_overlap_must_be_one_to_one_before_reusing_an_event():
     prepared = dn.prepare_registry_transaction(
         NoMatchLLM(), {"version": 1, "events": []}, [combined],
         "2026-07-21", {"events": {}}, items=[first_item, second_item])
+    combined_event_id = combined["event_id"]
 
     split_events = [
         {**_picked_event(), "ids": [0], "title": "Original report event"},
@@ -517,6 +518,55 @@ def test_same_day_overlap_must_be_one_to_one_before_reusing_an_event():
 
     assert len(prepared["events"]) == 2
     assert split_events[0]["event_id"] != split_events[1]["event_id"]
+    assert all(event["event_id"] != combined_event_id for event in split_events)
+    assert {event["event_id"] for event in prepared["events"]} == {
+        event["event_id"] for event in split_events
+    }
+
+
+def test_same_day_mixed_overlap_graph_rejects_every_ambiguous_edge():
+    source_x = _source_items()[0]
+    source_y = {
+        **source_x,
+        "title": "Independent event Y",
+        "url": "https://wire.example.test/event-y",
+        "source": "Wire",
+        "source_id": "wire",
+    }
+    prior_events = [
+        {**_picked_event(), "ids": [0], "title": "Prior event A"},
+        {**_picked_event(), "ids": [1], "title": "Prior event B"},
+    ]
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, prior_events,
+        "2026-07-21", {"events": {}}, items=[source_x, source_y])
+    prior_ids = {event["event_id"] for event in prior_events}
+    prior_registry = copy.deepcopy(prepared)
+
+    current_events = [
+        {**_picked_event(), "ids": [0], "title": "Prior event A"},
+        {**_picked_event(), "ids": [0, 1], "title": "Current event C2"},
+    ]
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, current_events, "2026-07-21", {"events": {}},
+        items=[source_x, source_y])
+    current_ids = [event["event_id"] for event in current_events]
+
+    assert len(prepared["events"]) == 2
+    assert prior_ids.isdisjoint(current_ids)
+    assert len(set(current_ids)) == 2
+    assert {event["event_id"] for event in prepared["events"]} == set(current_ids)
+
+    reordered_events = [
+        {**_picked_event(), "ids": [0, 1], "title": "Current event C2"},
+        {**_picked_event(), "ids": [1], "title": "Prior event A"},
+    ]
+    dn.prepare_registry_transaction(
+        NoMatchLLM(), prior_registry, reordered_events, "2026-07-21",
+        {"events": {}}, items=[source_y, source_x])
+    assert {event["title"]: event["event_id"] for event in current_events} == {
+        event["title"]: event["event_id"] for event in reordered_events
+    }
 
 
 def test_pinned_secondary_history_uses_final_v2_metadata():
