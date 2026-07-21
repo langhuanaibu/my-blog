@@ -57,12 +57,22 @@
       "material_updates": 2,
       "update_judge_failures": 0,
       "degraded": false
+    },
+    {
+      "date": "2026-07-22",
+      "audited_events": 6,
+      "split_events": 1,
+      "removed_fields": 28,
+      "cross_day_duplicates": 29,
+      "material_updates": 8,
+      "update_judge_failures": 0,
+      "degraded": false
     }
   ],
   "summary": {
-    "days": 6,
-    "audited_events": 152,
-    "split_events": 38,
-    "split_rate": 0.25
+    "days": 7,
+    "audited_events": 158,
+    "split_events": 39,
+    "split_rate": 0.2468
   }
 }
