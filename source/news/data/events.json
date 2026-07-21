@@ -188,7 +188,7 @@
    "event_id": "evt-20260706-aaa9db",
    "title": "强台风巴威登陆浙江，中国疏散近200万人",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-06",
    "last_seen": "2026-07-13",
@@ -1862,7 +1862,7 @@
    "event_id": "evt-20260712-c73c85",
    "title": "美议员指控以色列军方在约旦河西岸拘留事件中撒谎",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-13",
@@ -1968,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
+   "title": "美伊冲突升级：3名美军阵亡，双方持续空袭",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-20",
+   "last_seen": "2026-07-21",
    "history": [
     {
      "date": "2026-07-12",
@@ -2015,6 +2015,12 @@
      "date": "2026-07-20",
      "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
      "summary": "美军在伊拉克和约旦遭伊朗袭击，死亡人数增至3人，美军对伊朗海岸监视和防空设施发动更多空袭。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "美伊冲突升级：3名美军阵亡，双方持续空袭",
+     "summary": "美伊冲突加剧，3名美军士兵阵亡，美国对伊朗发动新一轮空袭，伊朗则攻击了霍尔木兹海峡的油轮作为报复。",
      "news_status": "发展中"
     }
    ]
@@ -2131,7 +2137,7 @@
    "event_id": "evt-20260713-d19f1e",
    "title": "OpenAI GPT-5.6 Sol Ultra一小时证明50年图论猜想",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2171,7 +2177,7 @@
    "event_id": "evt-20260713-753c1c",
    "title": "多伦多节日枪击致2死4伤",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2188,7 +2194,7 @@
    "event_id": "evt-20260713-c9bbfc",
    "title": "苹果起诉OpenAI挖角窃密，涉400名员工",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2257,7 +2263,7 @@
    "event_id": "evt-20260713-027dd5",
    "title": "德州男子被ICE枪杀引发抗议",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2274,7 +2280,7 @@
    "event_id": "evt-20260713-1b3ce4",
    "title": "特朗普威胁摧毁伊朗并制裁其金融家",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2291,7 +2297,7 @@
    "event_id": "evt-20260713-24fa71",
    "title": "卡塔尔前埃米尔哈马德去世，享年74岁",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2308,7 +2314,7 @@
    "event_id": "evt-20260713-dd4d2a",
    "title": "白宫强力施压苹果英伟达扶持英特尔",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2325,7 +2331,7 @@
    "event_id": "evt-20260713-cfcbeb",
    "title": "德州大学因行政令关闭移民主题艺术展",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2342,7 +2348,7 @@
    "event_id": "evt-20260713-519d7a",
    "title": "国常会部署加快新一代通信网和算力网建设",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2359,7 +2365,7 @@
    "event_id": "evt-20260713-4b6034",
    "title": "南非驱逐超5.3万名外国人，打击非法移民",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2376,7 +2382,7 @@
    "event_id": "evt-20260713-8b0dc9",
    "title": "印度穆斯林女法官因定罪牛义警面临死亡威胁",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2393,7 +2399,7 @@
    "event_id": "evt-20260713-ae9c06",
    "title": "OpenAI成Oracle关键信用风险，评级被下调",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2410,7 +2416,7 @@
    "event_id": "evt-20260713-c572d2",
    "title": "关税迫使美国玩具商尝试本土生产，成本高昂",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-13",
@@ -2533,17 +2539,23 @@
   },
   {
    "event_id": "evt-20260714-570deb",
-   "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
+   "title": "法官暂停派拉蒙与华纳兄弟探索1100亿美元合并",
    "category": "finance",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-14",
-   "last_seen": "2026-07-14",
+   "last_seen": "2026-07-21",
    "history": [
     {
      "date": "2026-07-14",
      "title": "12州起诉阻止派拉蒙与华纳兄弟探索公司1100亿美元合并",
      "summary": "美国12个州的总检察长联合提起诉讼，试图阻止派拉蒙与华纳兄弟探索公司价值1100亿美元的合并案，称其将损害竞争。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "法官暂停派拉蒙与华纳兄弟探索1100亿美元合并",
+     "summary": "美国加州法官发布临时限制令，暂停派拉蒙与华纳兄弟探索价值1100亿美元的合并案，以回应12个州的反垄断诉讼。",
      "news_status": "发展中"
     }
    ]
@@ -2829,18 +2841,24 @@
   },
   {
    "event_id": "evt-20260715-b8964d",
-   "title": "霍尔木兹紧张局势蔓延至AI芯片和化肥供应链",
+   "title": "胡塞武装对沙特实施海上禁运，霍尔木兹海峡通航量降至零",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-15",
-   "last_seen": "2026-07-15",
+   "last_seen": "2026-07-21",
    "history": [
     {
      "date": "2026-07-15",
      "title": "霍尔木兹紧张局势蔓延至AI芯片和化肥供应链",
      "summary": "霍尔木兹海峡紧张局势正从能源扩散至化肥、硫磺、铝材和氦气等关键工业原材料供应链。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "胡塞武装对沙特实施海上禁运，霍尔木兹海峡通航量降至零",
+     "summary": "也门胡塞武装宣布对沙特实施海上禁运，同时伊朗称霍尔木兹海峡通航量已降至零，多重封锁威胁全球能源供应。",
+     "news_status": "发展中"
     }
    ]
   },
@@ -4380,34 +4398,46 @@
   },
   {
    "event_id": "evt-20260720-94f555",
-   "title": "安迪·伯纳姆接替斯塔默成为英国新任首相",
+   "title": "安迪·伯纳姆就任英国首相并组建内阁",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-20",
-   "last_seen": "2026-07-20",
+   "last_seen": "2026-07-21",
    "history": [
     {
      "date": "2026-07-20",
      "title": "安迪·伯纳姆接替斯塔默成为英国新任首相",
      "summary": "前曼彻斯特市长安迪·伯纳姆于7月20日接替基尔·斯塔默，成为英国新任首相。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "安迪·伯纳姆就任英国首相并组建内阁",
+     "summary": "前大曼彻斯特市长安迪·伯纳姆（贝安德）在无人挑战下接任工党党魁，正式成为英国首相，并公布了新内阁名单。",
+     "news_status": "已确认"
     }
    ]
   },
   {
    "event_id": "evt-20260720-1157b8",
-   "title": "Tate兄弟在美被捕，面临英国59项新指控",
+   "title": "泰特兄弟在美出庭应对引渡，否认英国新指控",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-20",
-   "last_seen": "2026-07-20",
+   "last_seen": "2026-07-21",
    "history": [
     {
      "date": "2026-07-20",
      "title": "Tate兄弟在美被捕，面临英国59项新指控",
      "summary": "美国法警在迈阿密逮捕Andrew和Tristan Tate兄弟，英国检方新增38项指控，总指控数达59项，并寻求引渡。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "泰特兄弟在美出庭应对引渡，否认英国新指控",
+     "summary": "安德鲁·泰特与特里斯坦·泰特在迈阿密联邦法院出庭，反对被引渡至英国。他们于上周六被捕，英国随后提出包括强奸和性贩卖在内的数十项新指控，二人均否认。",
      "news_status": "发展中"
     }
    ]
@@ -4595,6 +4625,465 @@
      "date": "2026-07-20",
      "title": "英伟达：AI算力需求正转向后训练改进",
      "summary": "英伟达称，随着智能体AI兴起，模型后训练已从一次性步骤演变为持续核心工作负载，算力需求重心正从训练转向后训练。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-28c8ca",
+   "title": "OpenAI分享长周期AI模型安全对齐经验",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "OpenAI分享长周期AI模型安全对齐经验",
+     "summary": "OpenAI发布博文，分享部署长周期AI模型（如Agent）中观察到的安全风险、失败案例及改进的防护措施。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-fe8d38",
+   "title": "Cloudflare正式推出企业级Internal DNS服务",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "Cloudflare正式推出企业级Internal DNS服务",
+     "summary": "Cloudflare宣布其Internal DNS服务正式商用，将私有网络的权威与递归DNS整合到其全球网络和统一控制平台。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-ef0c6b",
+   "title": "月之暗面发布Kimi K3开源模型引发市场分歧",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "月之暗面发布Kimi K3开源模型引发市场分歧",
+     "summary": "月之暗面发布2.8万亿参数开源模型Kimi K3，性能比肩顶级闭源模型，但华尔街对其影响判断不一，有观点认为反而强化算力需求。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-caf03b",
+   "title": "谷歌被曝开发集成Gemini架构的Frozen v2芯片",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "谷歌被曝开发集成Gemini架构的Frozen v2芯片",
+     "summary": "据内部消息，谷歌正在开发代号Frozen v2的AI芯片，将Gemini架构直接集成到硅片中，效率或比当前TPU高6-10倍。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-987f88",
+   "title": "Hugging Face遭自主AI智能体入侵并AI反击",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "Hugging Face遭自主AI智能体入侵并AI反击",
+     "summary": "Hugging Face披露其基础设施遭自主AI智能体入侵，攻击者通过恶意数据集利用代码执行漏洞，窃取凭证；Hugging Face用LLM分析17000多条攻击行为。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-ca69f3",
+   "title": "GitHub社区贡献开源资金达1亿美元里程碑",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "GitHub社区贡献开源资金达1亿美元里程碑",
+     "summary": "GitHub宣布，社区通过其平台为开源项目贡献的资金总额达到1亿美元里程碑。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-7b5a9d",
+   "title": "纽时分析：中美AI策略差异显著，美严控中宽松",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "纽时分析：中美AI策略差异显著，美严控中宽松",
+     "summary": "纽约时报分析文章称，美国将前沿AI模型视为核武器般严密守护，而中国对AI潜在危害似乎不太在意。",
+     "news_status": "有争议"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-9e0526",
+   "title": "Hugging Face确认数据泄露，波及内部数据集和凭证",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "Hugging Face确认数据泄露，波及内部数据集和凭证",
+     "summary": "Hugging Face确认发生数据泄露，影响了内部数据集和凭证，敦促用户轮换存储在平台上的访问令牌并审查账户活动。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-4dd681",
+   "title": "腾讯混元发布递归自我改进智能体Hyra-1.0",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "腾讯混元发布递归自我改进智能体Hyra-1.0",
+     "summary": "腾讯混元推出Hyra-1.0，一个能递归自我改进的研究与工程智能体，在数学开放问题中刷新29个历史最好结果，已开源。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-9a2c81",
+   "title": "黑客利用近期修复的WordPress漏洞攻击数百万网站",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "黑客利用近期修复的WordPress漏洞攻击数百万网站",
+     "summary": "黑客正利用WordPress近期修复的两个关键安全漏洞，远程控制数千万网站，网络安全研究员已发出风险警告。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-3f5c40",
+   "title": "特朗普对加拿大部分商品加征50%关税，加总理誓言加强谈判",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "特朗普对加拿大部分商品加征50%关税，加总理誓言加强谈判",
+     "summary": "特朗普宣布对加拿大部分商品加征50%关税，理由是加拿大对美国汽车、酒类和乳制品存在歧视性贸易行为，加总理卡尼誓言加强谈判。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-25599d",
+   "title": "GitHub Code Quality功能正式上线",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "GitHub Code Quality功能正式上线",
+     "summary": "GitHub宣布Code Quality功能正式可用，面向GitHub Enterprise Cloud和Team用户，旨在帮助团队在AI加速代码产出时保障代码质量。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-7cfbec",
+   "title": "研究显示AI聊天机器人提供的选举投票建议不准确",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "研究显示AI聊天机器人提供的选举投票建议不准确",
+     "summary": "匈牙利选举期间的研究发现，AI聊天机器人提供的投票建议不准确、不一致且不可靠，甚至推荐了未参选的政党。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-c484ba",
+   "title": "阿里旗下速卖通因未遵守欧盟规定被罚5.5亿欧元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "阿里旗下速卖通因未遵守欧盟规定被罚5.5亿欧元",
+     "summary": "欧盟以速卖通未能有效阻止非法商品销售为由，开出5.5亿欧元（约6.25亿美元）罚单，创下《数字服务法》最高罚款纪录。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-dc380c",
+   "title": "美拟通过制裁与施压逐步限制中国AI模型",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "美拟通过制裁与施压逐步限制中国AI模型",
+     "summary": "特朗普政府正考虑通过将中国AI实验室列入制裁名单、让美国公司为安全漏洞担责等措施，逐步限制中国AI模型。",
+     "news_status": "仅传言"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-2df139",
+   "title": "微软转向AMD芯片，英伟达AI芯片垄断地位受挑战",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "微软转向AMD芯片，英伟达AI芯片垄断地位受挑战",
+     "summary": "微软正扩大Azure云AI基础设施，采用AMD新Helios平台，计划2026年下半年部署，挑战英伟达GPU系统。Anthropic也可能跟进。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-9d97e5",
+   "title": "研究显示AI在招聘中比人类更容易形成偏见",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "研究显示AI在招聘中比人类更容易形成偏见",
+     "summary": "MIT研究指出，大型语言模型在筛选简历时，比人类更容易基于种族、性别等形成系统性偏见，且偏见模式更隐蔽。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-1f15a2",
+   "title": "西班牙加时赛胜阿根廷，第二次夺得世界杯冠军",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "西班牙加时赛胜阿根廷，第二次夺得世界杯冠军",
+     "summary": "西班牙在世界杯决赛中凭借费兰·托雷斯加时赛的制胜球，以2-1击败阿根廷，队史第二次夺冠。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-1f8854",
+   "title": "厦门翔安机场距金门仅三公里，引发台湾安全担忧",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "厦门翔安机场距金门仅三公里，引发台湾安全担忧",
+     "summary": "厦门翔安机场距金门仅3公里，BBC实地报道称其位置敏感，引发台湾对军事威胁和飞航安全的担忧。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-d03319",
+   "title": "哈马斯任命哈利勒·哈亚为新任领导人",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "哈马斯任命哈利勒·哈亚为新任领导人",
+     "summary": "哈马斯宣布任命其卡塔尔首席谈判代表哈利勒·哈亚为新的政治领导人，接替2024年被以色列击杀的叶海亚·辛瓦尔。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-55fcf1",
+   "title": "圭亚那客轮倾覆致27死83失踪",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "圭亚那客轮倾覆致27死83失踪",
+     "summary": "圭亚那一艘客轮倾覆，已致27人死亡、83人失踪，总理称已启动调查并希望找到更多幸存者。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-7dde54",
+   "title": "印度警方阻止数千抗议者向议会游行",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "印度警方阻止数千抗议者向议会游行",
+     "summary": "印度德里数千名以年轻人为主的抗议者试图向议会游行，要求改革教育体系，遭警方阻止，现场混乱。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-29831d",
+   "title": "GitHub推出成本中心AI信用池管理功能",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "GitHub推出成本中心AI信用池管理功能",
+     "summary": "GitHub在账单UI中新增成本中心AI信用池管理功能，此前仅能通过API管理，现可直接在界面操作。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-ff676b",
+   "title": "YouTube更新政策明确AI生成和低质量视频规定",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "YouTube更新政策明确AI生成和低质量视频规定",
+     "summary": "YouTube更新变现政策，更清晰定义哪些AI生成和低质量视频不能获得广告收入。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-9e9908",
+   "title": "Moonshot因GPU需求爆满暂停Kimi K3新订阅",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "Moonshot因GPU需求爆满暂停Kimi K3新订阅",
+     "summary": "Moonshot因Kimi K3模型上线48小时内GPU需求接近满载，暂停新订阅，计划拆分订阅模式以分散负载。",
+     "news_status": "发展中"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-71674c",
+   "title": "BBC调查：逾3500名外国公民为俄在乌作战死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "BBC调查：逾3500名外国公民为俄在乌作战死亡",
+     "summary": "BBC调查发现，来自40多国的逾3500名外国公民在乌克兰战争中为俄罗斯作战时死亡，包括厄瓜多尔、美国、中国等国公民。",
+     "news_status": "已确认"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260721-c56829",
+   "title": "Natural融资3000万美元，为AI代理重塑支付体系",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-21",
+   "last_seen": "2026-07-21",
+   "history": [
+    {
+     "date": "2026-07-21",
+     "title": "Natural融资3000万美元，为AI代理重塑支付体系",
+     "summary": "成立一年的初创公司Natural获得3000万美元融资，旨在为自主AI代理构建全新的金融支付架构，挑战Stripe等传统支付巨头。",
      "news_status": "已确认"
     }
    ]
