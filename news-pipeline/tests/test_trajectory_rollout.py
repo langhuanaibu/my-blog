@@ -57,6 +57,7 @@ def test_fixture_exposes_rollout_health_for_trusted_polluted_and_legacy_history(
         "generation_fallbacks": 0,
         "audit_fallbacks": 0,
         "final_watch_count": 1,
+        "final_trusted_continuation_count": 1,
         "selected_count": 1,
         "final_watch_coverage": 1.0,
     }

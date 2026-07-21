@@ -2,6 +2,7 @@ import copy
 import importlib.util
 import json
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -61,6 +62,7 @@ def valid_health(**overrides):
         "generation_fallbacks": 0,
         "audit_fallbacks": 0,
         "final_watch_count": 1,
+        "final_trusted_continuation_count": 1,
         "selected_count": 1,
         "final_watch_coverage": 1.0,
     }
@@ -138,6 +140,20 @@ class Judge:
         return {"rows": copy.deepcopy(self.rows)}
 
 
+def passing_rows(cases):
+    return [{
+        "idx": case["idx"],
+        "continuity": ("pass" if case["public"].get("trusted_continuation") is True
+                       else "not_applicable"),
+        "history_support": ("pass" if case["public"].get("trusted_continuation") is True
+                            else "not_applicable"),
+        "watch_has_variable": True,
+        "watch_has_landmark": True,
+        "decision": "pass",
+        "reason": "The available evidence supports this verdict.",
+    } for case in cases]
+
+
 def test_selection_gate_metrics_are_deterministic_and_complete():
     assert hasattr(dn, "finalize_selection_gate_metrics")
     picked = [
@@ -171,6 +187,10 @@ def test_selection_gate_metrics_are_deterministic_and_complete():
 def test_transaction_exposes_allow_listed_review_cases_without_persisting_them():
     fixture = json.loads(
         (PIPELINE_DIR / "fixtures" / "trajectory_rollout.json").read_text(encoding="utf-8"))
+    fixture["items"][0]["fulltext"] = "FULLTEXT_SENTINEL"
+    fixture["items"][0]["content"] = "CONTENT_SENTINEL"
+    fixture["registry"]["events"][0]["history"][1]["summary"] = (
+        "REJECTED_HISTORY_SENTINEL")
 
     class FixtureLLM:
         def json_call(self, system, _user):
@@ -198,12 +218,70 @@ def test_transaction_exposes_allow_listed_review_cases_without_persisting_them()
     assert case["public"]["watch"] == picked[0]["watch"]
     assert case["sources"]
     assert case["verified_history"]
-    serialized = json.dumps(review_cases, ensure_ascii=False).lower()
-    assert "full article secret" not in serialized
-    assert "rejected polluted history" not in serialized
+    serialized = json.dumps(review_cases, ensure_ascii=False)
+    assert "The model launched." in serialized
+    assert "Initial enterprise adoption figures arrived." in serialized
+    assert "FULLTEXT_SENTINEL" not in serialized
+    assert "CONTENT_SENTINEL" not in serialized
+    assert "REJECTED_HISTORY_SENTINEL" not in serialized
+    serialized = serialized.lower()
     for forbidden in ("fulltext", "content", "article_body", "api_key", "environment"):
         assert forbidden not in serialized
     assert "review_cases" not in json.dumps(prepared, ensure_ascii=False)
+
+
+def test_transaction_counts_and_projects_multiple_final_trusted_continuations():
+    fixture = json.loads(
+        (PIPELINE_DIR / "fixtures" / "trajectory_rollout.json").read_text(encoding="utf-8"))
+    second_registry = copy.deepcopy(fixture["registry"]["events"][0])
+    second_registry["event_id"] = "evt-model-launch-2"
+    second_registry["title"] = "Second model launch"
+    fixture["registry"]["events"].append(second_registry)
+    second_pick = copy.deepcopy(fixture["picked"][0])
+    second_pick.update({"ids": [1], "title": "Second model follow-up"})
+    fixture["picked"].append(second_pick)
+    second_item = copy.deepcopy(fixture["items"][0])
+    second_item.update({"title": "Second model follow-up",
+                        "source_id": "example-news-2"})
+    fixture["items"].append(second_item)
+    fixture["responses"]["matches"]["matches"].append(
+        {"today": 1, "registry": 1})
+    second_validation = copy.deepcopy(
+        fixture["responses"]["continuity"]["validations"][0])
+    second_validation["candidate"] = 1
+    fixture["responses"]["continuity"]["validations"].append(second_validation)
+    second_generation = copy.deepcopy(
+        fixture["responses"]["generation"]["trajectories"][0])
+    second_generation["idx"] = 1
+    fixture["responses"]["generation"]["trajectories"].append(second_generation)
+    second_audit = copy.deepcopy(fixture["responses"]["audit"]["audits"][0])
+    second_audit["idx"] = 1
+    fixture["responses"]["audit"]["audits"].append(second_audit)
+
+    class FixtureLLM:
+        def json_call(self, system, _user):
+            if system == dn.CONTINUITY_GATE_SYSTEM:
+                stage = "continuity"
+            elif system == dn.TRAJECTORY_GENERATION_SYSTEM:
+                stage = "generation"
+            elif system == dn.TRAJECTORY_AUDIT_SYSTEM:
+                stage = "audit"
+            else:
+                stage = "matches"
+            return copy.deepcopy(fixture["responses"][stage])
+
+    health = dn.new_trajectory_health()
+    review_cases = []
+    dn.prepare_registry_transaction(
+        FixtureLLM(), fixture["registry"], copy.deepcopy(fixture["picked"]),
+        fixture["date"], {"events": {}, "trajectory": {"enabled": True}},
+        items=fixture["items"], trajectory_health=health,
+        trajectory_review_cases=review_cases)
+
+    assert health["final_trusted_continuation_count"] == 2
+    assert len(review_cases) == 2
+    assert all(case["public"]["trusted_continuation"] is True
+               for case in review_cases)
 
 
 def test_evidence_is_allow_listed_fingerprinted_and_written_only_to_explicit_temp_path(
@@ -297,6 +375,110 @@ def test_evaluator_batches_every_case_once_and_emits_versioned_pass_report():
     assert report["trajectory"]["watch_ratio"] == 1.0
     assert [row["idx"] for row in report["trajectory"]["verdicts"]] == [0, 1]
     assert report["fingerprints"] == evidence["fingerprints"]
+
+
+def test_evaluator_rejects_nested_forbidden_or_malformed_evidence_before_judge():
+    rv = rollout()
+    mutations = [
+        lambda evidence: evidence["review_cases"][0]["public"].update(
+            {"fulltext": "SECRET FULL BODY"}),
+        lambda evidence: evidence["review_cases"][0].update(
+            {"content": "SECRET CONTENT"}),
+        lambda evidence: evidence["review_cases"][0]["sources"][0].update(
+            {"snippet": "x" * 401}),
+        lambda evidence: evidence["review_cases"][0]["public"].update(
+            {"title": ["not", "text"]}),
+    ]
+    for mutate in mutations:
+        evidence = valid_evidence()
+        mutate(evidence)
+        judge = Judge()
+
+        report = rv.evaluate_rollout(
+            evidence, shadow_success=True, judge_llm=judge)
+
+        assert report["selection"]["status"] == "needs_review"
+        assert report["trajectory"]["status"] == "needs_review"
+        assert judge.calls == []
+
+
+def test_evaluator_requires_exact_final_trusted_case_coverage():
+    rv = rollout()
+    evidence = valid_evidence(trajectory=valid_health(
+        candidate_matches=2, continuity_accepted=2,
+        final_trusted_continuation_count=2, selected_count=2,
+        final_watch_coverage=0.5))
+    judge = Judge()
+
+    report = rv.evaluate_rollout(
+        evidence, shadow_success=True, judge_llm=judge)
+
+    assert report["trajectory"]["status"] == "needs_review"
+    assert "trusted" in " ".join(report["trajectory"]["reasons"]).lower()
+
+
+def test_evaluator_rejects_final_trusted_count_above_accepted_continuations():
+    rv = rollout()
+    cases = [valid_case(0), valid_case(1)]
+    evidence = valid_evidence(cases, trajectory=valid_health(
+        candidate_matches=2, continuity_accepted=1,
+        final_watch_count=2, final_trusted_continuation_count=2,
+        selected_count=2, final_watch_coverage=1.0))
+
+    report = rv.evaluate_rollout(
+        evidence, shadow_success=True,
+        judge_llm=Judge(rows=passing_rows(cases)))
+
+    assert report["trajectory"]["status"] == "needs_review"
+
+
+@pytest.mark.parametrize(("item_ref", "expected"), [
+    (None, "pass"),
+    ("2026-07-21:pick-3", "pass"),
+    ("2026-07-21:more-9", "pass"),
+    ("1999-01-01:pick-3", "fail"),
+    ("2026-07-21:deep-1", "fail"),
+    ("2026-07-21:not-a-public-item", "fail"),
+])
+def test_continuation_link_validates_exact_public_item_ref_contract(item_ref, expected):
+    rv = rollout()
+    case = valid_case()
+    if item_ref is None:
+        case["public"]["history"][0].pop("item_ref")
+    else:
+        case["public"]["history"][0]["item_ref"] = item_ref
+    report = rv.evaluate_rollout(
+        valid_evidence([case]), shadow_success=True,
+        judge_llm=Judge(rows=passing_rows([case])))
+    assert report["trajectory"]["status"] == expected
+
+
+@pytest.mark.parametrize("reason", [
+    "Possibly supported; cannot verify independently.",
+    "This may be supported, but it is not independently verified.",
+    "可能支持，尚待确认。",
+    "相关性无法核实。",
+])
+def test_explicit_multilingual_uncertainty_needs_review(reason):
+    rv = rollout()
+    row = passing_rows([valid_case()])[0]
+    row["reason"] = reason
+    report = rv.evaluate_rollout(
+        valid_evidence(), shadow_success=True, judge_llm=Judge(rows=[row]))
+    assert report["trajectory"]["status"] == "needs_review"
+
+
+@pytest.mark.parametrize("reason", [
+    "The watch names a possible adoption variable and a concrete quarterly report.",
+    "走向把可能影响采用率的变量写清，并给出下一份季度报告作为路标。",
+])
+def test_uncertainty_detection_does_not_misread_quoted_watch_language(reason):
+    rv = rollout()
+    row = passing_rows([valid_case()])[0]
+    row["reason"] = reason
+    report = rv.evaluate_rollout(
+        valid_evidence(), shadow_success=True, judge_llm=Judge(rows=[row]))
+    assert report["trajectory"]["status"] == "pass"
 
 
 @pytest.mark.parametrize("rows", [
@@ -397,6 +579,7 @@ def test_no_candidate_or_no_watch_is_neutral_without_judge_call():
     evidence = valid_evidence(
         cases=[], trajectory=valid_health(candidate_matches=0, continuity_accepted=0,
                                           final_watch_count=0,
+                                          final_trusted_continuation_count=0,
                                           final_watch_coverage=0.0))
     report = rv.evaluate_rollout(evidence, shadow_success=True, judge_llm=judge)
     assert report["trajectory"]["status"] == "neutral"
@@ -424,7 +607,7 @@ def test_selection_gate_rejects_each_automatic_pass_violation(change, reason_fra
 def test_watch_ratio_and_continuation_link_are_deterministic_trajectory_gates():
     rv = rollout()
     cases = [valid_case(i, trusted=(i == 0)) for i in range(5)]
-    cases[0]["public"]["history"][0]["date"] = "not-a-date"
+    cases[0]["public"]["history"][0]["item_ref"] = "1999-01-01:pick-3"
     rows = []
     for case in cases:
         rows.append({
@@ -460,3 +643,66 @@ def test_judge_config_reuses_audit_identity_but_forces_zero_temperature():
     assert resolved["max_retries"] == 3
     assert resolved["extra_body"] == {"thinking": {"type": "disabled"}}
     assert resolved["temperature"] == 0.0
+
+
+def test_cli_turns_judge_construction_failure_into_needs_review_report(
+        tmp_path, monkeypatch):
+    rv = rollout()
+    evidence_path = tmp_path / "evidence.json"
+    config_path = tmp_path / "config.yaml"
+    report_path = tmp_path / "report.json"
+    evidence_path.write_text(json.dumps(valid_evidence()), encoding="utf-8")
+    config_path.write_text(json.dumps({
+        "llm": {"base_url": "https://example.test", "api_key": "",
+                "model": "judge"},
+        "audit_llm": {},
+    }), encoding="utf-8")
+
+    class BrokenLLM:
+        def __init__(self, _cfg):
+            raise RuntimeError("missing credentials")
+
+    monkeypatch.setitem(sys.modules, "daily_news", types.SimpleNamespace(LLM=BrokenLLM))
+    try:
+        rv.main([
+            "--evidence", str(evidence_path), "--shadow-outcome", "success",
+            "--config", str(config_path), "--output", str(report_path),
+        ])
+    except Exception as exc:
+        pytest.fail(f"CLI leaked Judge construction failure: {exc}")
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["version"] == "rollout-report-v1"
+    assert report["trajectory"]["status"] == "needs_review"
+
+
+def test_cli_does_not_construct_judge_for_neutral_evidence(tmp_path, monkeypatch):
+    rv = rollout()
+    evidence = valid_evidence(
+        cases=[], trajectory=valid_health(
+            candidate_matches=0, continuity_accepted=0,
+            final_watch_count=0, final_trusted_continuation_count=0,
+            final_watch_coverage=0.0))
+    evidence_path = tmp_path / "evidence.json"
+    config_path = tmp_path / "config.yaml"
+    report_path = tmp_path / "report.json"
+    evidence_path.write_text(json.dumps(evidence), encoding="utf-8")
+    config_path.write_text(json.dumps({
+        "llm": {"base_url": "https://example.test", "api_key": "",
+                "model": "judge"},
+    }), encoding="utf-8")
+    constructions = []
+
+    class CountingLLM:
+        def __init__(self, _cfg):
+            constructions.append(True)
+
+    monkeypatch.setitem(sys.modules, "daily_news", types.SimpleNamespace(LLM=CountingLLM))
+    rv.main([
+        "--evidence", str(evidence_path), "--shadow-outcome", "success",
+        "--config", str(config_path), "--output", str(report_path),
+    ])
+
+    assert constructions == []
+    assert json.loads(report_path.read_text(encoding="utf-8"))[
+        "trajectory"]["status"] == "neutral"

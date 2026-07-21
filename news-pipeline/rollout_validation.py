@@ -46,6 +46,7 @@ TRAJECTORY_METRICS = {
     "generation_fallbacks",
     "audit_fallbacks",
     "final_watch_count",
+    "final_trusted_continuation_count",
     "selected_count",
     "final_watch_coverage",
 }
@@ -70,8 +71,20 @@ needs_review，禁止猜测通过。reason 用一句简洁理由。
 "history_support":"pass","watch_has_variable":true,
 "watch_has_landmark":true,"decision":"pass","reason":"..."}]}。"""
 
-_UNCERTAIN_RE = re.compile(r"\buncertain\b|\bnot sure\b|不确定|无法判断|证据不足", re.I)
+_UNCERTAIN_RE = re.compile(
+    r"\buncertain\b|\bnot sure\b"
+    r"|\b(?:possibly|perhaps|maybe)\s+(?:supported|valid|correct|related)\b"
+    r"|\bmay\s+be\s+(?:supported|valid|correct|related)\b"
+    r"|\b(?:cannot|can't|unable\s+to)\s+(?:independently\s+)?"
+    r"(?:verify|confirm|determine|establish)\b"
+    r"|\bnot\s+(?:independently\s+)?(?:verified|confirmed)\b"
+    r"|不确定|证据不足|(?:可能|也许|或许).{0,8}(?:支持|通过|成立|相关|正确)"
+    r"|尚待(?:确认|核实|验证)|(?:无法|不能)(?:独立)?(?:确认|核实|验证|判断)",
+    re.I,
+)
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PUBLIC_ITEM_ID_RE = re.compile(r"^(?:pick|more)-\d+$")
+_ITEM_REF_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}):((?:pick|more)-\d+)$")
 _FORBIDDEN_EVIDENCE_KEYS = {
     "fulltext", "content", "article_body", "article_bodies", "body",
     "api_key", "password", "token", "cookie", "credentials",
@@ -145,19 +158,69 @@ def _validate_evidence_allowlist(evidence):
         "trusted_continuation", "day_count", "history",
     }
     history_fields = {"date", "title", "summary", "watch", "item_ref"}
+
+    def bounded_text(value, limit, *, empty=True):
+        return (isinstance(value, str) and len(value) <= limit
+                and (empty or bool(value.strip())))
+
+    def valid_history_row(row, *, public_history=False):
+        allowed = ({"date", "summary", "item_ref"}
+                   if public_history else history_fields)
+        if (not isinstance(row, dict) or not set(row).issubset(allowed)
+                or not bounded_text(row.get("date"), 10, empty=False)
+                or not _DATE_RE.fullmatch(row["date"])
+                or not bounded_text(row.get("summary", ""), 160)):
+            return False
+        limits = {"title": 80, "watch": 160, "item_ref": 120}
+        return all(bounded_text(row[field], limits[field])
+                   for field in limits if field in row)
+
     for case in evidence["review_cases"]:
-        if (not isinstance(case, dict)
-                or set(case) != {"idx", "picked_index", "public", "sources",
-                                 "verified_history"}
-                or not isinstance(case.get("public"), dict)
-                or not set(case["public"]).issubset(public_fields)
+        if not isinstance(case, dict):
+            raise ValueError("rollout evidence violates the allow-list")
+        public = case.get("public")
+        if (set(case) != {"idx", "picked_index", "public", "sources",
+                          "verified_history"}
+                or type(case.get("idx")) is not int or case["idx"] < 0
+                or type(case.get("picked_index")) is not int
+                or case["picked_index"] < 0
+                or not isinstance(public, dict)
+                or not set(public).issubset(public_fields)
+                or not bounded_text(public.get("id"), 80, empty=False)
+                or not _PUBLIC_ITEM_ID_RE.fullmatch(public["id"])
+                or not bounded_text(public.get("title"), 80, empty=False)
+                or not bounded_text(public.get("summary"), 160)
+                or ("context" in public and not bounded_text(public["context"], 160))
+                or ("watch" in public and not bounded_text(public["watch"], 160))
+                or ("trusted_continuation" in public
+                    and type(public["trusted_continuation"]) is not bool)
+                or ("day_count" in public
+                    and (type(public["day_count"]) is not int
+                         or public["day_count"] < 1))
+                or ("history" in public
+                    and (not isinstance(public["history"], list)
+                         or any(not valid_history_row(row, public_history=True)
+                                for row in public["history"])))
+                or ("claims" in public
+                    and (not isinstance(public["claims"], list)
+                         or len(public["claims"]) > 4
+                         or any(not isinstance(claim, dict)
+                                or set(claim) != {"text", "kind", "sources"}
+                                or not bounded_text(claim.get("text"), 120, empty=False)
+                                or claim.get("kind") not in {"fact", "analysis", "uncertain"}
+                                or not isinstance(claim.get("sources"), list)
+                                or any(not bounded_text(source, 200, empty=False)
+                                       for source in claim["sources"])
+                                for claim in public["claims"])))
                 or not isinstance(case.get("sources"), list)
                 or any(not isinstance(source, dict)
                        or set(source) != {"source", "title", "snippet"}
+                       or not bounded_text(source.get("source"), 200, empty=False)
+                       or not bounded_text(source.get("title"), 400)
+                       or not bounded_text(source.get("snippet"), 400)
                        for source in case["sources"])
                 or not isinstance(case.get("verified_history"), list)
-                or any(not isinstance(row, dict)
-                       or not set(row).issubset(history_fields)
+                or any(not valid_history_row(row)
                        for row in case["verified_history"])):
             raise ValueError("rollout evidence violates the allow-list")
 
@@ -275,10 +338,18 @@ def _continuation_link_valid(public):
         return True
     day_count = public.get("day_count")
     history = public.get("history")
-    return (type(day_count) is int and day_count >= 2
-            and isinstance(history, list) and bool(history)
-            and isinstance(history[0], dict)
-            and bool(_DATE_RE.fullmatch(str(history[0].get("date") or ""))))
+    if (type(day_count) is not int or day_count < 2
+            or not isinstance(history, list) or not history
+            or not isinstance(history[0], dict)):
+        return False
+    history_date = str(history[0].get("date") or "")
+    if not _DATE_RE.fullmatch(history_date):
+        return False
+    item_ref = history[0].get("item_ref")
+    if not item_ref:
+        return True
+    match = _ITEM_REF_RE.fullmatch(str(item_ref))
+    return bool(match and match.group(1) == history_date)
 
 
 def _valid_case_set(cases):
@@ -404,6 +475,8 @@ def _trajectory_result(evidence, judge_llm):
     expected_coverage = (health["final_watch_count"] / health["selected_count"]
                          if health["selected_count"] else 0.0)
     if (health["final_watch_count"] > health["selected_count"]
+            or health["final_trusted_continuation_count"]
+            > health["continuity_accepted"]
             or health["continuity_accepted"] + health["continuity_rejected"]
             > health["candidate_matches"]
             or not 0.0 <= float(health["final_watch_coverage"]) <= 1.0
@@ -416,9 +489,10 @@ def _trajectory_result(evidence, judge_llm):
     trusted_cases = [case for case in cases
                      if case["public"].get("trusted_continuation") is True]
     if (len(public_watch_cases) != health["final_watch_count"]
-            or len(trusted_cases) > health["continuity_accepted"]
             or any(case["picked_index"] >= health["selected_count"] for case in cases)):
         return "needs_review", ["public watch review-case coverage is incomplete"], 0.0, [], health
+    if len(trusted_cases) != health["final_trusted_continuation_count"]:
+        return "needs_review", ["final trusted continuation review-case coverage is incomplete"], 0.0, [], health
     if health["candidate_matches"] < 1 or health["final_watch_count"] < 1:
         return "neutral", ["no candidate match or no public watch"], 0.0, [], health
     if judge_llm is None:
@@ -481,6 +555,12 @@ def evaluate_rollout(evidence, *, shadow_success, judge_llm):
         and all(isinstance(value, str) and bool(re.fullmatch(r"[0-9a-f]{64}", value))
                 for value in fingerprints.values()))
     if valid_envelope:
+        try:
+            _reject_forbidden_keys(evidence)
+            _validate_evidence_allowlist(evidence)
+        except (TypeError, ValueError):
+            valid_envelope = False
+    if valid_envelope:
         selection_status, selection_reasons, selection_metrics = _selection_result(
             evidence, shadow_success)
         trajectory_status, trajectory_reasons, watch_ratio, verdicts, trajectory_metrics = \
@@ -522,17 +602,27 @@ def parse_cli_args(argv=None):
 
 
 def main(argv=None):
-    import yaml
-    import daily_news
-
     args = parse_cli_args(argv)
     evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8"))
-    cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    if os.environ.get("LLM_API_KEY", "").strip():
-        cfg.setdefault("llm", {})["api_key"] = os.environ["LLM_API_KEY"].strip()
-    judge = daily_news.LLM(resolve_judge_llm_config(cfg))
+    shadow_success = args.shadow_outcome == "success"
     report = evaluate_rollout(
-        evidence, shadow_success=args.shadow_outcome == "success", judge_llm=judge)
+        evidence, shadow_success=shadow_success, judge_llm=None)
+    if (report["trajectory"]["status"] == "needs_review"
+            and report["trajectory"]["reasons"]
+            == ["Judge infrastructure is unavailable"]):
+        try:
+            import yaml
+            import daily_news
+
+            cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
+            if os.environ.get("LLM_API_KEY", "").strip():
+                cfg.setdefault("llm", {})["api_key"] = os.environ["LLM_API_KEY"].strip()
+            judge = daily_news.LLM(resolve_judge_llm_config(cfg))
+        except Exception:
+            judge = None
+        if judge is not None:
+            report = evaluate_rollout(
+                evidence, shadow_success=shadow_success, judge_llm=judge)
     serialized = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     if args.output:
         Path(args.output).write_text(serialized, encoding="utf-8")

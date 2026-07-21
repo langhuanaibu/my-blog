@@ -2962,6 +2962,7 @@ def new_trajectory_health():
         "generation_fallbacks": 0,
         "audit_fallbacks": 0,
         "final_watch_count": 0,
+        "final_trusted_continuation_count": 0,
         "selected_count": 0,
         "final_watch_coverage": 0.0,
     }
@@ -3626,6 +3627,9 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
     health["selected_count"] = len(picked)
     health["final_watch_count"] = (sum(1 for event in picked if event.get("watch"))
                                    if _trajectory_enabled(cfg) else 0)
+    health["final_trusted_continuation_count"] = (
+        sum(1 for event in picked if event.get("trusted_continuation") is True)
+        if _trajectory_enabled(cfg) else 0)
     health["final_watch_coverage"] = (
         health["final_watch_count"] / len(picked) if picked else 0.0)
     if trajectory_review_cases is not None:
