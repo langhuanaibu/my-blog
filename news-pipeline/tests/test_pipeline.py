@@ -2364,6 +2364,15 @@ finally:
     else:
         os.environ["DATA_DIR"] = _persist_old
 
+
+# ----------------------------------------------------------------
+# #15 可信轨迹上线门：无第三方测试依赖的确定性夹具回归
+# ----------------------------------------------------------------
+import test_trajectory_rollout as trajectory_rollout
+
+for _name, _passed, _detail in trajectory_rollout.run_tests():
+    check(f"轨迹夹具 {_name}" + (f" ({_detail})" if _detail else ""), _passed)
+
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")
 sys.exit(1 if failures else 0)

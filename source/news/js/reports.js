@@ -44,7 +44,8 @@ export function actionButtons(item, options = {}) {
   </div><div class="fb-panel" aria-live="polite"></div>`;
 }
 
-function continuationLink(item) {
+function continuationLink(item, enabled = true) {
+  if (!enabled) return "";
   if (item.trusted_continuation !== true || !Number.isInteger(item.day_count) || item.day_count < 2 || !Array.isArray(item.history) || !item.history.length) return "";
   const previous = item.history[0];
   if (!/^\d{4}-\d{2}-\d{2}$/.test(previous?.date || "")) return "";
@@ -57,12 +58,13 @@ function continuationLink(item) {
 
 export function dailyCard(item, date, options = {}) {
   const timeline = options.timeline || null;
+  const trajectoryEnabled = options.trajectoryEnabled !== false;
   return `<article class="card report-card${timeline ? ` timeline-entry${timeline.continuation ? " is-continuation" : ""}` : ""}" data-item-id="${escapeHtml(item.id)}">
-    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}${continuationLink(item)}${Number.isFinite(item.score) ? `<span class="score-num">${item.score}</span>` : ""}</div>
+    <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}${continuationLink(item, trajectoryEnabled)}${Number.isFinite(item.score) ? `<span class="score-num">${item.score}</span>` : ""}</div>
     <h3><a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>${escapeHtml(item.title)}</a></h3>
     ${item.summary ? `<p class="sum">${escapeHtml(item.summary)}</p>` : ""}
     ${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}
-    ${item.watch ? `<div class="kv watch"><b>走向：</b>${escapeHtml(item.watch)}</div>` : ""}
+    ${trajectoryEnabled && item.watch ? `<div class="kv watch"><b>走向：</b>${escapeHtml(item.watch)}</div>` : ""}
     <div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type: "news" })}
   </article>`;
 }
@@ -101,10 +103,11 @@ export function renderDailyReport(data, options = {}) {
   const hidden = options.hidden || {};
   const picks = (data.items || []).filter((item) => item.tier === "pick" && !hidden[`${data.date}:${item.id}`]);
   const hiddenCount = (data.items || []).filter((item) => item.tier === "pick" && hidden[`${data.date}:${item.id}`]).length;
-  const continued = picks.filter((item) => item.trusted_continuation === true && Number(item.day_count || 0) >= 2).length;
+  const renderOptions = { ...options, trajectoryEnabled: data.trajectory_enabled !== false };
+  const continued = renderOptions.trajectoryEnabled ? picks.filter((item) => item.trusted_continuation === true && Number(item.day_count || 0) >= 2).length : 0;
   const sections = CATEGORY_KEYS.map((category) => {
     const rows = picks.filter((item) => item.category === category);
-    return `<section class="report-section" data-category="${category}" aria-labelledby="cat-${category}"><h2 id="cat-${category}" class="sec-title">${CATEGORY_LABELS[category]} <span class="n">${rows.length} 篇</span></h2><div class="report-list">${rows.length ? rows.map((item) => dailyCard(item, data.date, options)).join("") : '<p class="section-empty">今日暂无精选</p>'}</div></section>`;
+    return `<section class="report-section" data-category="${category}" aria-labelledby="cat-${category}"><h2 id="cat-${category}" class="sec-title">${CATEGORY_LABELS[category]} <span class="n">${rows.length} 篇</span></h2><div class="report-list">${rows.length ? rows.map((item) => dailyCard(item, data.date, renderOptions)).join("") : '<p class="section-empty">今日暂无精选</p>'}</div></section>`;
   }).join("");
   const themes = (data.themes || []).slice(0, 3);
   const supplementary = [

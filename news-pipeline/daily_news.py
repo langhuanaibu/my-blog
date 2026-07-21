@@ -2866,6 +2866,29 @@ context 只能叙述已验证来龙；若含走向回对，必须有旧版最终
 每个 idx 最多一次，不要输出其他文字。"""
 
 
+def _trajectory_enabled(cfg):
+    return (cfg.get("trajectory") or {}).get("enabled", True) is not False
+
+
+def new_trajectory_health():
+    return {
+        "candidate_matches": 0,
+        "continuity_accepted": 0,
+        "continuity_rejected": 0,
+        "filtered_history_rows": 0,
+        "generation_fallbacks": 0,
+        "audit_fallbacks": 0,
+        "final_watch_count": 0,
+        "selected_count": 0,
+        "final_watch_coverage": 0.0,
+    }
+
+
+def _trajectory_fallback_units(proposal):
+    return sum(field in proposal for field in ("context", "watch")) \
+        + len(proposal.get("claims", []))
+
+
 def load_registry(data_dir):
     """读 events.json；不存在或损坏时返回空登记表（冷启动）。"""
     f = data_dir / "events.json"
@@ -2918,7 +2941,7 @@ def match_events_llm(llm, active_events, picked):
         return None
 
 
-def validate_continuity_llm(llm, pairs, active_events, picked, date_str):
+def validate_continuity_llm(llm, pairs, active_events, picked, date_str, health=None):
     """Validate candidate continuations and their recent history as one batch.
 
     Returns ``(trusted_pairs, verified_history_by_today)``. Any malformed or
@@ -2947,14 +2970,20 @@ def validate_continuity_llm(llm, pairs, active_events, picked, date_str):
             f"历史:\n" + ("\n".join(history_lines) or "  （无）"))
 
     if len(candidates) != len(pairs) or not candidates:
+        if health is not None:
+            health["filtered_history_rows"] += sum(map(len, histories))
         return [], {}
     try:
         result = llm.json_call(CONTINUITY_GATE_SYSTEM, "\n\n".join(candidates))
     except Exception as exc:
         log(f"  连续性门调用失败，受影响候选按新事件处理: {exc}")
+        if health is not None:
+            health["filtered_history_rows"] += sum(map(len, histories))
         return [], {}
     validations = result.get("validations") if isinstance(result, dict) else None
     if not isinstance(validations, list):
+        if health is not None:
+            health["filtered_history_rows"] += sum(map(len, histories))
         return [], {}
 
     by_candidate = {}
@@ -3004,6 +3033,10 @@ def validate_continuity_llm(llm, pairs, active_events, picked, date_str):
             continue
         trusted_pairs.append(pair)
         verified_history_by_today[pair[0]] = verified
+    if health is not None:
+        health["filtered_history_rows"] += (
+            sum(map(len, histories))
+            - sum(map(len, verified_history_by_today.values())))
     return trusted_pairs, verified_history_by_today
 
 
@@ -3108,7 +3141,7 @@ def _restore_trajectory_field(event, snapshot, field):
 
 
 def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
-                         items, audit_llm=None, source_limit=5):
+                         items, audit_llm=None, source_limit=5, health=None):
     """Generate and independently audit trusted trajectories as separate batches."""
     if not trusted_pairs:
         return picked
@@ -3145,15 +3178,19 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             json.dumps({"items": batch}, ensure_ascii=False))
     except Exception as exc:
         log(f"  轨迹生成失败，可信延续保留主精加工内容: {exc}")
+        if health is not None:
+            health["generation_fallbacks"] += len(batch)
         return picked
     generated, generation_duplicates = _indexed_batch_rows(
         raw, "trajectories", len(batch))
     proposals = {}
     audit_items = []
+    generation_fallback_indexes = set()
     for batch_index, input_row in enumerate(batch):
         row = generated.get(batch_index)
         if (batch_index in generation_duplicates or not isinstance(row, dict)
                 or not set(row).issubset({"idx", "context", "watch", "claims"})):
+            generation_fallback_indexes.add(batch_index)
             continue
         proposal = {}
         if "context" in row:
@@ -3169,6 +3206,8 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
                 row["claims"], set(input_row["evidence_sources"]))
             if claims is not None:
                 proposal["claims"] = claims
+        if set(proposal) != {"context", "watch", "claims"}:
+            generation_fallback_indexes.add(batch_index)
         if not proposal:
             continue
         proposals[batch_index] = proposal
@@ -3178,6 +3217,8 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             "reports": input_row["reports"],
             "trajectory": proposal,
         })
+    if health is not None:
+        health["generation_fallbacks"] += len(generation_fallback_indexes)
     if not audit_items:
         return picked
 
@@ -3187,6 +3228,10 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             json.dumps({"items": audit_items}, ensure_ascii=False))
     except Exception as exc:
         log(f"  轨迹审计失败，受影响条目恢复主精加工内容: {exc}")
+        if health is not None:
+            health["audit_fallbacks"] += sum(
+                _trajectory_fallback_units(proposal)
+                for proposal in proposals.values())
         return picked
     audited, audit_duplicates = _indexed_batch_rows(raw_audit, "audits", len(batch))
     for batch_index, proposal in proposals.items():
@@ -3195,28 +3240,40 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
         audit = audited.get(batch_index)
         if (batch_index in audit_duplicates or not isinstance(audit, dict)
                 or set(audit) != {"idx", "fields", "claims"}):
+            if health is not None:
+                health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
         fields = audit.get("fields")
         if not isinstance(fields, dict):
+            if health is not None:
+                health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
         text_fields = [field for field in ("context", "watch") if field in proposal]
         if (set(fields) != set(text_fields)
                 or any(type(fields[field]) is not bool for field in text_fields)):
+            if health is not None:
+                health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
         claim_checks = audit.get("claims")
         proposed_claims = proposal.get("claims", [])
         if (not isinstance(claim_checks, list)
                 or len(claim_checks) != len(proposed_claims)
                 or any(type(value) is not bool for value in claim_checks)):
+            if health is not None:
+                health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
         for field in text_fields:
             if fields[field]:
                 event[field] = proposal[field]
             else:
                 _restore_trajectory_field(event, snapshot, field)
+                if health is not None:
+                    health["audit_fallbacks"] += 1
         if "claims" in proposal:
             kept = [claim for claim, valid in zip(proposed_claims, claim_checks)
-                    if valid]
+                     if valid]
+            if health is not None:
+                health["audit_fallbacks"] += claim_checks.count(False)
             if kept:
                 event["claims"] = kept
             else:
@@ -3342,9 +3399,10 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
 
 def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                                  secondary=None, feedback=None, items=None,
-                                 trajectory_audit_llm=None):
+                                 trajectory_audit_llm=None, trajectory_health=None):
     """Prepare the complete registry update in memory without persisting it."""
     registry = copy.deepcopy(registry)
+    health = trajectory_health if trajectory_health is not None else new_trajectory_health()
     pinned_changed = apply_pins(registry, feedback or [])
     if pinned_changed:
         log(f"  钉选状态更新：{pinned_changed} 个事件")
@@ -3381,7 +3439,8 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
     pairs = [(today_index, active_index)
              for active_index, (today_index, _) in enumerate(rerun_pairs)]
     pairs.extend((llm_picked_indexes[today_index], len(rerun_pairs) + registry_index)
-                 for today_index, registry_index in (llm_pairs or []))
+                  for today_index, registry_index in (llm_pairs or []))
+    health["candidate_matches"] = len(pairs)
     picked_target_object_ids = {
         id(active[registry_index]) for _, registry_index in pairs
         if 0 <= registry_index < len(active)
@@ -3395,11 +3454,15 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
         id(event) for _, event in secondary_rerun_pairs
     }
     trusted_pairs, verified_history_by_today = validate_continuity_llm(
-        llm, pairs, active, picked, date_str) if pairs else ([], {})
-    run_trajectory_stage(
-        llm, picked, trusted_pairs, verified_history_by_today, items or [],
-        audit_llm=trajectory_audit_llm,
-        source_limit=4 if _rollout_output_enabled(cfg) else 5)
+        llm, pairs, active, picked, date_str, health=health) if pairs else ([], {})
+    health["continuity_accepted"] = len(trusted_pairs)
+    health["continuity_rejected"] = len(pairs) - len(trusted_pairs)
+    if _trajectory_enabled(cfg):
+        run_trajectory_stage(
+            llm, picked, trusted_pairs, verified_history_by_today, items or [],
+            audit_llm=trajectory_audit_llm,
+            source_limit=4 if _rollout_output_enabled(cfg) else 5,
+            health=health)
     rejected_today = {today_index for today_index, _ in pairs} - {
         today_index for today_index, _ in trusted_pairs}
     for today_index in rejected_today:
@@ -3408,6 +3471,11 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
     update_registry(
         registry, picked, trusted_pairs, active, date_str, cfg, items=items,
         verified_history_by_today=verified_history_by_today)
+    health["selected_count"] = len(picked)
+    health["final_watch_count"] = (sum(1 for event in picked if event.get("watch"))
+                                   if _trajectory_enabled(cfg) else 0)
+    health["final_watch_coverage"] = (
+        health["final_watch_count"] / len(picked) if picked else 0.0)
 
     # 钉选事件今天没进精选时，尝试与"更多资讯"补匹配续接进展，
     # 保证追踪中的事件不因分数不过线而断档
@@ -3443,18 +3511,24 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
 
 
 def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None,
-                 trajectory_audit_llm=None):
+                 trajectory_audit_llm=None, trajectory_health=None):
     """Load, prepare, and persist one complete registry transaction."""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
+    health = trajectory_health if trajectory_health is not None else new_trajectory_health()
     registry = prepare_registry_transaction(
         llm, load_registry(data_dir), picked, date_str, cfg,
         secondary=secondary, feedback=feedback, items=items,
-        trajectory_audit_llm=trajectory_audit_llm)
+        trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health)
     _atomic_write_json(data_dir / "events.json", registry)
     n_cont = sum(1 for ev in picked if ev.get("trusted_continuation"))
     n_active = sum(1 for event in registry["events"] if event.get("status") == "active")
     log(f"  事件登记表：活跃 {n_active}，续接 {n_cont}，登记总数 {len(registry['events'])}")
+    log("  轨迹健康：候选匹配 {candidate_matches}，连续性通过/拒绝 "
+        "{continuity_accepted}/{continuity_rejected}，过滤历史行 "
+        "{filtered_history_rows}，生成回退 {generation_fallbacks}，审计回退 "
+        "{audit_fallbacks}，最终走向 {final_watch_count}/{selected_count} "
+        "({coverage:.1%})".format(coverage=health["final_watch_coverage"], **health))
     return registry
 
 
@@ -4225,7 +4299,8 @@ def opinion_pulse(llm, cfg, pulse, profile_text=""):
 # 6. 输出
 # ----------------------------------------------------------------
 
-def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5):
+def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
+                  trajectory_enabled=True):
     ids = ev["ids"]
     # 主链接：可信度最高的事实源优先
     if (not isinstance(source_limit, int) or isinstance(source_limit, bool)
@@ -4265,8 +4340,8 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5):
         "status": ev.get("status", ""),
         "tags": ev.get("tags", []),
         **({"why": ev["why"]} if ev.get("why") else {}),
-        **({"watch": ev["watch"]} if ev.get("watch") else {}),
-        **({"context": ev["context"]} if ev.get("context") else {}),
+        **({"watch": ev["watch"]} if trajectory_enabled and ev.get("watch") else {}),
+        **({"context": ev["context"]} if trajectory_enabled and ev.get("context") else {}),
         **({"significance": ev["significance"]} if ev.get("significance") else {}),
         **({"detail": ev["detail"]} if ev.get("detail") else {}),
         **({"claims": ev["claims"]} if ev.get("claims") else {}),
@@ -4294,7 +4369,7 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5):
     # 跨天延续字段（第 2 天起）才带 day_count/history，文件保持干净
     if ev.get("event_id"):
         item["event_id"] = ev["event_id"]
-    if (ev.get("trusted_continuation") is True
+    if (trajectory_enabled and ev.get("trusted_continuation") is True
             and ev.get("day_count", 0) >= 2 and ev.get("history_prev")):
         item["trusted_continuation"] = True
         item["day_count"] = ev["day_count"]
@@ -4820,16 +4895,19 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     daily_dir.mkdir(parents=True, exist_ok=True)
 
     rollout_output = _rollout_output_enabled(cfg)
+    trajectory_output = _trajectory_enabled(cfg)
     source_limit = 4 if rollout_output else 5
     if rollout_output:
         for event in [*picked, *secondary]:
             apply_evidence_contract(event, items)
     out_items = ([event_to_item(
                     e, items, "pick", full_objectivity=rollout_output,
-                    source_limit=source_limit) for e in picked] +
+                    source_limit=source_limit,
+                    trajectory_enabled=trajectory_output) for e in picked] +
                  [event_to_item(
                     e, items, "more", full_objectivity=rollout_output,
-                    source_limit=source_limit) for e in secondary])
+                    source_limit=source_limit,
+                    trajectory_enabled=trajectory_output) for e in secondary])
     if not rollout_output:
         _strip_rollout_item_fields(out_items)
     payload = {
@@ -4843,6 +4921,7 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
             "more_count": len(secondary),
         },
         "quality": _quality_for_output(quality, rollout_output),
+        "trajectory_enabled": trajectory_output,
         "items": out_items,
     }
     if themes:

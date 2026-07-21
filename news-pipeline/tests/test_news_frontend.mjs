@@ -131,6 +131,23 @@ test("日报卡片只在 watch 存在时显示走向", () => {
   assert.doesNotMatch(withoutWatch.querySelector(".report-card").textContent, /走向/);
 });
 
+test("轨迹回滚标记关闭走向和可信延续展示", () => {
+  const rolledBack = {
+    ...daily,
+    trajectory_enabled: false,
+    items: [{
+      ...daily.items[0],
+      trusted_continuation: true,
+      day_count: 3,
+      history: [{ date: "2026-07-14", item_ref: "2026-07-14:pick-7" }],
+    }],
+  };
+  const doc = new JSDOM(`<main>${renderDailyReport(rolledBack)}</main>`).window.document;
+  assert.equal(doc.querySelector(".kv.watch"), null);
+  assert.equal(doc.querySelector(".continuation-link"), null);
+  assert.match(doc.querySelector(".mast-meta").textContent, /延续事件 0/);
+});
+
 test("可信延续徽标精确跳转上一条详情并为旧历史降级到日报", () => {
   const exact = new JSDOM(`<main>${dailyCard({
     ...daily.items[0],

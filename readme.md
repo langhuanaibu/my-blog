@@ -187,11 +187,18 @@ GITHUB_BRANCH=main
 - 排查信源抓取时先跑 `py -3.12 news-pipeline/daily_news.py --dry-run`，只抓取、不调 LLM。
 - 若通过 `publish.blog_dir` 把独立数据目录同步到博客，管线会完整镜像整个 `data/` 树并清理目标中的陈旧派生文件；切换使用临时目录和备份，失败时恢复旧目录，后续运行也会先恢复遗留备份。只有日报成功生成后才会进入发布同步。
 
+#### 可信轨迹上线门与回滚
+
+- 每次登记表阶段输出一行「轨迹健康」，稳定记录候选匹配、连续性通过/拒绝、被排除的历史行、整条生成回退、审计字段/claim 回退，以及最终公开走向数/精选数和覆盖率。连续性响应缺失或非法时按拒绝计数，其历史全部计入过滤；生成回退按条目计，审计回退按未采用的字段或 claim 计。
+- 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `python news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `python news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
+- 部署后才启动独立的 **5 个有效输出日**观察。每天人工检查全部可信延续，并额外抽查 5 条覆盖不同类目的一次性精选；5 日内错误串线、无依据历史/判断、错误延续跳转和主管线发布失败都必须为 0。对全部已展示 `watch` 做质量抽样，至少 80% 同时包含具体关键变量和可观察路标；另记走向覆盖率、轨迹回退率和历史行过滤率，不为提高覆盖率放宽连续性或审计门。
+- 任一硬门或质量门失败时，把 `news-pipeline/config.yaml` 的 `trajectory.enabled` 改为 `false` 后重新生成：连续性验证和登记表兼容更新仍保留，但跳过轨迹生成，公开 payload 标记关闭并移除来龙、走向与延续投影。恢复时改回 `true`；`events.json` 的 v2 可选字段无需迁移或回滚，既有日报数据也不重写。
+
 ### 线上数据产物
 
 `source/news/data/` 是线上数据目录，大多数文件由管线或后台 API 创建，不应手工改写，除非下方明确允许。
 
-- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
+- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`trajectory_enabled` 是当日轨迹展示开关；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
 - `manifest.js`：日报日期清单。
 - `quality-health.json`：滚动保留最近 90 天的日报可信度审计统计，并汇总审计事件数、拆分数与拆分率，用于观察错误聚类趋势；同日重跑会覆盖当日记录。
 - `source_health.json`：信源健康度，滚动保留 14 天；保留 `count/error` 区分抓取失败与窗口内无新文章，并记录逐源 `scored_events/selected_events`。某源连续 3 天抓取失败时在 Actions 输出 warning。

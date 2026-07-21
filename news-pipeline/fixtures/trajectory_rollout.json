@@ -1,0 +1,105 @@
+{
+  "date": "2026-07-21",
+  "registry": {
+    "version": 1,
+    "events": [
+      {
+        "event_id": "evt-model-launch",
+        "title": "Model launch",
+        "category": "ai",
+        "status": "active",
+        "pinned": false,
+        "first_seen": "2026-07-18",
+        "last_seen": "2026-07-20",
+        "history": [
+          {
+            "date": "2026-07-18",
+            "title": "Model launch",
+            "summary": "The model launched.",
+            "news_status": "confirmed",
+            "watch": "Watch for the first enterprise adoption report.",
+            "sources": ["example-news"],
+            "item_ref": "2026-07-18:pick-3"
+          },
+          {
+            "date": "2026-07-19",
+            "title": "Unrelated image launch",
+            "summary": "A different image model launched.",
+            "news_status": "confirmed"
+          },
+          {
+            "date": "2026-07-20",
+            "title": "Model adoption update",
+            "summary": "Initial enterprise adoption figures arrived.",
+            "news_status": "confirmed",
+            "watch": "Watch whether enterprise seats keep growing.",
+            "sources": ["example-news"]
+          }
+        ]
+      }
+    ]
+  },
+  "picked": [
+    {
+      "ids": [0],
+      "category": "ai",
+      "title": "Model launch follow-up",
+      "summary": "The company published a second adoption report.",
+      "status": "confirmed",
+      "context": "Base audited context.",
+      "watch": "Base audited watch.",
+      "score": 90,
+      "tier": "T1",
+      "tags": []
+    }
+  ],
+  "items": [
+    {
+      "title": "Model launch follow-up",
+      "desc": "The company published a second adoption report.",
+      "url": "https://example.test/model",
+      "source": "Example News",
+      "source_id": "example-news",
+      "source_type": "fact",
+      "tier": "T1",
+      "credibility": 9,
+      "time": "2026-07-21T01:00:00+00:00"
+    }
+  ],
+  "responses": {
+    "matches": {"matches": [{"today": 0, "registry": 0}]},
+    "continuity": {
+      "validations": [
+        {
+          "candidate": 0,
+          "matches_mainline": true,
+          "matches_latest": true,
+          "history": [
+            {"row": 0, "relevant": true},
+            {"row": 1, "relevant": false},
+            {"row": 2, "relevant": true}
+          ]
+        }
+      ]
+    },
+    "generation": {
+      "trajectories": [
+        {
+          "idx": 0,
+          "context": "两轮企业采用数据把事件推进到今天。",
+          "watch": "若企业席位继续增长，可观察下一份采用报告。",
+          "claims": []
+        }
+      ]
+    },
+    "audit": {
+      "audits": [
+        {
+          "idx": 0,
+          "fields": {"context": true, "watch": true},
+          "claims": []
+        }
+      ]
+    }
+  }
+}
