@@ -180,12 +180,9 @@ def test_legacy_registry_upgrades_with_final_metadata_without_public_projection_
     }
 
     public_item = dn.event_to_item(picked[0], items, "pick")
-    assert public_item["day_count"] == 2
-    assert public_item["history"] == [{
-        "date": "2026-07-20",
-        "summary": "The model launched.",
-    }]
-    assert "item_ref" not in public_item["history"][0]
+    assert "trusted_continuation" not in public_item
+    assert "day_count" not in public_item
+    assert "history" not in public_item
 
 
 def test_registry_transaction_is_prepared_in_memory_without_mutating_input(tmp_path):
@@ -223,6 +220,94 @@ def test_atomic_persistence_failure_keeps_prior_registry_intact(tmp_path, monkey
     assert list(tmp_path.glob(".events.json.*.tmp")) == []
 
 
+def test_deferred_registry_transaction_survives_output_failure(tmp_path, monkeypatch):
+    prior_text = json.dumps(_legacy_registry(), ensure_ascii=False, indent=2) + "\n"
+    registry_path = tmp_path / "events.json"
+    registry_path.write_text(prior_text, encoding="utf-8")
+    monkeypatch.setenv("DATA_DIR", str(tmp_path))
+
+    prepared = dn.track_events(
+        MatchLLM(), [_picked_event()], "2026-07-21", {"events": {}},
+        items=_source_items(), persist=False)
+
+    assert prepared["version"] == 2
+    assert registry_path.read_text(encoding="utf-8") == prior_text
+    persisted = []
+    monkeypatch.setattr(dn, "persist_registry",
+                        lambda registry, data_dir=None: persisted.append(registry))
+
+    def fail_output(*_args, **_kwargs):
+        raise RuntimeError("output failed")
+
+    monkeypatch.setattr(dn, "write_output", fail_output)
+    with pytest.raises(RuntimeError, match="output failed"):
+        dn.write_output_and_commit_registry(
+            "2026-07-21", "brief", [_picked_event()], [], _source_items(),
+            {"events": {}}, prepared)
+    assert persisted == []
+    assert registry_path.read_text(encoding="utf-8") == prior_text
+
+    monkeypatch.setattr(dn, "write_output", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        dn, "validate_daily_output_file", lambda *_args: ["invalid output"])
+    _, errors = dn.write_output_and_commit_registry(
+        "2026-07-21", "brief", [_picked_event()], [], _source_items(),
+        {"events": {}}, prepared)
+    assert errors == ["invalid output"]
+    assert persisted == []
+
+    monkeypatch.setattr(dn, "validate_daily_output_file", lambda *_args: [])
+    _, errors = dn.write_output_and_commit_registry(
+        "2026-07-21", "brief", [_picked_event()], [], _source_items(),
+        {"events": {}}, prepared)
+    assert errors == []
+    assert persisted == [prepared]
+
+
+def test_output_sanitization_precedes_registry_snapshot(monkeypatch):
+    picked = [{**_picked_event(), "context": "Generated context.",
+               "claims": [{"text": "Generated claim.", "kind": "analysis",
+                           "sources": ["Example News"]}]}]
+
+    def sanitize(event, _items):
+        for field in ("context", "watch", "claims"):
+            event.pop(field, None)
+
+    monkeypatch.setattr(dn, "sanitize_objectivity_event", sanitize)
+    cfg = {"events": {}, "_objectivity_runtime_mode": "active"}
+    dn.prepare_events_for_output(picked, [], _source_items(), cfg)
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, picked, "2026-07-21",
+        cfg, items=_source_items())
+
+    assert not ({"context", "watch", "claims"} & set(picked[0]))
+    assert "watch" not in prepared["events"][0]["history"][-1]
+
+
+def test_post_trajectory_sanitization_matches_registry_and_public_watch(monkeypatch):
+    picked = [_picked_event()]
+    original_sanitize = dn.sanitize_objectivity_event
+
+    def sanitize(event, items):
+        original_sanitize(event, items)
+        if str(event.get("watch", "")).startswith("若企业席位"):
+            event.pop("watch", None)
+
+    monkeypatch.setattr(dn, "sanitize_objectivity_event", sanitize)
+    cfg = {"events": {}, "_objectivity_runtime_mode": "active"}
+    prepared = dn.prepare_registry_transaction(
+        TrajectoryLLM(_trajectory_result(), _trajectory_audit()),
+        _trajectory_registry(), picked, "2026-07-21", cfg,
+        items=_source_items())
+    public = dn.event_to_item(
+        picked[0], _source_items(), "pick", full_objectivity=True,
+        source_limit=4)
+
+    assert "watch" not in picked[0]
+    assert "watch" not in prepared["events"][0]["history"][-1]
+    assert "watch" not in public
+
+
 def test_same_day_rerun_replaces_final_row_without_inflating_history(
         tmp_path, monkeypatch):
     (tmp_path / "events.json").write_text(
@@ -247,7 +332,29 @@ def test_same_day_rerun_replaces_final_row_without_inflating_history(
     assert [row["date"] for row in history] == ["2026-07-20", "2026-07-21"]
     assert history[-1]["summary"] == "Corrected adoption figures are available."
     assert history[-1]["watch"] == "Watch the corrected enterprise adoption trend."
-    assert rerun["day_count"] == 2
+    assert rerun["day_count"] == 1
+    assert "trusted_continuation" not in rerun
+
+
+def test_first_day_same_day_rerun_keeps_event_id_when_title_changes():
+    first = _picked_event()
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, [first], "2026-07-21",
+        {"events": {}}, items=_source_items())
+    event_id = first["event_id"]
+
+    rerun = {**_picked_event(), "title": "Corrected launch title",
+             "summary": "Corrected first-day summary."}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [rerun], "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert len(prepared["events"]) == 1
+    assert rerun["event_id"] == event_id
+    assert rerun["day_count"] == 1
+    assert "trusted_continuation" not in rerun
+    assert prepared["events"][0]["history"][-1]["title"] == \
+        "Corrected launch title"
 
 
 def test_pinned_secondary_history_uses_final_v2_metadata():
@@ -313,7 +420,8 @@ def test_secondary_rerun_target_is_not_also_matched_to_a_picked_item():
                   if row["date"] == "2026-07-21"]
     assert [row["item_ref"] for row in today_rows] == ["2026-07-21:pick-1"]
     assert picked[0]["event_id"] == "evt-legacy"
-    assert picked[0]["day_count"] == 2
+    assert picked[0]["day_count"] == 1
+    assert "trusted_continuation" not in picked[0]
 
 
 def test_untracked_secondary_rerun_does_not_restore_current_day_row():
@@ -359,7 +467,7 @@ def test_trust_chain_filters_polluted_rows_and_projects_only_verified_history():
     ]
     registry["events"][0]["last_seen"] = "2026-07-20"
     picked = [_picked_event()]
-    llm = TrustChainLLM([{
+    validations = [{
         "candidate": 0,
         "matches_mainline": True,
         "matches_latest": True,
@@ -368,7 +476,10 @@ def test_trust_chain_filters_polluted_rows_and_projects_only_verified_history():
             {"row": 1, "relevant": False},
             {"row": 2, "relevant": True},
         ],
-    }])
+    }]
+    llm = TrajectoryLLM(
+        _trajectory_result(context="Verified prior updates lead to today."),
+        _trajectory_audit(), validations=validations)
 
     dn.prepare_registry_transaction(
         llm, registry, picked, "2026-07-21", {"events": {}},
@@ -392,6 +503,35 @@ def test_trust_chain_filters_polluted_rows_and_projects_only_verified_history():
             "item_ref": "2026-07-18:pick-3",
         },
     ]
+
+
+def test_continuity_rejects_latest_row_marked_irrelevant_despite_latest_flag():
+    registry = _legacy_registry()
+    registry["events"][0]["history"].insert(0, {
+        "date": "2026-07-19",
+        "title": "Earlier related update",
+        "summary": "An earlier update was related.",
+        "news_status": "confirmed",
+    })
+    picked = [{**_picked_event(), "context": "Untrusted inherited context"}]
+    llm = TrustChainLLM([{
+        "candidate": 0,
+        "matches_mainline": True,
+        "matches_latest": True,
+        "history": [
+            {"row": 0, "relevant": True},
+            {"row": 1, "relevant": False},
+        ],
+    }])
+
+    dn.prepare_registry_transaction(
+        llm, registry, picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["event_id"] != "evt-legacy"
+    assert picked[0]["day_count"] == 1
+    assert "trusted_continuation" not in picked[0]
+    assert "context" not in picked[0]
 
 
 def test_same_category_false_join_fails_closed_as_one_off_without_context():
@@ -423,9 +563,8 @@ def test_malformed_validation_fails_closed_only_for_affected_candidate():
     second.update({"event_id": "evt-second", "title": "Second launch"})
     registry["events"].append(second)
     picked = [_picked_event(), {**_picked_event(), "title": "Second follow-up"}]
-    llm = TrustChainLLM(
-        [{
-            "candidate": 0,
+    validations = [{
+                "candidate": 0,
             "matches_mainline": True,
             "matches_latest": True,
             "history": [{"row": 0, "relevant": True}],
@@ -434,9 +573,11 @@ def test_malformed_validation_fails_closed_only_for_affected_candidate():
             "matches_mainline": True,
             "matches_latest": True,
             "history": [{"row": 0, "relevant": True}],
-        }],
-        matches=[{"today": 0, "registry": 0}, {"today": 1, "registry": 1}],
-    )
+            }]
+    llm = TrajectoryLLM(
+        _trajectory_result(context="Verified prior updates lead to today."),
+        _trajectory_audit(), validations=validations,
+        matches=[{"today": 0, "registry": 0}, {"today": 1, "registry": 1}])
 
     dn.prepare_registry_transaction(
         llm, registry, picked, "2026-07-21", {"events": {}},
@@ -646,7 +787,7 @@ def test_recap_without_prior_final_watch_falls_back_to_base_context():
     picked = [{**_picked_event(), "context": "Base audited context."}]
     llm = TrajectoryLLM(
         _trajectory_result(),
-        _trajectory_audit(),
+        _trajectory_audit(fields={"watch": True}, claims=[True]),
     )
 
     dn.prepare_registry_transaction(
@@ -669,7 +810,7 @@ def test_recap_requires_the_latest_verified_history_row_to_have_final_watch():
     picked = [{**_picked_event(), "context": "Base audited context."}]
     llm = TrajectoryLLM(
         _trajectory_result(),
-        _trajectory_audit(),
+        _trajectory_audit(fields={"watch": True}, claims=[True]),
         validations=[{
             "candidate": 0,
             "matches_mainline": True,
@@ -719,9 +860,10 @@ def test_missing_generation_result_falls_back_only_for_affected_item():
         items=items)
 
     assert first["watch"] == "若企业席位继续增长，可观察下一份采用报告。"
-    assert second_pick["context"] == "Second base context."
+    assert "context" not in second_pick
     assert second_pick["watch"] == "Second base watch."
-    assert second_pick["trusted_continuation"] is True
+    assert "trusted_continuation" not in second_pick
+    assert second_pick["day_count"] == 1
 
 
 def test_whole_trajectory_audit_failure_restores_all_base_fields():
@@ -740,10 +882,11 @@ def test_whole_trajectory_audit_failure_restores_all_base_fields():
         llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     assert picked[0]["watch"] == "Base audited watch."
     assert picked[0]["claims"] == [base_claim]
-    assert picked[0]["trusted_continuation"] is True
+    assert "trusted_continuation" not in picked[0]
+    assert picked[0]["day_count"] == 1
     assert prepared["events"][0]["history"][-1]["watch"] == "Base audited watch."
 
 
@@ -777,5 +920,6 @@ def test_malformed_trajectory_audit_row_falls_back_without_partial_apply(audit):
         llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     assert picked[0]["watch"] == "Base audited watch."
+    assert "trusted_continuation" not in picked[0]

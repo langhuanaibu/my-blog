@@ -3029,7 +3029,8 @@ def validate_continuity_llm(llm, pairs, active_events, picked, date_str, health=
             continue
         verified = [row for row_index, row in enumerate(history) if by_row[row_index]]
         if (not validation["matches_mainline"]
-                or not validation["matches_latest"] or not verified):
+                or not validation["matches_latest"] or not verified
+                or not history or not by_row[len(history) - 1]):
             continue
         trusted_pairs.append(pair)
         verified_history_by_today[pair[0]] = verified
@@ -3144,7 +3145,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
                          items, audit_llm=None, source_limit=5, health=None):
     """Generate and independently audit trusted trajectories as separate batches."""
     if not trusted_pairs:
-        return picked
+        return set()
     audit_llm = audit_llm or llm
     batch = []
     snapshots = []
@@ -3170,7 +3171,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
         snapshots.append(snapshot)
         today_indexes.append(today_index)
     if not batch:
-        return picked
+        return set()
 
     try:
         raw = llm.json_call(
@@ -3180,7 +3181,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
         log(f"  轨迹生成失败，可信延续保留主精加工内容: {exc}")
         if health is not None:
             health["generation_fallbacks"] += len(batch)
-        return picked
+        return set()
     generated, generation_duplicates = _indexed_batch_rows(
         raw, "trajectories", len(batch))
     proposals = {}
@@ -3220,7 +3221,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
     if health is not None:
         health["generation_fallbacks"] += len(generation_fallback_indexes)
     if not audit_items:
-        return picked
+        return set()
 
     try:
         raw_audit = audit_llm.json_call(
@@ -3232,8 +3233,9 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             health["audit_fallbacks"] += sum(
                 _trajectory_fallback_units(proposal)
                 for proposal in proposals.values())
-        return picked
+        return set()
     audited, audit_duplicates = _indexed_batch_rows(raw_audit, "audits", len(batch))
+    successful_today_indexes = set()
     for batch_index, proposal in proposals.items():
         event = picked[today_indexes[batch_index]]
         snapshot = snapshots[batch_index]
@@ -3278,7 +3280,8 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
                 event["claims"] = kept
             else:
                 event.pop("claims", None)
-    return picked
+        successful_today_indexes.add(today_indexes[batch_index])
+    return successful_today_indexes
 
 
 def _registry_history_entry(event, date_str, cfg, items, item_kind, summary):
@@ -3453,24 +3456,46 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
     secondary_rerun_event_object_ids = {
         id(event) for _, event in secondary_rerun_pairs
     }
+    continuity_pairs = [
+        pair for pair in pairs
+        if any(row.get("date") != date_str
+               for row in active[pair[1]].get("history", []))
+    ]
     trusted_pairs, verified_history_by_today = validate_continuity_llm(
-        llm, pairs, active, picked, date_str, health=health) if pairs else ([], {})
+        llm, continuity_pairs, active, picked, date_str,
+        health=health) if continuity_pairs else ([], {})
     health["continuity_accepted"] = len(trusted_pairs)
-    health["continuity_rejected"] = len(pairs) - len(trusted_pairs)
+    health["continuity_rejected"] = len(continuity_pairs) - len(trusted_pairs)
+    trajectory_successes = set()
     if _trajectory_enabled(cfg):
-        run_trajectory_stage(
+        trajectory_successes = run_trajectory_stage(
             llm, picked, trusted_pairs, verified_history_by_today, items or [],
             audit_llm=trajectory_audit_llm,
             source_limit=4 if _rollout_output_enabled(cfg) else 5,
             health=health)
-    rejected_today = {today_index for today_index, _ in pairs} - {
-        today_index for today_index, _ in trusted_pairs}
-    for today_index in rejected_today:
-        for field in ("context", "watch_recap", "recap"):
+    failed_projection_today = {today_index for today_index, _ in pairs} - \
+        trajectory_successes
+    for today_index in failed_projection_today:
+        for field in ("context", "watch_recap", "recap", "trusted_continuation"):
             picked[today_index].pop(field, None)
+    projected_history = {
+        today_index: history
+        for today_index, history in verified_history_by_today.items()
+        if today_index in trajectory_successes
+    }
+    rerun_registry_pairs = [
+        pair for pair in pairs if pair[0] in rerun_today
+    ]
+    registry_pairs = list(trusted_pairs)
+    registry_pairs.extend(
+        pair for pair in rerun_registry_pairs if pair not in registry_pairs)
+    # Trajectory generation may have replaced fields after the pipeline's
+    # initial cleanup. Sanitize once more before taking the registry snapshot;
+    # write_output repeats the same idempotent cleanup for direct callers.
+    prepare_events_for_output(picked, secondary or [], items or [], cfg)
     update_registry(
-        registry, picked, trusted_pairs, active, date_str, cfg, items=items,
-        verified_history_by_today=verified_history_by_today)
+        registry, picked, registry_pairs, active, date_str, cfg, items=items,
+        verified_history_by_today=projected_history)
     health["selected_count"] = len(picked)
     health["final_watch_count"] = (sum(1 for event in picked if event.get("watch"))
                                    if _trajectory_enabled(cfg) else 0)
@@ -3511,8 +3536,8 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
 
 
 def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None,
-                 trajectory_audit_llm=None, trajectory_health=None):
-    """Load, prepare, and persist one complete registry transaction."""
+                 trajectory_audit_llm=None, trajectory_health=None, persist=True):
+    """Load and prepare one registry transaction, optionally persisting it."""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     health = trajectory_health if trajectory_health is not None else new_trajectory_health()
@@ -3520,7 +3545,8 @@ def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, item
         llm, load_registry(data_dir), picked, date_str, cfg,
         secondary=secondary, feedback=feedback, items=items,
         trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health)
-    _atomic_write_json(data_dir / "events.json", registry)
+    if persist:
+        persist_registry(registry, data_dir)
     n_cont = sum(1 for ev in picked if ev.get("trusted_continuation"))
     n_active = sum(1 for event in registry["events"] if event.get("status") == "active")
     log(f"  事件登记表：活跃 {n_active}，续接 {n_cont}，登记总数 {len(registry['events'])}")
@@ -3530,6 +3556,14 @@ def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, item
         "{audit_fallbacks}，最终走向 {final_watch_count}/{selected_count} "
         "({coverage:.1%})".format(coverage=health["final_watch_coverage"], **health))
     return registry
+
+
+def persist_registry(registry, data_dir=None):
+    """Atomically commit a fully prepared registry after daily output succeeds."""
+    target_dir = Path(data_dir) if data_dir is not None else (
+        Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    _atomic_write_json(target_dir / "events.json", registry)
 
 
 # ----------------------------------------------------------------
@@ -4886,6 +4920,15 @@ def validate_daily_output_file(path, date_str):
     return errors
 
 
+def prepare_events_for_output(picked, secondary, items, cfg):
+    """Apply final public sanitization before registry and payload snapshots."""
+    if not _rollout_output_enabled(cfg):
+        return
+    for event in [*(picked or []), *(secondary or [])]:
+        apply_evidence_contract(event, items)
+        sanitize_objectivity_event(event, items)
+
+
 def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None,
                  themes=None, papers=None, opinion=None, quality=None):
     # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
@@ -4897,9 +4940,7 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     rollout_output = _rollout_output_enabled(cfg)
     trajectory_output = _trajectory_enabled(cfg)
     source_limit = 4 if rollout_output else 5
-    if rollout_output:
-        for event in [*picked, *secondary]:
-            apply_evidence_contract(event, items)
+    prepare_events_for_output(picked, secondary, items, cfg)
     out_items = ([event_to_item(
                     e, items, "pick", full_objectivity=rollout_output,
                     source_limit=source_limit,
@@ -4949,6 +4990,24 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     (data_dir / "manifest.js").write_text(manifest, encoding="utf-8")
     log(f"已写入 data/daily/{date_str}.js（精选 {len(picked)} + 更多 {len(secondary)}）")
     return payload
+
+
+def write_output_and_commit_registry(
+        date_str, brief, picked, secondary, items, cfg, registry, deep=None,
+        themes=None, papers=None, opinion=None, quality=None):
+    """Write and validate the public daily payload before committing registry."""
+    payload = write_output(
+        date_str, brief, picked, secondary, items, cfg, registry=registry,
+        deep=deep, themes=themes, papers=papers, opinion=opinion,
+        quality=quality)
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    out_file = data_dir / "daily" / f"{date_str}.js"
+    errors = validate_daily_output_file(out_file, date_str)
+    if not picked:
+        errors.append("picked items empty")
+    if not errors:
+        persist_registry(registry, data_dir)
+    return payload, errors
 
 
 # ----------------------------------------------------------------
@@ -5958,10 +6017,13 @@ def _run_pipeline(started_at, args, cfg, policy):
         policy, audit_llm, picked, secondary, items, quality)
     for ev in secondary:
         ev.setdefault("status", "")
+    # Final public sanitization must precede the registry snapshot so persisted
+    # history matches the fields readers receive in active/shadow modes.
+    prepare_events_for_output(picked, secondary, items, cfg)
     log("事件登记表：跨天延续性匹配 ...")
     registry = track_events(llm, picked, date_str, cfg,
                             secondary=secondary, feedback=feedback, items=items,
-                            trajectory_audit_llm=audit_llm)
+                            trajectory_audit_llm=audit_llm, persist=False)
     brief, themes = write_brief(
         llm, picked, secondary,
         audit_llm=audit_llm if policy["full_objectivity"] else None)
@@ -5975,9 +6037,10 @@ def _run_pipeline(started_at, args, cfg, policy):
     log("舆论观察：热榜传播机制解读 ...")
     opinion = opinion_pulse(llm, cfg, pulse, profile)
 
-    write_output(date_str, brief, picked, secondary, items, cfg,
-                 registry=registry, deep=deep, themes=themes, papers=papers,
-                 opinion=opinion, quality=quality)
+    _, publish_errors = write_output_and_commit_registry(
+        date_str, brief, picked, secondary, items, cfg, registry,
+        deep=deep, themes=themes, papers=papers, opinion=opinion,
+        quality=quality)
     try:
         update_quality_health(
             _data_dir, date_str, quality,
@@ -6004,11 +6067,6 @@ def _run_pipeline(started_at, args, cfg, policy):
     update_search_index(_data_dir, date_str, cfg)
 
     # ---- 发布前校验：精选非空、输出文件存在且包含当日数据 ----
-    _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
-    out_file = _data_dir / "daily" / f"{date_str}.js"
-    publish_errors = validate_daily_output_file(out_file, date_str)
-    if not picked:
-        publish_errors.append("picked items empty")
     if publish_errors:
         log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
         sys.exit(2)
