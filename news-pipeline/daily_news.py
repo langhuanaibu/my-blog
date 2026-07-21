@@ -361,7 +361,7 @@ def append_github_selection_summary(summary, environ=None):
 
 def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
                           trajectory_health, review_cases, data_dir,
-                          environ=None):
+                          config, environ=None):
     """Write acceptance evidence without coupling it to publication output."""
     environ = os.environ if environ is None else environ
     if not str(environ.get("ROLLOUT_EVIDENCE_PATH") or "").strip():
@@ -384,7 +384,11 @@ def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
         trajectory=trajectory_health,
         review_cases=review_cases,
         runtime_paths=[Path(__file__), Path(rollout_validation.__file__)],
-        trajectory_ui_paths=[ROOT.parent / "source" / "news" / "js" / "reports.js"],
+        trajectory_ui_paths=[
+            ROOT.parent / "source" / "news" / "js" / "reports.js",
+            ROOT.parent / "source" / "news" / "news.css",
+        ],
+        config=config,
     )
     return rollout_validation.write_rollout_evidence(
         evidence, data_dir=data_dir, environ=environ)
@@ -3242,7 +3246,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             verified_history_by_today.get(today_index, []))
         reports = _trajectory_reports(event, items or [], source_limit)
         snapshot = {field: copy.deepcopy(event[field])
-                    for field in ("context", "watch", "claims") if field in event}
+                    for field in ("watch", "claims") if field in event}
         batch.append({
             "idx": len(batch),
             "event": {field: event.get(field) for field in
@@ -3254,6 +3258,10 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
         })
         snapshots.append(snapshot)
         today_indexes.append(today_index)
+        # Base enrich context is generic background, not verified history.  Keep
+        # it in the generation input above, but never use it as a public
+        # trajectory fallback.
+        event.pop("context", None)
     if not batch:
         return set()
 
@@ -3382,6 +3390,9 @@ def _registry_history_entry(event, date_str, cfg, items, item_kind, summary):
             entry["sources"] = list(dict.fromkeys(source_ids))
     if event.get("ids"):
         entry["item_ref"] = _same_day_item_ref(event, date_str, item_kind)
+    event_identity = _same_day_event_identity(event, items or [])
+    if event_identity:
+        entry["event_identity"] = event_identity
     return entry
 
 
@@ -3390,21 +3401,41 @@ def _same_day_item_ref(event, date_str, item_kind="pick"):
     return f"{date_str}:{item_kind}-{ids[0]}" if ids else ""
 
 
+def _same_day_event_identity(event, items):
+    """Return a stable source identity independent of global/item-id ordering."""
+    source_indexes = _serialized_source_ids(event, items or [], limit=1)
+    if not source_indexes:
+        return ""
+    source = items[source_indexes[0]]
+    canonical_url = canonical_news_url(source.get("url"))
+    if canonical_url:
+        seed = f"url:{canonical_url}"
+    else:
+        source_id = str(source.get("source_id") or "").strip().casefold()
+        content = news_content_fingerprint(source.get("title"), source.get("desc"))
+        seed = f"source:{source_id}|content:{content}"
+    return "src-" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:24]
+
+
 def _same_day_rerun_pairs(candidates, eligible, date_str, item_kind,
-                          excluded_object_ids=None):
+                          items=None, excluded_object_ids=None):
     excluded_object_ids = excluded_object_ids or set()
     pairs = []
     candidate_indexes = set()
     matched_object_ids = set()
     for candidate_index, event in enumerate(candidates or []):
         item_ref = _same_day_item_ref(event, date_str, item_kind)
-        if not item_ref:
+        event_identity = _same_day_event_identity(event, items or [])
+        if not item_ref and not event_identity:
             continue
         matches = [registry_event for registry_event in eligible
                    if id(registry_event) not in excluded_object_ids
-                   and any(row.get("date") == date_str
-                           and row.get("item_ref") == item_ref
-                           for row in registry_event.get("history", []))]
+                   and any(
+                       row.get("date") == date_str
+                       and ((event_identity and row.get("event_identity") == event_identity)
+                            or (not row.get("event_identity")
+                                and item_ref and row.get("item_ref") == item_ref))
+                       for row in registry_event.get("history", []))]
         if len(matches) == 1:
             pairs.append((candidate_index, matches[0]))
             candidate_indexes.add(candidate_index)
@@ -3444,8 +3475,10 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
             ev, date_str, cfg, items, "pick", ev.get("summary", ""))
         tgt = matched.get(idx)
         if tgt is None:
-            # 哈希掺入首条原始条目索引（当天唯一），防同日同标题撞出重复 event_id
-            seed = f"{ev.get('title', '')}|{(ev.get('ids') or [idx])[0]}"
+            # Prefer the canonical source identity so fetch completion order and
+            # LLM source-id ordering cannot churn a same-day event id.
+            seed = entry.get("event_identity") or \
+                f"{ev.get('title', '')}|{(ev.get('ids') or [idx])[0]}"
             eid = "evt-{}-{}".format(
                 date_str.replace("-", ""),
                 hashlib.sha1(seed.encode("utf-8")).hexdigest()[:6])
@@ -3551,11 +3584,11 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                 if e.get("status") == "active"
                 and 0 <= days_since(e.get("last_seen", "")) <= window]
     rerun_pairs, rerun_today, rerun_event_object_ids = _same_day_rerun_pairs(
-        picked, eligible, date_str, "pick")
+        picked, eligible, date_str, "pick", items=items)
     secondary_rerun_pairs, _, _ = \
         _same_day_rerun_pairs(
             secondary, [event for event in eligible if event.get("pinned")],
-            date_str, "more",
+            date_str, "more", items=items,
             excluded_object_ids=rerun_event_object_ids)
 
     # LLM 只处理未由稳定 item_ref 认出的候选；今天之前没有历史的事件不进匹配池。
@@ -3571,7 +3604,6 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
              for active_index, (today_index, _) in enumerate(rerun_pairs)]
     pairs.extend((llm_picked_indexes[today_index], len(rerun_pairs) + registry_index)
                   for today_index, registry_index in (llm_pairs or []))
-    health["candidate_matches"] = len(pairs)
     picked_target_object_ids = {
         id(active[registry_index]) for _, registry_index in pairs
         if 0 <= registry_index < len(active)
@@ -3589,6 +3621,7 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
         if any(row.get("date") != date_str
                for row in active[pair[1]].get("history", []))
     ]
+    health["candidate_matches"] = len(continuity_pairs)
     trusted_pairs, verified_history_by_today = validate_continuity_llm(
         llm, continuity_pairs, active, picked, date_str,
         health=health) if continuity_pairs else ([], {})
@@ -3601,6 +3634,9 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             audit_llm=trajectory_audit_llm,
             source_limit=4 if _rollout_output_enabled(cfg) else 5,
             health=health)
+    for today_index, event in enumerate(picked):
+        if today_index not in trajectory_successes:
+            event.pop("context", None)
     failed_projection_today = {today_index for today_index, _ in pairs} - \
         trajectory_successes
     for today_index in failed_projection_today:
@@ -4512,7 +4548,9 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         "tags": ev.get("tags", []),
         **({"why": ev["why"]} if ev.get("why") else {}),
         **({"watch": ev["watch"]} if trajectory_enabled and ev.get("watch") else {}),
-        **({"context": ev["context"]} if trajectory_enabled and ev.get("context") else {}),
+        **({"context": ev["context"]}
+           if (trajectory_enabled and ev.get("trusted_continuation") is True
+               and ev.get("context")) else {}),
         **({"significance": ev["significance"]} if ev.get("significance") else {}),
         **({"detail": ev["detail"]} if ev.get("detail") else {}),
         **({"claims": ev["claims"]} if ev.get("claims") else {}),
@@ -6218,7 +6256,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         emit_rollout_evidence(
             date_str, policy, time.perf_counter() - started_at,
             selection_stats, trajectory_health, trajectory_review_cases,
-            _data_dir)
+            _data_dir, cfg)
     except Exception as exc:
         log(f"  rollout evidence 写入失败（不影响当日日报）: {exc}")
 

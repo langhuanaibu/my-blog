@@ -172,7 +172,7 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   const update = type === "news" && item.is_update ? `<div class="detail-update"><b>重大更新</b>${item.first_seen ? ` · 首次收录：${escapeHtml(item.first_seen)}` : ""}</div>` : "";
   let body = "";
   if (type === "news") {
-    const context = item.context ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(item.context)}</div></section>` : "";
+    const context = item.trusted_continuation === true && item.context ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(item.context)}</div></section>` : "";
     const currentParts = `${item.summary ? `<p class="detail-lede">${escapeHtml(item.summary)}</p>` : ""}${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}`;
     const current = currentParts ? `<section data-trajectory="current"><h2 class="detail-sec-t">现状</h2>${currentParts}</section>` : "";
     const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";

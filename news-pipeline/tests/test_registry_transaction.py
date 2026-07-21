@@ -177,6 +177,7 @@ def test_legacy_registry_upgrades_with_final_metadata_without_public_projection_
         "watch": "Watch whether enterprise adoption continues.",
         "sources": ["example-news"],
         "item_ref": "2026-07-21:pick-0",
+        "event_identity": dn._same_day_event_identity(picked[0], items),
     }
 
     public_item = dn.event_to_item(picked[0], items, "pick")
@@ -357,6 +358,45 @@ def test_first_day_same_day_rerun_keeps_event_id_when_title_changes():
         "Corrected launch title"
 
 
+def test_same_day_identity_survives_global_index_and_event_id_reordering():
+    primary = _source_items()[0]
+    corroborating = {
+        **primary,
+        "title": "Wire version of the same event",
+        "url": "https://wire.example.test/model",
+        "source": "Wire",
+        "source_id": "wire",
+        "credibility": 8,
+    }
+    unrelated = {
+        **primary,
+        "title": "Unrelated item",
+        "url": "https://example.test/unrelated",
+        "source": "Other",
+        "source_id": "other",
+    }
+    first_items = [primary, corroborating, unrelated]
+    first = {**_picked_event(), "ids": [0, 1]}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, [first], "2026-07-21",
+        {"events": {}}, items=first_items)
+    event_id = first["event_id"]
+    identity = prepared["events"][0]["history"][-1]["event_identity"]
+
+    rerun_items = [unrelated, corroborating, primary]
+    rerun = {**_picked_event(), "ids": [1, 2], "title": "Corrected title"}
+    prepared = dn.prepare_registry_transaction(
+        NoMatchLLM(), prepared, [rerun], "2026-07-21", {"events": {}},
+        items=rerun_items)
+
+    assert len(prepared["events"]) == 1
+    assert rerun["event_id"] == event_id
+    assert prepared["events"][0]["history"][-1]["event_identity"] == identity
+    assert prepared["events"][0]["history"][-1]["item_ref"] == \
+        "2026-07-21:pick-1"
+    assert dn.event_to_item(rerun, rerun_items, "pick")["id"] == "pick-1"
+
+
 def test_pinned_secondary_history_uses_final_v2_metadata():
     registry = _legacy_registry()
     registry["events"][0]["pinned"] = True
@@ -374,6 +414,8 @@ def test_pinned_secondary_history_uses_final_v2_metadata():
         "watch": "Watch whether enterprise adoption continues.",
         "sources": ["example-news"],
         "item_ref": "2026-07-21:more-0",
+        "event_identity": dn._same_day_event_identity(
+            secondary[0], _source_items()),
     }
 
 
@@ -557,6 +599,18 @@ def test_same_category_false_join_fails_closed_as_one_off_without_context():
     assert len(prepared["events"]) == 2
 
 
+def test_unmatched_one_off_does_not_publish_base_enrich_context():
+    picked = [{**_picked_event(), "context": "Generic product background."}]
+
+    dn.prepare_registry_transaction(
+        NoMatchLLM(), {"version": 1, "events": []}, picked, "2026-07-21",
+        {"events": {}, "trajectory": {"enabled": True}}, items=_source_items())
+    public = dn.event_to_item(picked[0], _source_items(), "pick")
+
+    assert "context" not in picked[0]
+    assert "context" not in public
+
+
 def test_malformed_validation_fails_closed_only_for_affected_candidate():
     registry = _legacy_registry()
     second = copy.deepcopy(registry["events"][0])
@@ -672,7 +726,7 @@ def test_trajectory_audit_restores_fields_independently_and_drops_failed_claims(
         llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     assert picked[0]["watch"] == "若企业席位继续增长，可观察下一份采用报告。"
     assert picked[0]["claims"] == [generated_claims[0]]
     assert picked[0]["tier"] == "T1"
@@ -759,7 +813,7 @@ def test_invalid_recap_status_falls_back_before_trajectory_audit(status):
         llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     audit_payload = json.loads(next(
         user for stage, user in llm.calls if stage == "audit"))
     assert "context" not in audit_payload["items"][0]["trajectory"]
@@ -777,7 +831,7 @@ def test_additional_invalid_recap_clause_falls_back_before_trajectory_audit():
         llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     audit_payload = json.loads(next(
         user for stage, user in llm.calls if stage == "audit"))
     assert "context" not in audit_payload["items"][0]["trajectory"]
@@ -794,7 +848,7 @@ def test_recap_without_prior_final_watch_falls_back_to_base_context():
         llm, _legacy_registry(), picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
 
 
 def test_recap_requires_the_latest_verified_history_row_to_have_final_watch():
@@ -826,7 +880,7 @@ def test_recap_requires_the_latest_verified_history_row_to_have_final_watch():
         llm, registry, picked, "2026-07-21", {"events": {}},
         items=_source_items())
 
-    assert picked[0]["context"] == "Base audited context."
+    assert "context" not in picked[0]
     audit_payload = json.loads(next(
         user for stage, user in llm.calls if stage == "audit"))
     assert "context" not in audit_payload["items"][0]["trajectory"]

@@ -14,6 +14,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 EVIDENCE_VERSION = "rollout-evidence-v1"
@@ -58,18 +59,27 @@ JUDGE_ROW_FIELDS = {
     "watch_has_variable",
     "watch_has_landmark",
     "decision",
+    "certainty",
+    "reason_code",
     "reason",
+}
+JUDGE_CERTAINTIES = {"certain", "uncertain"}
+JUDGE_REASON_CODES = {
+    "supported", "unsupported", "insufficient_evidence", "ambiguous",
 }
 
 JUDGE_SYSTEM = """你是日报轨迹验收 Judge，与生成和发布审计相互独立。
 一次性检查用户提供的全部 cases，逐项返回且不得遗漏、重复或改写 idx。
 continuity/history_support 只能是 pass、fail、not_applicable；只有可信延续才适用。
 watch_has_variable 与 watch_has_landmark 必须是布尔值，分别表示公开 watch 是否包含
-关键变量和可观察路标。decision 只能是 pass、fail、needs_review；无法确定必须
-needs_review，禁止猜测通过。reason 用一句简洁理由。
+关键变量和可观察路标。decision 只能是 pass、fail、needs_review；certainty 只能是
+certain、uncertain；reason_code 只能是 supported、unsupported、insufficient_evidence、
+ambiguous。pass 必须同时使用 certain + supported；任何不确定都必须用 uncertain，且
+decision 必须是 needs_review，禁止猜测通过。reason 用一句简洁理由。
 只输出 JSON：{"rows":[{"idx":0,"continuity":"pass",
 "history_support":"pass","watch_has_variable":true,
-"watch_has_landmark":true,"decision":"pass","reason":"..."}]}。"""
+"watch_has_landmark":true,"decision":"pass","certainty":"certain",
+"reason_code":"supported","reason":"..."}]}。"""
 
 _UNCERTAINTY_PATTERNS = (
     re.compile(
@@ -86,7 +96,7 @@ _UNCERTAINTY_PATTERNS = (
         r"relationship|support|continuation|"
         r"the\s+(?:evidence|relationship|support|continuation))\s+"
         r"(?:is|remains|seems|appears)\s+(?:still\s+)?"
-        r"(?:uncertain|unclear|inconclusive|unverified|unconfirmed)\b",
+        r"(?:uncertain|unclear|inconclusive|unverified|unconfirmed|ambiguous|doubtful)\b",
         re.I,
     ),
     re.compile(
@@ -103,7 +113,7 @@ _UNCERTAINTY_PATTERNS = (
         re.I,
     ),
     re.compile(
-        r"^\s*(?:uncertain|unclear|inconclusive|unverified|unconfirmed|not\s+sure)"
+        r"^\s*(?:uncertain|unclear|inconclusive|unverified|unconfirmed|ambiguous|doubtful|not\s+sure)"
         r"\s*[.!?]?\s*$",
         re.I,
     ),
@@ -119,12 +129,13 @@ _UNCERTAINTY_PATTERNS = (
         r"(?:确认|核实|验证|判断|支持)"
         r"|(?:尚待|有待)(?:确认|核实|验证)"
         r"|(?:无法|不能|尚不能)(?:独立|充分|最终)?(?:确认|核实|验证|判断)"
+        r"|存疑|(?:存在|仍有|含有)?歧义"
     ),
 )
 _ADVERSATIVE_RE = re.compile(
     r"\b(?:but|however|nevertheless)\b|(?:但是|不过|然而|可是|但)", re.I)
 _PRIOR_CONTEXT_RE = re.compile(
-    r"\b(?:previously|earlier|initially|formerly)\b|(?:此前|先前|之前|早先|曾经|原先)",
+    r"\b(?:previously|earlier|initially|formerly)\b|(?:此前|先前|之前|早先|曾经|原先|原有)",
     re.I,
 )
 _CURRENT_CONTEXT_RE = re.compile(
@@ -159,7 +170,7 @@ def _has_explicit_uncertainty(reason):
     return any(pattern.search(normalized) for pattern in _UNCERTAINTY_PATTERNS)
 
 
-def _fingerprint(paths):
+def _fingerprint(paths, projection=None):
     digest = hashlib.sha256()
     for raw_path in paths:
         path = Path(raw_path)
@@ -167,12 +178,101 @@ def _fingerprint(paths):
         digest.update(b"\0")
         digest.update(path.read_bytes())
         digest.update(b"\0")
+    if projection is not None:
+        digest.update(b"config\0")
+        digest.update(json.dumps(
+            projection, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":")).encode("utf-8"))
+        digest.update(b"\0")
     return digest.hexdigest()
+
+
+def _endpoint_identity(value):
+    try:
+        parsed = urlsplit(str(value or "").strip())
+        if not parsed.scheme or not parsed.hostname:
+            return ""
+        port = f":{parsed.port}" if parsed.port else ""
+        path = re.sub(r"/+", "/", parsed.path or "/")
+        if len(path) > 1:
+            path = path.rstrip("/")
+        route_hash = hashlib.sha256(path.encode("utf-8")).hexdigest()[:16]
+        return (f"{parsed.scheme.lower()}://{parsed.hostname.lower()}{port}"
+                f"|route:{route_hash}")
+    except (TypeError, ValueError):
+        return ""
+
+
+def _model_projection(raw, *, enabled=False):
+    raw = raw if isinstance(raw, dict) else {}
+    projection = {}
+    if enabled:
+        projection["enabled"] = raw.get("enabled") is True
+    for key in ("model", "temperature", "max_retries"):
+        if key in raw:
+            projection[key] = copy.deepcopy(raw[key])
+    endpoint = _endpoint_identity(raw.get("base_url"))
+    if endpoint:
+        projection["endpoint"] = endpoint
+    extra = raw.get("extra_body") if isinstance(raw.get("extra_body"), dict) else {}
+    extra_projection = {}
+    for section in ("thinking", "response_format"):
+        value = extra.get(section)
+        if isinstance(value, dict) and "type" in value:
+            extra_projection[section] = {"type": copy.deepcopy(value["type"])}
+    if extra_projection:
+        projection["extra_body"] = extra_projection
+    return projection
+
+
+def _selected_mapping(raw, keys):
+    raw = raw if isinstance(raw, dict) else {}
+    return {key: copy.deepcopy(raw[key]) for key in keys if key in raw}
+
+
+def _runtime_config_projection(config):
+    config = config if isinstance(config, dict) else {}
+    return {
+        "llm": _model_projection(config.get("llm")),
+        "audit_llm": _model_projection(config.get("audit_llm")),
+        "prefilter": _model_projection(config.get("prefilter"), enabled=True),
+        "objectivity": _selected_mapping(config.get("objectivity"), ("mode",)),
+        "selection": {
+            **_selected_mapping(config, (
+                "pick_threshold", "pick_min", "pick_max",
+                "min_per_category", "max_per_category", "interest_weights")),
+            "pick_dynamic": _selected_mapping(config.get("pick_dynamic"), (
+                "enabled", "window_days", "percentile", "clamp",
+                "min_history_days", "backfill_offset")),
+            "scoring": _selected_mapping(config.get("scoring"), (
+                "dim_weights", "tier_multipliers", "fit_span")),
+            "opinion": _selected_mapping(config.get("opinion"), ("cooccur_bonus",)),
+        },
+    }
+
+
+def _trajectory_config_projection(config):
+    config = config if isinstance(config, dict) else {}
+    return {
+        "trajectory": _selected_mapping(config.get("trajectory"), ("enabled",)),
+        "events": _selected_mapping(config.get("events"), (
+            "match_window_days", "archive_days", "prune_archived_days")),
+    }
+
+
+def build_stage_fingerprints(*, config, runtime_paths, trajectory_ui_paths):
+    """Hash only allow-listed config and files that affect each rollout stage."""
+    return {
+        "runtime": _fingerprint(
+            runtime_paths, _runtime_config_projection(config)),
+        "trajectory_ui": _fingerprint(
+            trajectory_ui_paths, _trajectory_config_projection(config)),
+    }
 
 
 def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
                            trajectory, review_cases, runtime_paths,
-                           trajectory_ui_paths):
+                           trajectory_ui_paths, config):
     """Build a JSON-safe evidence envelope from already allow-listed inputs."""
     return {
         "version": EVIDENCE_VERSION,
@@ -184,10 +284,9 @@ def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
         },
         "selection": copy.deepcopy(selection),
         "trajectory": copy.deepcopy(trajectory),
-        "fingerprints": {
-            "runtime": _fingerprint(runtime_paths),
-            "trajectory_ui": _fingerprint(trajectory_ui_paths),
-        },
+        "fingerprints": build_stage_fingerprints(
+            config=config, runtime_paths=runtime_paths,
+            trajectory_ui_paths=trajectory_ui_paths),
         "review_cases": copy.deepcopy(review_cases),
     }
 
@@ -455,6 +554,8 @@ def _needs_review_verdict(case, reason):
         "watch_has_variable": False,
         "watch_has_landmark": False,
         "decision": "needs_review",
+        "certainty": "uncertain",
+        "reason_code": "ambiguous",
         "reason": reason,
     }
 
@@ -505,12 +606,23 @@ def _judge_verdicts(cases, judge_llm):
               or type(row.get("watch_has_variable")) is not bool
               or type(row.get("watch_has_landmark")) is not bool
               or row.get("decision") not in {"pass", "fail", "needs_review"}
+              or row.get("certainty") not in JUDGE_CERTAINTIES
+              or row.get("reason_code") not in JUDGE_REASON_CODES
               or not isinstance(row.get("reason"), str)
               or not row["reason"].strip() or len(row["reason"].strip()) > 240):
             reason = "Judge row values were malformed"
         elif (row["decision"] == "needs_review"
+              or row["certainty"] == "uncertain"
+              or row["reason_code"] in {"insufficient_evidence", "ambiguous"}
               or _has_explicit_uncertainty(row["reason"])):
             reason = row["reason"]
+        elif ((row["decision"] == "pass"
+               and (row["certainty"] != "certain"
+                    or row["reason_code"] != "supported"))
+              or (row["decision"] == "fail"
+                  and (row["certainty"] != "certain"
+                       or row["reason_code"] != "unsupported"))):
+            reason = "Judge decision contradicted its structured reason"
         else:
             trusted = case["public"].get("trusted_continuation") is True
             expected = {"pass", "fail"} if trusted else {"not_applicable"}

@@ -248,7 +248,7 @@ test("重大更新在卡片和详情中明确标注首次收录日期", () => {
 });
 
 test("详情保留完整扩展字段", () => {
-  const html = renderDetail({ ...daily.items[0], why: "单独的判断价值" }, "news", daily.date);
+  const html = renderDetail({ ...daily.items[0], trusted_continuation: true, why: "单独的判断价值" }, "news", daily.date);
   assert.match(html, /detail-wrap reading-view/);
   assert.match(html, /为什么重要/);
   assert.match(html, /单独的判断价值/);
@@ -256,13 +256,20 @@ test("详情保留完整扩展字段", () => {
 });
 
 test("新闻详情按来龙现状走向和对我的意义组织阅读顺序", () => {
-  const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
+  const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true }, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
   assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "watch", "significance"]);
   assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "现状", "走向", "对我的意义"]);
   assert.match(sections[1].textContent, /摘要/);
   assert.match(sections[1].textContent, /长叙述/);
   assert.match(sections[1].textContent, /为什么重要/);
+});
+
+test("一次性条目的通用背景不被详情误标为来龙", () => {
+  const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
+  assert.equal(doc.querySelector('[data-trajectory="context"]'), null);
+  assert.doesNotMatch(doc.body.textContent, /来龙|背景机制/);
+  assert.match(doc.body.textContent, /摘要|长叙述|为什么重要/);
 });
 
 test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序", () => {
