@@ -110,6 +110,8 @@ _UNCERTAINTY_PATTERNS = (
     re.compile(
         r"不确定|证据不足|(?:可能|也许|或许)(?:仍然|仍|尚)?"
         r"(?:得到|获得)?(?:支持|通过|成立|有效|相关|属实|正确)"
+        r"|(?:可能|也许|或许)(?:仍然|仍|尚)?(?:并不|并未|不|尚未|未)"
+        r"(?:得到|获得)?(?:支持|通过|成立|有效|相关|属实|正确|确认|核实|验证)"
         r"|(?:目前)?(?:尚|仍|依然)?(?:不清楚|不明确)(?:是否)?"
         r"|(?:证据|核验结果|验证结果|关系|延续|结论)(?:仍|尚|依然)?"
         r"(?:无定论|未经核实|未获确认|未确认|不明确|不清楚)"
@@ -118,6 +120,18 @@ _UNCERTAINTY_PATTERNS = (
         r"|(?:尚待|有待)(?:确认|核实|验证)"
         r"|(?:无法|不能|尚不能)(?:独立|充分|最终)?(?:确认|核实|验证|判断)"
     ),
+)
+_ADVERSATIVE_RE = re.compile(
+    r"\b(?:but|however|nevertheless)\b|(?:但是|不过|然而|可是|但)", re.I)
+_PRIOR_CONTEXT_RE = re.compile(
+    r"\b(?:previously|earlier|initially|formerly)\b|(?:此前|先前|之前|早先|曾经|原先)",
+    re.I,
+)
+_CURRENT_CONTEXT_RE = re.compile(
+    r"\b(?:now|currently|today)\b|\b(?:new|latest)\s+"
+    r"(?:evidence|filing|report|document)\b"
+    r"|(?:现在|目前|当前|如今|今天|现已|新文件|最新文件|新证据|最新证据)",
+    re.I,
 )
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _PUBLIC_ITEM_ID_RE = re.compile(r"^(?:pick|more)-\d+$")
@@ -132,6 +146,16 @@ _FORBIDDEN_EVIDENCE_KEYS = {
 
 def _has_explicit_uncertainty(reason):
     normalized = " ".join(str(reason).split())
+    adversatives = list(_ADVERSATIVE_RE.finditer(normalized))
+    if adversatives:
+        normalized = normalized[adversatives[-1].end():].strip()
+    else:
+        prior = _PRIOR_CONTEXT_RE.search(normalized)
+        if prior:
+            current = [match for match in _CURRENT_CONTEXT_RE.finditer(normalized)
+                       if match.start() > prior.end()]
+            if current:
+                normalized = normalized[current[0].start():].strip()
     return any(pattern.search(normalized) for pattern in _UNCERTAINTY_PATTERNS)
 
 
