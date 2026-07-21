@@ -45,6 +45,33 @@ class TrustChainLLM:
         return {"matches": self.matches}
 
 
+class TrajectoryLLM:
+    def __init__(self, trajectories, audits, validations=None, matches=None):
+        self.trajectories = trajectories
+        self.audits = audits
+        self.validations = validations or _trusted_validation_response()["validations"]
+        self.matches = matches or [{"today": 0, "registry": 0}]
+        self.calls = []
+
+    def json_call(self, system, user):
+        if "连续性门" in system:
+            stage = "continuity"
+            response = {"validations": self.validations}
+        elif "轨迹生成" in system:
+            stage = "generation"
+            response = self.trajectories
+        elif "轨迹审计" in system:
+            stage = "audit"
+            response = self.audits
+        else:
+            stage = "match"
+            response = {"matches": self.matches}
+        self.calls.append((stage, user))
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
 def _legacy_registry():
     return {
         "version": 1,
@@ -92,6 +119,39 @@ def _picked_event():
         "tier": "T1",
         "tags": [],
     }
+
+
+def _trajectory_registry():
+    registry = _legacy_registry()
+    registry["events"][0]["history"][0].update({
+        "watch": "Watch for the first enterprise adoption report.",
+        "sources": ["example-news"],
+        "item_ref": "2026-07-20:pick-4",
+    })
+    return registry
+
+
+def _trajectory_result(context="走向回对（兑现）：首份企业采用报告已经发布。",
+                       watch="若企业席位继续增长，可观察下一份采用报告。",
+                       claims=None):
+    return {"trajectories": [{
+        "idx": 0,
+        "context": context,
+        "watch": watch,
+        "claims": claims if claims is not None else [{
+            "text": "采用数据仍只覆盖初期窗口。",
+            "kind": "uncertain",
+            "sources": ["Example News"],
+        }],
+    }]}
+
+
+def _trajectory_audit(fields=None, claims=None):
+    return {"audits": [{
+        "idx": 0,
+        "fields": fields or {"context": True, "watch": True},
+        "claims": claims if claims is not None else [True],
+    }]}
 
 
 def test_legacy_registry_upgrades_with_final_metadata_without_public_projection_change(
@@ -386,3 +446,336 @@ def test_malformed_validation_fails_closed_only_for_affected_candidate():
     assert picked[0]["trusted_continuation"] is True
     assert picked[1]["event_id"] not in {"evt-legacy", "evt-second"}
     assert picked[1]["day_count"] == 1
+
+
+def test_trusted_trajectory_uses_scoped_evidence_and_persists_final_watch():
+    registry = _trajectory_registry()
+    registry["events"][0]["history"].insert(0, {
+        "date": "2026-07-19",
+        "title": "Unrelated image launch",
+        "summary": "A different image model launched.",
+        "news_status": "confirmed",
+        "watch": "Watch image subscriptions.",
+        "sources": ["unrelated-news"],
+    })
+    picked = [{
+        **_picked_event(),
+        "context": "Base audited context.",
+        "claims": [{"text": "Base claim.", "kind": "analysis",
+                    "sources": ["Example News"]}],
+    }]
+    llm = TrajectoryLLM(
+        _trajectory_result(),
+        _trajectory_audit(),
+        validations=[{
+            "candidate": 0,
+            "matches_mainline": True,
+            "matches_latest": True,
+            "history": [
+                {"row": 0, "relevant": False},
+                {"row": 1, "relevant": True},
+            ],
+        }],
+    )
+
+    prepared = dn.prepare_registry_transaction(
+        llm, registry, picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert [stage for stage, _ in llm.calls] == [
+        "match", "continuity", "generation", "audit"]
+    generation_payload = json.loads(next(
+        user for stage, user in llm.calls if stage == "generation"))
+    audit_payload = json.loads(next(
+        user for stage, user in llm.calls if stage == "audit"))
+    assert [row["date"] for row in generation_payload["items"][0]["history"]] == [
+        "2026-07-20"]
+    assert "Unrelated image launch" not in json.dumps(
+        generation_payload, ensure_ascii=False)
+    assert audit_payload["items"][0]["history"] == \
+        generation_payload["items"][0]["history"]
+    assert audit_payload["items"][0]["reports"] == \
+        generation_payload["items"][0]["reports"]
+    assert picked[0]["context"] == "走向回对（兑现）：首份企业采用报告已经发布。"
+    assert picked[0]["watch"] == "若企业席位继续增长，可观察下一份采用报告。"
+    assert picked[0]["tier"] == "T1"
+    assert prepared["events"][0]["history"][-1]["watch"] == picked[0]["watch"]
+    assert prepared["events"][0]["history"][-1]["sources"] == ["example-news"]
+    assert prepared["events"][0]["history"][-1]["item_ref"] == \
+        "2026-07-21:pick-0"
+
+
+def test_trajectory_audit_restores_fields_independently_and_drops_failed_claims():
+    base_claim = {"text": "Base claim.", "kind": "analysis",
+                  "sources": ["Example News"]}
+    picked = [{
+        **_picked_event(),
+        "context": "Base audited context.",
+        "watch": "Base audited watch.",
+        "claims": [base_claim],
+    }]
+    generated_claims = [
+        {"text": "Supported trajectory claim.", "kind": "analysis",
+         "sources": ["Example News"]},
+        {"text": "Unsupported trajectory claim.", "kind": "uncertain",
+         "sources": ["Example News"]},
+    ]
+    llm = TrajectoryLLM(
+        _trajectory_result(claims=generated_claims),
+        _trajectory_audit(
+            fields={"context": False, "watch": True},
+            claims=[True, False]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    assert picked[0]["watch"] == "若企业席位继续增长，可观察下一份采用报告。"
+    assert picked[0]["claims"] == [generated_claims[0]]
+    assert picked[0]["tier"] == "T1"
+
+
+def test_trajectory_claim_source_ids_cannot_escape_the_public_source_contract():
+    base_claim = {"text": "Base claim.", "kind": "analysis",
+                  "sources": ["Example News"]}
+    picked = [{**_picked_event(), "claims": [base_claim]}]
+    llm = TrajectoryLLM(
+        _trajectory_result(claims=[{
+            "text": "Historical source-id claim.",
+            "kind": "analysis",
+            "sources": ["example-news"],
+        }]),
+        _trajectory_audit(fields={"context": True, "watch": True}, claims=[]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["claims"] == [base_claim]
+    assert "claims" not in json.loads(next(
+        user for stage, user in llm.calls if stage == "audit"))["items"][0]["trajectory"]
+
+
+def test_trajectory_claims_use_the_same_active_mode_source_limit_as_output():
+    items = [{
+        **_source_items()[0],
+        "source": f"Source {index}",
+        "source_id": f"source-{index}",
+        "url": f"https://example.test/source-{index}",
+    } for index in range(1, 6)]
+    base_claim = {"text": "Base claim.", "kind": "analysis",
+                  "sources": ["Source 1"]}
+    picked = [{**_picked_event(), "ids": list(range(5)), "claims": [base_claim]}]
+    llm = TrajectoryLLM(
+        _trajectory_result(claims=[{
+            "text": "Fifth-source claim.",
+            "kind": "analysis",
+            "sources": ["Source 5"],
+        }]),
+        _trajectory_audit(fields={"context": True, "watch": True}, claims=[]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21",
+        {"events": {}, "_objectivity_runtime_mode": "active"}, items=items)
+
+    generation = json.loads(next(
+        user for stage, user in llm.calls if stage == "generation"))
+    assert [row["source"] for row in generation["items"][0]["reports"]] == [
+        "Source 1", "Source 2", "Source 3", "Source 4"]
+    assert picked[0]["claims"] == [base_claim]
+
+
+def test_trajectory_audit_can_remove_generated_field_when_base_field_is_absent():
+    picked = [_picked_event()]
+    picked[0].pop("watch")
+    llm = TrajectoryLLM(
+        _trajectory_result(),
+        _trajectory_audit(
+            fields={"context": True, "watch": False}, claims=[True]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert "watch" not in picked[0]
+    assert picked[0]["context"].startswith("走向回对（兑现）")
+
+
+@pytest.mark.parametrize("status", ["待观察", "大致兑现", "基本反转"])
+def test_invalid_recap_status_falls_back_before_trajectory_audit(status):
+    picked = [{**_picked_event(), "context": "Base audited context."}]
+    llm = TrajectoryLLM(
+        _trajectory_result(context=f"走向回对（{status}）：出现了新数据。"),
+        _trajectory_audit(fields={"watch": True}, claims=[True]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    audit_payload = json.loads(next(
+        user for stage, user in llm.calls if stage == "audit"))
+    assert "context" not in audit_payload["items"][0]["trajectory"]
+
+
+def test_additional_invalid_recap_clause_falls_back_before_trajectory_audit():
+    picked = [{**_picked_event(), "context": "Base audited context."}]
+    llm = TrajectoryLLM(
+        _trajectory_result(
+            context="走向回对（兑现）：已有数据；走向回对（大致兑现）：仍待确认。"),
+        _trajectory_audit(fields={"watch": True}, claims=[True]),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    audit_payload = json.loads(next(
+        user for stage, user in llm.calls if stage == "audit"))
+    assert "context" not in audit_payload["items"][0]["trajectory"]
+
+
+def test_recap_without_prior_final_watch_falls_back_to_base_context():
+    picked = [{**_picked_event(), "context": "Base audited context."}]
+    llm = TrajectoryLLM(
+        _trajectory_result(),
+        _trajectory_audit(),
+    )
+
+    dn.prepare_registry_transaction(
+        llm, _legacy_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+
+
+def test_recap_requires_the_latest_verified_history_row_to_have_final_watch():
+    registry = _trajectory_registry()
+    registry["events"][0]["history"][0]["date"] = "2026-07-19"
+    registry["events"][0]["history"].append({
+        "date": "2026-07-20",
+        "title": "Latest verified update",
+        "summary": "A later update omitted its watch.",
+        "news_status": "confirmed",
+    })
+    registry["events"][0]["last_seen"] = "2026-07-20"
+    picked = [{**_picked_event(), "context": "Base audited context."}]
+    llm = TrajectoryLLM(
+        _trajectory_result(),
+        _trajectory_audit(),
+        validations=[{
+            "candidate": 0,
+            "matches_mainline": True,
+            "matches_latest": True,
+            "history": [
+                {"row": 0, "relevant": True},
+                {"row": 1, "relevant": True},
+            ],
+        }],
+    )
+
+    dn.prepare_registry_transaction(
+        llm, registry, picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    audit_payload = json.loads(next(
+        user for stage, user in llm.calls if stage == "audit"))
+    assert "context" not in audit_payload["items"][0]["trajectory"]
+
+
+def test_missing_generation_result_falls_back_only_for_affected_item():
+    registry = _trajectory_registry()
+    second = copy.deepcopy(registry["events"][0])
+    second.update({"event_id": "evt-second", "title": "Second launch"})
+    registry["events"].append(second)
+    first = {**_picked_event(), "context": "First base context."}
+    second_pick = {**_picked_event(), "ids": [1], "title": "Second follow-up",
+                   "context": "Second base context.", "watch": "Second base watch."}
+    items = _source_items() + [{**_source_items()[0],
+                                "url": "https://example.test/second",
+                                "source_id": "second-news"}]
+    llm = TrajectoryLLM(
+        _trajectory_result(),
+        _trajectory_audit(),
+        validations=[{
+            "candidate": index,
+            "matches_mainline": True,
+            "matches_latest": True,
+            "history": [{"row": 0, "relevant": True}],
+        } for index in range(2)],
+        matches=[{"today": 0, "registry": 0}, {"today": 1, "registry": 1}],
+    )
+
+    dn.prepare_registry_transaction(
+        llm, registry, [first, second_pick], "2026-07-21", {"events": {}},
+        items=items)
+
+    assert first["watch"] == "若企业席位继续增长，可观察下一份采用报告。"
+    assert second_pick["context"] == "Second base context."
+    assert second_pick["watch"] == "Second base watch."
+    assert second_pick["trusted_continuation"] is True
+
+
+def test_whole_trajectory_audit_failure_restores_all_base_fields():
+    base_claim = {"text": "Base claim.", "kind": "analysis",
+                  "sources": ["Example News"]}
+    picked = [{
+        **_picked_event(),
+        "context": "Base audited context.",
+        "watch": "Base audited watch.",
+        "claims": [base_claim],
+    }]
+    llm = TrajectoryLLM(
+        _trajectory_result(), RuntimeError("trajectory audit unavailable"))
+
+    prepared = dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    assert picked[0]["watch"] == "Base audited watch."
+    assert picked[0]["claims"] == [base_claim]
+    assert picked[0]["trusted_continuation"] is True
+    assert prepared["events"][0]["history"][-1]["watch"] == "Base audited watch."
+
+
+@pytest.mark.parametrize("audit", [
+    {
+        "idx": 0,
+        "fields": {"context": True, "watch": True},
+        "claims": [],
+        "unexpected": True,
+    },
+    {
+        "idx": 0,
+        "fields": {"context": True, "watch": True},
+        "claims": [True],
+    },
+])
+def test_malformed_trajectory_audit_row_falls_back_without_partial_apply(audit):
+    picked = [{
+        **_picked_event(),
+        "context": "Base audited context.",
+        "watch": "Base audited watch.",
+    }]
+    trajectories = {"trajectories": [{
+        "idx": 0,
+        "context": "Verified history led to today's update.",
+        "watch": "If adoption grows, observe the next company report.",
+    }]}
+    llm = TrajectoryLLM(trajectories, {"audits": [audit]})
+
+    dn.prepare_registry_transaction(
+        llm, _trajectory_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["context"] == "Base audited context."
+    assert picked[0]["watch"] == "Base audited watch."
