@@ -25,6 +25,7 @@ import copy
 from contextlib import contextmanager
 import hashlib
 import html
+import importlib.util
 import ipaddress
 import json
 import math
@@ -356,6 +357,37 @@ def append_github_selection_summary(summary, environ=None):
     with Path(target).open("a", encoding="utf-8") as handle:
         handle.write("\n".join(lines))
     return True
+
+
+def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
+                          trajectory_health, review_cases, data_dir,
+                          environ=None):
+    """Write acceptance evidence without coupling it to publication output."""
+    environ = os.environ if environ is None else environ
+    if not str(environ.get("ROLLOUT_EVIDENCE_PATH") or "").strip():
+        return False
+    try:
+        import rollout_validation
+    except ModuleNotFoundError:
+        module_path = ROOT / "rollout_validation.py"
+        spec = importlib.util.spec_from_file_location(
+            "daily_news_rollout_validation", module_path)
+        rollout_validation = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = rollout_validation
+        spec.loader.exec_module(rollout_validation)
+
+    evidence = rollout_validation.build_rollout_evidence(
+        date_str=date_str,
+        mode=policy["mode"],
+        runtime_seconds=runtime_seconds,
+        selection=selection_stats,
+        trajectory=trajectory_health,
+        review_cases=review_cases,
+        runtime_paths=[Path(__file__), Path(rollout_validation.__file__)],
+        trajectory_ui_paths=[ROOT.parent / "source" / "news" / "js" / "reports.js"],
+    )
+    return rollout_validation.write_rollout_evidence(
+        evidence, data_dir=data_dir, environ=environ)
 
 
 # ----------------------------------------------------------------
@@ -1914,6 +1946,55 @@ def save_score_history(data_dir, date_str, events, keep_days=SCORE_HISTORY_KEEP_
         return False
 
 
+def finalize_selection_gate_metrics(selection_stats, picked, cfg):
+    """Add deterministic acceptance inputs to the existing selection metrics."""
+    threshold = selection_stats.get("threshold")
+    quality_floor = selection_stats.get("quality_floor")
+    selection_stats["picked_count"] = len(picked)
+    selection_stats["selected_below_quality_floor"] = sum(
+        1 for event in picked
+        if (isinstance(event.get("score"), (int, float))
+            and not isinstance(event.get("score"), bool)
+            and isinstance(quality_floor, (int, float))
+            and not isinstance(quality_floor, bool)
+            and event["score"] < quality_floor))
+    selection_stats["selected_opinion_only"] = sum(
+        1 for event in picked if event.get("opinion_only") is True)
+
+    category_counts = {
+        category: sum(1 for event in picked if event.get("category") == category)
+        for category in CATEGORIES
+    }
+    selection_stats["category_counts"] = category_counts
+    qualified_supply = selection_stats.get("qualified_supply") or {}
+    min_per = max(0, int(cfg.get("min_per_category", 2)))
+    max_per_category = cfg.get("max_per_category") or {}
+    violations = 0
+    for category in CATEGORIES:
+        cap = max_per_category.get(category)
+        reserve_limit = min_per if cap is None else min(min_per, max(0, int(cap)))
+        available = qualified_supply.get(category, 0)
+        available = available if type(available) is int and available >= 0 else 0
+        required = min(reserve_limit, available)
+        if category_counts[category] < required:
+            violations += 1
+    selection_stats["category_reservation_violations"] = violations
+
+    clamp = (cfg.get("pick_dynamic") or {}).get("clamp")
+    clamp_valid = (isinstance(clamp, (list, tuple)) and len(clamp) == 2
+                   and all(isinstance(value, (int, float)) and not isinstance(value, bool)
+                           and math.isfinite(float(value)) for value in clamp)
+                   and float(clamp[0]) <= float(clamp[1]))
+    selection_stats["threshold_clamp"] = (
+        [int(clamp[0]), int(clamp[1])] if clamp_valid else [])
+    selection_stats["threshold_clamp_valid"] = bool(clamp_valid)
+    selection_stats["threshold_in_clamp"] = bool(
+        clamp_valid and isinstance(threshold, (int, float))
+        and not isinstance(threshold, bool)
+        and clamp[0] <= threshold <= clamp[1])
+    return selection_stats
+
+
 def score_and_select(events, items, cfg, effective_threshold=None, selection_stats=None):
     weights = cfg.get("interest_weights", {})
     scoring = cfg.get("scoring", {})
@@ -2043,6 +2124,7 @@ def score_and_select(events, items, cfg, effective_threshold=None, selection_sta
             "over_threshold_secondary": sum(
                 1 for event in secondary if event["score"] >= threshold),
         })
+        finalize_selection_gate_metrics(selection_stats, picked, cfg)
     return picked, secondary
 
 
@@ -2076,6 +2158,7 @@ def select_and_record(events, items, cfg, data_dir, date_str):
         "threshold_source": threshold_info["source"],
         "history_days": threshold_info["history_days"],
     })
+    finalize_selection_gate_metrics(selection_stats, picked, cfg)
     return picked, secondary, threshold_info, selection_stats
 
 
@@ -3400,9 +3483,53 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
     return registry
 
 
+def _build_trajectory_review_cases(picked, items, cfg):
+    """Project only final public trajectory fields and verified evidence."""
+    cases = []
+    source_limit = 4 if _rollout_output_enabled(cfg) else 5
+    for picked_index, event in enumerate(picked):
+        public = event_to_item(
+            event, items or [], "pick", source_limit=source_limit,
+            trajectory_enabled=_trajectory_enabled(cfg))
+        if public.get("trusted_continuation") is not True and not public.get("watch"):
+            continue
+        public_projection = {
+            field: copy.deepcopy(public[field])
+            for field in (
+                "id", "title", "summary", "context", "watch", "claims",
+                "trusted_continuation", "day_count", "history")
+            if field in public
+        }
+        sources = []
+        for source_index in _serialized_source_ids(
+                event, items or [], limit=source_limit):
+            source = items[source_index]
+            sources.append({
+                "source": str(source.get("source") or ""),
+                "title": str(source.get("title") or ""),
+                "snippet": str(source.get("desc") or "")[:400],
+            })
+        verified_history = []
+        if public.get("trusted_continuation") is True:
+            verified_history = [{
+                field: copy.deepcopy(row[field])
+                for field in ("date", "title", "summary", "watch", "item_ref")
+                if field in row
+            } for row in event.get("history_prev", []) if isinstance(row, dict)]
+        cases.append({
+            "idx": len(cases),
+            "picked_index": picked_index,
+            "public": public_projection,
+            "sources": sources,
+            "verified_history": verified_history,
+        })
+    return cases
+
+
 def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                                  secondary=None, feedback=None, items=None,
-                                 trajectory_audit_llm=None, trajectory_health=None):
+                                 trajectory_audit_llm=None, trajectory_health=None,
+                                 trajectory_review_cases=None):
     """Prepare the complete registry update in memory without persisting it."""
     registry = copy.deepcopy(registry)
     health = trajectory_health if trajectory_health is not None else new_trajectory_health()
@@ -3501,6 +3628,10 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                                    if _trajectory_enabled(cfg) else 0)
     health["final_watch_coverage"] = (
         health["final_watch_count"] / len(picked) if picked else 0.0)
+    if trajectory_review_cases is not None:
+        trajectory_review_cases.clear()
+        trajectory_review_cases.extend(
+            _build_trajectory_review_cases(picked, items or [], cfg))
 
     # 钉选事件今天没进精选时，尝试与"更多资讯"补匹配续接进展，
     # 保证追踪中的事件不因分数不过线而断档
@@ -3536,7 +3667,8 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
 
 
 def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None,
-                 trajectory_audit_llm=None, trajectory_health=None, persist=True):
+                 trajectory_audit_llm=None, trajectory_health=None,
+                 trajectory_review_cases=None, persist=True):
     """Load and prepare one registry transaction, optionally persisting it."""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -3544,7 +3676,8 @@ def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, item
     registry = prepare_registry_transaction(
         llm, load_registry(data_dir), picked, date_str, cfg,
         secondary=secondary, feedback=feedback, items=items,
-        trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health)
+        trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health,
+        trajectory_review_cases=trajectory_review_cases)
     if persist:
         persist_registry(registry, data_dir)
     n_cont = sum(1 for ev in picked if ev.get("trusted_continuation"))
@@ -6021,9 +6154,14 @@ def _run_pipeline(started_at, args, cfg, policy):
     # history matches the fields readers receive in active/shadow modes.
     prepare_events_for_output(picked, secondary, items, cfg)
     log("事件登记表：跨天延续性匹配 ...")
+    trajectory_health = new_trajectory_health()
+    trajectory_review_cases = []
     registry = track_events(llm, picked, date_str, cfg,
                             secondary=secondary, feedback=feedback, items=items,
-                            trajectory_audit_llm=audit_llm, persist=False)
+                            trajectory_audit_llm=audit_llm,
+                            trajectory_health=trajectory_health,
+                            trajectory_review_cases=trajectory_review_cases,
+                            persist=False)
     brief, themes = write_brief(
         llm, picked, secondary,
         audit_llm=audit_llm if policy["full_objectivity"] else None)
@@ -6070,6 +6208,15 @@ def _run_pipeline(started_at, args, cfg, policy):
     if publish_errors:
         log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
         sys.exit(2)
+
+    finalize_selection_gate_metrics(selection_stats, picked, cfg)
+    try:
+        emit_rollout_evidence(
+            date_str, policy, time.perf_counter() - started_at,
+            selection_stats, trajectory_health, trajectory_review_cases,
+            _data_dir)
+    except Exception as exc:
+        log(f"  rollout evidence 写入失败（不影响当日日报）: {exc}")
 
     if not policy["writes_public_data"]:
         summary = build_shadow_summary(
