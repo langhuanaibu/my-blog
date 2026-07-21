@@ -1353,7 +1353,7 @@ def test_article_redirect_receives_only_remaining_attempt_budget():
     assert timeouts[1].total <= 1.0
 
 
-def test_interim_keeps_prior_field_caps_and_snippets_while_full_mode_uses_new_caps_and_evidence():
+def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
     item = source_item(desc="旧摘要" * 80)
     item["evidence_text"] = "FULLTEXT_ONLY_MARKER " + ("正文证据" * 200)
     long_values = {
@@ -1384,7 +1384,7 @@ def test_interim_keeps_prior_field_caps_and_snippets_while_full_mode_uses_new_ca
 
     assert "FULLTEXT_ONLY_MARKER" not in interim_llm.calls[0][1]
     assert {field: len(interim_event[field]) for field in long_values} == {
-        "title": 45, "summary": 150, "why": 120, "context": 80,
+        "title": 30, "summary": 100, "why": 80, "context": 80,
         "significance": 70, "watch": 80, "detail": 800,
     }
     interim_output_item = dict(item)
@@ -1392,9 +1392,9 @@ def test_interim_keeps_prior_field_caps_and_snippets_while_full_mode_uses_new_ca
     interim_output_item["evidence_basis"] = "snippet"
     serialized_interim = dn.event_to_item(
         interim_event, [interim_output_item], "pick")
-    assert len(serialized_interim["title"]) == 45
-    assert len(serialized_interim["summary"]) == 150
-    assert len(serialized_interim["why"]) == 120
+    assert len(serialized_interim["title"]) == 30
+    assert len(serialized_interim["summary"]) == 100
+    assert len(serialized_interim["why"]) == 80
     assert len(serialized_interim["watch"]) == 80
 
     active_event = {
@@ -1412,5 +1412,5 @@ def test_interim_keeps_prior_field_caps_and_snippets_while_full_mode_uses_new_ca
     assert "FULLTEXT_ONLY_MARKER" in active_llm.calls[0][1]
     assert {field: len(active_event[field]) for field in long_values} == {
         "title": 30, "summary": 100, "why": 80, "context": 80,
-        "significance": 70, "watch": 60, "detail": 800,
+        "significance": 70, "watch": 80, "detail": 800,
     }

@@ -51,6 +51,7 @@ export function dailyCard(item, date, options = {}) {
     <h3><a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>${escapeHtml(item.title)}</a></h3>
     ${item.summary ? `<p class="sum">${escapeHtml(item.summary)}</p>` : ""}
     ${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}
+    ${item.watch ? `<div class="kv watch"><b>走向：</b>${escapeHtml(item.watch)}</div>` : ""}
     <div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type: "news" })}
   </article>`;
 }
@@ -153,10 +154,17 @@ function evidenceHtml(item) {
 export function renderDetail(item, type = "news", date = "", options = {}) {
   if (!item) return '<div class="empty">找不到这条内容（可能数据未加载）</div>';
   const title = item.title_zh || item.title;
-  const common = item.summary || item.brief ? `<p class="detail-lede">${escapeHtml(item.summary || item.brief)}</p>` : "";
+  const common = type !== "news" && (item.summary || item.brief) ? `<p class="detail-lede">${escapeHtml(item.summary || item.brief)}</p>` : "";
   const update = type === "news" && item.is_update ? `<div class="detail-update"><b>重大更新</b>${item.first_seen ? ` · 首次收录：${escapeHtml(item.first_seen)}` : ""}</div>` : "";
   let body = "";
-  if (type === "news") body = `${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}<div class="detail-kv">${[["为什么重要", item.why], ["背景机制", item.context], ["对我的意义", item.significance], ["后续关注", item.watch]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
+  if (type === "news") {
+    const context = item.context ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(item.context)}</div></section>` : "";
+    const currentParts = `${item.summary ? `<p class="detail-lede">${escapeHtml(item.summary)}</p>` : ""}${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}`;
+    const current = currentParts ? `<section data-trajectory="current"><h2 class="detail-sec-t">现状</h2>${currentParts}</section>` : "";
+    const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";
+    const significance = item.significance ? `<section data-trajectory="significance"><h2 class="detail-sec-t">对我的意义</h2><div class="kv">${escapeHtml(item.significance)}</div></section>` : "";
+    body = `<div class="detail-trajectory">${context}${current}${watch}${significance}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
+  }
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;
   return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${common}${update}${body}<div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type })}</article>`;
