@@ -11,14 +11,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import daily_news as dn
 
 
+def _trusted_validation_response():
+    return {"validations": [{
+        "candidate": 0,
+        "matches_mainline": True,
+        "matches_latest": True,
+        "history": [{"row": 0, "relevant": True}],
+    }]}
+
+
 class MatchLLM:
-    def json_call(self, _system, _user):
+    def json_call(self, system, _user):
+        if "连续性门" in system:
+            return _trusted_validation_response()
         return {"matches": [{"today": 0, "registry": 0}]}
 
 
 class NoMatchLLM:
-    def json_call(self, _system, _user):
+    def json_call(self, system, _user):
+        if "连续性门" in system:
+            return _trusted_validation_response()
         return {"matches": []}
+
+
+class TrustChainLLM:
+    def __init__(self, validations, matches=None):
+        self.validations = validations
+        self.matches = matches or [{"today": 0, "registry": 0}]
+
+    def json_call(self, system, _user):
+        if "连续性门" in system:
+            return {"validations": self.validations}
+        return {"matches": self.matches}
 
 
 def _legacy_registry():
@@ -248,3 +272,117 @@ def test_untracked_secondary_rerun_does_not_restore_current_day_row():
     event = prepared["events"][0]
     assert event["pinned"] is False
     assert [row["date"] for row in event["history"]] == ["2026-07-20"]
+
+
+def test_trust_chain_filters_polluted_rows_and_projects_only_verified_history():
+    registry = _legacy_registry()
+    registry["events"][0]["history"] = [
+        {
+            "date": "2026-07-18",
+            "title": "Model launch",
+            "summary": "The model launched.",
+            "news_status": "confirmed",
+            "item_ref": "2026-07-18:pick-3",
+        },
+        {
+            "date": "2026-07-19",
+            "title": "Unrelated image launch",
+            "summary": "A different image model launched.",
+            "news_status": "confirmed",
+        },
+        {
+            "date": "2026-07-20",
+            "title": "Model launch adoption",
+            "summary": "Initial adoption figures arrived.",
+            "news_status": "confirmed",
+        },
+    ]
+    registry["events"][0]["last_seen"] = "2026-07-20"
+    picked = [_picked_event()]
+    llm = TrustChainLLM([{
+        "candidate": 0,
+        "matches_mainline": True,
+        "matches_latest": True,
+        "history": [
+            {"row": 0, "relevant": True},
+            {"row": 1, "relevant": False},
+            {"row": 2, "relevant": True},
+        ],
+    }])
+
+    dn.prepare_registry_transaction(
+        llm, registry, picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["trusted_continuation"] is True
+    assert picked[0]["day_count"] == 3
+    assert [row["date"] for row in picked[0]["history_prev"]] == [
+        "2026-07-18", "2026-07-20"]
+    public_item = dn.event_to_item(picked[0], _source_items(), "pick")
+    assert public_item["trusted_continuation"] is True
+    assert public_item["day_count"] == 3
+    assert public_item["history"] == [
+        {
+            "date": "2026-07-20",
+            "summary": "Initial adoption figures arrived.",
+        },
+        {
+            "date": "2026-07-18",
+            "summary": "The model launched.",
+            "item_ref": "2026-07-18:pick-3",
+        },
+    ]
+
+
+def test_same_category_false_join_fails_closed_as_one_off_without_context():
+    picked = [{**_picked_event(), "context": "Untrusted inherited context",
+               "watch_recap": {"status": "兑现"}}]
+    llm = TrustChainLLM([{
+        "candidate": 0,
+        "matches_mainline": False,
+        "matches_latest": False,
+        "history": [{"row": 0, "relevant": False}],
+    }])
+
+    prepared = dn.prepare_registry_transaction(
+        llm, _legacy_registry(), picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["event_id"] != "evt-legacy"
+    assert picked[0]["day_count"] == 1
+    assert picked[0]["history_prev"] == []
+    assert "trusted_continuation" not in picked[0]
+    assert "context" not in picked[0]
+    assert "watch_recap" not in picked[0]
+    assert len(prepared["events"]) == 2
+
+
+def test_malformed_validation_fails_closed_only_for_affected_candidate():
+    registry = _legacy_registry()
+    second = copy.deepcopy(registry["events"][0])
+    second.update({"event_id": "evt-second", "title": "Second launch"})
+    registry["events"].append(second)
+    picked = [_picked_event(), {**_picked_event(), "title": "Second follow-up"}]
+    llm = TrustChainLLM(
+        [{
+            "candidate": 0,
+            "matches_mainline": True,
+            "matches_latest": True,
+            "history": [{"row": 0, "relevant": True}],
+        }, {
+            "candidate": 99,
+            "matches_mainline": True,
+            "matches_latest": True,
+            "history": [{"row": 0, "relevant": True}],
+        }],
+        matches=[{"today": 0, "registry": 0}, {"today": 1, "registry": 1}],
+    )
+
+    dn.prepare_registry_transaction(
+        llm, registry, picked, "2026-07-21", {"events": {}},
+        items=_source_items())
+
+    assert picked[0]["event_id"] == "evt-legacy"
+    assert picked[0]["trusted_continuation"] is True
+    assert picked[1]["event_id"] not in {"evt-legacy", "evt-second"}
+    assert picked[1]["day_count"] == 1

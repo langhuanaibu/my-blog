@@ -131,6 +131,46 @@ test("日报卡片只在 watch 存在时显示走向", () => {
   assert.doesNotMatch(withoutWatch.querySelector(".report-card").textContent, /走向/);
 });
 
+test("可信延续徽标精确跳转上一条详情并为旧历史降级到日报", () => {
+  const exact = new JSDOM(`<main>${dailyCard({
+    ...daily.items[0],
+    trusted_continuation: true,
+    day_count: 3,
+    history: [{ date: "2026-07-14", summary: "上一进展", item_ref: "2026-07-14:pick-7" }],
+  }, daily.date)}</main>`).window.document;
+  const exactLink = exact.querySelector(".continuation-link");
+  assert.equal(exactLink?.textContent, "第 3 天·延续");
+  assert.equal(exactLink?.getAttribute("href"), "?date=2026-07-14&type=news&item=pick-7");
+  assert.equal(exactLink?.hasAttribute("data-route"), true);
+
+  const legacy = new JSDOM(`<main>${dailyCard({
+    ...daily.items[0],
+    trusted_continuation: true,
+    day_count: 2,
+    history: [{ date: "2026-07-14", summary: "旧进展" }],
+  }, daily.date)}</main>`).window.document;
+  assert.equal(
+    legacy.querySelector(".continuation-link")?.getAttribute("href"),
+    "?view=reports&period=day&date=2026-07-14",
+  );
+});
+
+test("一次性或验证失败条目不显示延续徽标", () => {
+  const oneOff = new JSDOM(`<main>${dailyCard({
+    ...daily.items[0],
+    day_count: 8,
+    history: [{ date: "2026-07-14", summary: "未经验证的旧历史" }],
+  }, daily.date)}</main>`).window.document;
+  assert.equal(oneOff.querySelector(".continuation-link"), null);
+
+  const report = new JSDOM(`<main>${renderDailyReport({
+    ...daily,
+    items: [{ ...daily.items[0], day_count: 8, history: [{ date: "2026-07-14" }] }],
+  })}</main>`).window.document;
+  assert.match(report.querySelector(".mast-meta")?.textContent || "", /今日新事件 1/);
+  assert.match(report.querySelector(".mast-meta")?.textContent || "", /延续事件 0/);
+});
+
 test("日报卡片只显示有限数字分数", () => {
   const scored = new JSDOM(`<main>${dailyCard({ ...daily.items[0], score: 88 }, daily.date)}</main>`);
   assert.equal(scored.window.document.querySelector(".card-top .score-num")?.textContent, "88");
