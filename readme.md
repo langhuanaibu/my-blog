@@ -178,7 +178,7 @@ GITHUB_BRANCH=main
 
 ### 自动运行与本地运行
 
-- GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。
+- GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。同一 workflow 在 `generate` 与只读 `shadow` 结束后运行云端 `rollout-review`：读取临时验收 artifact，使用最小权限 `contents: read` / `issues: write` 幂等更新 GitHub Issue #15；Issue 关闭后自动跳过。该台账任务完全运行在 GitHub 托管 runner，不依赖个人电脑或 Codex Desktop 在线。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。自建 RSSHub 源另需两个 Secret：`RSSHUB_BASE`、`RSSHUB_KEY`（未配置则相关源自动跳过，管线不崩）。LLM 模型用显式版本名 `deepseek-v4-flash`（`deepseek-chat` 别名 2026-07-24 官方停用）；V4 裸模型名默认开 thinking 模式（temperature 静默失效、思考 token 计费），管线经 `config.yaml` 的 `llm.extra_body` 显式关闭，换供应商时删掉该配置即可。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
 - 本地手动补跑（PowerShell）：始终在仓库根目录运行 `py -3.12 -m pip install --require-hashes -r news-pipeline/requirements.txt`，再用 `$env:LLM_API_KEY="你的key"` 注入密钥并执行 `py -3.12 news-pipeline/daily_news.py`。需要抓自建 RSSHub 源时再设置 `$env:RSSHUB_BASE` 和 `$env:RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `$env:DATA_DIR` 指向 `source/news/data`。
 - 客观性 shadow：`python news-pipeline/daily_news.py --objectivity-shadow`。它先把当前 `DATA_DIR`（含 feedback/profile/registry/weekly 等状态）整树复制到临时快照，读写只发生在快照里，正常返回、提前返回、异常和校验失败都会还原环境并删除快照；输出只有不含正文和密钥的聚合指标，包括高风险单源数量/比率、独立链和来源集中度。Actions 里的 `shadow` job 在 `generate` 成功后重新 checkout `main` 运行，限时 24 分钟、只读、允许失败，不 commit/push，也不改动已发布的日报。generate 的 step summary 另记录当日阈值来源、质量线、类目供给/入选和过线次级事件数。
@@ -191,8 +191,9 @@ GITHUB_BRANCH=main
 
 - 每次登记表阶段输出一行「轨迹健康」，稳定记录候选匹配、连续性通过/拒绝、被排除的历史行、整条生成回退、审计字段/claim 回退，以及最终公开走向数/精选数和覆盖率。连续性响应缺失或非法时按拒绝计数，其历史全部计入过滤；生成回退按条目计，审计回退按未采用的字段或 claim 计。
 - 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `python news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `python news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
-- 本轮未宣称已部署或线上验收通过。获得公开启用授权后，选材改革与可信轨迹**同日公开**，不再等选材先跑完。两门从首个有效输出日起独立连续计数：选材 7 日，轨迹 5 日。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。
+- 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但线上验收尚未通过。2026-07-22 的定时日报在合并前启动，不计入新窗口；从合并后的首个成功定时产出日起，两门独立连续计数：选材 7 日，轨迹 5 日。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。
 - GitHub Issue #15 是这两门的**唯一自动每日台账**。同一北京日期的重跑只幂等更新当日记录，不多算一天；当日任一次发布失败，即使后续重跑成功，当日两门仍都按失败处理。非发布失败时，`pass` 让对应门 +1，`fail` 只把对应门清零，`neutral` / `needs_review` 冻结该门当前计数。
+- 云端 `rollout-review` 当前只自动处理选材与轨迹两门。enrich 五日内容抽样、客观性 shadow 内容复核和主管线 14 日信源复核仍按 `docs/news_source_roadmap.md` 人工执行；45 条客观性夹具由独立的手动 `Objectivity Acceptance` workflow 执行，不能把前述人工门误记为已自动化。
 - 观察期冻结选材运行逻辑和轨迹展示逻辑；必须改动时按影响范围重计。选材/共享运行时指纹变化会同时重置两门，只有轨迹 UI 指纹变化则仅重置轨迹门；发布失败也同时重置两门。自动初验失败、`needs_review` 或台账写入异常只在 Actions/Issue 告警，不阻断日报发布、不改配置、不自动回滚。两门分别达到 7/5 日时只标记「待人工最终确认」，不自动关闭 #15 或 #10。
 - 每天人工检查全部可信延续，并额外抽查 5 条覆盖不同类目的一次性精选；5 个有效输出日内错误串线、无依据历史/判断、错误延续跳转和主管线发布失败都必须为 0。对全部已展示 `watch` 做质量抽样，至少 80% 同时包含具体关键变量和可观察路标；另记走向覆盖率、轨迹回退率和历史行过滤率，不为提高覆盖率放宽连续性或审计门。
 - enrich 五日文字质量门、客观性 shadow 七日门 + 45 条夹具三轮门、主管线信源 14 日观察门仍然独立有效，不被选材/轨迹计数替代。前三个受选材样本或新观测字段影响的时钟，均从并行公开后首个有效输出日重计；enrich 安全基线取新窗口前 3 个输出日中位数，客观性固定夹具门和独立深读源观察不重计。

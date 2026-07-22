@@ -21,7 +21,7 @@
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、稍后读写回接口；`vocab.js` 仅为停用功能保留，非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs`、字体字符清单与生成脚本等一次性或维护工具；字体源 OTF 和工具中间产物不得入库。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
-| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如 `daily-news.yml`。 |
+| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如每日生成与云端验收台账 `daily-news.yml`、手动只读夹具验收 `objectivity-acceptance.yml`。 |
 | **`/docs`** | 项目维护文档 | 根层存现行维护规范；`archive/` 只存仍有兼容、迁移或排障价值的历史记录；`visual-baselines/` 存页面回归基准图。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
 
 ---
