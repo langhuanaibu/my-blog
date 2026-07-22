@@ -70,16 +70,37 @@ ALLOWED_REDLINES = set().union(*CATEGORY_REDLINES.values())
 RESULT_KEYS = {"id", "labels", "attribution_ok", "redlines"}
 JUDGE_ROW_KEYS = {"case_index", "labels", "attribution_ok", "redlines"}
 
+CATEGORY_DESCRIPTIONS = {
+    "armed_conflict": "armed-conflict casualty, attack, actor-responsibility, or ceasefire claims",
+    "company_claim": "a company's own demand, growth, readiness, benchmark, or executive claims",
+    "forbidden_fabricated_balance": "opposition, critics, experts, rivals, or public reaction absent from evidence",
+    "legal_procedure": "allegations, complaints, investigations, arrests, charges, or procedural rulings",
+    "magnitude_without_baseline": "record, surge, huge, massive, or widespread language without a comparison base",
+    "motive_causal_inference": "motive, retaliation, pressure, causation, or correlation claims not established by evidence",
+    "sensitive_single_source": "a sensitive allegation or event supported by only one publisher's account",
+    "shared_evidence": "syndication, sister sites, repetition, or shared reporting presented as independent corroboration",
+    "waic_framing": "conference, product, or organizer marketing framed as consensus, leadership, or objective fact",
+}
+CATEGORY_GUIDANCE = "\n".join(
+    f"- {category}: {CATEGORY_DESCRIPTIONS[category]}"
+    for category in sorted(CATEGORY_DESCRIPTIONS)
+)
+
 
 JUDGE_SYSTEM = """You are an independent objectivity judge. Evaluate only the supplied
 synthetic evidence and final candidate output. Do not assume omitted facts and do not
-invent balance. Allowed labels: {labels}. Allowed redlines: {redlines}.
+invent balance. Assign exactly one evidence-risk label to each case based on the evidence,
+even when the candidate safely removes or attributes that risk:
+{category_guidance}
+Allowed redlines: {redlines}.
 Return only {{"cases":[{{"case_index":0,"labels":["..."],
 "attribution_ok":true,"redlines":[]}}]}} with one row per input case, in which
 case_index is the zero-based position in the supplied batch. attribution_ok means every
-claim, allegation, estimate, company statement, or one-sided account that needs
-attribution remains explicitly attributed in the final candidate.""".format(
-    labels=", ".join(sorted(ALLOWED_LABELS)),
+claim, allegation, estimate, company statement, or one-sided account that remains in the
+candidate and needs attribution is explicitly attributed; an omitted risky claim is not an attribution failure.
+redlines describe only violations that remain in the final candidate,
+not risks present only in the evidence.""".format(
+    category_guidance=CATEGORY_GUIDANCE,
     redlines=", ".join(sorted(ALLOWED_REDLINES)),
 )
 

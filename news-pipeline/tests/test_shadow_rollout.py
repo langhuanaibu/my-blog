@@ -55,6 +55,17 @@ def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_repor
     assert upload["with"]["path"] == "${{ runner.temp }}/objectivity-acceptance.json"
 
 
+def test_objectivity_judge_prompt_separates_evidence_category_from_candidate_failures():
+    evaluator = _load_eval_module()
+
+    for category in evaluator.CATEGORIES:
+        assert f"- {category}:" in evaluator.JUDGE_SYSTEM
+    assert "exactly one evidence-risk label" in evaluator.JUDGE_SYSTEM
+    assert "even when the candidate safely removes" in evaluator.JUDGE_SYSTEM
+    assert "redlines describe only violations that remain in the final candidate" in evaluator.JUDGE_SYSTEM
+    assert "omitted risky claim is not an attribution failure" in evaluator.JUDGE_SYSTEM
+
+
 def test_mode_defaults_to_interim_and_shadow_overrides_active():
     default_args = dn.parse_cli_args([])
     default = dn.resolve_run_policy({}, default_args)
