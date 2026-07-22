@@ -46,4 +46,4 @@ Issue 与 PRD 存放在 GitHub Issues（`langhuanaibu/my-blog`），通过 `gh` 
 
 ### Domain docs
 
-单上下文布局：根目录 `CONTEXT.md` + `docs/adr/`（当前均未创建，按需惰性生成）。详见 `docs/agents/domain.md`。
+单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0003）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。

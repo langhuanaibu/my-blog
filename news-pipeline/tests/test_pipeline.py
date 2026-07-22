@@ -1775,7 +1775,7 @@ check("enrich 输入显式携带事件类目", "类目：ai" in _prompt_llm.user
 check("enrich prompt 划清七字段职责",
       all(token in _prompt_llm.system for token in (
           "事实增量", "公共影响", "最短背景", "个人学习或行动参考",
-          "未来可观察", "不复述其他字段", "分析或不确定判断")))
+          "关键变量", "可观察路标", "不复述其他字段", "分析或不确定判断")))
 check("enrich prompt 允许 claims 为空",
       "允许空数组" in _prompt_llm.system and _prompt_event[0]["claims"] == [])
 check("enrich 深度受摘要证据约束",
@@ -2363,6 +2363,15 @@ finally:
         os.environ.pop("DATA_DIR", None)
     else:
         os.environ["DATA_DIR"] = _persist_old
+
+
+# ----------------------------------------------------------------
+# #15 可信轨迹上线门：无第三方测试依赖的确定性夹具回归
+# ----------------------------------------------------------------
+import test_trajectory_rollout as trajectory_rollout
+
+for _name, _passed, _detail in trajectory_rollout.run_tests():
+    check(f"轨迹夹具 {_name}" + (f" ({_detail})" if _detail else ""), _passed)
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")

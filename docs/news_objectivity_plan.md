@@ -84,4 +84,4 @@ HTML，不执行脚本、不登录、不迁回私网，不做 **paywall** bypass
 ## 四、源验收与榨信号状态（本计划启动时已完成，仅索引）
 
 - 六源验收（07-16 完成）：ftcn / yicai 停用，anthropic / anthropic-eng / cls-depth / ithome 保留，记录在 `sources.yaml` 各源注释。
-- 榨信号第五轮（07-17 完成）：36氪撤销缓刑保留；精选构成 world 41% / finance 10.7%；定案见 `sources.yaml` 尾注，后续调参待办见 `docs/news_source_roadmap.md`（07-22 单变量调参）。
+- 榨信号第五轮（07-17 完成）：36氪撤销缓刑保留；精选构成 world 41% / finance 10.7%；定案见 `sources.yaml` 尾注。原单变量调参已由 `docs/news_selection_plan.md` 的动态阈值与类目保留席改革取代，部署后的观察事项继续由 `docs/news_source_roadmap.md` 记录。

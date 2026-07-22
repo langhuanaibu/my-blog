@@ -13,7 +13,7 @@ Issues and PRDs for this repo live as GitHub issues (`langhuanaibu/my-blog`). Us
 
 Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
 
-> **Note**: `gh` is installed on this machine but not yet authenticated. Run `gh auth login` (or set `GH_TOKEN`) before the first issue operation.
+Before the first write in a new environment, run `gh auth status`. If authentication is missing, use `gh auth login` or provide `GH_TOKEN`; never record credentials in the repository.
 
 ## Pull requests as a triage surface
 

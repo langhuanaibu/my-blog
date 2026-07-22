@@ -20,9 +20,11 @@ Single-context repo (this repo):
 /
 ├── CONTEXT.md
 ├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── src/
+│   ├── 0001-daily-item-trajectory-model.md
+│   ├── 0002-verified-continuation-trust-chain.md
+│   └── 0003-lightweight-superforecasting-no-scoreboard.md
+├── news-pipeline/
+└── source/
 ```
 
 Multi-context repo (presence of `CONTEXT-MAP.md` at the root):
