@@ -14,6 +14,37 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import daily_news as dn
 
 
+def test_enrich_ignores_non_object_rows_in_model_response():
+    class NestedListLLM:
+        def json_call(self, _system, _user):
+            return [[{"idx": 0, "title": "unsafe nested row"}]]
+
+    events = [{"ids": [0], "category": "world", "title": "Original title"}]
+    items = [{
+        "title": "Source title",
+        "desc": "Source summary",
+        "source": "Synthetic Wire",
+        "source_id": "synthetic-wire",
+        "source_type": "fact",
+        "tier": "T1",
+        "credibility": 9,
+        "url": "https://example.com/report",
+        "time": "2026-07-22T00:00:00+00:00",
+    }]
+
+    result = dn.enrich(
+        NestedListLLM(),
+        events,
+        items,
+        {"topic_tags": [], "detail": {"enabled": True},
+         "objectivity": {"mode": "interim"}},
+    )
+
+    assert result == [{
+        "ids": [0], "category": "world", "title": "Original title",
+    }]
+
+
 def test_article_blocking_read_obeys_wall_clock_deadline_and_closes_response():
     class BlockingResponse:
         status_code = 200
