@@ -2373,7 +2373,15 @@ def enrich(llm, picked, items, cfg, profile_text=""):
                 + "\n".join(srcs) + hint_line)
         log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
         result = llm.json_call(system, prof_block + "【今日事件】\n" + "\n\n".join(blocks))
+        if not isinstance(result, list):
+            log("  阶段B 返回结构非法，本批保留基础内容")
+            continue
+        invalid_rows = sum(not isinstance(row, dict) for row in result)
+        if invalid_rows:
+            log(f"  阶段B 忽略 {invalid_rows} 条非法返回，本批其余条目继续")
         for r in result:
+            if not isinstance(r, dict):
+                continue
             k = r.get("idx")
             if not isinstance(k, int) or not (0 <= k < len(picked)):
                 continue
