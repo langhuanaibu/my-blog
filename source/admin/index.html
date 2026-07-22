@@ -890,7 +890,7 @@
         fileName = file.name.replace(/\.[^.]+$/, '') + '.' + OUTPUT_EXT;
       }
 
-      return api('/api/adminUpload', {
+      const result = await api('/api/adminUpload', {
         method: 'POST',
         body: JSON.stringify({
           purpose,
@@ -898,6 +898,9 @@
           dataUrl
         })
       });
+      // 返回的 url 指向刚提交、尚未部署的静态文件，Vercel 重建前请求会 404；
+      // 一并带上本地压缩结果供上传后即时预览。
+      return { ...result, previewDataUrl: dataUrl };
     }
 
     async function savePost(event) {
@@ -1025,8 +1028,9 @@
         const image = await uploadImage(file, 'cover');
         $('coverUrl').value = image.url;
         state.coverTouched = true;
-        updateCoverPreview();
-        setStatus('封面已上传');
+        // 用本地压缩结果即时预览，避免请求尚未部署的线上路径导致破图。
+        $('coverPreview').src = image.previewDataUrl;
+        setStatus('封面已上传，部署完成后线上生效');
       } catch (error) {
         setStatus(error.message);
       } finally {
