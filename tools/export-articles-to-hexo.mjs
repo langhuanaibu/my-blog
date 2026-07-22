@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
 import { pinyin } from 'pinyin-pro';
 
 const API_BASE = 'https://aoiblog.top/api/getArticles';
@@ -12,6 +14,21 @@ const coverMapPath = path.join(sourceDir, '_data', 'category-covers.json');
 
 function yamlString(value) {
   return JSON.stringify(String(value ?? ''));
+}
+
+function safeArticleId(value) {
+  const id = String(value || '').trim();
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) {
+    throw new Error(`Invalid legacy article id: ${id}`);
+  }
+  return id;
+}
+
+function safeInlineJson(value) {
+  return JSON.stringify(value, null, 2)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }
 
 function normalizeDate(value) {
@@ -66,10 +83,63 @@ async function fetchJson(url) {
   return data.data;
 }
 
-async function writePost(article, usedSlugs, mapping) {
+async function pathExists(target) {
+  try {
+    await fs.access(target);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+async function replaceDirectoryAtomically(target, populate) {
+  const parent = path.dirname(target);
+  const name = path.basename(target);
+  const nonce = randomUUID();
+  const staging = path.join(parent, `.${name}.export-${nonce}`);
+  const backup = path.join(parent, `.${name}.backup-${nonce}`);
+  let currentMoved = false;
+  let replacementMoved = false;
+
+  await fs.mkdir(staging, { recursive: false });
+  try {
+    await populate(staging);
+    if (await pathExists(target)) {
+      await fs.rename(target, backup);
+      currentMoved = true;
+    }
+    try {
+      await fs.rename(staging, target);
+      replacementMoved = true;
+    } catch (error) {
+      if (currentMoved) {
+        await fs.rename(backup, target);
+        currentMoved = false;
+      }
+      throw error;
+    }
+    if (currentMoved) {
+      await fs.rm(backup, { recursive: true, force: true });
+      currentMoved = false;
+    }
+  } finally {
+    if (!replacementMoved) {
+      await fs.rm(staging, { recursive: true, force: true });
+    }
+    if (currentMoved && !await pathExists(target) && await pathExists(backup)) {
+      await fs.rename(backup, target);
+    } else if (await pathExists(backup)) {
+      await fs.rm(backup, { recursive: true, force: true });
+    }
+  }
+}
+
+async function writePost(article, usedSlugs, mapping, outputDir) {
+  const articleId = safeArticleId(article.id);
   const date = normalizeDate(article.date);
   const [year, month, day] = date.split('-');
-  const baseSlug = slugify(article.title, article.id);
+  const baseSlug = slugify(article.title, articleId);
   let slug = baseSlug;
   let index = 2;
 
@@ -94,8 +164,8 @@ async function writePost(article, usedSlugs, mapping) {
     'categories:',
     `  - ${yamlString(category)}`,
     `index_img: ${yamlString(indexImg)}`,
-    `old_id: ${yamlString(article.id)}`,
-    `twikooPath: ${yamlString(article.id)}`,
+    `old_id: ${yamlString(articleId)}`,
+    `twikooPath: ${yamlString(articleId)}`,
     '---',
     ''
   ].join('\n');
@@ -104,13 +174,13 @@ async function writePost(article, usedSlugs, mapping) {
     '',
     '<section class="legacy-comments">',
     `  <h2>${COMMENTS_TITLE}</h2>`,
-    `  <div id="twikoo-${article.id}" data-twikoo-path="${article.id}"></div>`,
+    `  <div id="twikoo-${articleId}" data-twikoo-path="${articleId}"></div>`,
     '</section>',
     ''
   ].join('\n');
 
-  await fs.writeFile(path.join(postsDir, fileName), `${frontMatter}${content}\n${twikooMount}`, 'utf8');
-  mapping[article.id] = permalink;
+  await fs.writeFile(path.join(outputDir, fileName), `${frontMatter}${content}\n${twikooMount}`, 'utf8');
+  mapping[articleId] = permalink;
 }
 
 async function writeCompatibilityPage(mapping) {
@@ -122,7 +192,7 @@ async function writeCompatibilityPage(mapping) {
   <title>\u6587\u7ae0\u8df3\u8f6c - Aoitsuki</title>
   <meta name="robots" content="noindex">
   <script>
-    const articleMap = ${JSON.stringify(mapping, null, 2)};
+    const articleMap = ${safeInlineJson(mapping)};
     const id = decodeURIComponent((window.location.hash || '').replace(/^#/, ''));
     const target = articleMap[id];
     window.location.replace(target || '/archives/');
@@ -203,25 +273,39 @@ GitHub\uff1a[github.com/langhuanaibu](https://github.com/langhuanaibu)
 }
 
 async function main() {
-  await fs.rm(postsDir, { recursive: true, force: true });
-  await fs.mkdir(postsDir, { recursive: true });
-
   const summaries = await fetchJson(`${API_BASE}?view=list`);
+  if (!Array.isArray(summaries) || summaries.length === 0) {
+    throw new Error('Article list is empty; existing posts were left untouched');
+  }
+  const articles = [];
+  for (const summary of summaries) {
+    const id = safeArticleId(summary?.id);
+    const article = await fetchJson(`${API_BASE}?view=detail&id=${encodeURIComponent(id)}`);
+    safeArticleId(article?.id);
+    articles.push(article);
+  }
+
   const usedSlugs = new Set();
   const mapping = {};
-
-  for (const summary of summaries) {
-    const article = await fetchJson(`${API_BASE}?view=detail&id=${encodeURIComponent(summary.id)}`);
-    await writePost(article, usedSlugs, mapping);
-  }
+  await replaceDirectoryAtomically(postsDir, async (staging) => {
+    for (const article of articles) {
+      await writePost(article, usedSlugs, mapping, staging);
+    }
+  });
 
   await writeCompatibilityPage(mapping);
   await writePages();
 
-  console.log(`Exported ${summaries.length} posts.`);
+  console.log(`Exported ${articles.length} posts.`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+export { replaceDirectoryAtomically, safeArticleId, safeInlineJson };
+
+const invokedDirectly = process.argv[1]
+  && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
+if (invokedDirectly) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

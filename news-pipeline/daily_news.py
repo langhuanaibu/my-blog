@@ -145,10 +145,22 @@ def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
+def parse_iso_date(value):
+    text = str(value or "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise argparse.ArgumentTypeError("date must be YYYY-MM-DD")
+    try:
+        datetime.strptime(text, "%Y-%m-%d")
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("date must be a real calendar date") from exc
+    return text
+
+
 def parse_cli_args(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true", help="只抓取，不调 LLM")
-    parser.add_argument("--date", default=None, help="输出日期 YYYY-MM-DD，默认今天")
+    parser.add_argument("--date", type=parse_iso_date, default=None,
+                        help="输出日期 YYYY-MM-DD，默认今天")
     parser.add_argument(
         "--objectivity-shadow", action="store_true",
         help="运行完整证据/客观性路径，但不写入公开数据",

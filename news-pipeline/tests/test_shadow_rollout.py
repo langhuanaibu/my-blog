@@ -93,6 +93,14 @@ def test_mode_defaults_to_interim_and_shadow_overrides_active():
     }
 
 
+def test_date_argument_accepts_only_real_iso_calendar_dates():
+    assert dn.parse_cli_args(["--date", "2026-07-22"]).date == "2026-07-22"
+
+    for value in ("../../outside", "2026-02-30", "2026-7-2"):
+        with pytest.raises(SystemExit):
+            dn.parse_cli_args(["--date", value])
+
+
 def test_invalid_configured_mode_is_rejected():
     with pytest.raises(ValueError, match="objectivity.mode"):
         dn.resolve_run_policy(

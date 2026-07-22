@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import test from "node:test";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
@@ -63,6 +65,37 @@ test("admin frontend does not persist the bearer token in browser storage", asyn
   const source = await readFile(new URL("../../source/admin/index.html", import.meta.url), "utf8");
   assert.doesNotMatch(source, /localStorage\.(?:getItem|setItem)\(['"]aoiblog_admin_token/);
   assert.match(source, /localStorage\.removeItem\(['"]aoiblog_admin_token/);
+});
+
+test("admin new-post dates use the Beijing calendar instead of UTC", async () => {
+  const source = await readFile(new URL("../../source/admin/index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
+  assert.match(source, /timeZone:\s*['"]Asia\/Shanghai['"]/);
+});
+
+test("legacy export stages posts before replacing the live directory", async () => {
+  const source = await readFile(new URL("../../tools/export-articles-to-hexo.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /fs\.rm\(postsDir,\s*\{\s*recursive:\s*true/);
+  assert.match(source, /replaceDirectoryAtomically\(postsDir/);
+  assert.match(source, /safeInlineJson\(mapping\)/);
+});
+
+test("legacy export preserves current posts when staging fails", async () => {
+  const { replaceDirectoryAtomically } = await import("../../tools/export-articles-to-hexo.mjs");
+  const root = await mkdtemp(join(tmpdir(), "aoiblog-export-test-"));
+  const target = join(root, "posts");
+  try {
+    await mkdir(target);
+    await writeFile(join(target, "current.md"), "current", "utf8");
+    await assert.rejects(replaceDirectoryAtomically(target, async (staging) => {
+      await writeFile(join(staging, "partial.md"), "partial", "utf8");
+      throw new Error("write failed");
+    }), /write failed/);
+    assert.equal(await readFile(join(target, "current.md"), "utf8"), "current");
+    await assert.rejects(readFile(join(target, "partial.md"), "utf8"), { code: "ENOENT" });
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test("news frontend no longer reads or sends the bearer token", async () => {

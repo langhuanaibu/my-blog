@@ -220,6 +220,24 @@ test("timeline mainline only uses events from the newest report day", async () =
   assert.doesNotMatch(dom.window.document.querySelector(".timeline-mainline")?.textContent || "", /旧日高分/);
 });
 
+test("timeline mainline encodes item ids instead of creating injected attributes", async () => {
+  const maliciousId = 'pick" onmouseover="alert(1)';
+  const api = dataApi(); api.daily = async (date) => ({ date, items: [{
+    id: maliciousId, tier: "pick", category: "ai", title: "编码测试", score: 99,
+    time: `${date}T01:00:00Z`, sources: [
+      { name: "A", url: "https://a.example.com/x" },
+      { name: "B", url: "https://b.example.com/x" },
+    ],
+  }] });
+  const dom = shell("https://example.test/news/?view=timeline");
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: api, manifests: { daily: [day.date] } });
+  await app.start();
+  const link = dom.window.document.querySelector(".timeline-mainline a");
+  assert.ok(link);
+  assert.equal(link.hasAttribute("onmouseover"), false);
+  assert.equal(new URL(link.href).searchParams.get("item"), maliciousId);
+});
+
 test("timeline labels missing and invalid publication times as uncertain", async () => {
   const api = dataApi(); api.daily = async (date) => ({ date, items: [
     { id: "missing-time", tier: "pick", category: "ai", title: "缺失时间", summary: "A" },

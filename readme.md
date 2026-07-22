@@ -149,6 +149,7 @@ GITHUB_BRANCH=main
 - 旧 `/articles.html#article_id` 链接由 `source/articles.html` 兼容跳转到新文章地址。
 - Twikoo 评论使用每篇文章的旧 `article_id` 作为 path，尽量保留旧评论关联。
 - 旧 Astro 前台、旧 MongoDB API 和静态后台不再作为运行入口保留；当前 `api/` 是后来建设的在线后台与日报状态接口。
+- 历史迁移工具 `tools/export-articles-to-hexo.mjs` 会先完整下载远端文章，再在同级暂存目录生成并替换 `source/_posts/`；远端为空、下载失败或暂存写入失败时保留现有文章不动。
 
 详细决策见 `docs/archive/2026-06-18-hexo-fluid-migration.md`。
 
