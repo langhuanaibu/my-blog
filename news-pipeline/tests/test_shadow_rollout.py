@@ -25,6 +25,36 @@ def _load_eval_module():
     return module
 
 
+def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_report():
+    workflow_path = ROOT / ".github" / "workflows" / "objectivity-acceptance.yml"
+    assert workflow_path.exists(), "manual objectivity acceptance workflow is missing"
+
+    workflow_text = workflow_path.read_text(encoding="utf-8")
+    workflow = yaml.load(workflow_text, Loader=yaml.BaseLoader)
+
+    assert set(workflow["on"]) == {"workflow_dispatch"}
+    assert workflow["permissions"] == {"contents": "read"}
+    assert set(workflow["jobs"]) == {"evaluate"}
+
+    evaluate = workflow["jobs"]["evaluate"]
+    assert evaluate["permissions"] == {"contents": "read"}
+    assert evaluate["env"]["LLM_API_KEY"] == "${{ secrets.LLM_API_KEY }}"
+
+    steps = evaluate["steps"]
+    run_scripts = "\n".join(step.get("run", "") for step in steps)
+    assert "python news-pipeline/objectivity_eval.py" in run_scripts
+    assert "tee" in run_scripts
+    assert "git commit" not in run_scripts
+    assert "git push" not in run_scripts
+
+    upload = next(
+        step for step in steps
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["if"] == "${{ always() }}"
+    assert upload["with"]["path"] == "${{ runner.temp }}/objectivity-acceptance.json"
+
+
 def test_mode_defaults_to_interim_and_shadow_overrides_active():
     default_args = dn.parse_cli_args([])
     default = dn.resolve_run_policy({}, default_args)
