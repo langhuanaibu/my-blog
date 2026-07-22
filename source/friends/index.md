@@ -29,4 +29,13 @@ title: 友情链接
       <em>labuladong.online</em>
     </span>
   </a>
+
+  <a class="friend-card" href="https://acechann.github.io/" target="_blank" rel="noopener noreferrer">
+    <img src="/images/ace-avatar.jpg" alt="艾斯的小窝头像">
+    <span>
+      <strong>艾斯的小窝</strong>
+      <small>BUPTcs本科在读，随便写点东西</small>
+      <em>acechann.github.io</em>
+    </span>
+  </a>
 </div>
