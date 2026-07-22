@@ -257,6 +257,8 @@ def score_run(fixtures, rows):
     attribution_correct = 0
     attribution_total = 0
     redline_count = 0
+    label_mismatch_count = 0
+    reported_redline_count = 0
     for fixture in fixtures:
         expected = fixture["expected"]
         if expected["attribution_required"]:
@@ -269,7 +271,10 @@ def score_run(fixtures, rows):
             attribution_correct += 1
         if set(row["labels"]) != set(expected["labels"]):
             redline_count += 1
-        redline_count += len(row["redlines"])
+            label_mismatch_count += 1
+        row_redline_count = len(row["redlines"])
+        redline_count += row_redline_count
+        reported_redline_count += row_redline_count
     total = len(fixtures)
     valid_count = max(0, valid_count - max(0, len(rows) - total))
     return {
@@ -278,6 +283,13 @@ def score_run(fixtures, rows):
             round(attribution_correct / attribution_total, 4)
             if attribution_total else 1.0),
         "structure_validity": round(valid_count / total, 4) if total else 0.0,
+        "diagnostics": {
+            "invalid_case_count": max(0, total - valid_count),
+            "label_mismatch_count": label_mismatch_count,
+            "reported_redline_count": reported_redline_count,
+            "attribution_correct_count": attribution_correct,
+            "attribution_required_count": attribution_total,
+        },
     }
 
 

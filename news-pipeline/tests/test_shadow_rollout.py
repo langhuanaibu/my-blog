@@ -566,6 +566,70 @@ def test_three_run_worst_case_aggregation_and_thresholds():
     }
 
 
+def test_score_run_reports_aggregate_failure_breakdown():
+    evaluator = _load_eval_module()
+    fixtures = [
+        {
+            "id": "case-1",
+            "category": "company_claim",
+            "source": "Synthetic Wire",
+            "excerpt": "A company reported a benchmark result.",
+            "expected": {
+                "labels": ["company_claim"],
+                "attribution_required": True,
+                "redlines": ["internal_benchmark_as_independent"],
+            },
+        },
+        {
+            "id": "case-2",
+            "category": "legal_procedure",
+            "source": "Synthetic Wire",
+            "excerpt": "Prosecutors filed an allegation.",
+            "expected": {
+                "labels": ["legal_procedure"],
+                "attribution_required": True,
+                "redlines": ["allegation_as_conviction"],
+            },
+        },
+        {
+            "id": "case-3",
+            "category": "waic_framing",
+            "source": "Synthetic Wire",
+            "excerpt": "An organizer described a product as leading.",
+            "expected": {
+                "labels": ["waic_framing"],
+                "attribution_required": True,
+                "redlines": ["marketing_as_fact"],
+            },
+        },
+    ]
+    rows = [
+        {
+            "id": "case-1",
+            "labels": ["company_claim"],
+            "attribution_ok": True,
+            "redlines": [],
+        },
+        {
+            "id": "case-2",
+            "labels": ["company_claim"],
+            "attribution_ok": False,
+            "redlines": ["allegation_as_conviction"],
+        },
+        {"judge_batch_invalid": True},
+    ]
+
+    score = evaluator.score_run(fixtures, rows)
+
+    assert score["diagnostics"] == {
+        "invalid_case_count": 1,
+        "label_mismatch_count": 1,
+        "reported_redline_count": 1,
+        "attribution_correct_count": 1,
+        "attribution_required_count": 3,
+    }
+
+
 def test_structure_validity_rejects_extra_model_rows():
     evaluator = _load_eval_module()
     fixtures = [{
