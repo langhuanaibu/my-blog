@@ -121,7 +121,7 @@ GITHUB_BRANCH=main
 2. 输入后台口令。
 3. 点击“新文章”。
 4. 填标题、日期、分类和 Markdown 正文。
-5. 可选上传封面；不上传时使用分类默认封面。
+5. 可选上传封面；不上传时使用分类默认封面。上传的封面/正文图会在浏览器端自动缩放（封面 ≤1920px、正文 ≤1600px）并重编码为 WebP 后再提交——因为 Vercel Serverless Function 请求体硬上限为 4.5MB，手机原图直传会被平台以 413 拦掉；压缩逻辑在 `source/admin/index.html`（`compressImage`），GIF 例外（原样上传以保留动画，仅做体积拦截）。
 6. 点击“发布”，后台会提交 Markdown 和图片到 GitHub，Vercel 会自动重新部署。
 
 本地方式：

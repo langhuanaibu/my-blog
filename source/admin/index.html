@@ -807,13 +807,94 @@
       });
     }
 
+    // Vercel Serverless Function 请求体硬上限为 4.5MB，超限直接 413，
+    // 请求进不到函数代码。base64 会让载荷膨胀约 33%，故把压缩后的图片
+    // 字节控制在约 3.2MB 以内，留足余量。
+    const UPLOAD_BLOB_BUDGET = 3.2 * 1024 * 1024;
+
+    // 老版 Safari 不支持 WebP 编码，此处探测后回退 JPEG。
+    const OUTPUT_TYPE = (() => {
+      const c = document.createElement('canvas');
+      return c.toDataURL('image/webp').startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg';
+    })();
+    const OUTPUT_EXT = OUTPUT_TYPE === 'image/webp' ? 'webp' : 'jpg';
+
+    function isAnimatedType(file) {
+      return /gif$/i.test(file.type) || /\.gif$/i.test(file.name);
+    }
+
+    function canvasToBlob(canvas, type, quality) {
+      return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => (blob ? resolve(blob) : reject(new Error('图片压缩失败，请换一张'))), type, quality);
+      });
+    }
+
+    async function compressImage(file, maxDim) {
+      const url = URL.createObjectURL(file);
+      try {
+        const img = new Image();
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = () => reject(new Error('图片无法解码，请换一张'));
+          img.src = url;
+        });
+
+        const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        let width = Math.max(1, Math.round(img.naturalWidth * scale));
+        let height = Math.max(1, Math.round(img.naturalHeight * scale));
+        let quality = 0.85;
+
+        for (let attempt = 0; attempt < 8; attempt++) {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (OUTPUT_TYPE === 'image/jpeg') {
+            // JPEG 无透明通道，先铺白底，避免透明区域变黑。
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const blob = await canvasToBlob(canvas, OUTPUT_TYPE, quality);
+          if (blob.size <= UPLOAD_BLOB_BUDGET) return blob;
+
+          // 仍超预算：先降画质，触底后再缩尺寸。
+          if (quality > 0.5) {
+            quality -= 0.12;
+          } else {
+            width = Math.max(1, Math.round(width * 0.85));
+            height = Math.max(1, Math.round(height * 0.85));
+          }
+        }
+        throw new Error('图片压缩后仍过大，请换一张更小的图');
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
     async function uploadImage(file, purpose) {
-      const dataUrl = await readFileAsDataUrl(file);
+      const maxDim = purpose === 'cover' ? 1920 : 1600;
+      let dataUrl;
+      let fileName = file.name;
+
+      if (isAnimatedType(file)) {
+        // GIF 走 canvas 会丢动画，原样上传，仅做体积拦截。
+        if (file.size > UPLOAD_BLOB_BUDGET) {
+          throw new Error('GIF 体积过大（需小于约 3MB），请压缩后再传');
+        }
+        dataUrl = await readFileAsDataUrl(file);
+      } else {
+        const blob = await compressImage(file, maxDim);
+        dataUrl = await readFileAsDataUrl(blob);
+        fileName = file.name.replace(/\.[^.]+$/, '') + '.' + OUTPUT_EXT;
+      }
+
       return api('/api/adminUpload', {
         method: 'POST',
         body: JSON.stringify({
           purpose,
-          fileName: file.name,
+          fileName,
           dataUrl
         })
       });
