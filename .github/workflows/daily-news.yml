@@ -177,7 +177,7 @@ jobs:
         env:
           GENERATE_RESULT: ${{ needs.generate.result }}
           EVIDENCE_PATH: ${{ env.REVIEW_DIR }}/rollout-evidence/rollout-evidence.json
-          SHADOW_STATUS_PATH: ${{ env.REVIEW_DIR }}/shadow-status/shadow-status.json
+          SHADOW_STATUS_PATH: ${{ env.REVIEW_DIR }}/shadow-status/daily-news-shadow-status.json
         run: |
           python - <<'PY'
           import json

@@ -1,6 +1,9 @@
 import importlib.util
-from pathlib import Path
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 import yaml
 
 
@@ -352,6 +355,39 @@ def step_named(job, name):
     return next(step for step in job["steps"] if step.get("name") == name)
 
 
+def run_prepare_rollout_review(tmp_path, shadow_text=None):
+    prepare = step_named(workflow()["jobs"]["rollout-review"],
+                         "Prepare rollout review")
+    script = prepare["run"]
+    marker = "python - <<'PY'\n"
+    assert script.startswith(marker) and script.endswith("\nPY\n")
+    code = script[len(marker):-4]
+
+    review_dir = tmp_path / "daily-news-rollout-review"
+    evidence = review_dir / "rollout-evidence" / "rollout-evidence.json"
+    evidence.parent.mkdir(parents=True)
+    evidence.write_text("{}\n", encoding="utf-8")
+    shadow = review_dir / "shadow-status" / "daily-news-shadow-status.json"
+    configured_shadow = Path(
+        prepare["env"]["SHADOW_STATUS_PATH"].replace(
+            "${{ env.REVIEW_DIR }}", str(review_dir)))
+    if shadow_text is not None:
+        shadow.parent.mkdir(parents=True)
+        shadow.write_text(shadow_text, encoding="utf-8")
+    output = tmp_path / "github-output"
+    env = {
+        **os.environ,
+        "GENERATE_RESULT": "success",
+        "EVIDENCE_PATH": str(evidence),
+        "SHADOW_STATUS_PATH": str(configured_shadow),
+        "GITHUB_OUTPUT": str(output),
+    }
+    subprocess.run([sys.executable, "-c", code], env=env, check=True)
+    return dict(
+        line.split("=", 1)
+        for line in output.read_text(encoding="utf-8").splitlines())
+
+
 def test_workflow_permissions_are_minimal_and_publication_stage_is_unchanged():
     jobs = workflow()["jobs"]
 
@@ -388,6 +424,26 @@ def test_workflow_artifacts_are_temp_scoped_short_lived_and_sha_pinned():
     assert all(step["uses"] == (
         "actions/download-artifact@"
         "d3f86a106a0bac45b974a628896c90dbdf5c8093") for step in downloads)
+
+    review_prepare = step_named(jobs["rollout-review"], "Prepare rollout review")
+    assert review_prepare["env"]["SHADOW_STATUS_PATH"] == (
+        "${{ env.REVIEW_DIR }}/shadow-status/daily-news-shadow-status.json")
+
+
+def test_prepare_review_reads_real_downloaded_shadow_status_and_fails_closed(
+        tmp_path):
+    success = run_prepare_rollout_review(
+        tmp_path / "success", '{"outcome":"success"}\n')
+    assert success["publication"] == "success"
+    assert success["judge_ready"] == "true"
+    assert success["shadow_outcome"] == "success"
+
+    for name, payload in (
+            ("missing", None),
+            ("invalid", "not-json\n"),
+            ("failed", '{"outcome":"failure"}\n')):
+        result = run_prepare_rollout_review(tmp_path / name, payload)
+        assert result["shadow_outcome"] == "failure"
 
 
 def test_shadow_failure_is_observed_without_failing_the_job():
