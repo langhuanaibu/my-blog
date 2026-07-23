@@ -27,7 +27,8 @@ post:
   banner_img: /images/img_1774022028502.png
   banner_img_height: 55
   comments:
-    enable: false
+    enable: true
+    type: twikoo
   meta:
     author:
       enable: true
@@ -68,6 +69,10 @@ links:
 page:
   banner_img: /images/img_1774022028502.png
   banner_img_height: 55
+
+twikoo:
+  envId: https://twikoo.aoiblog.top
+  path: window.location.pathname
 
 custom_js:
   - /js/twikoo-legacy-path.js

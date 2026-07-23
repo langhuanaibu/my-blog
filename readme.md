@@ -113,6 +113,13 @@ GITHUB_BRANCH=main
 - 留言页正文：改 `source/guestbook/index.md`。
 - 文章标题、分类、日期、封面、正文：优先通过 `/admin/` 编辑，也可以直接改 `source/_posts/*.md`。
 
+## 评论（Twikoo）
+
+- 后端为自托管 Twikoo 云函数，`envId: https://twikoo.aoiblog.top`（1.7.x），文章页与留言板共用同一后端。
+- 文章页评论走 Fluid 内置评论区，由 `_config.fluid.yml` 三处开关控制：`post.comments.enable: true`、`post.comments.type: twikoo`、顶层 `twikoo.envId`。三者缺一不显示（`type` 默认是 `disqus`，只开 `enable` 不改 `type` 会加载错插件）。
+- 留言板页（`/guestbook/`）不走内置评论区，用 `source/guestbook/index.md` 里手写的 `<div data-twikoo-path>` + `source/js/twikoo-legacy-path.js` 单独挂载，与文章页互不影响。
+- 踩坑：Hexo Fluid 迁移时 `post.comments.enable` 被置为 `false`，文章页评论一度整体消失；后端始终在线，恢复只需开上述三处配置，无需重建后端。
+
 ## 发布新文章
 
 推荐方式：
