@@ -141,8 +141,16 @@ quota_rows = [
 ]
 check("deep三栏软配额",
       [row[1] for row in dn.select_deep_soft_quota(quota_rows, 3)] == [0, 2, 3])
+check("deep第四席取剩余最高分",
+      [row[1] for row in dn.select_deep_soft_quota(quota_rows, 4)] == [0, 2, 3, 1])
 check("deep空栏释放名额",
       [row[1] for row in dn.select_deep_soft_quota(quota_rows[:3], 3)] == [0, 2, 1])
+check("deep内容类型只接受约定枚举",
+      dn.normalize_deep_content_type("reporting") == "reporting"
+      and dn.normalize_deep_content_type("analysis") == "analysis"
+      and dn.normalize_deep_content_type("opinion") == "opinion"
+      and dn.normalize_deep_content_type("invalid") is None
+      and dn.normalize_deep_content_type(None) is None)
 check("deep旧栏目名映射到新名",
       dn.deep_source_channel({"channel": "zh_society_finance", "lang": "zh"})
       == "society_finance")
@@ -794,6 +802,7 @@ try:
         def json_call(self, system, user):
             # 去重后候选只剩 B(0) C(1)：B 过线，C 不过线
             return [{"idx": 0, "score": 9, "title_zh": "深读B", "brief": "b", "why": "w",
+                     "content_type": "analysis",
                      "key_points": ["观点一", "观点二", "", "观点三", "观点四"],
                      "audience": "正在搭建 AI 工具的开发者",
                      "takeaway": "先验证工作流，再考虑模型升级"},
@@ -804,7 +813,8 @@ try:
                            "2026-07-05")
     check("deep已推荐URL被去重且阈值过滤", [d["url"] for d in deep] == ["https://a.com/3"])
     check("deep字段完整", deep[0]["title_zh"] == "深读B" and deep[0]["read_minutes"] == 20
-          and deep[0]["id"].startswith("deep-"))
+          and deep[0]["id"].startswith("deep-")
+          and deep[0]["content_type"] == "analysis")
     check("deep详情字段保留且限制要点数量", deep[0]["key_points"] == ["观点一", "观点二", "观点三"]
           and deep[0]["audience"] == "正在搭建 AI 工具的开发者"
           and deep[0]["takeaway"] == "先验证工作流，再考虑模型升级")
@@ -1661,6 +1671,8 @@ check("当前配置启用动态精选改革",
       and _repo_cfg.get("secondary_count") == 8
       and (_repo_cfg.get("pick_dynamic") or {}).get("enabled") is True
       and (_repo_cfg.get("pick_dynamic") or {}).get("backfill_offset") == 8)
+check("当前配置深读最多 4 篇",
+      (_repo_cfg.get("deep") or {}).get("pick_max") == 4)
 
 _capacity_items = []
 _capacity_events = []

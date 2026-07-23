@@ -190,13 +190,13 @@ vocab:
 
 # ---------- 深度阅读频道 ----------
 # 独立于新闻管线：抓 sources.yaml 的 deep_sources，LLM 打"深读价值分"，
-# 阈值制 0-3 篇/天（宁缺毋滥），推荐写入 daily js 的 deep 字段。
+# 阈值制 0-4 篇/天（宁缺毋滥），推荐写入 daily js 的 deep 字段。
 deep:
   enabled: true
   window_hours: 78      # newsletter 多为周更，窗口放宽到 3 天
   max_per_source: 5
   pick_threshold: 7     # 深读价值分（0-10）过线才推
-  pick_max: 3
+  pick_max: 4
   seen_keep_days: 60    # 已推荐 URL 记录（data/deep_seen.json）保留天数
 
 # ---------- 今日论文频道（Hugging Face Daily Papers） ----------

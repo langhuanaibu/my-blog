@@ -3,6 +3,7 @@ import { routeUrl } from "./router.js";
 export const CATEGORY_LABELS = { ai: "AI", tech: "互联网/科技", finance: "财经", society: "社会", world: "国际" };
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
 const STATUS_CLASSES = new Set(["已确认", "发展中", "有争议", "仅传言"]);
+const CONTENT_TYPE_LABELS = { reporting: "报道", analysis: "分析", opinion: "观点" };
 export const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 export const safeUrl = (value) => /^https?:\/\//i.test(value || "") ? escapeHtml(value) : "#";
 
@@ -78,7 +79,9 @@ function readMinutes(data) {
 function contentCard(item, type, date, options) {
   const title = item.title_zh || item.title || item.summary || "未命名";
   const detail = type === "opinion" ? "" : routeUrl({ view: "detail", date, type, item: item.id });
+  const contentType = type === "deep" && Object.hasOwn(CONTENT_TYPE_LABELS, item.content_type) ? `<span class="tag content-type">${CONTENT_TYPE_LABELS[item.content_type]}</span>` : "";
   return `<article class="deep ${type === "paper" ? "paper" : type === "opinion" ? "pulse" : ""}" data-item-id="${escapeHtml(item.id)}">
+    ${contentType}
     <h3>${detail ? `<a href="${detail}" data-route>${escapeHtml(title)}</a>` : escapeHtml(title)}</h3>
     ${item.summary || item.brief || item.why_hot ? `<p>${escapeHtml(item.summary || item.brief || item.why_hot)}</p>` : ""}${item.why || item.takeaway || (type === "opinion" && item.mechanism) ? `<div class="kv why"><b>${type === "opinion" ? "传播机制" : "值得读"}：</b>${escapeHtml(item.why || item.takeaway || item.mechanism)}</div>` : ""}
     <div class="srcs">${sourceLinks(item)}</div>${type !== "opinion" ? actionButtons(item, { ...options, date, type }) : ""}
@@ -110,15 +113,17 @@ export function renderDailyReport(data, options = {}) {
     return `<section class="report-section" data-category="${category}" aria-labelledby="cat-${category}"><h2 id="cat-${category}" class="sec-title">${CATEGORY_LABELS[category]} <span class="n">${rows.length} 篇</span></h2><div class="report-list">${rows.length ? rows.map((item) => dailyCard(item, data.date, renderOptions)).join("") : '<p class="section-empty">今日暂无精选</p>'}</div></section>`;
   }).join("");
   const themes = (data.themes || []).slice(0, 3);
+  const deepItems = data.deep || [];
+  const deepMinutes = deepItems.reduce((total, item) => total + (Number.isFinite(item.read_minutes) && item.read_minutes > 0 ? item.read_minutes : 0), 0);
   const supplementary = [
-    ["追踪中", "tracking", (data.tracking || []).map((item) => trackingCard(item, data.date, options))],
-    ["深度阅读", "deep", (data.deep || []).map((item) => contentCard(item, "deep", data.date, options))],
-    ["今日论文", "papers", (data.papers || []).map((item) => contentCard(item, "paper", data.date, options))],
-    ["舆论观察", "opinion", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options))],
-    ["更多资讯", "more", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date))],
-  ].filter(([, , rows]) => rows.length).map(([title, kind, rows]) => `<section class="supplemental" data-kind="${kind}"><h2 class="sec-title">${title}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
+    ["追踪中", "tracking", (data.tracking || []).map((item) => trackingCard(item, data.date, options)), ""],
+    ["深度阅读", "deep", deepItems.map((item) => contentCard(item, "deep", data.date, options)), deepMinutes ? `<span class="n">${deepItems.length} 篇 · 原文约 ${deepMinutes} 分钟</span>` : ""],
+    ["今日论文", "papers", (data.papers || []).map((item) => contentCard(item, "paper", data.date, options)), ""],
+    ["舆论观察", "opinion", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options)), ""],
+    ["更多资讯", "more", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date)), ""],
+  ].filter(([, , rows]) => rows.length).map(([title, kind, rows, meta]) => `<section class="supplemental" data-kind="${kind}"><h2 class="sec-title">${title}${meta ? ` ${meta}` : ""}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
   const dateLabel = displayDate(data.date); const issue = annualIssue(data.date);
-  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
+  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>日报约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
 }
 
 function claimsHtml(item) {

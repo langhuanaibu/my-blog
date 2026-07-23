@@ -4,6 +4,7 @@ import { JSDOM } from "jsdom";
 import { createRequire } from "node:module";
 
 import { createNewsApp } from "../../source/news/js/app.js";
+import { renderDailyReport } from "../../source/news/js/reports.js";
 const TimelineCore = createRequire(import.meta.url)("../../source/news/news-timeline.js");
 const NewsState = createRequire(import.meta.url)("../../api/newsState.js");
 
@@ -51,6 +52,28 @@ test("desktop search ignores Escape and remains available", async () => {
   assert.equal(dom.window.document.activeElement, input);
   assert.equal(panel.getAttribute("role"), null);
   assert.equal(panel.getAttribute("aria-modal"), null);
+});
+
+test("daily report separates digest and deep reading time and degrades content labels", () => {
+  const html = renderDailyReport({
+    date: "2026-07-15",
+    lead: "导语",
+    read_minutes: 12,
+    items: [],
+    deep: [
+      { id: "deep-valid", title: "A", read_minutes: 20, content_type: "analysis", url: "https://example.com/a" },
+      { id: "deep-invalid", title: "B", read_minutes: 7, content_type: "invalid", url: "https://example.com/b" },
+      { id: "deep-legacy", title: "C", read_minutes: 3, url: "https://example.com/c" },
+    ],
+  });
+  const dom = new JSDOM(`<main>${html}</main>`);
+  const text = dom.window.document.querySelector("main").textContent;
+  assert.match(text, /日报约 12 分钟/);
+  assert.match(text, /原文约 30 分钟/);
+  assert.deepEqual(
+    [...dom.window.document.querySelectorAll(".content-type")].map((node) => node.textContent.trim()),
+    ["分析"],
+  );
 });
 
 test("mobile search is a labelled modal dialog and traps Tab in its controls", async () => {
