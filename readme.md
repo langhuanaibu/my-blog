@@ -120,6 +120,11 @@ GITHUB_BRANCH=main
 - 留言板页（`/guestbook/`）不走内置评论区，用 `source/guestbook/index.md` 里手写的 `<div data-twikoo-path>` + `source/js/twikoo-legacy-path.js` 单独挂载，与文章页互不影响。
 - 踩坑：Hexo Fluid 迁移时 `post.comments.enable` 被置为 `false`，文章页评论一度整体消失；后端始终在线，恢复只需开上述三处配置，无需重建后端。
 
+## 文章目录（TOC）
+
+- 侧栏目录由 Fluid 内置的 tocbot 渲染，`.toc-body` 超过 `75vh` 时内部可滚动。
+- 踩坑：tocbot 默认 `disableTocScrollSync: false`，即高亮项随阅读变化时会自动把目录滚回当前标题，手动向下翻看目录会被反复拽回顶部。已在 `_config.fluid.yml` 的 `post.toc.disableTocScrollSync: true` 关闭该同步（该键经 deep-merge 传入 `tocbot.init`，主题其余 toc 默认不受影响）。
+
 ## 发布新文章
 
 推荐方式：

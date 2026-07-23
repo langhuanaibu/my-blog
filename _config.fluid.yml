@@ -29,6 +29,9 @@ post:
   comments:
     enable: true
     type: twikoo
+  toc:
+    # 关闭 tocbot 高亮项变化时的自动滚动，避免手动翻看目录后被拽回当前标题
+    disableTocScrollSync: true
   meta:
     author:
       enable: true
