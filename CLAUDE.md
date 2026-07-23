@@ -44,6 +44,10 @@
 
 Issue 与 PRD 存放在 GitHub Issues（`langhuanaibu/my-blog`），通过 `gh` CLI 操作。详见 `docs/agents/issue-tracker.md`。
 
+### Triage labels
+
+Issue 使用五个标准流转标签：`needs-triage`、`needs-info`、`ready-for-agent`、`ready-for-human`、`wontfix`。详见 `docs/agents/triage-labels.md`。
+
 ### Domain docs
 
 单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0003）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。
