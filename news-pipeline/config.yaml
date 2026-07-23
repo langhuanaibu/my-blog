@@ -80,7 +80,7 @@ max_per_source: 18
 # 所有补位仍须达到 effective_threshold - backfill_offset，宁缺毋滥。
 pick_threshold: 68   # 静态回退门槛（0-99）
 pick_min: 8          # 质量合格前提下尝试达到的最低条数，不硬凑
-pick_max: 36         # 每日通读预算软顶；供给不足时少发
+pick_max: 36         # 每日通读容量硬顶；供给不足时少发
 secondary_count: 8   # 次级条目条数（折叠在"更多资讯"里，真·漏网提醒，宁少勿杂）
 
 # 每日先计算历史各产出日的事件分 P75，再对最近 window_days 个日值取中位数；

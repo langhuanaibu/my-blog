@@ -177,7 +177,7 @@ GITHUB_BRANCH=main
 - 主管线在增加任何信源前，必须先观察现有源至少 14 天：抓取成功/零更新、候选与入选量、单源高风险率、独立证据链和来源集中度。`source_health.json` 逐源记录抓取条目、参与评分事件和参与最终精选事件；objectivity shadow summary 记录高风险单源、独立链和来源引用集中度。观察期内不加源、不回填历史数据，数据与人工审查都支持时才可重议。
 - 信源分为官方/事实源、分析源、舆论源，并有 T1 / T1.5 / T2 层级。纯舆论源（`source_type: opinion`）支撑的事件分数会封顶在当日有效精选阈值之下，只能进"更多资讯"，也不进入动态阈值账本；有事实源或分析源交叉佐证后才解除限制。
 - 抓取健壮性：`fetch_rss`/`fetch_aihot` 统一走 `http_get`（指数退避重试），治 AIHOT 连接重置这类偶发失败——单次请求一挂整源归零。`max_per_source` 默认 18（削减 world/舆论刷屏源的 triage 噪音）；AIHOT 是 AI 深度独木、已精选噪音低，在 `fetch_aihot` 内单独放宽取量、不受该值压制。AI 一手供给以逐篇新闻站（The Decoder 等）为主，不用摘要型 newsletter（每期一条不适配事件聚类）。`source_health.json` 将抓取错误与窗口内零更新分开记录；2026-07-16 验收中，`ftcn` 连续 6 天抓取失败，`yicai` 上游头条接口停留在 2026-05-30，二者均已在 `sources.yaml` 停用。
-- 精选采用按产出日等权的动态阈值：每个历史日先对非纯舆论事件最终分计算 nearest-rank P75，再取最近 14 个有效日值的中位数并钳制到 66-82；不足 5 日或账本异常时回退静态 68。五类各有 3 个保留席，优先取过线事件，不足时只从“有效阈值−8”以上补位；`pick_min: 8` 也遵守同一质量线，宁可少发。保留席不参与最终按分截断，精选硬顶为 32；可选 `max_per_category` 当前为空，但启用时优先于保留席。AI 与其他类目仍按分竞争，`TRIAGE_SYSTEM` 首轮未改。主题标签只允许来自 `config.yaml` 的 `topic_tags`。
+- 精选采用按产出日等权的动态阈值：每个历史日先对非纯舆论事件最终分计算 nearest-rank P75，再取最近 14 个有效日值的中位数并钳制到 66-82；不足 5 日或账本异常时回退静态 68。五类各有 4 个保留席，优先取过线事件，不足时只从“有效阈值−8”以上补位；`pick_min: 8` 也遵守同一质量线，宁可少发。保留席不参与最终按分截断，精选最多 36 条，供给不足时少发；「更多资讯」仍最多 8 条。可选 `max_per_category` 当前为空，但启用时优先于保留席。AI 与其他类目仍按分竞争，`TRIAGE_SYSTEM` 首轮未改。主题标签只允许来自 `config.yaml` 的 `topic_tags`。
 - 可信度质量门分两层：跨批次聚类后，所有含两个及以上原始条目的事件都会复核凝聚度；审计输出无效或调用失败时，该事件拆回单条、取消多源加成并把证据分降为中性值。精选深加工的模型响应只消费对象行，畸形行会被忽略并让对应事件保留基础内容；随后再核对 `why/context/significance/watch/detail/claims` 是否由当前事件来源支撑。审计失败时保守删除全部扩展字段，只保留标题、摘要、来源、分类、状态、分数和时间等基础内容，避免未经复核的叙述进入日报。
 - 面向读者的生成文字（精选 title/summary/why/context/detail 与今日主线）受 prompt 层"客观性规范"约束（2026-07-18 起）：只陈述可追溯事实，媒体的立场性定性必须显式归因（"X 报道称"）、不得写成事实，剥离情绪化措辞与无依据动机推断，禁止为"平衡"编造原文没有的对立观点；立场性判断优先进 `claims`（kind=analysis）。
 - 精选深加工按字段分工生成：`summary` 写事实增量，`why` 写公共影响和利害关系，`context` 承载「来龙」，`significance` 给画像相关的学习/行动参考，`watch` 承载「走向」，`detail` 串联来源已有的因果过程和关键细节，`claims` 只承载需要显式归因的分析或不确定判断。走向最多 90 字，需说明 1-2 个关键变量并给出至少一个可观察路标；禁止具体概率、无条件断言和来源外类比，支撑审计删除后不填充占位内容。interim、shadow、active 共用同一字段裁剪策略。prompt 会显式携带 `category`：非 AI 类补必要术语和机构背景，AI 类直接进入增量；机制链、数字比较和利益相关方只在来源支持时选最有价值的一至两项，不为追求深度补写来源外事实。该行为仍使用 interim 摘要输入，五日人工质量验收记在 `docs/news_source_roadmap.md`。
@@ -191,7 +191,7 @@ GITHUB_BRANCH=main
 
 ### 自动运行与本地运行
 
-- GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。同一 workflow 在 `generate` 与只读 `shadow` 结束后运行云端 `rollout-review`：读取临时验收 artifact，使用最小权限 `contents: read` / `issues: write` 幂等更新 GitHub Issue #15；Issue 关闭后自动跳过。该台账任务完全运行在 GitHub 托管 runner，不依赖个人电脑或 Codex Desktop 在线。
+- GitHub Actions（`.github/workflows/daily-news.yml`）每天 UTC 23:00（北京 07:00 左右）运行管线，校验通过后自动 commit + push `source/news/data/`，触发 Vercel 部署上线。这是"严禁自动 push"规则的唯一例外，详见 `CLAUDE.md`。同一 workflow 在 `generate` 与只读 `shadow` 结束后运行云端 `rollout-review`：读取临时验收 artifact，使用最小权限 `contents: read` / `issues: write` 幂等更新 GitHub Issue #15；Issue 关闭后自动跳过。下载后的 shadow 状态固定读取 `shadow-status/daily-news-shadow-status.json`，缺失、损坏或非 `success` 一律保守判失败。该台账任务完全运行在 GitHub 托管 runner，不依赖个人电脑或 Codex Desktop 在线。
 - API key 存于仓库 Secrets（`LLM_API_KEY`），绝不进代码。自建 RSSHub 源另需两个 Secret：`RSSHUB_BASE`、`RSSHUB_KEY`（未配置则相关源自动跳过，管线不崩）。LLM 模型用显式版本名 `deepseek-v4-flash`（`deepseek-chat` 别名 2026-07-24 官方停用）；V4 裸模型名默认开 thinking 模式（temperature 静默失效、思考 token 计费），管线经 `config.yaml` 的 `llm.extra_body` 显式关闭，换供应商时删掉该配置即可。失败时 GitHub 自动发邮件通知，可在 Actions 页面手动 Re-run 或用 Run workflow 补跑；失败当天线上保持上一份已生成日报。
 - 本地手动补跑（PowerShell）：始终在仓库根目录运行 `py -3.12 -m pip install --require-hashes -r news-pipeline/requirements.txt`，再用 `$env:LLM_API_KEY="你的key"` 注入密钥并执行 `py -3.12 news-pipeline/daily_news.py`。需要抓自建 RSSHub 源时再设置 `$env:RSSHUB_BASE` 和 `$env:RSSHUB_KEY`。默认产物写到 `news-pipeline/data/`（已 gitignore）；如需直接写入站点数据，设置 `$env:DATA_DIR` 指向 `source/news/data`。
 - 客观性 shadow：`python news-pipeline/daily_news.py --objectivity-shadow`。它先把当前 `DATA_DIR`（含 feedback/profile/registry/weekly 等状态）整树复制到临时快照，读写只发生在快照里，正常返回、提前返回、异常和校验失败都会还原环境并删除快照；输出只有不含正文和密钥的聚合指标，包括高风险单源数量/比率、独立链和来源集中度。Actions 里的 `shadow` job 在 `generate` 成功后重新 checkout `main` 运行，限时 24 分钟、只读、允许失败，不 commit/push，也不改动已发布的日报。generate 的 step summary 另记录当日阈值来源、质量线、类目供给/入选和过线次级事件数。
@@ -204,19 +204,19 @@ GITHUB_BRANCH=main
 
 - 每次登记表阶段输出一行「轨迹健康」，稳定记录候选匹配、连续性通过/拒绝、被排除的历史行、整条生成回退、审计字段/claim 回退，以及最终公开走向数/精选数和覆盖率。连续性响应缺失或非法时按拒绝计数，其历史全部计入过滤；生成回退按条目计，审计回退按未采用的字段或 claim 计。
 - 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `python news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `python news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
-- 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但线上验收尚未通过。2026-07-22 的定时日报在合并前启动，不计入新窗口；从合并后的首个成功定时产出日起，两门独立连续计数：选材 7 日，轨迹 5 日。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。
+- 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但线上验收尚未通过。本次 36 条/4 席与深读扩充会改变公开样本；发布后的首个有效产出日起，选材 7 日、轨迹 5 日、enrich 5 日、客观性 shadow 7 日和主管线信源 14 日按各自有效条件重新计时。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。
 - GitHub Issue #15 是这两门的**唯一自动每日台账**。同一北京日期的重跑只幂等更新当日记录，不多算一天；当日任一次发布失败，即使后续重跑成功，当日两门仍都按失败处理。非发布失败时，`pass` 让对应门 +1，`fail` 只把对应门清零，`neutral` / `needs_review` 冻结该门当前计数。
 - 云端 `rollout-review` 当前只自动处理选材与轨迹两门。enrich 五日内容抽样、客观性 shadow 内容复核和主管线 14 日信源复核仍按 `docs/news_source_roadmap.md` 人工执行；45 条客观性夹具由独立的手动 `Objectivity Acceptance` workflow 执行，不能把前述人工门误记为已自动化。
 - 观察期冻结选材运行逻辑和轨迹展示逻辑；必须改动时按影响范围重计。选材/共享运行时指纹变化会同时重置两门，只有轨迹 UI 指纹变化则仅重置轨迹门；发布失败也同时重置两门。自动初验失败、`needs_review` 或台账写入异常只在 Actions/Issue 告警，不阻断日报发布、不改配置、不自动回滚。两门分别达到 7/5 日时只标记「待人工最终确认」，不自动关闭 #15 或 #10。
 - 每天人工检查全部可信延续，并额外抽查 5 条覆盖不同类目的一次性精选；5 个有效输出日内错误串线、无依据历史/判断、错误延续跳转和主管线发布失败都必须为 0。对全部已展示 `watch` 做质量抽样，至少 80% 同时包含具体关键变量和可观察路标；另记走向覆盖率、轨迹回退率和历史行过滤率，不为提高覆盖率放宽连续性或审计门。
-- enrich 五日文字质量门、客观性 shadow 七日门 + 45 条夹具三轮门、主管线信源 14 日观察门仍然独立有效，不被选材/轨迹计数替代。前三个受选材样本或新观测字段影响的时钟，均从并行公开后首个有效输出日重计；enrich 安全基线取新窗口前 3 个输出日中位数，客观性固定夹具门和独立深读源观察不重计。
+- enrich 五日文字质量门、客观性 shadow 七日门 + 45 条夹具三轮门、主管线信源 14 日观察门仍然独立有效，不被选材/轨迹计数替代。受本次容量与观测字段影响的连续时钟均从温和扩充发布后首个有效输出日重计；enrich 安全基线取新窗口前 3 个输出日中位数，客观性固定夹具门不重计。深读源改按新的完整队列重新观察：阮一峰先行，晚点与 Noahpinion 可跨栏并行，其余英文财经源同栏串行。
 - 是否回滚由人工根据当日证据决定。轨迹回滚时把 `news-pipeline/config.yaml` 的 `trajectory.enabled` 改为 `false` 后重新生成：连续性验证和登记表兼容更新仍保留，但跳过轨迹生成，公开 payload 标记关闭并移除来龙、走向与延续投影。恢复时改回 `true`；`events.json` 的 v2 可选字段无需迁移或回滚，既有日报数据也不重写。选材参数回退口径见 `docs/news_selection_plan.md`。
 
 ### 线上数据产物
 
 `source/news/data/` 是线上数据目录，大多数文件由管线或后台 API 创建，不应手工改写，除非下方明确允许。
 
-- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`trajectory_enabled` 是当日轨迹展示开关；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
+- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数和是否发生降级；`trajectory_enabled` 是当日轨迹展示开关；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，并可带 `content_type: reporting|analysis|opinion`；非法值或历史数据缺失时前端省略标签。论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
 - `manifest.js`：日报日期清单。
 - `quality-health.json`：滚动保留最近 90 天的日报可信度审计统计，并汇总审计事件数、拆分数与拆分率，用于观察错误聚类趋势；同日重跑会覆盖当日记录。
 - `source_health.json`：信源健康度，滚动保留 14 天；保留 `count/error` 区分抓取失败与窗口内无新文章，并记录逐源 `scored_events/selected_events`。某源连续 3 天抓取失败时在 Actions 输出 warning。
@@ -226,6 +226,7 @@ GITHUB_BRANCH=main
 - `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行（也可一次性手写丰富的种子画像），但偏好要写成以 `- ` 开头的要点。画像既影响精选排序（兴趣契合分），也用于生成每条精选的"对我的意义"。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
 - `deep_health.json`：最近 14 天深度阅读健康度（v2），按源区分抓取成功/失败、窗口内抓取量、去重后候选、已评分、主题匹配、过线和入选；即使当日零候选也会留记录，避免把低频源误判为失效源。
+- `misses.json`：仅个人签名会话可通过 `api/newsState.js` 读写的漏读记录，字段固定为 `id/ts/date/title?/url?/reason`；标题或有效 HTTP(S) URL 至少一个，原因只取重要事件、值得深读、缺少视角，最多保留 1000 条并可撤销。文件位于公开仓库，不允许自由备注或类别字段，也不进入画像、评分或信源调整。
 - `papers_seen.json`：今日论文（HF Daily Papers）推荐去重记录，按 `config.yaml` 的 `papers.seen_keep_days` 保留。
 - `vocab/YYYY-MM-DD.js` / `vocab-book.json`：**单词本功能已于 2026-07-10 停用**（`config.yaml` 的 `vocab.enabled: false`，管线不再每日挑词；前端界面已移除）。历史数据文件与 `api/vocab.js` 接口原地保留，想恢复时把 enabled 改回 true、前端从 git 历史找回单词本界面即可。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。
@@ -240,7 +241,7 @@ GITHUB_BRANCH=main
 - 新闻页虽然不继承 Fluid 导航，但始终保留博客出口：桌面端左侧栏底部显示“← 返回博客”，移动端站点栏显示首页图标，均以普通 `href="/"` 在当前标签页返回博客首页。该链接不带 `data-route`，避免被日报内部客户端路由接管。
 - 时间线视图：按发布时间连续倒序呈现不折叠的单列时间轴，以北京时间日期节点分隔，日期统一显示为中文月日与星期，今天和昨天增加相对前缀；条目按原文发布时间转换为北京时间后归日，日报文件日期只代表生成批次，无有效发布时间时显示「时间待确认」。跨天事件有实质新增时保留在原时间位置并标「延续」，纯重复报道合并来源。顶部「今日主线」是只取最新日报事件的轻量提示，按独立信源、分数和 36 小时时间衰减选出最多 3 条；页内检索与普通时间轴采用相同归日和去重口径。
 - 全部动态视图：按日期节点使用倒序单列时间轴，提供文本搜索、来源筛选、分类筛选和评分过滤。回填评分的日子默认只显示 `score >= min_score` 的条目，并提示已隐藏条数，可切换显示低分或未评分内容；条目同时展示来源、分类和分数。
-- 报告视图：桌面端显示日/周切换与归档控制栏；移动端顶部栏横向排列周期、归档和前后日期控制。日报正文按 AI、互联网/科技、财经、社会、国际五类稳定分节并全部展开；日报和时间线卡片直出摘要、「为什么重要」，并仅在 `watch` 存在时追加「走向」。可信延续在日报卡片显示可聚焦的「第 N 天·延续」链接：优先跳到上一条精确详情，旧历史缺少 `item_ref` 时降级到对应日期的日报。来龙、对我的意义和 claims 只在详情页展开。「追踪中」紧跟新闻分节，深读、论文、舆论观察和更多资讯依次置后。周报按周主线、数字盘点、动态主题、判断回收、值得读和下周信号纵向展开。
+- 报告视图：桌面端显示日/周切换与归档控制栏；移动端顶部栏横向排列周期、归档和前后日期控制。日报正文按 AI、互联网/科技、财经、社会、国际五类稳定分节并全部展开；日报和时间线卡片直出摘要、「为什么重要」，并仅在 `watch` 存在时追加「走向」。可信延续在日报卡片显示可聚焦的「第 N 天·延续」链接：优先跳到上一条精确详情，旧历史缺少 `item_ref` 时降级到对应日期的日报。来龙、对我的意义和 claims 只在详情页展开。「追踪中」紧跟新闻分节，深读、论文、舆论观察和更多资讯依次置后。刊头显示日报摘要估时，深读标题单独汇总全部入选原文估时；30 分钟只是通读日报并选择性阅读深读的软目标，不据此裁剪内容。有效个人会话可在刊头下补记遗漏，表单明确提示记录会进入公开仓库；周报增加所选自然周近 7 天遗漏清单与原因汇总，普通访客不加载或显示该状态。
 - 主题视图（所有访客可见，URL `/news/?view=topics` 可直达分享）：优先纵向呈现 📌 追踪中、🔥 进行中和 🗄 已归档事件，卡片可展开事件历史进展并回链对应日报，有效个人会话下可追踪或取消追踪。下方「题材地图」使用紧凑自适应网格陈列受控标签及 180 天精选条数，点击进入对应 `tag:` 时间线。
 - 全站历史搜索在桌面端常驻内容工具栏；移动端由顶部搜索按钮打开全屏覆盖层，支持关闭按钮与 `Escape` 返回触发按钮。
 - 页面视觉采用暖纸色上的报刊编辑风，亮/暗跟随博客：初始化读 Fluid 写入的 `localStorage["Fluid_Color_Scheme"]` 决定亮暗，未设置则跟随系统。阅读型日报、周报、时间线和详情页统一使用 780px 阅读栏；正文条目以栏线分隔，今日主线、深读和结论使用双线特稿框。日报刊头的导语是页面唯一 `h1`，日期使用 `<time datetime>`，装饰印章不进入无障碍树；期号按日报日期的年内日序生成 `YYYY · 第DDD期`，不依赖 manifest 数量。supplementary 栏目通过内部 `data-kind` 区分版式，仅在正文容器达到 740px 时让追踪、论文和更多资讯启用双栏，深读和舆论观察始终单栏。五类颜色仅用于分类文字和栏目题花，事实状态继续使用独立语义色。新增装饰统一使用 `--ink`、`--vermilion`、`--rule` 等 token，暗色模式只覆盖 token。耦合点：博客若更换主题或改这个存储键，日报页暗色会静默失效。
@@ -256,7 +257,7 @@ GITHUB_BRANCH=main
 - 卡片上的稍后读、更多类似、追踪都是可撤销开关，再点一次即撤回对应记录；操作移入菜单不改变 API、localStorage 键或同步语义。
 - ⭐ 收藏（仅个人会话）：独立于稍后读的永久精华库——稍后读是待读队列（读完沉底），收藏是"觉得最有价值就存"。精选、深度阅读、今日论文三类卡片上都有 ⭐ 按钮（再点取消）；收藏页按收藏时间倒序使用单列阅读流，并提供全部、新闻、深读、论文类型筛选。条目凭 `date + item_id` 引用从对应 daily 文件懒加载并重渲染完整卡片，跨天引用沿用 `日期:id` 复合键；服务端列表会并入本地高亮缓存（`news_fav`，永久不清理），换设备后卡片 ★ 状态一致。
 - 追踪事件即使不进精选，也会出现在页面的追踪区；管线会用"更多资讯"补匹配，尽量防止断档。
-- 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`，每个源归入 `ai_engineering`、`tech_business`、`society_finance` 三栏（旧配置名 `zh_society_finance` 仍可读，新数据只写新名）。每天先从各栏选一篇过线文章，空栏名额再按总分释放，仍最多 3 篇且不降低 7 分门槛。`deep_sources.type` 可切换专用适配器；综合评论源可用 `topic_filter: finance` 仅保留宏观、商业、市场、劳动和公共经济政策文章。深读失败只丢当天深读推荐，不影响新闻日报产出。
+- 深度阅读频道独立于新闻主管线，源来自 `sources.yaml` 的 `deep_sources`，每个源归入 `ai_engineering`、`tech_business`、`society_finance` 三栏（旧配置名 `zh_society_finance` 仍可读，新数据只写新名）。前三席优先从三栏各取一篇过线文章，空栏名额按总分释放；第四席取剩余最高分，最多 4 篇且不降低 7 分门槛。深读不另建 `voices` 栏，体裁由可选的内容类型标签表达。`deep_sources.type` 可切换专用适配器；综合评论源可用 `topic_filter: finance` 仅保留宏观、商业、市场、劳动和公共经济政策文章。深读失败只丢当天深读推荐，不影响新闻日报产出。
 - 今日论文频道同样独立于新闻主管线：抓 **Hugging Face Daily Papers**（社区精选 + 点赞，公开接口无需 key），LLM 按 `interest_profile.md` 的学习坐标（前端/全栈/AI 应用/自动化）从当天几十篇里挑 3-4 篇，产出中文标题、"该读什么/该补什么概念"，带点赞数与"是否有开源代码"标记。写进 daily js 的 `papers` 字段，前端日视图「今日论文」板块渲染（紫色左边框区别于深读）。论文不是新闻——不进精选评分、不占五类名额。参数在 `config.yaml` 的 `papers` 段（`enabled`/`lookback_days`/`max_candidates`/`pick_threshold`/`pick_max`/`seen_keep_days`），失败只记日志、不阻断每日产出。
 - 舆论观察：微博/B站热榜（`sources.yaml` 的 `pulse_sources`，直连公开接口）只作两个用途，热榜词条本身永不成为新闻条目——①`opinion_pulse` 用 LLM 挑 2-3 个值得说的传播现象，讲"为何热/群体情绪/平台机制"（滤纯明星八卦），写 daily js 的 `opinion` 字段，前端「舆论观察」板块渲染（琥珀色左边框）；②co-occurrence 暗排序：热榜词条与真新闻事件文本重合（4 字连片或二元组覆盖 ≥0.5）时，该事件最终分乘 `opinion.cooccur_bonus`（默认 1.08）。参数在 `config.yaml` 的 `opinion` 段；热榜抓取或 LLM 失败只丢当天舆论板块，不阻断日报。
 - 周综述按周一至周日的自然周生成：主管线每次日报运行都会幂等检查最近一个已结束周，覆盖至少 **5/7** 天且报告尚不存在时才合成，低于门槛则跳过；报告会列出覆盖期数与缺失日期。新版静态数据为兼容型 v2，包含周主线、数字盘点、3-6 个动态主题、代表报道复合引用（`date:item_id`）、上周判断回收、下周信号，以及单列的深读/论文引用；写入前会校验全部引用存在。旧周报不改写，低于 5/7 的旧报告不进入新版归档。**失败只记日志、不阻断每日产出，也不进发布校验**；不新增 workflow。
