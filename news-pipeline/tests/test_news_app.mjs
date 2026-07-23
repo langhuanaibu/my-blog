@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import { createRequire } from "node:module";
 
 import { createNewsApp } from "../../source/news/js/app.js";
-import { renderDailyReport } from "../../source/news/js/reports.js";
+import { renderDailyReport, renderWeeklyReport } from "../../source/news/js/reports.js";
 const TimelineCore = createRequire(import.meta.url)("../../source/news/news-timeline.js");
 const NewsState = createRequire(import.meta.url)("../../api/newsState.js");
 
@@ -150,6 +150,33 @@ test("weekly archive, browser Back and old week route are integrated", async () 
   await new Promise((resolve) => dom.window.setTimeout(resolve, 10));
   await app.idle();
   assert.match(dom.window.document.querySelector("main").textContent, /周报 2026-W27/);
+});
+
+test("personal weekly report shows the selected seven-day misses and reason summary", async () => {
+  const dom = shell("https://example.test/news/?view=reports&period=week&week=2026-W28");
+  const misses = [
+    { id: "m1", ts: "2026-07-06T01:00:00.000Z", date: "2026-07-06", title: "周内事件", reason: "important_event" },
+    { id: "m2", ts: "2026-07-10T01:00:00.000Z", date: "2026-07-10", url: "https://example.com/deep", reason: "deep_read" },
+    { id: "m3", ts: "2026-07-12T01:00:00.000Z", date: "2026-07-12", title: "另一事件", reason: "important_event" },
+    { id: "outside", ts: "2026-07-13T01:00:00.000Z", date: "2026-07-13", title: "周外事件", reason: "missing_perspective" },
+  ];
+  const fetchStub = async (url) => {
+    assert.match(String(url), /type=misses/);
+    return { ok: true, json: async () => ({ success: true, data: { version: 1, entries: misses } }) };
+  };
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: fetchStub });
+  await app.start();
+  const panel = dom.window.document.querySelector(".weekly-misses");
+  assert.ok(panel);
+  assert.match(panel.textContent, /近 7 天遗漏|重要事件 2|值得深读 1|周内事件|另一事件/);
+  assert.doesNotMatch(panel.textContent, /周外事件/);
+  assert.equal(panel.querySelectorAll('[data-action="remove-miss"]').length, 3);
+
+  const publicHtml = renderWeeklyReport(
+    { week: "2026-W28", lead: { title: "公开周报" }, threads: [] },
+    { personal: false, misses },
+  );
+  assert.doesNotMatch(publicHtml, /weekly-misses|周内事件/);
 });
 
 test("personal not-interested stays in module layout and deep/paper details retain type fields", async () => {

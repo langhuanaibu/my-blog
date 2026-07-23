@@ -102,6 +102,14 @@ function moreCard(item, date) {
   return `<article class="row"><strong>${escapeHtml(item.title)}</strong>${item.summary ? `<span>${escapeHtml(item.summary)}</span>` : ""}${url ? `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">原文</a>` : ""}<a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>详情</a></article>`;
 }
 
+function renderMissRow(entry, { showDate = false } = {}) {
+  const label = MISS_REASON_LABELS[entry.reason] || "";
+  const content = entry.url
+    ? `<a href="${safeUrl(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.title || entry.url)}</a>`
+    : `<span>${escapeHtml(entry.title || "")}</span>`;
+  return `<div class="miss-row">${showDate ? `<time datetime="${escapeHtml(entry.date)}">${escapeHtml(entry.date)}</time>` : ""}<span class="tag">${escapeHtml(label)}</span>${content}<button type="button" class="act" data-action="remove-miss" data-id="${escapeHtml(entry.id)}">撤销</button></div>`;
+}
+
 function renderMissesTool(date, entries = [], loadError = "") {
   const rows = entries
     .filter((entry) => entry?.date === date && entry.id)
@@ -115,7 +123,7 @@ function renderMissesTool(date, entries = [], loadError = "") {
       <label>原因<select data-miss-field="reason">${Object.entries(MISS_REASON_LABELS).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
       <button type="button" class="fb-go" data-action="submit-miss" data-date="${escapeHtml(date)}">记录遗漏</button>
     </div>
-    ${rows.length ? `<div class="misses-list">${rows.map((entry) => `<div class="miss-row"><span class="tag">${escapeHtml(MISS_REASON_LABELS[entry.reason] || "")}</span>${entry.url ? `<a href="${safeUrl(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.title || entry.url)}</a>` : `<span>${escapeHtml(entry.title || "")}</span>`}<button type="button" class="act" data-action="remove-miss" data-id="${escapeHtml(entry.id)}">撤销</button></div>`).join("")}</div>` : ""}
+    ${rows.length ? `<div class="misses-list">${rows.map((entry) => renderMissRow(entry)).join("")}</div>` : ""}
   </section>`;
 }
 
@@ -210,7 +218,42 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
 
 function refLink(ref, title) { const [date, ...rest] = String(ref || "").split(":"); const item = rest.join(":"); if (!date || !item) return ""; const type = item.startsWith("deep-") ? "deep" : item.startsWith("paper-") ? "paper" : "news"; return `<a data-ref="${escapeHtml(ref)}" href="${routeUrl({ view: "detail", date, type, item })}" data-route>${escapeHtml(title || ref)}</a>`; }
 
-export function renderWeeklyReport(data) {
+function isoWeekRange(week) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(week || "");
+  if (!match) return null;
+  const year = Number(match[1]); const weekNumber = Number(match[2]);
+  if (weekNumber < 1 || weekNumber > 53) return null;
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7;
+  const start = new Date(jan4);
+  start.setUTCDate(jan4.getUTCDate() - jan4Day + 1 + (weekNumber - 1) * 7);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  return [start.toISOString().slice(0, 10), end.toISOString().slice(0, 10)];
+}
+
+function renderWeeklyMisses(week, entries = [], loadError = "") {
+  const range = isoWeekRange(week);
+  const rows = range ? entries
+    .filter((entry) => entry?.id && entry.date >= range[0] && entry.date <= range[1])
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))
+      || String(b.ts || "").localeCompare(String(a.ts || ""))) : [];
+  const counts = Object.fromEntries(Object.keys(MISS_REASON_LABELS).map((reason) => [
+    reason,
+    rows.filter((entry) => entry.reason === reason).length,
+  ]));
+  const summary = Object.entries(MISS_REASON_LABELS)
+    .filter(([reason]) => counts[reason])
+    .map(([reason, label]) => `<span>${label} ${counts[reason]}</span>`)
+    .join("");
+  return `<section class="weekly-section weekly-misses"><h2 class="sec-title">近 7 天遗漏</h2>
+    ${loadError ? `<p class="misses-error" role="alert">遗漏记录加载失败：${escapeHtml(loadError)}。<button type="button" class="act" data-action="retry-misses">重试</button></p>` : ""}
+    ${summary ? `<div class="misses-summary">${summary}</div>` : ""}
+    <div class="misses-list">${rows.length ? rows.map((entry) => renderMissRow(entry, { showDate: true })).join("") : '<p class="section-empty">近 7 天暂无补记遗漏</p>'}</div>
+  </section>`;
+}
+
+export function renderWeeklyReport(data, options = {}) {
   if (!data) return '<div class="empty" role="status">暂无周报数据</div>';
   const coverage = data.coverage || {}; const lead = typeof data.lead === "string" ? { title: data.lead } : (data.lead || {}); const stats = data.stats || {}; const missing = coverage.missing_dates || [];
   const reading = Array.isArray(data.reading) ? data.reading : [
@@ -218,5 +261,8 @@ export function renderWeeklyReport(data) {
     ...(data.reading?.deep_refs || []).map((ref) => ({ ref, title: "深度阅读" })),
     ...(data.reading?.paper_refs || []).map((ref) => ({ ref, title: "研究论文" })),
   ];
-  return `<article class="weekly-report weekly-reading"><header class="brief"><div class="bt">${escapeHtml(data.week || "周报")}</div><h1>${escapeHtml(lead.title || "本周综述")}</h1>${lead.summary ? `<p>${escapeHtml(lead.summary)}</p>` : ""}${coverage.daily_count != null ? `<p class="coverage">覆盖 ${coverage.daily_count}/${coverage.expected_days || 7} 期${missing.length ? ` · 缺失：${missing.map(escapeHtml).join("、")}` : ""}</p>` : ""}</header>${Object.keys(stats).length ? `<dl class="weekly-stats"><div><dt>精选</dt><dd>${escapeHtml(stats.pick_count ?? 0)}</dd></div><div><dt>独立事件</dt><dd>${escapeHtml(stats.event_count ?? stats.unique_event_count ?? 0)}</dd></div><div><dt>信源</dt><dd>${escapeHtml(stats.source_count ?? 0)}</dd></div><div><dt>阅读</dt><dd>${escapeHtml(stats.read_minutes ?? 0)} 分钟</dd></div></dl>` : ""}<section class="weekly-section weekly-threads"><h2 class="sec-title">动态主题</h2>${(data.threads || []).map((thread) => `<article class="wk-thread"><h3>${escapeHtml(thread.title)} ${thread.direction ? `<span class="tag dir-${escapeHtml(thread.direction)}">${escapeHtml(thread.direction)}</span>` : ""}</h3><p>${escapeHtml(thread.summary || thread.one_liner || thread.detail || "")}</p><div class="representatives">${(thread.representative_refs || []).map((ref) => refLink(ref, "代表报道")).join("")}</div></article>`).join("") || '<p class="section-empty">暂无主题</p>'}</section>${(data.watch_recap || []).length ? `<section class="weekly-section"><h2 class="sec-title">上周判断回收</h2>${data.watch_recap.map((row) => `<article class="wk-recap"><strong>${escapeHtml(row.title || row.watch)}</strong><span>${escapeHtml(row.note || row.result || "")}</span>${(row.evidence_refs || []).map((ref) => refLink(ref, "支撑报道")).join("")}</article>`).join("")}</section>` : ""}${reading.length ? `<section class="weekly-section"><h2 class="sec-title">本周值得读</h2><div class="reading-list">${reading.map((row) => refLink(row.ref || row.item_ref, row.title || row.ref)).join("")}</div></section>` : ""}${(data.outlook || []).length ? `<section class="weekly-section"><h2 class="sec-title">下周信号</h2><ul>${data.outlook.map((row) => `<li>${escapeHtml(typeof row === "string" ? row : row.text || row.title)}</li>`).join("")}</ul></section>` : ""}</article>`;
+  const missesPanel = options.personal
+    ? renderWeeklyMisses(data.week, options.misses, options.missesError)
+    : "";
+  return `<article class="weekly-report weekly-reading"><header class="brief"><div class="bt">${escapeHtml(data.week || "周报")}</div><h1>${escapeHtml(lead.title || "本周综述")}</h1>${lead.summary ? `<p>${escapeHtml(lead.summary)}</p>` : ""}${coverage.daily_count != null ? `<p class="coverage">覆盖 ${coverage.daily_count}/${coverage.expected_days || 7} 期${missing.length ? ` · 缺失：${missing.map(escapeHtml).join("、")}` : ""}</p>` : ""}</header>${missesPanel}${Object.keys(stats).length ? `<dl class="weekly-stats"><div><dt>精选</dt><dd>${escapeHtml(stats.pick_count ?? 0)}</dd></div><div><dt>独立事件</dt><dd>${escapeHtml(stats.event_count ?? stats.unique_event_count ?? 0)}</dd></div><div><dt>信源</dt><dd>${escapeHtml(stats.source_count ?? 0)}</dd></div><div><dt>阅读</dt><dd>${escapeHtml(stats.read_minutes ?? 0)} 分钟</dd></div></dl>` : ""}<section class="weekly-section weekly-threads"><h2 class="sec-title">动态主题</h2>${(data.threads || []).map((thread) => `<article class="wk-thread"><h3>${escapeHtml(thread.title)} ${thread.direction ? `<span class="tag dir-${escapeHtml(thread.direction)}">${escapeHtml(thread.direction)}</span>` : ""}</h3><p>${escapeHtml(thread.summary || thread.one_liner || thread.detail || "")}</p><div class="representatives">${(thread.representative_refs || []).map((ref) => refLink(ref, "代表报道")).join("")}</div></article>`).join("") || '<p class="section-empty">暂无主题</p>'}</section>${(data.watch_recap || []).length ? `<section class="weekly-section"><h2 class="sec-title">上周判断回收</h2>${data.watch_recap.map((row) => `<article class="wk-recap"><strong>${escapeHtml(row.title || row.watch)}</strong><span>${escapeHtml(row.note || row.result || "")}</span>${(row.evidence_refs || []).map((ref) => refLink(ref, "支撑报道")).join("")}</article>`).join("")}</section>` : ""}${reading.length ? `<section class="weekly-section"><h2 class="sec-title">本周值得读</h2><div class="reading-list">${reading.map((row) => refLink(row.ref || row.item_ref, row.title || row.ref)).join("")}</div></section>` : ""}${(data.outlook || []).length ? `<section class="weekly-section"><h2 class="sec-title">下周信号</h2><ul>${data.outlook.map((row) => `<li>${escapeHtml(typeof row === "string" ? row : row.text || row.title)}</li>`).join("")}</ul></section>` : ""}</article>`;
 }

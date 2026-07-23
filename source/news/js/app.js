@@ -91,7 +91,11 @@ export function createNewsApp(options) {
         const weeks = await dataApi.weeklyManifest(); if (!isCurrent(requestId)) return; const select = doc.getElementById("weekSel"); if (select) { select.innerHTML = weeks.map((week) => `<option value="${week}">${week}</option>`).join(""); }
         const week = route.week || weeks[0]; if (!week) { app.innerHTML = '<div class="empty" role="status">暂无周报数据</div>'; return; }
         if (!route.week || win.location.search !== routeUrl({ ...route, week })) win.history.replaceState({}, "", routeUrl({ ...route, week }));
-        const weekly = await dataApi.weekly(week); if (!isCurrent(requestId)) return; if (select) select.value = week; app.innerHTML = renderWeeklyReport(weekly); announce(`已加载 ${week} 周报`, doc); currentRoute = { ...route, week }; return;
+        const [weekly, missesResult] = await Promise.all([
+          dataApi.weekly(week),
+          loadMisses(),
+        ]);
+        if (!isCurrent(requestId)) return; if (select) select.value = week; app.innerHTML = renderWeeklyReport(weekly, { personal, misses: missesResult.state.entries || [], missesError: missesResult.error }); announce(`已加载 ${week} 周报`, doc); currentRoute = { ...route, week }; return;
       }
       if (route.view === "detail") {
         const data = await dataApi.daily(route.date); if (!isCurrent(requestId)) return; indexData(data, route.date); const bucket = route.type === "deep" ? "deep" : route.type === "paper" ? "papers" : "items"; const item = (data?.[bucket] || []).find((row) => row.id === route.item);
