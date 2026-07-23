@@ -487,8 +487,8 @@ def _selection_result(evidence, shadow_success):
         reasons.append("selected opinion-only items were present")
     if selection["category_reservation_violations"]:
         reasons.append("category reservation violations were present")
-    if selection["picked_count"] > 32:
-        reasons.append("picked count exceeded 32")
+    if selection["picked_count"] > 36:
+        reasons.append("picked count exceeded 36")
     clamp = selection["threshold_clamp"]
     actual_in_clamp = clamp[0] <= selection["threshold"] <= clamp[1]
     if (not selection["threshold_clamp_valid"]

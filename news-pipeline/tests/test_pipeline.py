@@ -1655,10 +1655,51 @@ _repo_cfg = dn.yaml.safe_load(
 check("当前配置未启用 ai 精选上限",
       (_repo_cfg.get("max_per_category") or {}).get("ai") is None)
 check("当前配置启用动态精选改革",
-      _repo_cfg.get("pick_max") == 32
-      and _repo_cfg.get("min_per_category") == 3
+      _repo_cfg.get("pick_max") == 36
+      and _repo_cfg.get("min_per_category") == 4
+      and _repo_cfg.get("pick_min") == 8
+      and _repo_cfg.get("secondary_count") == 8
       and (_repo_cfg.get("pick_dynamic") or {}).get("enabled") is True
       and (_repo_cfg.get("pick_dynamic") or {}).get("backfill_offset") == 8)
+
+_capacity_items = []
+_capacity_events = []
+for _category in dn.CATEGORIES:
+    for _index in range(12):
+        _item_id = len(_capacity_items)
+        _capacity_items.append(mk_item(
+            f"{_category}-{_index}", "fact", "T1", 9))
+        _capacity_events.append({
+            "ids": [_item_id],
+            "category": _category,
+            "dims": {dim: 10.0 for dim in dn.DIMS},
+            "title": f"{_category}-{_index}",
+        })
+_capacity_picked, _capacity_secondary = dn.score_and_select(
+    _capacity_events, _capacity_items, _repo_cfg)
+check("精选容量上限为 36 条", len(_capacity_picked) == 36)
+check("五类供给充足时各保留 4 席", all(
+    sum(1 for event in _capacity_picked
+        if event["category"] == category) >= 4
+    for category in dn.CATEGORIES))
+check("更多资讯仍为 8 条", len(_capacity_secondary) == 8)
+
+_sparse_events = [
+    event for event in _capacity_events
+    if event["category"] != "world" or event["title"] in {"world-0", "world-1"}
+]
+_sparse_picked, _ = dn.score_and_select(
+    _sparse_events, _capacity_items, _repo_cfg)
+check("类目供给不足时少发且保留全部合格供给",
+      sum(1 for event in _sparse_picked
+          if event["category"] == "world") == 2)
+_thin_events = [
+    event for event in _capacity_events
+    if int(event["title"].rsplit("-", 1)[1]) < 2
+]
+_thin_picked, _ = dn.score_and_select(
+    _thin_events, _capacity_items, _repo_cfg)
+check("总供给不足时不凑满 36 条", len(_thin_picked) == 10)
 
 _cap_items = [mk_item("openai", "fact", "T1", 9) for _ in range(8)]
 _cap_dims_hi = {d: 10.0 for d in dn.DIMS}

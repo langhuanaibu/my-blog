@@ -766,7 +766,7 @@ def test_first_day_and_same_day_rerun_both_remain_trajectory_neutral():
     ({"selected_below_quality_floor": 1}, "quality floor"),
     ({"selected_opinion_only": 1}, "opinion"),
     ({"category_reservation_violations": 1}, "reservation"),
-    ({"picked_count": 33}, "32"),
+    ({"picked_count": 37}, "36"),
     ({"threshold_in_clamp": False}, "clamp"),
     ({"threshold": 90, "threshold_in_clamp": True}, "clamp"),
 ])
@@ -777,6 +777,14 @@ def test_selection_gate_rejects_each_automatic_pass_violation(change, reason_fra
     report = rv.evaluate_rollout(evidence, shadow_success=shadow_success, judge_llm=Judge())
     assert report["selection"]["status"] == "fail"
     assert reason_fragment in " ".join(report["selection"]["reasons"]).lower()
+
+
+def test_selection_gate_accepts_new_capacity_boundary():
+    rv = rollout()
+    evidence = valid_evidence(selection=valid_metrics(picked_count=36))
+    report = rv.evaluate_rollout(
+        evidence, shadow_success=True, judge_llm=Judge())
+    assert report["selection"]["status"] == "pass"
 
 
 def test_watch_ratio_and_continuation_link_are_deterministic_trajectory_gates():
