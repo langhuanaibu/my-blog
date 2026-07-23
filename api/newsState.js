@@ -1,3 +1,4 @@
+const { randomUUID } = require('node:crypto');
 const {
   setCors,
   sendJson,
@@ -8,32 +9,44 @@ const {
   putTextFile
 } = require('./_github');
 
-// 新闻驾驶舱用户状态写回通道：反馈 / 稍后读 / 收藏，追加写入仓库数据文件。
+// 新闻驾驶舱用户状态写回通道：反馈 / 稍后读 / 收藏 / 漏读，追加写入仓库数据文件。
 // 仅本人（由 ADMIN_TOKEN 换取的签名会话）可用；管线在次日运行时读取 feedback/read_later。
 const STATE_FILES = {
   feedback: 'source/news/data/feedback.json',
   read_later: 'source/news/data/read_later.json',
-  favorites: 'source/news/data/favorites.json'
+  favorites: 'source/news/data/favorites.json',
+  misses: 'source/news/data/misses.json'
 };
 
 const FEEDBACK_ACTIONS = ['not_interested', 'more_like_this', 'low_quality_source', 'track', 'untrack'];
 const READ_LATER_OPS = ['add', 'done', 'remove'];
 const FAVORITES_OPS = ['add', 'remove'];
+const MISS_REASONS = ['important_event', 'deep_read', 'missing_perspective'];
 const MAX_ENTRIES = 1000;
 const MAX_PAYLOAD_BYTES = 4096;
 
 function emptyState(type) {
-  return type === 'feedback'
+  return type === 'feedback' || type === 'misses'
     ? { version: 1, entries: [] }
     : { version: 1, items: [] };
 }
 
 function entriesKey(type) {
-  return type === 'feedback' ? 'entries' : 'items';
+  return type === 'feedback' || type === 'misses' ? 'entries' : 'items';
 }
 
 function clip(value, max) {
   return String(value ?? '').slice(0, max);
+}
+
+function isHttpUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+      && Boolean(parsed.hostname);
+  } catch {
+    return false;
+  }
 }
 
 function validateEntry(type, payload) {
@@ -46,6 +59,36 @@ function validateEntry(type, payload) {
   if (Buffer.byteLength(JSON.stringify(payload), 'utf8') > MAX_PAYLOAD_BYTES) {
     throw createHttpError(400, 'payload too large');
   }
+
+  if (type === 'misses') {
+    if (payload.op === 'remove') {
+      const id = clip(payload.id, 80).trim();
+      if (!id) throw createHttpError(400, 'payload.id is required for remove');
+      return { op: 'remove', id };
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))) {
+      throw createHttpError(400, 'payload.date must be YYYY-MM-DD');
+    }
+    const title = clip(payload.title, 200).trim();
+    const url = clip(payload.url, 500).trim();
+    if (!title && !url) {
+      throw createHttpError(400, 'payload.title or payload.url is required');
+    }
+    if (url && !isHttpUrl(url)) {
+      throw createHttpError(400, 'payload.url must be an http(s) URL');
+    }
+    if (!MISS_REASONS.includes(payload.reason)) {
+      throw createHttpError(400, `payload.reason must be one of: ${MISS_REASONS.join(', ')}`);
+    }
+    return {
+      op: 'add',
+      date: payload.date,
+      ...(title ? { title } : {}),
+      ...(url ? { url } : {}),
+      reason: payload.reason
+    };
+  }
+
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))) {
     throw createHttpError(400, 'payload.date must be YYYY-MM-DD');
   }
@@ -102,6 +145,25 @@ function validateEntry(type, payload) {
 function appendEntry(state, type, entry, now) {
   const key = entriesKey(type);
   const list = Array.isArray(state[key]) ? state[key] : [];
+
+  if (type === 'misses') {
+    if (entry.op === 'remove') {
+      const idx = list.findIndex((item) => item.id === entry.id);
+      if (idx === -1) return { state, deduped: true };
+      return {
+        state: { ...state, [key]: list.filter((_, index) => index !== idx) },
+        deduped: false
+      };
+    }
+    const { op, ...added } = entry;
+    return {
+      state: {
+        ...state,
+        [key]: [...list, { ts: now, ...added }].slice(-MAX_ENTRIES)
+      },
+      deduped: false
+    };
+  }
 
   if (type === 'read_later' || type === 'favorites') {
     const idx = list.findIndex((it) => it.item_id === entry.item_id && it.date === entry.date);
@@ -208,6 +270,9 @@ async function handler(req, res) {
       const body = await readJsonBody(req);
       const type = String(body.type || '');
       const entry = validateEntry(type, body.payload);
+      if (type === 'misses' && entry.op === 'add') {
+        entry.id = randomUUID();
+      }
       const now = new Date().toISOString();
       const result = await writeEntry(type, entry, now);
       return sendJson(res, 200, {
@@ -228,6 +293,7 @@ async function handler(req, res) {
 handler._test = {
   STATE_FILES,
   FEEDBACK_ACTIONS,
+  MISS_REASONS,
   validateEntry,
   appendEntry,
   emptyState

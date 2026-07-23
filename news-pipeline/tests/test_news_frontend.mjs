@@ -20,6 +20,18 @@ const daily = {
   deep: [], papers: [], opinion: [], tracking: [],
 };
 
+test("漏读加载失败时明确提示并允许重试", () => {
+  const html = renderDailyReport(daily, {
+    personal: true,
+    misses: [],
+    missesError: "network <down>",
+  });
+  const document = new JSDOM(`<main>${html}</main>`).window.document;
+  assert.match(document.querySelector(".misses-error").textContent, /加载失败.*network <down>.*重试/);
+  assert.ok(document.querySelector('[data-action="retry-misses"]'));
+  assert.doesNotMatch(html, /network <down>/);
+});
+
 test("新旧路由统一为 canonical reports/timeline routes", () => {
   assert.deepEqual(parseRoute(""), { view: "reports", period: "day" });
   assert.deepEqual(parseRoute("?view=unknown"), { view: "reports", period: "day" });

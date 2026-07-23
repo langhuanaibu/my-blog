@@ -49,6 +49,11 @@ export function createNewsApp(options) {
   }
   const resolveItem = (date, id) => itemIndex.get(`${date}:${id}`);
   const personalState = () => ({ readLater: storage.get(STORAGE_KEYS.readLater), favorites: storage.get(STORAGE_KEYS.favorites), liked: storage.get(STORAGE_KEYS.liked), tracked: storage.get(STORAGE_KEYS.tracked) });
+  const loadMisses = () => personal
+    ? api.get("misses")
+      .then((state) => ({ state, error: "" }))
+      .catch((error) => ({ state: { entries: [] }, error: String(error?.message || error) }))
+    : Promise.resolve({ state: { entries: [] }, error: "" });
   const prefersReducedMotion = () => Boolean(win.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   const scrollTop = () => {
     if (/jsdom/i.test(win.navigator?.userAgent || "")) return;
@@ -74,9 +79,13 @@ export function createNewsApp(options) {
         const date = route.date || dailyManifest[0];
         if (!date) { app.innerHTML = '<div class="empty" role="status">还没有任何日报数据。</div>'; return; }
         if (!route.date || win.location.search !== routeUrl({ ...route, date })) win.history.replaceState({}, "", routeUrl({ ...route, date }));
-        const data = await dataApi.daily(date); if (!isCurrent(requestId)) return; indexData(data, date); storage.markSeen(date);
+        const [data, missesResult] = await Promise.all([
+          dataApi.daily(date),
+          loadMisses(),
+        ]);
+        if (!isCurrent(requestId)) return; indexData(data, date); storage.markSeen(date);
         const select = doc.getElementById("dateSel"); if (select) { select.value = date; const option = [...select.options].find((node) => node.value === date); if (option && !option.textContent.startsWith("✓ ")) option.textContent = `✓ ${date}`; }
-        app.innerHTML = renderDailyReport(data, { personal, hidden: storage.get(STORAGE_KEYS.hidden), ...personalState() }); announce(`已加载 ${date} 日报`, doc); currentRoute = { ...route, date }; return;
+        app.innerHTML = renderDailyReport(data, { personal, misses: missesResult.state.entries || [], missesError: missesResult.error, hidden: storage.get(STORAGE_KEYS.hidden), ...personalState() }); announce(`已加载 ${date} 日报`, doc); currentRoute = { ...route, date }; return;
       }
       if (route.view === "reports" && route.period === "week") {
         const weeks = await dataApi.weeklyManifest(); if (!isCurrent(requestId)) return; const select = doc.getElementById("weekSel"); if (select) { select.innerHTML = weeks.map((week) => `<option value="${week}">${week}</option>`).join(""); }

@@ -8,6 +8,7 @@ import { join } from "node:path";
 const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
 const adminArticles = require("../../api/adminArticles.js");
+const newsState = require("../../api/newsState.js");
 
 function jsonResponse(data, status = 200) {
   return {
@@ -59,6 +60,96 @@ test("personal-session authentication accepts a signed cookie without granting b
     assert.doesNotThrow(() => github.requireAdminSession(req, now));
     assert.throws(() => github.requireAdmin(req), (error) => error.status === 401);
   });
+});
+
+test("misses state requires an authenticated personal session", async () => {
+  await withRepoEnv(async () => {
+    const req = { method: "GET", headers: {}, query: { type: "misses" } };
+    const res = mockResponse();
+    await newsState(req, res);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.success, false);
+  });
+});
+
+test("misses API persists create, read, and remove through the repository file", async () => {
+  await withRepoEnv(async () => {
+    let stored = { version: 1, entries: [] };
+    let sha = "sha-0";
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url, options = {}) => {
+      assert.match(String(url), /contents\/source\/news\/data\/misses\.json/);
+      if ((options.method || "GET") === "GET") {
+        return jsonResponse({
+          content: Buffer.from(`${JSON.stringify(stored)}\n`, "utf8").toString("base64"),
+          sha,
+        });
+      }
+      assert.equal(options.method, "PUT");
+      const body = JSON.parse(options.body);
+      stored = JSON.parse(Buffer.from(body.content, "base64").toString("utf8"));
+      sha = `sha-${Number(sha.split("-")[1]) + 1}`;
+      return jsonResponse({ content: { sha } });
+    };
+    try {
+      const session = github.createAdminSession("admin-secret", Date.now());
+      const headers = { cookie: `aoiblog_admin_session=${session}` };
+
+      const createRes = mockResponse();
+      await newsState({
+        method: "POST",
+        headers,
+        body: {
+          type: "misses",
+          payload: {
+            date: "2026-07-15",
+            title: "遗漏事件",
+            url: "https://example.com/missed",
+            reason: "important_event",
+          },
+        },
+      }, createRes);
+      assert.equal(createRes.statusCode, 200);
+      assert.equal(stored.entries.length, 1);
+      assert.match(stored.entries[0].id, /^[0-9a-f-]{36}$/);
+
+      const readRes = mockResponse();
+      await newsState({
+        method: "GET",
+        headers,
+        query: { type: "misses" },
+      }, readRes);
+      assert.equal(readRes.statusCode, 200);
+      assert.deepEqual(readRes.body.data, stored);
+
+      const removeRes = mockResponse();
+      await newsState({
+        method: "POST",
+        headers,
+        body: {
+          type: "misses",
+          payload: { op: "remove", id: stored.entries[0].id },
+        },
+      }, removeRes);
+      assert.equal(removeRes.statusCode, 200);
+      assert.deepEqual(stored.entries, []);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+test("misses URL validation rejects malformed HTTP prefixes", () => {
+  for (const url of ["https://", "https://not a url", "javascript:alert(1)"]) {
+    assert.throws(
+      () => newsState._test.validateEntry("misses", {
+        date: "2026-07-15",
+        url,
+        reason: "deep_read",
+      }),
+      /http\(s\)/i,
+    );
+  }
 });
 
 test("admin frontend does not persist the bearer token in browser storage", async () => {

@@ -11,5 +11,11 @@ export function createApiClient({ fetch }) {
     if (!response.ok || !json.success) throw new Error(json.error || `HTTP ${response.status}`);
     return json.data;
   }
-  return { postFeedback: (payload) => request("feedback", payload), postReadLater: (payload) => request("read_later", payload), postFavorite: (payload) => request("favorites", payload), get };
+  return {
+    postFeedback: (payload) => request("feedback", payload),
+    postReadLater: (payload) => request("read_later", payload),
+    postFavorite: (payload) => request("favorites", payload),
+    postMiss: (payload) => request("misses", payload),
+    get,
+  };
 }

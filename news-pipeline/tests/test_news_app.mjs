@@ -204,6 +204,105 @@ test("personal actions preserve newsState storage and API contracts", async () =
   assert.equal(JSON.parse(dom.window.localStorage.getItem("news_like"))["2026-07-15:pick-1"], true);
 });
 
+test("misses state is independent, constrained, removable, and capped", () => {
+  const { STATE_FILES, validateEntry, appendEntry, emptyState } = NewsState._test;
+  assert.equal(STATE_FILES.misses, "source/news/data/misses.json");
+  const titleOnly = validateEntry("misses", {
+    date: day.date,
+    title: "漏掉的重要事件",
+    reason: "important_event",
+    note: "must not persist",
+    category: "ai",
+  });
+  assert.deepEqual(titleOnly, {
+    op: "add",
+    date: day.date,
+    title: "漏掉的重要事件",
+    reason: "important_event",
+  });
+  const urlOnly = validateEntry("misses", {
+    date: day.date,
+    url: "https://example.com/missed",
+    reason: "deep_read",
+  });
+  assert.equal(urlOnly.url, "https://example.com/missed");
+  assert.throws(
+    () => validateEntry("misses", { date: day.date, reason: "important_event" }),
+    /title or payload\.url/i,
+  );
+  assert.throws(
+    () => validateEntry("misses", { date: day.date, url: "javascript:alert(1)", reason: "deep_read" }),
+    /http\(s\)/i,
+  );
+  assert.throws(
+    () => validateEntry("misses", { date: day.date, title: "x", reason: "other" }),
+    /reason/i,
+  );
+  const added = appendEntry(emptyState("misses"), "misses", { id: "miss-1", ...titleOnly }, "2026-07-15T00:00:00.000Z");
+  assert.deepEqual(added.state.entries[0], {
+    id: "miss-1",
+    ts: "2026-07-15T00:00:00.000Z",
+    date: day.date,
+    title: "漏掉的重要事件",
+    reason: "important_event",
+  });
+  const removed = appendEntry(
+    added.state,
+    "misses",
+    validateEntry("misses", { op: "remove", id: "miss-1" }),
+    "2026-07-15T01:00:00.000Z",
+  );
+  assert.equal(removed.state.entries.length, 0);
+  const full = { version: 1, entries: Array.from({ length: 1000 }, (_, index) => ({ id: `old-${index}` })) };
+  const capped = appendEntry(full, "misses", { id: "miss-new", ...titleOnly }, "2026-07-15T00:00:00.000Z");
+  assert.equal(capped.state.entries.length, 1000);
+  assert.equal(capped.state.entries.at(-1).id, "miss-new");
+  assert.equal(capped.state.entries.some((entry) => entry.id === "old-0"), false);
+});
+
+test("personal daily report records and removes public misses from the top tool", async () => {
+  const requests = [];
+  const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
+  const fetchStub = async (url, init = {}) => {
+    if (!init.method && String(url).includes("type=misses")) {
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            version: 1,
+            entries: [{ id: "miss-existing", ts: "2026-07-15T00:00:00.000Z", date: day.date, title: "已有遗漏", reason: "missing_perspective" }],
+          },
+        }),
+      };
+    }
+    requests.push(JSON.parse(init.body));
+    return { ok: true, json: async () => ({ success: true, data: {} }) };
+  };
+  const app = createNewsApp({ window: dom.window, document: dom.window.document, dataApi: dataApi(), personal: true, fetch: fetchStub });
+  await app.start();
+  const tool = dom.window.document.querySelector(".misses-tool");
+  assert.ok(tool);
+  assert.equal(tool.previousElementSibling.classList.contains("masthead"), true);
+  assert.match(tool.textContent, /补记遗漏|公开仓库/);
+  tool.querySelector('[data-miss-field="title"]').value = "新遗漏";
+  tool.querySelector('[data-miss-field="url"]').value = "https://example.com/new";
+  tool.querySelector('[data-miss-field="reason"]').value = "deep_read";
+  tool.querySelector('[data-action="submit-miss"]').click();
+  await app.idle();
+  assert.ok(requests.some((request) => request.type === "misses"
+    && request.payload.title === "新遗漏"
+    && request.payload.reason === "deep_read"));
+  dom.window.document.querySelector('[data-action="remove-miss"][data-id="miss-existing"]').click();
+  await app.idle();
+  assert.ok(requests.some((request) => request.type === "misses"
+    && request.payload.op === "remove"
+    && request.payload.id === "miss-existing"));
+
+  const publicHtml = renderDailyReport(day, { personal: false, misses: [{ id: "hidden", date: day.date, title: "不公开展示" }] });
+  assert.doesNotMatch(publicHtml, /misses-tool|不公开展示/);
+});
+
 test("timeline renders a continuous Beijing-time stream with a light mainline and filters", async () => {
   const dates = Array.from({ length: 7 }, (_, index) => `2026-07-${String(15 - index).padStart(2, "0")}`);
   const api = dataApi(); api.daily = async (date) => ({ ...structuredClone(day), date, items: day.items.map((item) => ({ ...item, score: 82, time: `${date}T01:00:00Z`, tags: item.id === "pick-2" ? ["Agent"] : ["模型"] })) });

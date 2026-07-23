@@ -4,6 +4,7 @@ export const CATEGORY_LABELS = { ai: "AI", tech: "互联网/科技", finance: "�
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
 const STATUS_CLASSES = new Set(["已确认", "发展中", "有争议", "仅传言"]);
 const CONTENT_TYPE_LABELS = { reporting: "报道", analysis: "分析", opinion: "观点" };
+const MISS_REASON_LABELS = { important_event: "重要事件", deep_read: "值得深读", missing_perspective: "缺少视角" };
 export const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 export const safeUrl = (value) => /^https?:\/\//i.test(value || "") ? escapeHtml(value) : "#";
 
@@ -101,6 +102,23 @@ function moreCard(item, date) {
   return `<article class="row"><strong>${escapeHtml(item.title)}</strong>${item.summary ? `<span>${escapeHtml(item.summary)}</span>` : ""}${url ? `<a href="${safeUrl(url)}" target="_blank" rel="noopener noreferrer">原文</a>` : ""}<a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>详情</a></article>`;
 }
 
+function renderMissesTool(date, entries = [], loadError = "") {
+  const rows = entries
+    .filter((entry) => entry?.date === date && entry.id)
+    .sort((a, b) => String(b.ts || "").localeCompare(String(a.ts || "")));
+  return `<section class="misses-tool" aria-labelledby="misses-title">
+    <div class="misses-head"><div><h2 id="misses-title">补记遗漏</h2><p>记录会写入公开仓库，请勿填写隐私信息。</p></div></div>
+    ${loadError ? `<p class="misses-error" role="alert">已有遗漏加载失败：${escapeHtml(loadError)}。<button type="button" class="act" data-action="retry-misses">重试</button></p>` : ""}
+    <div class="misses-form">
+      <label>标题（与链接至少填一项）<input type="text" maxlength="200" data-miss-field="title"></label>
+      <label>链接（可选）<input type="url" maxlength="500" placeholder="https://" data-miss-field="url"></label>
+      <label>原因<select data-miss-field="reason">${Object.entries(MISS_REASON_LABELS).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}</select></label>
+      <button type="button" class="fb-go" data-action="submit-miss" data-date="${escapeHtml(date)}">记录遗漏</button>
+    </div>
+    ${rows.length ? `<div class="misses-list">${rows.map((entry) => `<div class="miss-row"><span class="tag">${escapeHtml(MISS_REASON_LABELS[entry.reason] || "")}</span>${entry.url ? `<a href="${safeUrl(entry.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.title || entry.url)}</a>` : `<span>${escapeHtml(entry.title || "")}</span>`}<button type="button" class="act" data-action="remove-miss" data-id="${escapeHtml(entry.id)}">撤销</button></div>`).join("")}</div>` : ""}
+  </section>`;
+}
+
 export function renderDailyReport(data, options = {}) {
   if (!data) return '<div class="empty" role="status">暂无日报数据</div>';
   const hidden = options.hidden || {};
@@ -123,7 +141,8 @@ export function renderDailyReport(data, options = {}) {
     ["更多资讯", "more", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date)), ""],
   ].filter(([, , rows]) => rows.length).map(([title, kind, rows, meta]) => `<section class="supplemental" data-kind="${kind}"><h2 class="sec-title">${title}${meta ? ` ${meta}` : ""}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
   const dateLabel = displayDate(data.date); const issue = annualIssue(data.date);
-  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>日报约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
+  const missesTool = options.personal ? renderMissesTool(data.date, options.misses, options.missesError) : "";
+  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>日报约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${missesTool}${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
 }
 
 function claimsHtml(item) {

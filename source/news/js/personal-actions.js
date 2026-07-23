@@ -15,6 +15,22 @@ export function installPersonalActions(root, context) {
     const overflow = button.closest("details.action-overflow"); if (overflow) overflow.open = false;
 
     if (action === "restore-hidden") { const hidden = storage.get(STORAGE_KEYS.hidden); for (const ref of Object.keys(hidden)) if (ref.startsWith(`${date}:`)) delete hidden[ref]; storage.set(STORAGE_KEYS.hidden, hidden); rerender(); return; }
+    if (action === "retry-misses") { rerender(); return; }
+
+    if (action === "submit-miss") {
+      const tool = button.closest(".misses-tool");
+      const title = tool?.querySelector('[data-miss-field="title"]')?.value.trim() || "";
+      const url = tool?.querySelector('[data-miss-field="url"]')?.value.trim() || "";
+      const reason = tool?.querySelector('[data-miss-field="reason"]')?.value || "";
+      if (!title && !url) { toast("标题或链接至少填写一项", true); return; }
+      if (url && !/^https?:\/\//i.test(url)) { toast("链接必须以 http:// 或 https:// 开头", true); return; }
+      run(api.postMiss({ date, ...(title ? { title } : {}), ...(url ? { url } : {}), reason }).then(() => rerender()));
+      return;
+    }
+    if (action === "remove-miss") {
+      run(api.postMiss({ op: "remove", id: button.dataset.id }).then(() => rerender()));
+      return;
+    }
 
     if (action === "not-interested") {
       const panel = button.closest("article")?.querySelector(".fb-panel");
