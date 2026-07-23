@@ -4,7 +4,7 @@
 
 ## 1. 架构定位与修改边界
 - **当前架构**：Hexo + Fluid 静态博客，部署于 Vercel，内容源为 `source/_posts/*.md`。
-- **API 层**：`api/` 下的 Vercel Serverless 接口用于在线后台发布与设置，以及日报反馈/稍后读写回；单词本接口仅为停用功能保留。
+- **API 层**：`api/` 下的 Vercel Serverless 接口用于在线后台发布与设置，以及日报反馈、收藏、稍后读与漏读写回；单词本接口仅为停用功能保留。
 - **核心原则**：渐进式迭代，保持线上稳定。
 - **严格边界**：仅在要求的特定作用域内修改。禁止擅自重构接口、大改后台逻辑、修改已有文章内容。
 - 旧 Astro 前台、旧 MongoDB API 和静态后台（`public/admin.html`）不再作为运行入口。当前 Vercel API 位于 `api/`，历史记录见 `docs/archive/`。

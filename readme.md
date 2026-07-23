@@ -9,7 +9,7 @@
 - 内容源：`source/_posts/*.md`
 - 静态资源：`source/images/`
 - 自定义脚本：`source/js/`
-- Vercel API：`api/`（在线后台、日报反馈与稍后读写回；停用的单词本接口仍保留）
+- Vercel API：`api/`（在线后台，以及日报反馈、收藏、稍后读与漏读写回；停用的单词本接口仍保留）
 - 在线后台：`/admin/`
 - 构建输出：`dist/`
 - 部署平台：Vercel
@@ -94,12 +94,12 @@ GITHUB_REPO=my-blog
 GITHUB_BRANCH=main
 ```
 
-`ADMIN_TOKEN` 只在当前后台页面的内存中使用，刷新后台后需要重新输入，不会写入 `localStorage`。登录同时换取一个 8 小时有效、`HttpOnly + Secure + SameSite=Strict` 的签名会话，供日报反馈、收藏和稍后读使用；签名会话不具备文章、设置或上传接口的权限。GitHub token 始终只保存在服务端环境变量中。
+`ADMIN_TOKEN` 只在当前后台页面的内存中使用，刷新后台后需要重新输入，不会写入 `localStorage`。登录同时换取一个 8 小时有效、`HttpOnly + Secure + SameSite=Strict` 的签名会话，供日报反馈、收藏、稍后读和漏读使用；签名会话不具备文章、设置或上传接口的权限。GitHub token 始终只保存在服务端环境变量中。
 
 ### API 鉴权与并发保护
 
 - `POST /api/adminSession` 校验后台口令并建立个人会话；`GET` 用于探测会话，`DELETE` 用于退出。会话 Cookie 仅作用于 `/api`，接口不开放跨域凭据读取。
-- `api/newsState.js` 只接受个人会话，用于日报反馈、收藏和稍后读；`adminArticles.js`、`adminSettings.js`、`adminUpload.js` 等高权限接口仍要求 `Authorization: Bearer <ADMIN_TOKEN>`。
+- `api/newsState.js` 只接受个人会话，用于日报反馈、收藏、稍后读和漏读；读取使用 `GET /api/newsState?type=feedback|read_later|favorites|misses`，写入使用 `POST /api/newsState` 与 `{ "type": "...", "payload": { ... } }`。漏读新增 payload 为 `date/title?/url?/reason`，撤销为 `op: "remove"` 加记录 `id`；`date` 必须是真实的 `YYYY-MM-DD` 日历日期，标题或有效 HTTP(S) URL 至少一个，`reason` 只允许 `important_event`（重要事件）、`deep_read`（值得深读）、`missing_perspective`（缺少视角）。`adminArticles.js`、`adminSettings.js`、`adminUpload.js` 等高权限接口仍要求 `Authorization: Bearer <ADMIN_TOKEN>`。
 - 编辑或删除文章时必须提交打开文章时返回的 GitHub blob SHA；文件已被其他操作修改时接口返回 `409`，应刷新后重新编辑，不能覆盖较新的内容。
 - 站点设置涉及 `_config.yml` 与 `_config.fluid.yml` 时通过单个 Git commit 原子更新；任一源文件版本过期都会拒绝整次更新，不留下半套配置。
 
@@ -226,7 +226,7 @@ GITHUB_BRANCH=main
 - `interest_profile.md`：兴趣画像，管线会把 marker（`<!-- last_feedback_ts: ... -->`）之后的新反馈蒸馏进去。这个文件可以人工编辑或删行（也可一次性手写丰富的种子画像），但偏好要写成以 `- ` 开头的要点。画像既影响精选排序（兴趣契合分），也用于生成每条精选的"对我的意义"。
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
 - `deep_health.json`：最近 14 天深度阅读健康度（v2），按源区分抓取成功/失败、窗口内抓取量、去重后候选、已评分、主题匹配、过线和入选；即使当日零候选也会留记录，避免把低频源误判为失效源。
-- `misses.json`：仅个人签名会话可通过 `api/newsState.js` 读写的漏读记录，字段固定为 `id/ts/date/title?/url?/reason`；标题或有效 HTTP(S) URL 至少一个，原因只取重要事件、值得深读、缺少视角，最多保留 1000 条并可撤销。文件位于公开仓库，不允许自由备注或类别字段，也不进入画像、评分或信源调整。
+- `misses.json`：仅个人签名会话可通过 `api/newsState.js` 读写的漏读记录，字段固定为 `id/ts/date/title?/url?/reason`；`date` 必须是真实的 `YYYY-MM-DD` 日历日期，标题或有效 HTTP(S) URL 至少一个，`reason` 只取 `important_event`、`deep_read`、`missing_perspective`，最多保留 1000 条并可撤销。页面分别显示为“重要事件”“值得深读”“缺少视角”。文件位于公开仓库，不允许自由备注或类别字段，也不进入画像、评分或信源调整。
 - `papers_seen.json`：今日论文（HF Daily Papers）推荐去重记录，按 `config.yaml` 的 `papers.seen_keep_days` 保留。
 - `vocab/YYYY-MM-DD.js` / `vocab-book.json`：**单词本功能已于 2026-07-10 停用**（`config.yaml` 的 `vocab.enabled: false`，管线不再每日挑词；前端界面已移除）。历史数据文件与 `api/vocab.js` 接口原地保留，想恢复时把 enabled 改回 true、前端从 git 历史找回单词本界面即可。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。

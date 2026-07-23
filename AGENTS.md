@@ -6,7 +6,7 @@
 
 - 这是一个 Hexo + Fluid + Vercel 静态博客项目。
 - 文章 Markdown 位于 `source/_posts/`。
-- Vercel API 路由位于 `api/`，用于在线后台发布与设置，以及日报反馈/稍后读写回；单词本接口仅为停用功能保留。
+- Vercel API 路由位于 `api/`，用于在线后台发布与设置，以及日报反馈、收藏、稍后读与漏读写回；单词本接口仅为停用功能保留。
 - 在线后台页面位于 `source/admin/index.html`。
 - 每日日报静态页位于 `source/news/`，数据由 `news-pipeline/` 生成。
 - 维护规范放在 `docs/`，历史重构记录放在 `docs/archive/`。
