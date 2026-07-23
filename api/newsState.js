@@ -49,6 +49,20 @@ function isHttpUrl(value) {
   }
 }
 
+function isRealIsoDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(0);
+  parsed.setUTCHours(0, 0, 0, 0);
+  parsed.setUTCFullYear(year, month - 1, day);
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() === month - 1
+    && parsed.getUTCDate() === day;
+}
+
 function validateEntry(type, payload) {
   if (!STATE_FILES[type]) {
     throw createHttpError(400, `Invalid type: ${type}`);
@@ -66,8 +80,8 @@ function validateEntry(type, payload) {
       if (!id) throw createHttpError(400, 'payload.id is required for remove');
       return { op: 'remove', id };
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))) {
-      throw createHttpError(400, 'payload.date must be YYYY-MM-DD');
+    if (!isRealIsoDate(payload.date)) {
+      throw createHttpError(400, 'payload.date must be a real calendar date in YYYY-MM-DD format');
     }
     const title = clip(payload.title, 200).trim();
     const url = clip(payload.url, 500).trim();

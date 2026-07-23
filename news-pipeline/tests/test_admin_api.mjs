@@ -152,6 +152,24 @@ test("misses URL validation rejects malformed HTTP prefixes", () => {
   }
 });
 
+test("misses date validation rejects impossible calendar dates", () => {
+  for (const date of ["2026-02-29", "2026-02-30", "2026-13-01", "2026-00-10"]) {
+    assert.throws(
+      () => newsState._test.validateEntry("misses", {
+        date,
+        title: "Missed event",
+        reason: "important_event",
+      }),
+      /real calendar date/i,
+    );
+  }
+  assert.doesNotThrow(() => newsState._test.validateEntry("misses", {
+    date: "2024-02-29",
+    title: "Leap-day event",
+    reason: "important_event",
+  }));
+});
+
 test("admin frontend does not persist the bearer token in browser storage", async () => {
   const source = await readFile(new URL("../../source/admin/index.html", import.meta.url), "utf8");
   assert.doesNotMatch(source, /localStorage\.(?:getItem|setItem)\(['"]aoiblog_admin_token/);
