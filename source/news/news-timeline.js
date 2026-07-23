@@ -39,8 +39,6 @@
     return out;
   }
   function sameFallback(a,b){
-    const au=new Set((a.item.sources||[]).map(s=>canonicalUrl(s.url)).filter(Boolean));
-    if((b.item.sources||[]).some(s=>au.has(canonicalUrl(s.url)))) return true;
     return similarity(a.item.title,b.item.title)>=.82;
   }
   function groupRows(rows){

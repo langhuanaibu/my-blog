@@ -25,6 +25,14 @@ const distinct = Timeline.groupHotEvents([
 ]);
 assert.equal(distinct.length, 2);
 
+const sharedDocumentDistinctEvents = Timeline.groupHotEvents([
+  {reportDate: '2026-07-23', item: {id: 'data-centre', title: 'OpenAI starts a data-centre project',
+    time: '2026-07-23T01:00:00Z', sources: [{name: 'Roundup', url: 'https://example.test/roundup'}]}},
+  {reportDate: '2026-07-23', item: {id: 'presence', title: 'OpenAI launches Presence agents',
+    time: '2026-07-23T02:00:00Z', sources: [{name: 'Roundup', url: 'https://example.test/roundup'}]}}
+]);
+assert.equal(sharedDocumentDistinctEvents.length, 2);
+
 const collapsed = Timeline.timelineRows(duplicate);
 assert.equal(collapsed.length, 1);
 assert.equal(collapsed[0].publishedDate, '2026-07-12');

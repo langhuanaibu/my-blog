@@ -50,4 +50,4 @@ Issue 使用五个标准流转标签：`needs-triage`、`needs-info`、`ready-fo
 
 ### Domain docs
 
-单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0003）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。
+单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0004）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。

@@ -125,7 +125,6 @@ window.NEWS_DATA["2026-07-13"] = {
      "text": "美国共和党参议员林赛·格雷厄姆去世，享年71岁。",
      "kind": "fact",
      "sources": [
-      "CNBC",
       "BBC World"
      ]
     },
@@ -134,20 +133,6 @@ window.NEWS_DATA["2026-07-13"] = {
      "kind": "fact",
      "sources": [
       "BBC World"
-     ]
-    },
-    {
-     "text": "格雷厄姆刚从乌克兰访问归来。",
-     "kind": "fact",
-     "sources": [
-      "CNBC"
-     ]
-    },
-    {
-     "text": "南卡罗来纳州共和党众议员南希·梅斯和州长亨利·麦克马斯特是可能的接替人选。",
-     "kind": "analysis",
-     "sources": [
-      "CNBC"
      ]
     }
    ],

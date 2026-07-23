@@ -132,16 +132,14 @@ window.NEWS_DATA["2026-07-12"] = {
      "text": "台风巴威在浙江台州玉环市和温州乐清市两次登陆，中心最大风力13级。",
      "kind": "fact",
      "sources": [
-      "澎湃新闻·热门",
-      "财联社·深度"
+      "澎湃新闻·热门"
      ]
     },
     {
      "text": "中央气象台发布台风黄色预警、暴雨红色预警和强对流预警。",
      "kind": "fact",
      "sources": [
-      "澎湃新闻·热门",
-      "财联社·深度"
+      "澎湃新闻·热门"
      ]
     },
     {
@@ -579,7 +577,6 @@ window.NEWS_DATA["2026-07-12"] = {
      "sources": [
       "AI HOT · IT之家（RSS）",
       "AI HOT · X：宝玉 (@dotey)",
-      "The Decoder",
       "CNBC"
      ]
     },
@@ -601,7 +598,6 @@ window.NEWS_DATA["2026-07-12"] = {
      "text": "超过400名前苹果员工目前就职于OpenAI。",
      "kind": "fact",
      "sources": [
-      "The Decoder",
       "CNBC"
      ]
     }

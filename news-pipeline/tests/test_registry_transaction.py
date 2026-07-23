@@ -222,7 +222,8 @@ def test_atomic_persistence_failure_keeps_prior_registry_intact(tmp_path, monkey
     assert list(tmp_path.glob(".events.json.*.tmp")) == []
 
 
-def test_deferred_registry_transaction_survives_output_failure(tmp_path, monkeypatch):
+def test_deferred_registry_transaction_commits_only_with_valid_output(
+        tmp_path, monkeypatch):
     prior_text = json.dumps(_legacy_registry(), ensure_ascii=False, indent=2) + "\n"
     registry_path = tmp_path / "events.json"
     registry_path.write_text(prior_text, encoding="utf-8")
@@ -234,36 +235,23 @@ def test_deferred_registry_transaction_survives_output_failure(tmp_path, monkeyp
 
     assert prepared["version"] == 2
     assert registry_path.read_text(encoding="utf-8") == prior_text
-    persisted = []
-    monkeypatch.setattr(dn, "persist_registry",
-                        lambda registry, data_dir=None: persisted.append(registry))
-
-    def fail_output(*_args, **_kwargs):
-        raise RuntimeError("output failed")
-
-    monkeypatch.setattr(dn, "write_output", fail_output)
-    with pytest.raises(RuntimeError, match="output failed"):
+    invalid = _picked_event()
+    invalid["claims"] = [{
+        "text": "Unsupported claim.",
+        "kind": "analysis",
+        "sources": ["Missing Source"],
+    }]
+    with pytest.raises(ValueError, match="daily payload validation failed"):
         dn.write_output_and_commit_registry(
-            "2026-07-21", "brief", [_picked_event()], [], _source_items(),
+            "2026-07-21", "brief", [invalid], [], _source_items(),
             {"events": {}}, prepared)
-    assert persisted == []
     assert registry_path.read_text(encoding="utf-8") == prior_text
 
-    monkeypatch.setattr(dn, "write_output", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr(
-        dn, "validate_daily_output_file", lambda *_args: ["invalid output"])
-    _, errors = dn.write_output_and_commit_registry(
-        "2026-07-21", "brief", [_picked_event()], [], _source_items(),
-        {"events": {}}, prepared)
-    assert errors == ["invalid output"]
-    assert persisted == []
-
-    monkeypatch.setattr(dn, "validate_daily_output_file", lambda *_args: [])
     _, errors = dn.write_output_and_commit_registry(
         "2026-07-21", "brief", [_picked_event()], [], _source_items(),
         {"events": {}}, prepared)
     assert errors == []
-    assert persisted == [prepared]
+    assert json.loads(registry_path.read_text(encoding="utf-8")) == prepared
 
 
 def test_output_sanitization_precedes_registry_snapshot(monkeypatch):

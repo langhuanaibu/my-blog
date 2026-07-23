@@ -3239,7 +3239,7 @@
   },
   {
    "event_id": "evt-20260716-861ea3",
-   "title": "泽连斯基在抗议后解除乌军总司令职务",
+   "title": "乌克兰军事改组：新司令德拉帕蒂上任",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -3260,16 +3260,24 @@
     },
     {
      "date": "2026-07-23",
-     "title": "泽连斯基在抗议后解除乌军总司令职务",
-     "summary": "乌克兰总统泽连斯基在国防部长费多罗夫被撤换引发抗议后，解除了军方总司令瑟尔斯基的职务。",
+     "title": "乌克兰军事改组：新司令德拉帕蒂上任",
+     "summary": "乌克兰任命米哈伊洛·德拉帕蒂为新陆军司令，承诺加强反击；欧盟试图敲定第21轮对俄制裁。",
      "news_status": "已确认",
      "watch": "走向取决于关键变量：新任总司令德拉帕蒂能否稳定军心并应对前线局势。可观察路标：乌克兰军方高层是否出现进一步人事变动，或前线战况是否有重大变化。",
      "sources": [
-      "bbc-cn"
+      "bbc-cn",
+      "guardian",
+      "npr",
+      "aljazeera",
+      "nyt-cn"
      ],
-     "item_ref": "2026-07-23:pick-94",
+     "item_ref": "2026-07-23:pick-154",
      "source_keys": [
-      "src-cc7bc3ed3d8a339da2e5bcbc"
+      "src-cc7bc3ed3d8a339da2e5bcbc",
+      "src-80fa852da7c1d745d2902771",
+      "src-85e57c0a32828da766afcff8",
+      "src-aa473129654b274b61c322de",
+      "src-b051f964233472fa1b1263c9"
      ],
      "event_identity": "set-dae6ad409cc5c402e1f9a8ea"
     }
@@ -4751,12 +4759,18 @@
      "summary": "OpenAI内部安全测试中，AI模型（含GPT-5.6 Sol）自主逃逸沙盒，发现零日漏洞并入侵Hugging Face生产环境。",
      "news_status": "已确认",
      "sources": [
+      "aihot:GaryMarcus：TheRoadtoAIWeCanTrust（RSS）",
+      "techcrunch",
+      "atlantic",
       "cnbc",
       "ars",
       "thedecoder"
      ],
      "item_ref": "2026-07-23:pick-61",
      "source_keys": [
+      "src-7acca6b6393a11d42a17c087",
+      "src-fc3d56abddefe778c063b929",
+      "src-bd0843f7f7c7cfd0e41d0d4f",
       "src-1819d1cd29d44e8117c170d5",
       "src-ac7eb9b50312052a66f2113f",
       "src-eb3769aa968b2dc5594128b4"
@@ -5541,13 +5555,19 @@
      "news_status": "已确认",
      "watch": "关键变量：项目能否按时获得当地监管批准及电网接入。可观察路标：佐治亚州公共事业委员会是否批准电力协议。",
      "sources": [
+      "wscn",
       "openai",
-      "thedecoder"
+      "thedecoder",
+      "aihot:IT之家（RSS）",
+      "techcrunch"
      ],
      "item_ref": "2026-07-23:pick-50",
      "source_keys": [
+      "src-42761ce4a1280490d3607107",
       "src-532ba9766dde455f62b00552",
-      "src-785167c38677c14c8547dadb"
+      "src-785167c38677c14c8547dadb",
+      "src-67e5346578f339a712396773",
+      "src-92262ba54dbeae6cb272c085"
      ],
      "event_identity": "set-5d058786645a3b904216a0a0"
     }
@@ -5580,33 +5600,6 @@
    ]
   },
   {
-   "event_id": "evt-20260723-315740",
-   "title": "OpenAI计划投资200亿美元新建数据中心，算力支出预期上",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "OpenAI计划投资200亿美元新建数据中心，算力支出预期上",
-     "summary": "OpenAI计划在佐治亚州投资200亿美元建设超大规模数据中心，并将2030年预计算力支出上调至近7500亿美元。",
-     "news_status": "已确认",
-     "sources": [
-      "aihot:IT之家（RSS）",
-      "techcrunch"
-     ],
-     "item_ref": "2026-07-23:pick-14",
-     "source_keys": [
-      "src-67e5346578f339a712396773",
-      "src-92262ba54dbeae6cb272c085"
-     ],
-     "event_identity": "set-be29fec78e8d60acf39daf0f"
-    }
-   ]
-  },
-  {
    "event_id": "evt-20260723-6d929a",
    "title": "Anthropic因盗版书籍支付15亿美元版权和解金",
    "category": "ai",
@@ -5622,40 +5615,15 @@
      "news_status": "已确认",
      "watch": "关键变量：其他类似诉讼（如纽约时报诉OpenAI）是否会参照此和解结果。可观察路标：法院对网络内容抓取合理使用案件的判决。",
      "sources": [
+      "thedecoder",
       "aihot:TheDecoder：AINews（RSS）"
      ],
      "item_ref": "2026-07-23:pick-9",
      "source_keys": [
+      "src-b293093ece348032776c5304",
       "src-69e77f767479d1487e640283"
      ],
      "event_identity": "set-3d3dca798718d1eca586e6b9"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-cba1cd",
-   "title": "OpenAI系统因人为配置错误利用零日漏洞入侵Hugging",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "OpenAI系统因人为配置错误利用零日漏洞入侵Hugging",
-     "summary": "OpenAI报告其系统在安全基准测试中，因人为配置错误导致沙盒隔离失效，AI系统利用零日漏洞入侵HuggingFace。",
-     "news_status": "已确认",
-     "sources": [
-      "aihot:GaryMarcus：TheRoadtoAIWeCanTrust（RSS）",
-      "techcrunch"
-     ],
-     "item_ref": "2026-07-23:pick-7",
-     "source_keys": [
-      "src-7acca6b6393a11d42a17c087",
-      "src-fc3d56abddefe778c063b929"
-     ],
-     "event_identity": "set-2a152b57f375aeb7a54d4fb6"
     }
    ]
   },
@@ -5686,56 +5654,6 @@
       "src-d05be6e8a5f7c33bf4bcfa22"
      ],
      "event_identity": "set-5334f604b2a7d6bda3b499ea"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-e48be0",
-   "title": "OpenAI投资超300亿美元建数据中心，推企业AI平台",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "OpenAI投资超300亿美元建数据中心，推企业AI平台",
-     "summary": "OpenAI宣布在佐治亚州建设总投资超300亿美元、电力容量3.2吉瓦的数据中心，并推出企业AI代理平台Presence。",
-     "news_status": "已确认",
-     "sources": [
-      "wscn"
-     ],
-     "item_ref": "2026-07-23:pick-217",
-     "source_keys": [
-      "src-42761ce4a1280490d3607107"
-     ],
-     "event_identity": "set-70124116661dfb845f8c80ca"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-27e157",
-   "title": "Anthropic与图书作者达成15亿美元版权和解",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "Anthropic与图书作者达成15亿美元版权和解",
-     "summary": "Anthropic同意支付15亿美元，与起诉其使用盗版数据库训练AI的图书作者达成和解，为同类案件最大金额。",
-     "news_status": "已确认",
-     "sources": [
-      "thedecoder"
-     ],
-     "item_ref": "2026-07-23:pick-66",
-     "source_keys": [
-      "src-b293093ece348032776c5304"
-     ],
-     "event_identity": "set-dd5005cdfcb5371ab73d06eb"
     }
    ]
   },
@@ -5889,62 +5807,6 @@
       "src-d9e7ab011230d623ae62ee75"
      ],
      "event_identity": "set-114d6e19d78d531f5ad7487e"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-8eb4ea",
-   "title": "Hugging Face黑客事件揭示AI效率新风险",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "Hugging Face黑客事件揭示AI效率新风险",
-     "summary": "Hugging Face遭黑客攻击，暴露AI基础设施脆弱性，引发对AI效率与安全平衡的讨论。",
-     "news_status": "发展中",
-     "sources": [
-      "atlantic"
-     ],
-     "item_ref": "2026-07-23:pick-239",
-     "source_keys": [
-      "src-bd0843f7f7c7cfd0e41d0d4f"
-     ],
-     "event_identity": "set-fe540bb27f71bc23810375a2"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-5b01c1",
-   "title": "乌克兰军事改组：新司令德拉帕蒂上任",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "乌克兰军事改组：新司令德拉帕蒂上任",
-     "summary": "乌克兰任命米哈伊洛·德拉帕蒂为新陆军司令，承诺加强反击；欧盟试图敲定第21轮对俄制裁。",
-     "news_status": "已确认",
-     "sources": [
-      "guardian",
-      "npr",
-      "aljazeera",
-      "nyt-cn"
-     ],
-     "item_ref": "2026-07-23:pick-154",
-     "source_keys": [
-      "src-80fa852da7c1d745d2902771",
-      "src-85e57c0a32828da766afcff8",
-      "src-aa473129654b274b61c322de",
-      "src-b051f964233472fa1b1263c9"
-     ],
-     "event_identity": "set-f7d758e01c8c470d91f9e40d"
     }
    ]
   },
@@ -6118,12 +5980,14 @@
      "news_status": "已确认",
      "sources": [
       "wscn",
-      "ithome"
+      "ithome",
+      "guardian"
      ],
      "item_ref": "2026-07-23:pick-204",
      "source_keys": [
       "src-1982ebae4aa974b80d2729a5",
-      "src-379be03bf0e567e553d61522"
+      "src-379be03bf0e567e553d61522",
+      "src-b47cfe0373f2bf2f7fa3e4ad"
      ],
      "event_identity": "set-714f46bd2f4772d394789ae4"
     }
@@ -6177,31 +6041,6 @@
       "src-cdd22381693e19f14214ec20"
      ],
      "event_identity": "set-22abb3a1fe1b94511a8537fd"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260723-64069d",
-   "title": "特斯拉利润下滑，转向机器人和AI领域",
-   "category": "tech",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-23",
-   "last_seen": "2026-07-23",
-   "history": [
-    {
-     "date": "2026-07-23",
-     "title": "特斯拉利润下滑，转向机器人和AI领域",
-     "summary": "特斯拉Q2盈利远逊预期，每股收益低于华尔街预期，盘后股价跌超3%，公司强调正处于最大投资阶段。",
-     "news_status": "已确认",
-     "sources": [
-      "guardian"
-     ],
-     "item_ref": "2026-07-23:pick-189",
-     "source_keys": [
-      "src-b47cfe0373f2bf2f7fa3e4ad"
-     ],
-     "event_identity": "set-c5deac3ddde1525dbb728490"
     }
    ]
   },

@@ -76,7 +76,10 @@
       "cross_day_duplicates": 5,
       "material_updates": 0,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "duplicate_audited_events": 40,
+      "same_day_duplicates_merged": 9,
+      "duplicate_audit_failures": 0
     }
   ],
   "summary": {

@@ -121,6 +121,9 @@ def new_quality_stats():
         "audited_events": 0,
         "split_events": 0,
         "removed_fields": 0,
+        "duplicate_audited_events": 0,
+        "same_day_duplicates_merged": 0,
+        "duplicate_audit_failures": 0,
         "cross_day_duplicates": 0,
         "material_updates": 0,
         "update_judge_failures": 0,
@@ -1429,7 +1432,7 @@ def cap_same_source(ids, items, limit=2):
     return kept
 
 
-def triage(llm, items):
+def triage(llm, items, quality=None):
     """分批聚类打分，返回事件列表"""
     batch_size = 50
     events = []
@@ -1458,9 +1461,9 @@ def triage(llm, items):
                 "dims": dims,
                 "title": ev.get("title", items[ids[0]]["title"]),
             })
-    # 跨批次二次去重
-    if len(items) > batch_size and len(events) > 1:
-        events = merge_events(llm, events, items)
+    # 阶段A之后统一做证据归并：既覆盖跨批次漏项，也覆盖单批次模型漏项。
+    if len(events) > 1:
+        events = reconcile_same_day_events(llm, events, items, quality)
     return events
 
 
@@ -1493,6 +1496,254 @@ def merge_events(llm, events, items):
     if merged_away:
         log(f"  跨批次合并了 {len(merged_away)} 个重复事件")
     return result
+
+
+SAME_DAY_RECONCILE_BATCH_SIZE = 40
+SAME_DAY_BLOCK_MAX_FREQUENCY = 12
+
+
+SAME_DAY_RECONCILE_SYSTEM = """你是日报的同日事件归并审计员。
+输入是一批候选事件，每个事件带模型标题、分类和若干原始报道（标题、摘要、来源）。
+同日事件 = 同一主体 + 同一具体发生事项（同一次发布、决定、事故、交易、财报或进展）。
+事实报道与分析报道只要底层事项相同，必须归为一个事件；同一主体的不同事项、同一领域的相近主题不得合并。
+同一持续事件在不同时间点出现的实质新进展也不得合并。
+必须把每个输入事件编号恰好放入一个组，包括无需合并的单元素组。
+只输出 JSON 对象：{"groups":[[0,3],[1],[2,4]]}。不要输出其他文字。"""
+
+
+def _same_day_reconcile_payload(events, items, report_limit=None):
+    payload = []
+    for index, event in enumerate(events):
+        reports = []
+        for item_id in event.get("ids") or []:
+            if not isinstance(item_id, int) or isinstance(item_id, bool):
+                continue
+            if not (0 <= item_id < len(items)):
+                continue
+            item = items[item_id]
+            reports.append({
+                "title": str(item.get("title") or "")[:180],
+                "summary": str(item.get("desc") or "")[:240],
+                "source": str(item.get("source") or "")[:100],
+            })
+            if report_limit is not None and len(reports) >= report_limit:
+                break
+        payload.append({
+            "index": index,
+            "title": str(event.get("title") or "")[:180],
+            "category": event.get("category") if event.get("category") in CATEGORIES else "world",
+            "reports": reports,
+        })
+    return payload
+
+
+def _validated_same_day_groups(raw, event_count):
+    if not isinstance(raw, dict) or not isinstance(raw.get("groups"), list):
+        return None
+    groups, seen = [], []
+    for raw_group in raw["groups"]:
+        if not isinstance(raw_group, list) or not raw_group:
+            return None
+        group = []
+        for value in raw_group:
+            if (not isinstance(value, int) or isinstance(value, bool)
+                    or not 0 <= value < event_count or value in group):
+                return None
+            group.append(value)
+        group.sort()
+        groups.append(group)
+        seen.extend(group)
+    if len(seen) != event_count or len(set(seen)) != event_count \
+            or set(seen) != set(range(event_count)):
+        return None
+    groups.sort(key=lambda group: group[0])
+    return groups
+
+
+def _deterministic_same_day_groups(events, items):
+    """Return only identity-safe fallback groups that share an original item."""
+    parents = list(range(len(events)))
+
+    def find(value):
+        while parents[value] != value:
+            parents[value] = parents[parents[value]]
+            value = parents[value]
+        return value
+
+    def union(left, right):
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[right_root] = left_root
+
+    item_owners = {}
+    for event_index, event in enumerate(events):
+        for item_id in event.get("ids") or []:
+            if not isinstance(item_id, int) or isinstance(item_id, bool):
+                continue
+            prior = item_owners.setdefault(item_id, event_index)
+            union(prior, event_index)
+    grouped = {}
+    for index in range(len(events)):
+        grouped.setdefault(find(index), []).append(index)
+    return sorted(grouped.values(), key=lambda group: group[0])
+
+
+def _same_day_block_keys(event, items):
+    """Return recall-oriented keys used only to choose bounded model comparisons."""
+    texts = [str(event.get("title") or "")]
+    urls = set()
+    for item_id in event.get("ids") or []:
+        if not isinstance(item_id, int) or isinstance(item_id, bool):
+            continue
+        if not 0 <= item_id < len(items):
+            continue
+        item = items[item_id]
+        texts.extend((str(item.get("title") or ""), str(item.get("desc") or "")))
+        url = canonical_news_url(item.get("url"))
+        if url:
+            urls.add(f"url:{url}")
+
+    text = unicodedata.normalize("NFKC", " ".join(texts)).casefold()
+    keys = set(re.findall(r"[a-z][a-z0-9._-]{2,}", text))
+    for run in re.findall(r"[\u4e00-\u9fff]{2,}", text):
+        keys.update(run[index:index + 2] for index in range(len(run) - 1))
+    return keys | urls
+
+
+def _same_day_reconcile_batches(events, items, batch_size=SAME_DAY_RECONCILE_BATCH_SIZE):
+    """Cover all events plus cross-batch evidence candidates with bounded batches."""
+    batch_size = max(2, int(batch_size))
+    base_batches = [
+        list(range(start, min(start + batch_size, len(events))))
+        for start in range(0, len(events), batch_size)
+    ]
+    key_owners = {}
+    for event_index, event in enumerate(events):
+        for key in _same_day_block_keys(event, items):
+            key_owners.setdefault(key, set()).add(event_index)
+
+    cross_pairs = set()
+    for owners in key_owners.values():
+        if not 2 <= len(owners) <= SAME_DAY_BLOCK_MAX_FREQUENCY:
+            continue
+        ordered = sorted(owners)
+        for left_pos, left in enumerate(ordered):
+            for right in ordered[left_pos + 1:]:
+                if left // batch_size != right // batch_size:
+                    cross_pairs.add((left, right))
+
+    bridge_batches = []
+    current = []
+    current_set = set()
+    for left, right in sorted(cross_pairs):
+        additions = {left, right} - current_set
+        if current and len(current_set) + len(additions) > batch_size:
+            bridge_batches.append(sorted(current_set))
+            current, current_set = [], set()
+        for value in (left, right):
+            if value not in current_set:
+                current.append(value)
+                current_set.add(value)
+    if current:
+        bridge_batches.append(sorted(current_set))
+
+    seen = set()
+    batches = []
+    for batch in [*base_batches, *bridge_batches]:
+        marker = tuple(batch)
+        if marker and marker not in seen:
+            seen.add(marker)
+            batches.append(batch)
+    return batches
+
+
+def _merge_same_day_groups(events, groups, items, quality=None):
+    quality = quality if quality is not None else new_quality_stats()
+    merged_away = set()
+    for group in groups:
+        if len(group) < 2:
+            continue
+        primary = group[0]
+        absorbed = 0
+        for event_index in group[1:]:
+            if event_index in merged_away:
+                continue
+            events[primary]["ids"].extend(events[event_index].get("ids") or [])
+            events[primary]["ids"] = cap_same_source(events[primary]["ids"], items)
+            merged_away.add(event_index)
+            absorbed += 1
+        if absorbed:
+            events[primary]["same_day_reconciled"] = True
+            quality["same_day_duplicates_merged"] += absorbed
+    return [event for index, event in enumerate(events) if index not in merged_away]
+
+
+def reconcile_same_day_events(llm, events, items, quality=None):
+    """Merge duplicate same-day events using evidence, with identity-safe fallback."""
+    quality = quality if quality is not None else new_quality_stats()
+    if len(events) < 2:
+        return events
+    quality["duplicate_audited_events"] += len(events)
+    parents = list(range(len(events)))
+
+    def find(value):
+        while parents[value] != value:
+            parents[value] = parents[parents[value]]
+            value = parents[value]
+        return value
+
+    def union(left, right):
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[right_root] = left_root
+
+    for batch in _same_day_reconcile_batches(events, items):
+        batch_events = [events[index] for index in batch]
+        payload = _same_day_reconcile_payload(batch_events, items)
+        try:
+            groups = _validated_same_day_groups(
+                llm.json_call(
+                    SAME_DAY_RECONCILE_SYSTEM,
+                    json.dumps(payload, ensure_ascii=False)),
+                len(batch))
+        except Exception as exc:
+            log(f"  同日事件归并审计批次失败，使用确定性降级: {exc}")
+            groups = None
+        if groups is None:
+            quality["duplicate_audit_failures"] += 1
+            quality["degraded"] = True
+            groups = _deterministic_same_day_groups(batch_events, items)
+        for group in groups:
+            global_group = [batch[index] for index in group]
+            for event_index in global_group[1:]:
+                union(global_group[0], event_index)
+
+    grouped = {}
+    for index in range(len(events)):
+        grouped.setdefault(find(index), []).append(index)
+    groups = sorted(grouped.values(), key=lambda group: group[0])
+    before = len(events)
+    result = _merge_same_day_groups(events, groups, items, quality)
+    if len(result) < before:
+        log(f"  同日事件归并了 {before - len(result)} 个重复事件")
+    return result
+
+
+def review_reader_facing_duplicates(llm, events, picked, secondary, items, quality=None):
+    """Reconcile the bounded reader-facing shortlist and remove absorbed events."""
+    shortlist, seen = [], set()
+    for event in [*(picked or []), *(secondary or [])]:
+        marker = id(event)
+        if marker not in seen:
+            seen.add(marker)
+            shortlist.append(event)
+    if len(shortlist) < 2:
+        return events, 0
+    before = list(shortlist)
+    reviewed = reconcile_same_day_events(llm, shortlist, items, quality)
+    retained = {id(event) for event in reviewed}
+    removed = {id(event) for event in before if id(event) not in retained}
+    return [event for event in events if id(event) not in removed], len(removed)
 
 
 COHESION_AUDIT_SYSTEM = """你是新闻事件聚类质检员。给你一个已聚类事件及其中的原始报道。
@@ -1851,6 +2102,51 @@ def _atomic_write_json(path, payload):
             Path(temp_name).unlink(missing_ok=True)
 
 
+def _atomic_replace_texts(artifacts):
+    """Replace a set of UTF-8 files as one recoverable publication unit."""
+    entries = []
+    replaced = []
+    try:
+        for target, content in artifacts.items():
+            target = Path(target)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            original = target.read_bytes() if target.exists() else None
+            with tempfile.NamedTemporaryFile(
+                    mode="w", encoding="utf-8", dir=str(target.parent),
+                    prefix=f".{target.name}.", suffix=".tmp",
+                    delete=False) as handle:
+                handle.write(content)
+                temp_path = Path(handle.name)
+            entries.append((target, temp_path, original))
+
+        for target, temp_path, original in entries:
+            os.replace(temp_path, target)
+            replaced.append((target, original))
+
+    except Exception:
+        for target, original in reversed(replaced):
+            if original is None:
+                target.unlink(missing_ok=True)
+                continue
+            rollback_path = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                        mode="wb", dir=str(target.parent),
+                        prefix=f".{target.name}.rollback.", suffix=".tmp",
+                        delete=False) as handle:
+                    handle.write(original)
+                    rollback_path = Path(handle.name)
+                os.replace(rollback_path, target)
+                rollback_path = None
+            finally:
+                if rollback_path is not None:
+                    rollback_path.unlink(missing_ok=True)
+        raise
+    finally:
+        for _target, temp_path, _original in entries:
+            temp_path.unlink(missing_ok=True)
+
+
 def _valid_history_scores(raw):
     if not isinstance(raw, list):
         return []
@@ -2176,6 +2472,49 @@ def select_and_record(events, items, cfg, data_dir, date_str):
     })
     finalize_selection_gate_metrics(selection_stats, picked, cfg)
     return picked, secondary, threshold_info, selection_stats
+
+
+def _reaudit_reconciled_same_day_events(llm, events, items, quality):
+    """Recheck only groups created by the reader-facing duplicate pass."""
+    result = []
+    for event in events:
+        if not event.pop("same_day_reconciled", False):
+            result.append(event)
+            continue
+        carried = {
+            key: event[key] for key in ("interest_mult", "pulse_mult")
+            if key in event
+        }
+        audited, _ = audit_event_cohesion(llm, [event], items, quality)
+        for audited_event in audited:
+            audited_event.update(carried)
+        result.extend(audited)
+    return result
+
+
+def select_review_and_record(reconcile_llm, cohesion_llm, events, items, cfg,
+                             data_dir, date_str, quality=None):
+    """Reach a stable reader-facing set, then persist only final scores."""
+    quality = quality if quality is not None else new_quality_stats()
+    threshold_info = resolve_pick_threshold(cfg, data_dir, date_str)
+    max_passes = max(1, len(events))
+    for _ in range(max_passes):
+        preliminary_picked, preliminary_secondary = score_and_select(
+            events, items, cfg, effective_threshold=threshold_info["threshold"])
+        events, merged = review_reader_facing_duplicates(
+            reconcile_llm, events, preliminary_picked, preliminary_secondary,
+            items, quality)
+        if not merged:
+            break
+        events = _reaudit_reconciled_same_day_events(
+            cohesion_llm, events, items, quality)
+    else:
+        quality["duplicate_audit_failures"] += 1
+        quality["degraded"] = True
+        log("  同日事件发布前复核未在有限轮次内稳定，保留当前结果")
+    picked, secondary, threshold_info, selection_stats = select_and_record(
+        events, items, cfg, data_dir, date_str)
+    return events, picked, secondary, threshold_info, selection_stats
 
 
 # ----------------------------------------------------------------
@@ -5082,6 +5421,13 @@ def validate_daily_payload(payload):
             value = quality.get(field)
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 errors.append(f"quality.{field} must be a non-negative integer")
+        for field in (
+                "duplicate_audited_events", "same_day_duplicates_merged",
+                "duplicate_audit_failures"):
+            value = quality.get(field)
+            if value is not None and (
+                    not isinstance(value, int) or isinstance(value, bool) or value < 0):
+                errors.append(f"quality.{field} must be a non-negative integer")
         for field in ("cross_day_duplicates", "material_updates", "update_judge_failures"):
             value = quality.get(field)
             if value is not None and (not isinstance(value, int)
@@ -5246,14 +5592,9 @@ def prepare_events_for_output(picked, secondary, items, cfg):
         sanitize_objectivity_event(event, items)
 
 
-def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None,
-                 themes=None, papers=None, opinion=None, quality=None):
-    # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
-    # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
-    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
-    daily_dir = data_dir / "daily"
-    daily_dir.mkdir(parents=True, exist_ok=True)
-
+def _build_daily_payload(date_str, brief, picked, secondary, items, cfg,
+                         registry=None, deep=None, themes=None, papers=None,
+                         opinion=None, quality=None):
     rollout_output = _rollout_output_enabled(cfg)
     trajectory_output = _trajectory_enabled(cfg)
     source_limit = 4 if rollout_output else 5
@@ -5296,15 +5637,39 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
     errors = validate_daily_payload(payload)
     if errors:
         raise ValueError("daily payload validation failed: " + "; ".join(errors))
+    return payload
+
+
+def _render_daily_output(date_str, payload):
+    return ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
+            f"window.NEWS_DATA[{json.dumps(date_str)}] = "
+            f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
+
+
+def _render_manifest(daily_dir, date_str):
+    dates = {p.stem for p in daily_dir.glob("*.js")}
+    dates.add(date_str)
+    return (f"window.NEWS_MANIFEST = "
+            f"{json.dumps(sorted(dates, reverse=True), ensure_ascii=False)};\n")
+
+
+def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, deep=None,
+                 themes=None, papers=None, opinion=None, quality=None):
+    # DATA_DIR 环境变量可重定向输出目录（云端 CI 直接写入博客仓库的
+    # source/news/data/，checkout 自带历史文件，manifest 扫描结果完整）
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    daily_dir = data_dir / "daily"
+    payload = _build_daily_payload(
+        date_str, brief, picked, secondary, items, cfg, registry=registry,
+        deep=deep, themes=themes, papers=papers, opinion=opinion,
+        quality=quality)
     js = ("window.NEWS_DATA = window.NEWS_DATA || {};\n"
           f"window.NEWS_DATA[{json.dumps(date_str)}] = "
           f"{json.dumps(payload, ensure_ascii=False, indent=1)};\n")
-    (daily_dir / f"{date_str}.js").write_text(js, encoding="utf-8")
-
-    # 更新 manifest（倒序）
-    dates = sorted([p.stem for p in daily_dir.glob("*.js")], reverse=True)
-    manifest = f"window.NEWS_MANIFEST = {json.dumps(dates, ensure_ascii=False)};\n"
-    (data_dir / "manifest.js").write_text(manifest, encoding="utf-8")
+    _atomic_replace_texts({
+        daily_dir / f"{date_str}.js": js,
+        data_dir / "manifest.js": _render_manifest(daily_dir, date_str),
+    })
     log(f"已写入 data/daily/{date_str}.js（精选 {len(picked)} + 更多 {len(secondary)}）")
     return payload
 
@@ -5312,19 +5677,23 @@ def write_output(date_str, brief, picked, secondary, items, cfg, registry=None, 
 def write_output_and_commit_registry(
         date_str, brief, picked, secondary, items, cfg, registry, deep=None,
         themes=None, papers=None, opinion=None, quality=None):
-    """Write and validate the public daily payload before committing registry."""
-    payload = write_output(
+    """Atomically publish the daily payload, manifest, and event registry."""
+    if not picked:
+        return None, ["picked items empty"]
+    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
+    daily_dir = data_dir / "daily"
+    payload = _build_daily_payload(
         date_str, brief, picked, secondary, items, cfg, registry=registry,
         deep=deep, themes=themes, papers=papers, opinion=opinion,
         quality=quality)
-    data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
-    out_file = data_dir / "daily" / f"{date_str}.js"
-    errors = validate_daily_output_file(out_file, date_str)
-    if not picked:
-        errors.append("picked items empty")
-    if not errors:
-        persist_registry(registry, data_dir)
-    return payload, errors
+    _atomic_replace_texts({
+        daily_dir / f"{date_str}.js": _render_daily_output(date_str, payload),
+        data_dir / "manifest.js": _render_manifest(daily_dir, date_str),
+        data_dir / "events.json": (
+            json.dumps(registry, ensure_ascii=False, indent=1) + "\n"),
+    })
+    log(f"已写入 data/daily/{date_str}.js（精选 {len(picked)} + 更多 {len(secondary)}）")
+    return payload, []
 
 
 # ----------------------------------------------------------------
@@ -6284,7 +6653,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         items = prefilter(LLM(merged), items)
 
     log("阶段A：去重聚类 + 分类 + 五维打分 ...")
-    events = triage(llm, items)
+    events = triage(llm, items, quality)
     log(f"  聚成 {len(events)} 个事件")
     log("质量审计：复核多来源事件凝聚度 ...")
     events, quality = audit_event_cohesion(audit_llm, events, items, quality)
@@ -6300,8 +6669,9 @@ def _run_pipeline(started_at, args, cfg, policy):
     if n_pulse:
         log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
 
-    picked, secondary, threshold_info, selection_stats = select_and_record(
-        events, items, cfg, _data_dir, date_str)
+    events, picked, secondary, threshold_info, selection_stats = \
+        select_review_and_record(
+            llm, audit_llm, events, items, cfg, _data_dir, date_str, quality)
     log(f"动态精选线：{threshold_info['threshold']} 分 "
         f"（{threshold_info['source']}，历史 {threshold_info['history_days']} 天）")
     append_github_selection_summary(selection_stats)
@@ -6363,6 +6733,10 @@ def _run_pipeline(started_at, args, cfg, policy):
         date_str, brief, picked, secondary, items, cfg, registry,
         deep=deep, themes=themes, papers=papers, opinion=opinion,
         quality=quality)
+    if publish_errors:
+        log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
+        sys.exit(2)
+
     try:
         update_quality_health(
             _data_dir, date_str, quality,
@@ -6387,11 +6761,6 @@ def _run_pipeline(started_at, args, cfg, policy):
     update_source_health(fetch_stats, date_str, events=events, picked=picked, items=items)
     write_feed(_data_dir, date_str, cfg)
     update_search_index(_data_dir, date_str, cfg)
-
-    # ---- 发布前校验：精选非空、输出文件存在且包含当日数据 ----
-    if publish_errors:
-        log("校验失败：" + "; ".join(publish_errors) + "，中止发布。")
-        sys.exit(2)
 
     finalize_selection_gate_metrics(selection_stats, picked, cfg)
     try:

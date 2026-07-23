@@ -3,6 +3,7 @@
 用法: python news-pipeline/tests/test_pipeline.py
 覆盖: 舆论源封顶 / 同源封顶 / 跨批次合并 / 信源健康度 / 跨天事件登记表
 """
+import copy
 import json
 import os
 import shutil
@@ -406,6 +407,198 @@ check("合并后剩1个事件", len(merged) == 1)
 check("维度分保留主事件(不取max)", all(merged[0]["dims"][d] == 3.0 for d in dn.DIMS))
 check("合并后ids同源封顶", merged[0]["ids"] == [6, 5, 7, 0, 1])
 check("标题保留主事件", merged[0]["title"] == "主事件")
+
+
+# ----------------------------------------------------------------
+# 3.1 同日事件证据归并：跨批次漏项 / 严格降级 / 发布前复核
+# ----------------------------------------------------------------
+
+
+def _same_day_item(title, desc, source, sid, url):
+    return {
+        "title": title, "desc": desc, "source": source, "source_id": sid,
+        "source_type": "analysis", "tier": "T1.5", "credibility": 8,
+        "url": url, "time": "2026-07-22T18:00:00+00:00",
+    }
+
+
+_same_day_items = [
+    _same_day_item(
+        "OpenAI cyber models broke out of training environment to hack Hugging Face",
+        "OpenAI models escaped a sandbox and accessed Hugging Face production systems.",
+        "CNBC", "cnbc", "https://example.com/cnbc-hf"),
+    _same_day_item(
+        "OpenAI opens a 3.2GW Georgia data center",
+        "Project Camellia is a new AI infrastructure project in Georgia.",
+        "OpenAI", "openai", "https://example.com/openai-georgia"),
+    _same_day_item(
+        "A Startling Glimpse at AI's Ruthless Efficiency",
+        "The OpenAI Hugging Face hack shows how efficiently an AI agent can exploit systems.",
+        "The Atlantic", "atlantic", "https://example.com/atlantic-hf"),
+]
+_same_day_events = [
+    {"ids": [0], "category": "ai", "title": "OpenAI 模型逃逸沙盒入侵 Hugging Face",
+     "dims": {d: 8.0 for d in dn.DIMS}},
+    {"ids": [1], "category": "ai", "title": "OpenAI 启动佐治亚数据中心",
+     "dims": {d: 7.0 for d in dn.DIMS}},
+    {"ids": [2], "category": "tech", "title": "AI 效率带来新的安全风险",
+     "dims": {d: 6.0 for d in dn.DIMS}},
+]
+
+
+class EvidenceReconcileLLM:
+    def __init__(self, result):
+        self.result = result
+        self.system = ""
+        self.user = ""
+
+    def json_call(self, system, user):
+        self.system = system
+        self.user = user
+        if isinstance(self.result, Exception):
+            raise self.result
+        return self.result
+
+
+_evidence_llm = EvidenceReconcileLLM({"groups": [[0, 2], [1]]})
+_evidence_quality = dn.new_quality_stats()
+_evidence_merged = dn.reconcile_same_day_events(
+    _evidence_llm, copy.deepcopy(_same_day_events), _same_day_items,
+    _evidence_quality)
+check("证据归并跨越抽象分析标题", len(_evidence_merged) == 2
+      and _evidence_merged[0]["ids"] == [0, 2]
+      and _evidence_merged[0]["category"] == "ai"
+      and _evidence_merged[1]["ids"] == [1])
+check("证据归并输入包含原始摘要与来源",
+      "Ruthless Efficiency" in _evidence_llm.user
+      and "The Atlantic" in _evidence_llm.user
+      and "efficiently an AI agent" in _evidence_llm.user)
+check("同公司不同事件与不同实质进展保持独立",
+      "同一持续事件在不同时间点出现的实质新进展也不得合并"
+      in _evidence_llm.system)
+check("同日归并质量计数",
+      _evidence_quality["duplicate_audited_events"] == 3
+      and _evidence_quality["same_day_duplicates_merged"] == 1
+      and _evidence_quality["duplicate_audit_failures"] == 0)
+
+
+class TriageThenReconcileLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def json_call(self, _system, _user):
+        self.calls += 1
+        if self.calls == 1:
+            return [
+                {"ids": [0], "category": "ai", "dims": {d: 8 for d in dn.DIMS},
+                 "title": "OpenAI 模型入侵 Hugging Face"},
+                {"ids": [1], "category": "ai", "dims": {d: 7 for d in dn.DIMS},
+                 "title": "AI 效率带来风险"},
+            ]
+        return {"groups": [[0, 1]]}
+
+
+_small_triage_llm = TriageThenReconcileLLM()
+_small_triage_quality = dn.new_quality_stats()
+_small_triage = dn.triage(
+    _small_triage_llm, [_same_day_items[0], _same_day_items[2]],
+    _small_triage_quality)
+check("单批次阶段A后仍执行全量同日归并",
+      len(_small_triage) == 1 and _small_triage_llm.calls == 2)
+
+for _invalid_name, _invalid_groups in (
+        ("布尔索引", [[0, True], [1], [2]]),
+        ("重叠索引", [[0, 1], [1, 2]]),
+        ("越界索引", [[0, 3], [1], [2]]),
+        ("遗漏索引", [[0], [1]])):
+    _invalid_llm = EvidenceReconcileLLM({"groups": _invalid_groups})
+    _invalid_quality = dn.new_quality_stats()
+    _invalid_events = copy.deepcopy(_same_day_events)
+    _invalid_result = dn.reconcile_same_day_events(
+        _invalid_llm, _invalid_events, _same_day_items, _invalid_quality)
+    check(f"{_invalid_name}不被部分采信", len(_invalid_result) == 3)
+    check(f"{_invalid_name}触发保守降级",
+          _invalid_quality["duplicate_audit_failures"] == 1
+          and _invalid_quality["degraded"] is True)
+
+_fallback_items = copy.deepcopy(_same_day_items[:2])
+_fallback_items[1]["url"] = _fallback_items[0]["url"] + "?utm_source=rss"
+_fallback_events = copy.deepcopy(_same_day_events[:2])
+_fallback_llm = EvidenceReconcileLLM(RuntimeError("model unavailable"))
+_fallback_quality = dn.new_quality_stats()
+_fallback_result = dn.reconcile_same_day_events(
+    _fallback_llm, _fallback_events, _fallback_items, _fallback_quality)
+check("审计失败时相同 URL 不被误作相同事件",
+      len(_fallback_result) == 2)
+check("URL 候选批次失败仍记录审计失败",
+      _fallback_quality["duplicate_audit_failures"] == 1
+      and _fallback_quality["same_day_duplicates_merged"] == 0)
+
+_review_events = copy.deepcopy(_same_day_events)
+_review_picked = _review_events[:2]
+_review_secondary = [_review_events[2]]
+_review_quality = dn.new_quality_stats()
+_reviewed, _review_merged = dn.review_reader_facing_duplicates(
+    EvidenceReconcileLLM({"groups": [[0, 2], [1]]}),
+    _review_events, _review_picked, _review_secondary,
+    _same_day_items, _review_quality)
+check("发布前复核合并精选与次级中的同日事件",
+      _review_merged == 1 and len(_reviewed) == 2
+      and _reviewed[0]["ids"] == [0, 2])
+
+_selection_events = copy.deepcopy(_same_day_events)
+for event, value in zip(_selection_events, (9.0, 4.0, 8.0)):
+    event["dims"] = {d: value for d in dn.DIMS}
+_selection_items = copy.deepcopy(_same_day_items)
+for item in _selection_items:
+    item["source_type"] = "fact"
+_selection_cfg = {
+    "pick_threshold": 68, "pick_min": 0, "pick_max": 1,
+    "secondary_count": 1, "min_per_category": 0,
+    "max_per_category": {}, "interest_weights": {"ai": 1.0},
+    "scoring": {
+        "dim_weights": {d: 0.2 for d in dn.DIMS},
+        "tier_multipliers": {"T1": 1.0, "T1.5": 0.93, "T2": 0.83},
+    },
+    "pick_dynamic": {"enabled": False, "backfill_offset": 8},
+}
+class StableSelectionReconcileLLM:
+    def __init__(self):
+        self.calls = 0
+
+    def json_call(self, _system, user):
+        self.calls += 1
+        size = len(json.loads(user))
+        if self.calls == 1:
+            return {"groups": [[0, 1]]}
+        return {"groups": [[index] for index in range(size)]}
+
+
+_selection_reconcile = StableSelectionReconcileLLM()
+_selection_cohesion = EvidenceReconcileLLM({
+    "groups": [{
+        "ids": [0, 2], "category": "ai",
+        "dims": {d: 9.0 for d in dn.DIMS},
+        "title": "OpenAI 模型逃逸沙盒入侵 Hugging Face",
+    }],
+})
+_selection_tmp = Path(tempfile.mkdtemp(prefix="same-day-selection-"))
+try:
+    _selection_quality = dn.new_quality_stats()
+    (_stable_events, _stable_picked, _stable_secondary,
+     _stable_threshold, _stable_stats) = dn.select_review_and_record(
+        _selection_reconcile, _selection_cohesion,
+        _selection_events, _selection_items, _selection_cfg,
+        _selection_tmp, "2026-07-23", _selection_quality)
+    check("二次复核后重新选位填入下一独立事件",
+          _stable_picked[0]["ids"] == [0, 2]
+          and _stable_secondary[0]["ids"] == [1])
+    _stable_ledger = json.loads(
+        (_selection_tmp / "score_history.json").read_text(encoding="utf-8"))
+    check("分数账本只记录稳定归并后的事件",
+          len(_stable_ledger["days"]["2026-07-23"]["eligible_scores"]) == 2)
+finally:
+    shutil.rmtree(_selection_tmp)
 
 # ----------------------------------------------------------------
 # 4. 信源健康度（update_source_health）
@@ -1953,6 +2146,11 @@ _quality_payload = {
     "themes": [{"member_ids": ["pick-0"]}],
 }
 check("发布校验接受有效条目与 claim 引用", dn.validate_daily_payload(_quality_payload) == [])
+_bad_duplicate_quality = copy.deepcopy(_quality_payload)
+_bad_duplicate_quality["quality"]["same_day_duplicates_merged"] = -1
+check("发布校验拒绝非法同日归并质量计数",
+      any("same_day_duplicates_merged" in error
+          for error in dn.validate_daily_payload(_bad_duplicate_quality)))
 _quality_payload["items"][0]["claims"][0]["sources"] = ["Meta"]
 check("发布校验拒绝 claim 越界来源",
       any("claim" in e for e in dn.validate_daily_payload(_quality_payload)))
@@ -2428,4 +2626,5 @@ for _name, _passed, _detail in trajectory_rollout.run_tests():
 
 print()
 print("全部通过" if not failures else f"{len(failures)} 项失败: {failures}")
-sys.exit(1 if failures else 0)
+if __name__ == "__main__":
+    sys.exit(1 if failures else 0)
