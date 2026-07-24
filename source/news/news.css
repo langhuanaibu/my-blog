@@ -177,6 +177,11 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .ml-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ml-chip{font-size:12px;padding:2px 10px;border-radius:12px;border:1px solid var(--border2);color:var(--text2);cursor:pointer;background:var(--card);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ml-chip:hover{border-color:var(--accent);color:var(--accent2)}
+.report-jump{display:flex;gap:8px;margin:18px 4px 4px;padding-bottom:4px;overflow-x:auto;scrollbar-width:none}
+.report-jump::-webkit-scrollbar{display:none}
+.report-jump a{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;padding:5px 12px;border:1px solid var(--rule);color:var(--text2);font-size:12.5px;text-decoration:none}
+.report-jump a:hover{border-color:var(--ink-2);color:var(--ink)}
+.report-jump a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---------- filter tabs ---------- */
 .tabs{display:flex;gap:8px;margin:20px 0 4px;flex-wrap:wrap}
@@ -191,6 +196,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .sec-title{margin:30px 0 12px;font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.08em;color:var(--ink);display:flex;align-items:center;gap:10px}
 .sec-title::before{content:"";width:14px;height:3px;background:var(--vermilion)}
 .sec-title::after{content:"";flex:1;height:4px;border-top:1px solid var(--rule);box-shadow:0 3px 0 var(--rule)}
+.report-section .sec-title[id]{scroll-margin-top:190px}
 [data-category="ai"]>.sec-title::before{background:var(--cat-ai)}
 [data-category="tech"]>.sec-title::before{background:var(--cat-tech)}
 [data-category="finance"]>.sec-title::before{background:var(--cat-finance)}
@@ -256,6 +262,12 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .detail-claim .claim-kind{display:inline-block;min-width:52px;margin-right:8px;font-size:11px;font-weight:700;color:var(--text3)}
 .detail-claim.kind-fact{border-left:3px solid var(--ok)}.detail-claim.kind-analysis{border-left:3px solid var(--accent)}.detail-claim.kind-uncertain{border-left:3px solid var(--rumor)}
 .claim-sources{margin-top:6px;font-size:11.5px;color:var(--text3)}
+.trajectory-recap{margin:24px 0 4px;padding:10px 12px;border-left:3px solid var(--rule);color:var(--text2);font-size:13.5px;line-height:1.7}
+.trajectory-recap span{display:block;margin-bottom:3px;font-size:11.5px;font-weight:700;letter-spacing:.04em}
+.trajectory-recap.recap-兑现{border-left-color:var(--ok)}.trajectory-recap.recap-兑现 span{color:var(--ok)}
+.trajectory-recap.recap-部分兑现{border-left-color:var(--dev)}.trajectory-recap.recap-部分兑现 span{color:var(--dev)}
+.trajectory-recap.recap-未兑现{border-left-color:var(--rumor)}.trajectory-recap.recap-未兑现 span{color:var(--rumor)}
+.trajectory-recap.recap-反转{border-left-color:var(--vermilion)}.trajectory-recap.recap-反转 span{color:var(--vermilion)}
 
 @media(max-width:600px){
   .detail-wrap{max-width:none}.detail-title{font-size:26px}.detail-lede{font-size:16px;padding:13px 14px}
@@ -479,6 +491,7 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 .all-tools input,.all-tools select{min-height:38px;padding:7px 10px;border:1px solid var(--rule);border-radius:0;background:var(--card);color:var(--text)}
 .all-list{display:flex;flex-direction:column}.all-entry{display:grid;gap:5px}.all-entry-meta{display:flex;align-items:center;gap:8px}
 .weekly-reading{display:flex;flex-direction:column;gap:20px}.weekly-section{margin:0}.weekly-threads .wk-thread{padding-block:12px;border-bottom:1px solid var(--border)}
+.supplemental-load{margin:28px 2px -12px;color:var(--text3);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
 .topic-event-group{margin-bottom:24px}.topic-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px}.topic-card{padding:9px 11px;box-shadow:none}
 .reading-view{font-family:var(--font-body,inherit)}
 @container (min-width:740px){

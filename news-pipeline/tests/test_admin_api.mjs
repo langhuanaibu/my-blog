@@ -8,6 +8,7 @@ import { join } from "node:path";
 const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
 const adminArticles = require("../../api/adminArticles.js");
+const adminSettings = require("../../api/adminSettings.js");
 const newsState = require("../../api/newsState.js");
 
 function jsonResponse(data, status = 200) {
@@ -182,6 +183,25 @@ test("admin new-post dates use the Beijing calendar instead of UTC", async () =>
   assert.match(source, /timeZone:\s*['"]Asia\/Shanghai['"]/);
 });
 
+test("footer settings escape active HTML while preserving the editor value", () => {
+  const siteConfig = 'title: "Blog"\nsubtitle: "Notes"\n';
+  const fluidConfig = [
+    "footer:",
+    '  content: "<span>Current</span>"',
+    "",
+  ].join("\n");
+  const footerText = 'Hello </span><script>alert("xss")</script> & goodbye';
+
+  const next = adminSettings._test.applySettings(siteConfig, fluidConfig, { footerText });
+
+  assert.doesNotMatch(next.fluidConfig, /<script>/i);
+  assert.match(next.fluidConfig, /&lt;script&gt;/);
+  assert.equal(
+    adminSettings._test.extractSettings(next.siteConfig, next.fluidConfig).footerText,
+    footerText,
+  );
+});
+
 test("legacy export stages posts before replacing the live directory", async () => {
   const source = await readFile(new URL("../../tools/export-articles-to-hexo.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(source, /fs\.rm\(postsDir,\s*\{\s*recursive:\s*true/);
@@ -253,6 +273,40 @@ test("write-enabled workflow pins actions and Python packages immutably", async 
   assert.match(requirements, /--hash=sha256:/);
   assert.match(requirements, /news-pipeline\/vendor\/sgmllib3k-1\.0\.0-py3-none-any\.whl/);
   assert.doesNotMatch(requirements, /^sgmllib3k==/m);
+});
+
+test("deployment headers prevent MIME sniffing and admin clickjacking", async () => {
+  const config = JSON.parse(
+    await readFile(new URL("../../vercel.json", import.meta.url), "utf8"),
+  );
+  const headersFor = (source) => Object.fromEntries(
+    config.headers
+      .filter((rule) => rule.source === source)
+      .flatMap((rule) => rule.headers)
+      .map(({ key, value }) => [key.toLowerCase(), value]),
+  );
+
+  assert.equal(headersFor("/(.*)")["x-content-type-options"], "nosniff");
+  assert.equal(headersFor("/admin/(.*)")["x-frame-options"], "DENY");
+});
+
+test("personal state files are excluded from static deployments", async () => {
+  const hexoConfig = await readFile(new URL("../../_config.yml", import.meta.url), "utf8");
+  const vercelIgnore = await readFile(new URL("../../.vercelignore", import.meta.url), "utf8");
+  const privateFiles = [
+    "feedback.json",
+    "read_later.json",
+    "favorites.json",
+    "misses.json",
+    "vocab-book.json",
+    "interest_profile.md",
+  ];
+
+  for (const file of privateFiles) {
+    const relativePath = `news/data/${file}`;
+    assert.match(hexoConfig, new RegExp(`- ["']${relativePath.replace(".", "\\.")}["']`));
+    assert.match(vercelIgnore, new RegExp(`^source/${relativePath.replace(".", "\\.")}$`, "m"));
+  }
 });
 
 test("atomic multi-file update creates one commit and advances the branch once", async () => {

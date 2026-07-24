@@ -134,6 +134,58 @@ test("日报固定五类全部展开，精选卡直出摘要、为什么重要�
   assert.doesNotMatch(card.textContent, /背景机制|对我的意义|长叙述|事实/);
 });
 
+test("刊头按实际可见核心日报估时且忽略顶层 read_minutes", () => {
+  const report = {
+    date: "2026-07-15",
+    read_minutes: 99,
+    lead: "导".repeat(280),
+    themes: [{ title: "主线标题", overview: "主线说明" }],
+    items: [
+      { id: "pick-ai", tier: "pick", category: "ai", title: "精选标题", summary: "精选摘要", why: "精选意义", watch: "精选走向" },
+      { id: "pick-world", tier: "pick", category: "world", title: "藏".repeat(300), summary: "隐藏摘要" },
+    ],
+    deep: [], papers: [], opinion: [], tracking: [],
+  };
+  const doc = new JSDOM(`<main>${renderDailyReport(report, { hidden: { "2026-07-15:pick-world": true } })}</main>`).window.document;
+  assert.match(doc.querySelector(".mast-meta")?.textContent || "", /核心日报约 2 分钟/);
+  assert.doesNotMatch(doc.querySelector(".mast-meta")?.textContent || "", /99 分钟/);
+});
+
+test("关闭轨迹时核心估时不计入走向", () => {
+  const report = {
+    date: "2026-07-15",
+    trajectory_enabled: false,
+    lead: "导".repeat(290),
+    items: [{ id: "pick-ai", tier: "pick", category: "ai", title: "标题", summary: "摘要", why: "意义", watch: "走".repeat(300) }],
+    deep: [], papers: [], opinion: [], tracking: [],
+  };
+  const doc = new JSDOM(`<main>${renderDailyReport(report)}</main>`).window.document;
+  assert.match(doc.querySelector(".mast-meta")?.textContent || "", /核心日报约 1 分钟/);
+});
+
+test("附栏导读估时覆盖舆论 why_hot 并与深读原文估时分开", () => {
+  const report = {
+    date: "2026-07-15",
+    lead: "导语",
+    items: [],
+    deep: [{ id: "deep-1", title_zh: "深读", brief: "导读", read_minutes: 20 }],
+    papers: [],
+    opinion: [{ id: "opinion-1", title: "舆论", why_hot: "热".repeat(301), mechanism: "机制" }],
+    tracking: [],
+  };
+  const doc = new JSDOM(`<main>${renderDailyReport(report)}</main>`).window.document;
+  assert.match(doc.querySelector(".supplemental-load")?.textContent || "", /附栏导读约 2 分钟/);
+  assert.match(doc.querySelector('[data-kind="deep"] .sec-title')?.textContent || "", /原文约 20 分钟/);
+});
+
+test("报告类目跳转只包含有可见精选的分类并指向现有标题", () => {
+  const doc = new JSDOM(`<main>${renderDailyReport(daily, { hidden: { [`${daily.date}:pick-world`]: true } })}</main>`).window.document;
+  const nav = doc.querySelector(".report-jump");
+  assert.equal(nav?.getAttribute("aria-label"), "日报类目跳转");
+  assert.deepEqual([...nav.querySelectorAll("a")].map((node) => [node.textContent, node.getAttribute("href")]), [["AI 1", "#cat-ai"]]);
+  assert.equal(doc.querySelector("#cat-ai")?.tagName, "H2");
+});
+
 test("日报卡片只在 watch 存在时显示走向", () => {
   const withWatch = new JSDOM(`<main>${dailyCard(daily.items[0], daily.date)}</main>`).window.document;
   assert.equal(withWatch.querySelector(".kv.watch")?.textContent, "走向：后续关注");
@@ -251,6 +303,21 @@ test("时间线日期按北京时间统一格式并标记今天昨天", () => {
   assert.equal(TimelineView.formatTimelineDate("2026-07-17", nextBeijingDay), "昨天 · 7月17日 周五");
 });
 
+test("时间线最新一期榜单使用本期优先读名称", async () => {
+  const date = "2026-07-15";
+  const html = await TimelineView.renderTimeline({
+    dates: [date],
+    dataApi: { daily: async () => ({ date, items: [{ id: "pick-1", tier: "pick", category: "ai", title: "优先条目", score: 99, time: "2026-07-15T01:00:00Z", sources: [] }] }) },
+    hidden: {},
+    personal: false,
+    state: TimelineView.createTimelineState(),
+    now: new Date("2026-07-15T02:00:00Z").getTime(),
+  });
+  const doc = new JSDOM(`<main>${html}</main>`).window.document;
+  assert.equal(doc.querySelector(".timeline-mainline h2")?.textContent, "本期优先读");
+  assert.doesNotMatch(doc.querySelector(".timeline-mainline")?.textContent || "", /今日主线/);
+});
+
 test("重大更新在卡片和详情中明确标注首次收录日期", () => {
   const item = { ...daily.items[0], is_update: true, first_seen: "2026-07-14" };
   assert.match(dailyCard(item, daily.date), /重大更新/);
@@ -275,6 +342,33 @@ test("新闻详情按来龙现状走向和对我的意义组织阅读顺序", ()
   assert.match(sections[1].textContent, /摘要/);
   assert.match(sections[1].textContent, /长叙述/);
   assert.match(sections[1].textContent, /为什么重要/);
+});
+
+test("详情把末尾格式完整的四种走向回对独立显示", () => {
+  for (const status of ["兑现", "部分兑现", "未兑现", "反转"]) {
+    const item = {
+      ...daily.items[0],
+      trusted_continuation: true,
+      context: `既有来龙。走向回对（${status}）：此前路标已有结论。`,
+    };
+    const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
+    const recap = doc.querySelector(`.trajectory-recap.recap-${status}`);
+    assert.match(recap?.textContent || "", new RegExp(`${status}.*此前路标已有结论`));
+    assert.equal(doc.querySelector('[data-trajectory="context"]')?.textContent.includes("走向回对"), false);
+    assert.ok(recap.compareDocumentPosition(doc.querySelector('[data-trajectory="watch"]')) & 4);
+  }
+});
+
+test("详情不移动非末尾或格式不完整的走向回对", () => {
+  for (const context of [
+    "走向回对（兑现）：已有结论。后面还有普通来龙。",
+    "既有来龙。走向回对（大致兑现）：证据不足。",
+    "既有来龙，没有回对。",
+  ]) {
+    const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true, context }, "news", daily.date)}</main>`).window.document;
+    assert.equal(doc.querySelector(".trajectory-recap"), null);
+    assert.match(doc.querySelector('[data-trajectory="context"]')?.textContent || "", new RegExp(context.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
 });
 
 test("一次性条目的通用背景不被详情误标为来龙", () => {

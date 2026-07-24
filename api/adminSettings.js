@@ -16,12 +16,38 @@ function yamlString(value) {
   return JSON.stringify(String(value ?? ''));
 }
 
+function escapeHtmlText(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function decodeHtmlText(value) {
+  return String(value ?? '')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&amp;/g, '&');
+}
+
 function yamlInlineHtml(value) {
-  return yamlString(`<span>${String(value ?? '').trim()}</span>`);
+  return yamlString(`<span>${escapeHtmlText(String(value ?? '').trim())}</span>`);
 }
 
 function unquote(value) {
-  return String(value || '').trim().replace(/^['"]|['"]$/g, '');
+  const text = String(value || '').trim();
+  if (text.startsWith('"') && text.endsWith('"')) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      // Fall through for legacy YAML values that are not valid JSON strings.
+    }
+  }
+  return text.replace(/^['"]|['"]$/g, '');
 }
 
 function readTopLevelBlock(source, blockName) {
@@ -53,7 +79,7 @@ function readSlogan(source) {
 function readFooter(source) {
   const raw = readNestedScalar(source, 'footer', 'content');
   const htmlMatch = raw.match(/^<span>([\s\S]*)<\/span>$/);
-  return htmlMatch ? htmlMatch[1] : raw;
+  return decodeHtmlText(htmlMatch ? htmlMatch[1] : raw);
 }
 
 function readNav(source) {

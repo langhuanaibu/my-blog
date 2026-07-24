@@ -71,10 +71,33 @@ export function dailyCard(item, date, options = {}) {
   </article>`;
 }
 
-function readMinutes(data) {
-  if (Number.isFinite(data?.read_minutes)) return data.read_minutes;
-  const text = [data?.lead, data?.brief, ...(data?.items || []).flatMap((item) => [item.summary, item.why])].filter(Boolean).join("");
-  return Math.max(1, Math.ceil(text.length / 500));
+function textMinutes(parts) {
+  const length = parts.filter((part) => typeof part === "string" && part).join("").length;
+  return Math.max(1, Math.ceil(length / 300));
+}
+
+function coreReadMinutes(data, picks) {
+  const trajectoryEnabled = data.trajectory_enabled !== false;
+  return textMinutes([
+    data.lead || data.brief,
+    ...(data.themes || []).slice(0, 3).flatMap((theme) => [theme.title, theme.overview || theme.one_liner]),
+    ...picks.flatMap((item) => [item.title, item.summary, item.why, trajectoryEnabled ? item.watch : ""]),
+  ]);
+}
+
+function supplementalReadMinutes(data) {
+  const contentParts = (items, type) => (items || []).flatMap((item) => [
+    item.title_zh || item.title,
+    item.summary || item.brief || item.why_hot,
+    item.why || item.takeaway || (type === "opinion" ? item.mechanism : ""),
+  ]);
+  return textMinutes([
+    ...(data.tracking || []).flatMap((item) => [item.title, ...(item.history || []).map((row) => row.summary)]),
+    ...contentParts(data.deep, "deep"),
+    ...contentParts(data.papers, "paper"),
+    ...contentParts(data.opinion, "opinion"),
+    ...(data.items || []).filter((item) => item.tier === "more").flatMap((item) => [item.title, item.summary]),
+  ]);
 }
 
 function contentCard(item, type, date, options) {
@@ -139,6 +162,10 @@ export function renderDailyReport(data, options = {}) {
     return `<section class="report-section" data-category="${category}" aria-labelledby="cat-${category}"><h2 id="cat-${category}" class="sec-title">${CATEGORY_LABELS[category]} <span class="n">${rows.length} 篇</span></h2><div class="report-list">${rows.length ? rows.map((item) => dailyCard(item, data.date, renderOptions)).join("") : '<p class="section-empty">今日暂无精选</p>'}</div></section>`;
   }).join("");
   const themes = (data.themes || []).slice(0, 3);
+  const jumpLinks = CATEGORY_KEYS.map((category) => {
+    const count = picks.filter((item) => item.category === category).length;
+    return count ? `<a href="#cat-${category}">${CATEGORY_LABELS[category]} ${count}</a>` : "";
+  }).filter(Boolean).join("");
   const deepItems = data.deep || [];
   const deepMinutes = deepItems.reduce((total, item) => total + (Number.isFinite(item.read_minutes) && item.read_minutes > 0 ? item.read_minutes : 0), 0);
   const supplementary = [
@@ -148,9 +175,21 @@ export function renderDailyReport(data, options = {}) {
     ["舆论观察", "opinion", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options)), ""],
     ["更多资讯", "more", (data.items || []).filter((item) => item.tier === "more").map((item) => moreCard(item, data.date)), ""],
   ].filter(([, , rows]) => rows.length).map(([title, kind, rows, meta]) => `<section class="supplemental" data-kind="${kind}"><h2 class="sec-title">${title}${meta ? ` ${meta}` : ""}</h2><div class="more-list">${rows.join("")}</div></section>`).join("");
+  const supplementalLoad = supplementary ? `<div class="supplemental-load">附栏导读约 ${supplementalReadMinutes(data)} 分钟</div>` : "";
   const dateLabel = displayDate(data.date); const issue = annualIssue(data.date);
   const missesTool = options.personal ? renderMissesTool(data.date, options.misses, options.missesError) : "";
-  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>日报约 ${readMinutes(data)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${missesTool}${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementary}</article>`;
+  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>核心日报约 ${coreReadMinutes(data, picks)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${missesTool}${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${jumpLinks ? `<nav class="report-jump" aria-label="日报类目跳转">${jumpLinks}</nav>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementalLoad}${supplementary}</article>`;
+}
+
+function trajectoryRecap(context) {
+  if (typeof context !== "string" || !context) return null;
+  const match = /(^|[。！？\n])走向回对（(兑现|部分兑现|未兑现|反转)）：([^。！？\n]+[。！？]?)$/u.exec(context);
+  if (!match) return null;
+  return {
+    context: `${context.slice(0, match.index)}${match[1]}`.trim(),
+    status: match[2],
+    text: match[3].trim(),
+  };
 }
 
 function claimsHtml(item) {
@@ -204,12 +243,15 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   const update = type === "news" && item.is_update ? `<div class="detail-update"><b>重大更新</b>${item.first_seen ? ` · 首次收录：${escapeHtml(item.first_seen)}` : ""}</div>` : "";
   let body = "";
   if (type === "news") {
-    const context = item.trusted_continuation === true && item.context ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(item.context)}</div></section>` : "";
+    const recapData = item.trusted_continuation === true ? trajectoryRecap(item.context) : null;
+    const contextText = recapData ? recapData.context : item.context;
+    const context = item.trusted_continuation === true && contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
     const currentParts = `${item.summary ? `<p class="detail-lede">${escapeHtml(item.summary)}</p>` : ""}${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}`;
     const current = currentParts ? `<section data-trajectory="current"><h2 class="detail-sec-t">现状</h2>${currentParts}</section>` : "";
+    const recap = recapData ? `<div class="trajectory-recap recap-${recapData.status}"><span>走向回对 · ${recapData.status}</span>${escapeHtml(recapData.text)}</div>` : "";
     const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";
     const significance = item.significance ? `<section data-trajectory="significance"><h2 class="detail-sec-t">对我的意义</h2><div class="kv">${escapeHtml(item.significance)}</div></section>` : "";
-    body = `<div class="detail-trajectory">${context}${current}${watch}${significance}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
+    body = `<div class="detail-trajectory">${context}${current}${recap}${watch}${significance}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
   }
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;

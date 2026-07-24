@@ -23,6 +23,14 @@ skip_render:
   - admin/**
   - news/**
 
+exclude:
+  - "news/data/feedback.json"
+  - "news/data/read_later.json"
+  - "news/data/favorites.json"
+  - "news/data/misses.json"
+  - "news/data/vocab-book.json"
+  - "news/data/interest_profile.md"
+
 new_post_name: :year-:month-:day-:title.md
 default_layout: post
 titlecase: false

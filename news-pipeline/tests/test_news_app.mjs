@@ -54,7 +54,7 @@ test("desktop search ignores Escape and remains available", async () => {
   assert.equal(panel.getAttribute("aria-modal"), null);
 });
 
-test("daily report separates digest and deep reading time and degrades content labels", () => {
+test("daily report separates visible core, supplemental digest and deep reading time", () => {
   const html = renderDailyReport({
     date: "2026-07-15",
     lead: "导语",
@@ -68,7 +68,9 @@ test("daily report separates digest and deep reading time and degrades content l
   });
   const dom = new JSDOM(`<main>${html}</main>`);
   const text = dom.window.document.querySelector("main").textContent;
-  assert.match(text, /日报约 12 分钟/);
+  assert.match(text, /核心日报约 1 分钟/);
+  assert.match(text, /附栏导读约 1 分钟/);
+  assert.doesNotMatch(text, /日报约 12 分钟/);
   assert.match(text, /原文约 30 分钟/);
   assert.deepEqual(
     [...dom.window.document.querySelectorAll(".content-type")].map((node) => node.textContent.trim()),
