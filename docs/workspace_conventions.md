@@ -17,7 +17,7 @@
 | ├── `/source/about` | 关于页面 | 存放 `index.md`。 |
 | ├── `/source/friends` | 友情链接页面 | 存放 `index.md`。 |
 | ├── `/source/guestbook` | 留言板页面 | 存放 `index.md`。 |
-| ├── `/source/news` | 每日日报静态页 | `index.html` 只保留语义页面骨架，`news.css` 存放独立样式，`js/` 存放原生 ES Modules，`fonts/` 只存上线所需的 WOFF2、生成 CSS 和字体许可证，`data/` 主要由管线和页面 API 产出。可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
+| ├── `/source/news` | 每日日报静态页 | `index.html` 只保留语义页面骨架，`news.css` 存放独立样式，`js/` 存放原生 ES Modules，`fonts/` 只存上线所需的 WOFF2、生成 CSS 和字体许可证，`data/` 主要由管线和页面 API 产出。个人状态文件虽由 Hexo `exclude` 与 `.vercelignore` 排除出静态部署，仍以公开 Git 仓库为后端，不得写入秘密或可识别个人身份的信息。可人工维护 `source/news/data/interest_profile.md` 的兴趣画像要点，其余数据优先通过管线或页面操作生成。 |
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、收藏、稍后读和漏读写回接口；`vocab.js` 仅为停用功能保留，非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs`、字体字符清单与生成脚本等一次性或维护工具；字体源 OTF 和工具中间产物不得入库。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
@@ -77,7 +77,7 @@
 👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`score_history.json`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。`score_history.json` 是动态精选线的内部账本，损坏时应让管线按静态线回退并重建，不要人工补历史分数。`vocab/*.js` 是已停用单词本的历史数据，也不要手工维护。
 
 **场景 7：我要维护日报个人状态**
-👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json`、`read_later.json`、`favorites.json` 或 `misses.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。漏读记录会进入公开仓库，不能写自由备注或类别；单词本已停用，`api/vocab.js` 与 `vocab-book.json` 仅为恢复能力保留。
+👉 **动作**：优先通过 `/news/` 页面操作，由 `api/newsState.js` 写 `feedback.json`、`read_later.json`、`favorites.json` 或 `misses.json`；不要绕过 API 直接编辑这些状态文件，除非是在排障时做最小修复。新增或调整状态文件时，还要同步检查 `_config.yml` 的 `exclude` 与 `.vercelignore`。这两层只阻止静态发布，不会把 Git 后端变成私有存储；漏读记录不能写自由备注或类别，任何状态文件都不得保存敏感内容。单词本已停用，`api/vocab.js` 与 `vocab-book.json` 仅为恢复能力保留。
 
 **场景 8：我要记录一个 Vercel 部署相关的深坑经验**
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。

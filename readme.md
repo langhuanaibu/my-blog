@@ -37,6 +37,8 @@ docs/                   维护规范与必要的历史记录
 docs/archive/           历史架构与迁移记录（非当前运行说明）
 _config.yml             Hexo 主配置
 _config.fluid.yml       Fluid 主题配置
+.vercelignore           Vercel 源文件排除清单
+vercel.json             Vercel 路由与安全响应头
 ```
 
 ## 常用命令
@@ -168,7 +170,7 @@ GITHUB_BRANCH=main
 
 ## 每日日报页（/news/）
 
-`source/news/` 是独立的静态"每日新闻驾驶舱"页面，通过导航菜单"日报"访问（`/news/`）。页面与数据均为纯静态文件，`_config.yml` 的 `skip_render: news/**` 保证 Hexo 原样拷贝、不经主题渲染。
+`source/news/` 是独立的静态"每日新闻驾驶舱"页面，通过导航菜单"日报"访问（`/news/`）。公开页面与生成数据是纯静态文件，`_config.yml` 的 `skip_render: news/**` 保证 Hexo 原样拷贝、不经主题渲染；个人状态文件同时列入 Hexo `exclude` 与 `.vercelignore`，不会进入静态部署。
 
 ### 数据管线
 
@@ -229,7 +231,7 @@ GITHUB_BRANCH=main
 - `deep_seen.json`：深度阅读推荐 URL 去重记录，按配置保留。
 - `deep_health.json`：最近 14 天深度阅读健康度（v2），按源区分抓取成功/失败、窗口内抓取量、去重后候选、已评分、主题匹配、过线和入选；即使当日零候选也会留记录，避免把低频源误判为失效源。
 - `misses.json`：仅个人签名会话可通过 `api/newsState.js` 读写的漏读记录，字段固定为 `id/ts/date/title?/url?/reason`；`date` 必须是真实的 `YYYY-MM-DD` 日历日期，标题或有效 HTTP(S) URL 至少一个，`reason` 只取 `important_event`、`deep_read`、`missing_perspective`，最多保留 1000 条并可撤销。页面分别显示为“重要事件”“值得深读”“缺少视角”。文件不进入画像、评分或信源调整。
-- `feedback.json`、`read_later.json`、`favorites.json`、`misses.json`、`vocab-book.json` 与 `interest_profile.md` 通过 Hexo `exclude` 和 `.vercelignore` 排除在静态部署之外，线上 `/news/data/` 不应直接提供这些文件。它们仍位于公开仓库，因此不得写入秘密或个人敏感信息；若需要真正的私密状态，应迁移到私有存储并清理 Git 历史。
+- `feedback.json`、`read_later.json`、`favorites.json`、`misses.json`、`vocab-book.json` 与 `interest_profile.md` 通过 Hexo `exclude` 和 `.vercelignore` 排除在静态部署之外，线上 `/news/data/` 不应直接提供这些文件。它们仍以公开 Git 仓库文件为存储后端（尚未产生的文件除外），因此不得写入秘密、隐私正文或可识别个人身份的信息；若需要真正的私密状态，应迁移到私有存储，并清理已经提交过的内容及 Git 历史。
 - `papers_seen.json`：今日论文（HF Daily Papers）推荐去重记录，按 `config.yaml` 的 `papers.seen_keep_days` 保留。
 - `vocab/YYYY-MM-DD.js` / `vocab-book.json`：**单词本功能已于 2026-07-10 停用**（`config.yaml` 的 `vocab.enabled: false`，管线不再每日挑词；前端界面已移除）。历史数据文件与 `api/vocab.js` 接口原地保留，想恢复时把 enabled 改回 true、前端从 git 历史找回单词本界面即可。
 - `feed.xml`：RSS 订阅文件，地址为 `/news/data/feed.xml`，按 `config.yaml` 的 `feed_days` 收录精选，深读推荐带【深读】前缀。
