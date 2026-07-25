@@ -16,9 +16,16 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent
 CORPUS_PATH = ROOT / "fixtures" / "objectivity_evidence.json"
-CORPUS_SHA256 = "259a1f55824e38302bb8d84c1d9071062a2f92e03b6ac944adfe04d0a36cc2d4"
+CORPUS_SHA256 = "10a2966f887e975b43f673bf81e0f1c9ee3f5040d389cb243ce2fc04b56c58b2"
 FIXTURE_KEYS = {"id", "category", "source", "excerpt", "expected"}
-EXPECTED_KEYS = {"labels", "attribution_required", "redlines"}
+EXPECTED_KEYS = {"labels", "accepted_labels", "attribution_required", "redlines"}
+# Several fixtures sit where two risk axes overlap — claim type (armed_conflict,
+# company_claim, …) versus evidential weakness (sensitive_single_source,
+# shared_evidence, …). A single "correct" label there is arbitrary, so each
+# fixture carries every label its excerpt genuinely supports. Widening a set
+# requires an argument from CATEGORY_DESCRIPTIONS, never a wish to pass a run.
+LABEL_AGREEMENT_TARGET = 0.90
+ATTRIBUTION_TARGET = 0.95
 CATEGORY_REDLINES = {
     "armed_conflict": {
         "casualty_count_unattributed", "combat_claim_as_verified",
@@ -92,6 +99,13 @@ synthetic evidence and final candidate output. Do not assume omitted facts and d
 invent balance. Assign exactly one evidence-risk label to each case based on the evidence,
 even when the candidate safely removes or attributes that risk:
 {category_guidance}
+The label names the risk the evidence creates for whoever writes from it, which is not
+the same as a flaw visible in the evidence text. Evidence that is careful, one-sided or
+correctly sourced still carries a risk: a temporary pause invites a permanent-peace
+overstatement, a properly based figure invites growth claims beyond the reported period,
+an unexplained sequence of events invites an invented motive, material containing only
+one side invites a fabricated response, and genuinely independent chains invite collapsing
+distinct details. Always label that risk; never answer that no risk applies.
 Allowed redlines: {redlines}.
 Return only {{"cases":[{{"case_index":0,"labels":["..."],
 "attribution_ok":true,"redlines":[]}}]}} with one row per input case, in which
@@ -190,6 +204,16 @@ def validate_fixture_schema(fixtures):
         if (not isinstance(labels, list)
                 or any(label not in ALLOWED_LABELS for label in labels)):
             errors.append(f"{prefix}.expected.labels contains a label outside allowed vocabulary")
+        accepted = expected.get("accepted_labels")
+        if (not isinstance(accepted, list) or not accepted
+                or any(label not in ALLOWED_LABELS for label in accepted)
+                or len(accepted) != len(set(accepted))):
+            errors.append(
+                f"{prefix}.expected.accepted_labels must be unique labels "
+                "from the allowed vocabulary")
+        elif category not in accepted:
+            errors.append(
+                f"{prefix}.expected.accepted_labels must contain the category")
         if not isinstance(expected.get("attribution_required"), bool):
             errors.append(f"{prefix}.expected.attribution_required must be boolean")
         redlines = expected.get("redlines")
@@ -277,19 +301,21 @@ def score_run(fixtures, rows):
     valid_count = 0
     attribution_correct = 0
     attribution_total = 0
+    label_agreed = 0
+    label_scored = 0
     redline_count = 0
     label_mismatch_count = 0
-    reported_redline_count = 0
     # Which cases failed, not just how many. The aggregate counters alone
     # cannot tell anyone what to fix; these findings are produced after the
     # judge has answered and never reach the judge or the candidate path.
     findings = []
     for fixture in fixtures:
         expected = fixture["expected"]
-        if expected["attribution_required"]:
-            attribution_total += 1
         row = by_id.get(fixture["id"])
         if fixture["id"] in duplicates or not _valid_result(row, fixture["id"]):
+            # Structure failures are the structure gate's business alone. Letting
+            # them also dock attribution or label agreement charges one fault to
+            # three meters and makes every meter unreadable.
             findings.append({
                 "id": fixture["id"],
                 "issue": "duplicate_row" if fixture["id"] in duplicates
@@ -298,20 +324,26 @@ def score_run(fixtures, rows):
             continue
         valid_count += 1
         if expected["attribution_required"]:
+            attribution_total += 1
             if row["attribution_ok"]:
                 attribution_correct += 1
             else:
                 findings.append(
                     {"id": fixture["id"], "issue": "attribution_missed"})
-        if set(row["labels"]) != set(expected["labels"]):
-            redline_count += 1
+        label_scored += 1
+        accepted = set(expected["accepted_labels"])
+        if set(row["labels"]) <= accepted:
+            label_agreed += 1
+        else:
             label_mismatch_count += 1
             findings.append({
                 "id": fixture["id"],
                 "issue": "label_mismatch",
-                "expected_labels": sorted(expected["labels"]),
+                "accepted_labels": sorted(accepted),
                 "actual_labels": sorted(row["labels"]),
             })
+        # A redline is a violation left in the published candidate. Taxonomy
+        # disagreement is a judge-calibration signal and is counted separately.
         row_redline_count = len(row["redlines"])
         if row_redline_count:
             findings.append({
@@ -320,7 +352,6 @@ def score_run(fixtures, rows):
                 "redlines": sorted(row["redlines"]),
             })
         redline_count += row_redline_count
-        reported_redline_count += row_redline_count
     total = len(fixtures)
     extra_rows = max(0, len(rows) - total)
     if extra_rows:
@@ -331,6 +362,8 @@ def score_run(fixtures, rows):
     valid_count = max(0, valid_count - extra_rows)
     return {
         "redline_count": redline_count,
+        "label_agreement": (
+            round(label_agreed / label_scored, 4) if label_scored else 0.0),
         "attribution_accuracy": (
             round(attribution_correct / attribution_total, 4)
             if attribution_total else 1.0),
@@ -338,7 +371,8 @@ def score_run(fixtures, rows):
         "diagnostics": {
             "invalid_case_count": max(0, total - valid_count),
             "label_mismatch_count": label_mismatch_count,
-            "reported_redline_count": reported_redline_count,
+            "label_scored_count": label_scored,
+            "reported_redline_count": redline_count,
             "attribution_correct_count": attribution_correct,
             "attribution_required_count": attribution_total,
         },
@@ -353,13 +387,16 @@ def acceptance_result(runs):
         "redline_count": max(int(run["redline_count"]) for run in runs),
         "attribution_accuracy": min(float(run["attribution_accuracy"]) for run in runs),
         "structure_validity": min(float(run["structure_validity"]) for run in runs),
+        "label_agreement": min(
+            float(run.get("label_agreement", 0.0)) for run in runs),
     }
     return {
         "runs": runs,
         "worst": worst,
         "accepted": (
             worst["redline_count"] == 0
-            and worst["attribution_accuracy"] >= 0.95
+            and worst["label_agreement"] >= LABEL_AGREEMENT_TARGET
+            and worst["attribution_accuracy"] >= ATTRIBUTION_TARGET
             and worst["structure_validity"] == 1.0
         ),
     }

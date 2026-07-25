@@ -485,6 +485,7 @@ def test_fixture_schema_rejects_unknown_keys_and_long_excerpts():
         "excerpt": "x" * 281,
         "expected": {
             "labels": ["company_claim"],
+            "accepted_labels": ["company_claim"],
             "attribution_required": True,
             "redlines": [],
         },
@@ -529,7 +530,7 @@ def test_fixture_corpus_is_fixed_to_checked_in_path_and_hash():
     raw = evaluator.CORPUS_PATH.read_bytes()
     lf_raw = raw.replace(b"\r\n", b"\n")
     crlf_raw = lf_raw.replace(b"\n", b"\r\n")
-    canonical_digest = "259a1f55824e38302bb8d84c1d9071062a2f92e03b6ac944adfe04d0a36cc2d4"
+    canonical_digest = "10a2966f887e975b43f673bf81e0f1c9ee3f5040d389cb243ce2fc04b56c58b2"
 
     assert evaluator.CORPUS_PATH == PIPELINE_DIR / "fixtures" / "objectivity_evidence.json"
     assert evaluator.CORPUS_SHA256 == canonical_digest
@@ -568,23 +569,37 @@ def test_three_run_worst_case_aggregation_and_thresholds():
     assert calls == [1, 2, 3]
     assert report["worst"] == {
         "redline_count": 0,
+        "label_agreement": 1.0,
         "attribution_accuracy": round(
             (len(required_indexes) - 1) / len(required_indexes), 4),
         "structure_validity": 1.0,
     }
     assert report["accepted"] is True
 
+    def run(redline=0, label=1.0, attribution=1.0, structure=1.0):
+        return {"redline_count": redline, "label_agreement": label,
+                "attribution_accuracy": attribution,
+                "structure_validity": structure}
+
     failed = evaluator.acceptance_result([
-        {"redline_count": 1, "attribution_accuracy": 1.0, "structure_validity": 1.0},
-        {"redline_count": 0, "attribution_accuracy": 0.949, "structure_validity": 1.0},
-        {"redline_count": 0, "attribution_accuracy": 1.0, "structure_validity": 0.999},
-    ])
+        run(redline=1), run(attribution=0.949), run(structure=0.999)])
     assert failed["accepted"] is False
     assert failed["worst"] == {
         "redline_count": 1,
+        "label_agreement": 1.0,
         "attribution_accuracy": 0.949,
         "structure_validity": 0.999,
     }
+
+    # Each gate must be able to fail the run on its own.
+    for single in (run(redline=1), run(label=0.899),
+                   run(attribution=0.949), run(structure=0.999)):
+        assert evaluator.acceptance_result(
+            [run(), single, run()])["accepted"] is False
+    # Label agreement is a real gate, but it is not required to be perfect:
+    # genuinely ambiguous cases may still divide a well-calibrated judge.
+    assert evaluator.acceptance_result(
+        [run(), run(label=0.9), run()])["accepted"] is True
 
 
 def test_score_run_reports_aggregate_failure_breakdown():
@@ -597,6 +612,7 @@ def test_score_run_reports_aggregate_failure_breakdown():
             "excerpt": "A company reported a benchmark result.",
             "expected": {
                 "labels": ["company_claim"],
+                "accepted_labels": ["company_claim"],
                 "attribution_required": True,
                 "redlines": ["internal_benchmark_as_independent"],
             },
@@ -608,6 +624,7 @@ def test_score_run_reports_aggregate_failure_breakdown():
             "excerpt": "Prosecutors filed an allegation.",
             "expected": {
                 "labels": ["legal_procedure"],
+                "accepted_labels": ["legal_procedure"],
                 "attribution_required": True,
                 "redlines": ["allegation_as_conviction"],
             },
@@ -619,6 +636,7 @@ def test_score_run_reports_aggregate_failure_breakdown():
             "excerpt": "An organizer described a product as leading.",
             "expected": {
                 "labels": ["waic_framing"],
+                "accepted_labels": ["waic_framing"],
                 "attribution_required": True,
                 "redlines": ["marketing_as_fact"],
             },
@@ -645,20 +663,76 @@ def test_score_run_reports_aggregate_failure_breakdown():
     assert score["diagnostics"] == {
         "invalid_case_count": 1,
         "label_mismatch_count": 1,
+        "label_scored_count": 2,
         "reported_redline_count": 1,
         "attribution_correct_count": 1,
-        "attribution_required_count": 3,
+        # case-3 is structurally invalid, so it is charged to the structure
+        # gate only and never enters the attribution or label denominators.
+        "attribution_required_count": 2,
     }
+    assert score["redline_count"] == 1
+    assert score["label_agreement"] == 0.5
     # The aggregate counters above cannot say *which* case to go fix; these can.
     assert score["case_findings"] == [
         {"id": "case-2", "issue": "attribution_missed"},
         {"id": "case-2", "issue": "label_mismatch",
-         "expected_labels": ["legal_procedure"],
+         "accepted_labels": ["legal_procedure"],
          "actual_labels": ["company_claim"]},
         {"id": "case-2", "issue": "residual_redline",
          "redlines": ["allegation_as_conviction"]},
         {"id": "case-3", "issue": "invalid_structure"},
     ]
+
+
+def test_redline_count_ignores_taxonomy_disagreement():
+    """A judge that mislabels a clean candidate is a calibration problem,
+    not a safety violation, and must not be reported as a redline."""
+    evaluator = _load_eval_module()
+    fixtures = [{
+        "id": "case-1",
+        "category": "waic_framing",
+        "source": "Synthetic Wire",
+        "excerpt": "An organizer called a demo industry-leading.",
+        "expected": {
+            "labels": ["waic_framing"],
+            "accepted_labels": ["waic_framing"],
+            "attribution_required": True,
+            "redlines": ["marketing_as_fact"],
+        },
+    }]
+    rows = [{"id": "case-1", "labels": ["company_claim"],
+             "attribution_ok": True, "redlines": []}]
+
+    score = evaluator.score_run(fixtures, rows)
+
+    assert score["redline_count"] == 0
+    assert score["label_agreement"] == 0.0
+    assert score["attribution_accuracy"] == 1.0
+
+
+def test_accepted_label_set_admits_every_defensible_reading():
+    evaluator = _load_eval_module()
+    fixtures = [{
+        "id": "waic-05",
+        "category": "waic_framing",
+        "source": "Synthetic Wire",
+        "excerpt": "A lab handout called its robot fully autonomous.",
+        "expected": {
+            "labels": ["waic_framing"],
+            "accepted_labels": ["waic_framing", "company_claim"],
+            "attribution_required": True,
+            "redlines": ["autonomy_overclaim"],
+        },
+    }]
+
+    def agreement(label):
+        rows = [{"id": "waic-05", "labels": [label],
+                 "attribution_ok": True, "redlines": []}]
+        return evaluator.score_run(fixtures, rows)["label_agreement"]
+
+    assert agreement("waic_framing") == 1.0
+    assert agreement("company_claim") == 1.0
+    assert agreement("legal_procedure") == 0.0
 
 
 def test_case_findings_stay_empty_when_every_case_passes():
@@ -670,6 +744,7 @@ def test_case_findings_stay_empty_when_every_case_passes():
         "excerpt": "A company reported a benchmark result.",
         "expected": {
             "labels": ["company_claim"],
+            "accepted_labels": ["company_claim"],
             "attribution_required": True,
             "redlines": ["internal_benchmark_as_independent"],
         },
@@ -694,6 +769,7 @@ def test_case_findings_account_for_extra_rows_that_dock_structure_validity():
         "excerpt": "A company reported a benchmark result.",
         "expected": {
             "labels": ["company_claim"],
+            "accepted_labels": ["company_claim"],
             "attribution_required": True,
             "redlines": ["internal_benchmark_as_independent"],
         },
@@ -742,6 +818,7 @@ def test_structure_validity_rejects_extra_model_rows():
         "excerpt": "A company said a lab metric improved.",
         "expected": {
             "labels": ["company_claim"],
+            "accepted_labels": ["company_claim"],
             "attribution_required": True,
             "redlines": [],
         },
