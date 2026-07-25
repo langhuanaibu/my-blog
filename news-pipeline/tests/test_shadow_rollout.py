@@ -911,6 +911,56 @@ def test_production_harness_does_not_launder_invalid_raw_judge_batches(raw_judge
     assert score["structure_validity"] < 1.0
 
 
+def test_production_harness_splits_invalid_judge_batches_until_rows_are_valid():
+    evaluator = _load_eval_module()
+    fixtures = evaluator.load_checked_in_corpus()[:2]
+
+    class CandidateLLM:
+        def json_call(self, _system, _user):
+            return [{
+                "idx": index, "title": f"Safe candidate {index}",
+                "summary": "Safe summary.", "why": "", "context": "",
+                "significance": "", "watch": "", "detail": "", "claims": [],
+            } for index in range(2)]
+
+    class AuditLLM:
+        def json_call(self, _system, user):
+            content = json.loads(user)["content"]
+            return {
+                "fields": {key: True for key in content if key != "claims"},
+                "claims": [],
+            }
+
+    class SplitJudge:
+        def __init__(self):
+            self.batch_sizes = []
+
+        def json_call(self, _system, user):
+            cases = json.loads(user)["cases"]
+            self.batch_sizes.append(len(cases))
+            if len(cases) > 1:
+                return {"cases": []}
+            return {"cases": [{
+                "case_index": 0,
+                "labels": [fixtures[0]["category"]],
+                "attribution_ok": True,
+                "redlines": [],
+            }]}
+
+    judge = SplitJudge()
+    runner = evaluator.ProductionHarnessRunner(
+        dn, CandidateLLM(), AuditLLM(), judge,
+        config={"topic_tags": [], "detail": {"enabled": True, "max_chars": 600}},
+        batch_size=2,
+    )
+    rows = runner(fixtures, run_number=1)
+
+    assert judge.batch_sizes == [2, 1, 1]
+    assert [row["id"] for row in rows] == [
+        fixtures[0]["id"], fixtures[1]["id"]
+    ]
+
+
 def test_production_harness_marks_validator_exceptions_as_invalid(monkeypatch):
     evaluator = _load_eval_module()
     fixture = next(

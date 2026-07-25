@@ -644,6 +644,29 @@ def test_judge_infrastructure_failure_is_needs_review_not_fail():
     assert "judge" in " ".join(report["trajectory"]["reasons"]).lower()
 
 
+def test_judge_retries_a_malformed_batch_before_returning_needs_review():
+    rv = rollout()
+    case = valid_case()
+    valid_row = Judge().rows[0]
+
+    class RetryJudge:
+        def __init__(self):
+            self.calls = 0
+
+        def json_call(self, _system, _user):
+            self.calls += 1
+            if self.calls == 1:
+                return {"rows": [{"idx": 0}]}
+            return {"rows": [copy.deepcopy(valid_row)]}
+
+    judge = RetryJudge()
+    verdicts, error = rv._judge_verdicts([case], judge)
+
+    assert error is None
+    assert judge.calls == 2
+    assert verdicts[0]["decision"] == "pass"
+
+
 def test_explicit_judge_failure_has_a_gate_reason():
     rv = rollout()
     rows = [{

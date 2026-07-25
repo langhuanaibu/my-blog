@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import yaml
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -94,6 +95,52 @@ def test_gate_streaks_follow_independent_fail_and_neutral_semantics():
     streaks = il.compute_streaks(states)
 
     assert streaks == {"selection": 1, "trajectory": 0}
+
+
+def test_manual_review_can_only_replace_needs_review_for_the_same_run():
+    il = ledger()
+    daily = state(
+        "2026-07-25",
+        [attempt(10, 1, selection="pass", trajectory="needs_review")],
+    )
+
+    reviewed = il.apply_manual_review(
+        daily, gate="trajectory", status="pass",
+        reason="Reviewed all public watches against the rollout artifact.",
+        run_id="10",
+    )
+
+    assert reviewed["aggregate"]["trajectory"] == "pass"
+    assert reviewed["manual_reviews"]["trajectory"]["run_id"] == "10"
+
+    preserved = il.build_daily_state(
+        "2026-07-25",
+        [attempt(10, 1, selection="pass", trajectory="needs_review")],
+        manual_reviews=reviewed["manual_reviews"],
+    )
+    assert preserved["aggregate"]["trajectory"] == "pass"
+
+    superseded = il.build_daily_state(
+        "2026-07-25",
+        [attempt(11, 1, selection="pass", trajectory="needs_review")],
+        manual_reviews=reviewed["manual_reviews"],
+    )
+    assert superseded["aggregate"]["trajectory"] == "needs_review"
+
+
+def test_manual_review_rejects_automatic_failures():
+    il = ledger()
+    daily = state(
+        "2026-07-25",
+        [attempt(10, 1, selection="pass", trajectory="fail")],
+    )
+
+    with pytest.raises(ValueError, match="needs_review"):
+        il.apply_manual_review(
+            daily, gate="trajectory", status="pass",
+            reason="Must not override a deterministic failure.",
+            run_id="10",
+        )
 
 
 def test_publication_failure_resets_both_streaks():
@@ -278,6 +325,61 @@ def test_sync_updates_same_daily_comment_idempotently():
     assert parsed["attempts"][0]["selection"]["status"] == "pass"
 
 
+def test_sync_preserves_manual_review_for_an_unchanged_workflow_run():
+    il = ledger()
+    existing = state(
+        "2026-07-25",
+        [attempt(10, 1, selection="pass", trajectory="needs_review")],
+    )
+    existing = il.apply_manual_review(
+        existing, gate="trajectory", status="pass",
+        reason="Reviewed the persisted rollout report.", run_id="10",
+    )
+    client = FakeClient(comments=[bot_comment(88, existing)])
+
+    il.sync_issue(
+        client, issue_number=15, date="2026-07-25",
+        incoming=attempt(10, 1, selection="pass", trajectory="needs_review"),
+    )
+
+    updated = next(call[2] for call in client.calls if call[0] == "update_comment")
+    parsed = il.parse_machine_state({
+        "user": {"login": "github-actions[bot]", "type": "Bot"},
+        "body": updated,
+    })
+    assert parsed["aggregate"]["trajectory"] == "pass"
+    assert parsed["manual_reviews"]["trajectory"]["run_id"] == "10"
+
+
+def test_manual_review_issue_updates_the_trusted_comment_and_streaks():
+    il = ledger()
+    prior = state("2026-07-24", [attempt(9, 1)])
+    current = state(
+        "2026-07-25",
+        [attempt(10, 1, selection="pass", trajectory="needs_review")],
+    )
+    client = FakeClient(comments=[
+        bot_comment(80, prior),
+        bot_comment(88, current),
+    ])
+
+    result = il.manual_review_issue(
+        client, issue_number=15, date="2026-07-25",
+        gate="trajectory", status="pass",
+        reason="All watches were reviewed against report artifact 10.",
+        run_id="10",
+    )
+
+    assert result == {"status": "updated", "comment_id": 88}
+    updated = next(call[2] for call in client.calls if call[0] == "update_comment")
+    parsed = il.parse_machine_state({
+        "user": {"login": "github-actions[bot]", "type": "Bot"},
+        "body": updated,
+    })
+    assert parsed["aggregate"]["trajectory"] == "pass"
+    assert parsed["streaks"] == {"selection": 2, "trajectory": 2}
+
+
 class FakeResponse:
     def __init__(self, payload):
         self.payload = payload
@@ -348,6 +450,12 @@ def test_check_open_cli_writes_closed_output_without_comment_calls(tmp_path):
 def workflow():
     return yaml.safe_load(
         (ROOT / ".github" / "workflows" / "daily-news.yml").read_text(
+            encoding="utf-8"))
+
+
+def manual_review_workflow():
+    return yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "rollout-manual-review.yml").read_text(
             encoding="utf-8"))
 
 
@@ -517,3 +625,25 @@ def test_needs_review_report_emits_a_workflow_warning():
 
     assert "needs_review" in judge["run"]
     assert "::warning::" in judge["run"]
+
+
+def test_rollout_review_uploads_the_complete_report_artifact():
+    review = workflow()["jobs"]["rollout-review"]
+    upload = step_named(review, "Upload rollout report")
+
+    assert upload["if"] == "${{ always() && steps.issue.outputs.open == 'true' }}"
+    assert upload["with"]["name"] == "rollout-report"
+    assert upload["with"]["path"] == "${{ env.REVIEW_DIR }}/rollout-report.json"
+
+
+def test_manual_review_workflow_uses_bot_identity_and_bounded_inputs():
+    workflow_doc = manual_review_workflow()
+    job = workflow_doc["jobs"]["review"]
+    inputs = workflow_doc[True]["workflow_dispatch"]["inputs"]
+    apply_step = step_named(job, "Apply manual review")
+
+    assert workflow_doc["permissions"] == {"contents": "read", "issues": "write"}
+    assert inputs["gate"]["options"] == ["selection", "trajectory"]
+    assert inputs["status"]["options"] == ["pass", "fail", "neutral"]
+    assert "--run-id \"${{ inputs.run_id }}\"" in apply_step["run"]
+    assert apply_step["env"]["GITHUB_TOKEN"] == "${{ github.token }}"

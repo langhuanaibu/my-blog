@@ -1,0 +1,59 @@
+name: Rollout Manual Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Beijing rollout date (YYYY-MM-DD)
+        required: true
+        type: string
+      gate:
+        description: Gate to review
+        required: true
+        type: choice
+        options:
+          - selection
+          - trajectory
+      status:
+        description: Evidence-backed manual verdict
+        required: true
+        type: choice
+        options:
+          - pass
+          - fail
+          - neutral
+      run_id:
+        description: Workflow run ID recorded in the daily ledger
+        required: true
+        type: string
+      reason:
+        description: Concise evidence summary without private source text
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply manual review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python news-pipeline/issue_ledger.py manual-review \
+            --issue 15 \
+            --date "${{ inputs.date }}" \
+            --gate "${{ inputs.gate }}" \
+            --status "${{ inputs.status }}" \
+            --run-id "${{ inputs.run_id }}" \
+            --reason "${{ inputs.reason }}"

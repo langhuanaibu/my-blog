@@ -560,58 +560,65 @@ def _needs_review_verdict(case, reason):
     }
 
 
-def _judge_verdicts(cases, judge_llm):
-    try:
-        raw = judge_llm.json_call(
-            JUDGE_SYSTEM, json.dumps({"cases": cases}, ensure_ascii=False))
-    except Exception as exc:
-        reason = f"Judge infrastructure failure: {exc}"
-        return [_needs_review_verdict(case, reason) for case in cases], reason
+def _validated_judge_rows(cases, raw):
+    """Return complete schema-valid rows, or a conservative error."""
     rows = raw.get("rows") if isinstance(raw, dict) else None
     if not isinstance(rows, list):
-        reason = "Judge schema failure: rows must be a list"
-        return [_needs_review_verdict(case, reason) for case in cases], reason
+        return None, "Judge schema failure: rows must be a list"
 
     by_index = {}
-    duplicates = set()
-    global_malformed = False
     for row in rows:
         if not isinstance(row, dict):
-            global_malformed = True
-            continue
+            return None, "Judge returned an out-of-range or malformed row"
         index = row.get("idx")
         if type(index) is not int or not 0 <= index < len(cases):
-            global_malformed = True
-            continue
+            return None, "Judge returned an out-of-range or malformed row"
         if index in by_index:
-            duplicates.add(index)
-        else:
-            by_index[index] = row
+            return None, "Judge returned a duplicate row"
+        if set(row) != JUDGE_ROW_FIELDS:
+            return None, "Judge row fields were malformed"
+        if (row.get("continuity") not in {"pass", "fail", "not_applicable"}
+                or row.get("history_support") not in {
+                    "pass", "fail", "not_applicable"}
+                or type(row.get("watch_has_variable")) is not bool
+                or type(row.get("watch_has_landmark")) is not bool
+                or row.get("decision") not in {
+                    "pass", "fail", "needs_review"}
+                or row.get("certainty") not in JUDGE_CERTAINTIES
+                or row.get("reason_code") not in JUDGE_REASON_CODES
+                or not isinstance(row.get("reason"), str)
+                or not row["reason"].strip()
+                or len(row["reason"].strip()) > 240):
+            return None, "Judge row values were malformed"
+        by_index[index] = row
+    if set(by_index) != set(range(len(cases))):
+        return None, "Judge omitted the required row"
+    return by_index, None
+
+
+def _judge_verdicts(cases, judge_llm):
+    by_index = None
+    schema_error = None
+    for _attempt in range(2):
+        try:
+            raw = judge_llm.json_call(
+                JUDGE_SYSTEM, json.dumps({"cases": cases}, ensure_ascii=False))
+        except Exception as exc:
+            reason = f"Judge infrastructure failure: {exc}"
+            return [_needs_review_verdict(case, reason) for case in cases], reason
+        by_index, schema_error = _validated_judge_rows(cases, raw)
+        if by_index is not None:
+            break
+    if by_index is None:
+        reason = schema_error or "Judge schema failure"
+        return [_needs_review_verdict(case, reason) for case in cases], reason
 
     verdicts = []
     for case in cases:
         index = case["idx"]
         row = by_index.get(index)
         reason = None
-        if global_malformed:
-            reason = "Judge returned an out-of-range or malformed row"
-        elif index in duplicates:
-            reason = "Judge returned a duplicate row"
-        elif not isinstance(row, dict):
-            reason = "Judge omitted the required row"
-        elif set(row) != JUDGE_ROW_FIELDS:
-            reason = "Judge row fields were malformed"
-        elif (row.get("continuity") not in {"pass", "fail", "not_applicable"}
-              or row.get("history_support") not in {"pass", "fail", "not_applicable"}
-              or type(row.get("watch_has_variable")) is not bool
-              or type(row.get("watch_has_landmark")) is not bool
-              or row.get("decision") not in {"pass", "fail", "needs_review"}
-              or row.get("certainty") not in JUDGE_CERTAINTIES
-              or row.get("reason_code") not in JUDGE_REASON_CODES
-              or not isinstance(row.get("reason"), str)
-              or not row["reason"].strip() or len(row["reason"].strip()) > 240):
-            reason = "Judge row values were malformed"
-        elif (row["decision"] == "needs_review"
+        if (row["decision"] == "needs_review"
               or row["certainty"] == "uncertain"
               or row["reason_code"] in {"insufficient_evidence", "ambiguous"}
               or _has_explicit_uncertainty(row["reason"])):

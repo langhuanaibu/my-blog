@@ -63,7 +63,18 @@ def _latest_fingerprints(attempts):
     return result
 
 
-def build_daily_state(date, attempts):
+def _valid_manual_review(gate, review, latest_run_id):
+    return (
+        gate in {"selection", "trajectory"}
+        and isinstance(review, dict)
+        and review.get("status") in {"pass", "fail", "neutral"}
+        and isinstance(review.get("reason"), str)
+        and bool(review["reason"].strip())
+        and str(review.get("run_id") or "") == str(latest_run_id or "")
+    )
+
+
+def build_daily_state(date, attempts, manual_reviews=None):
     """Aggregate all attempts for one Beijing date."""
     ordered = sorted((copy.deepcopy(row) for row in attempts), key=_attempt_key)
     latest = ordered[-1] if ordered else {}
@@ -74,7 +85,7 @@ def build_daily_state(date, attempts):
         "selection": "fail" if publication_failed else _gate_status(latest, "selection"),
         "trajectory": "fail" if publication_failed else _gate_status(latest, "trajectory"),
     }
-    return {
+    state = {
         "version": "issue-ledger-v1",
         "date": str(date),
         "attempts": ordered,
@@ -82,6 +93,50 @@ def build_daily_state(date, attempts):
         "fingerprints": _latest_fingerprints(ordered),
         "streaks": {"selection": 0, "trajectory": 0},
     }
+    reviews = manual_reviews if isinstance(manual_reviews, dict) else {}
+    applied = {}
+    latest_run_id = latest.get("run_id")
+    for gate in ("selection", "trajectory"):
+        review = reviews.get(gate)
+        if (aggregate[gate] == "needs_review"
+                and _valid_manual_review(gate, review, latest_run_id)):
+            applied[gate] = copy.deepcopy(review)
+            aggregate[gate] = review["status"]
+    if applied:
+        state["manual_reviews"] = applied
+    return state
+
+
+def apply_manual_review(state, *, gate, status, reason, run_id):
+    """Replace only one needs-review result with an evidenced human verdict."""
+    if gate not in {"selection", "trajectory"}:
+        raise ValueError("manual review gate must be selection or trajectory")
+    if status not in {"pass", "fail", "neutral"}:
+        raise ValueError("manual review status must be pass, fail, or neutral")
+    updated = copy.deepcopy(state)
+    aggregate = updated.get("aggregate")
+    aggregate = aggregate if isinstance(aggregate, dict) else {}
+    if aggregate.get("publication") != "success":
+        raise ValueError("manual review cannot override a publication failure")
+    if aggregate.get(gate) != "needs_review":
+        raise ValueError("manual review can only replace needs_review")
+    attempts = updated.get("attempts") or []
+    latest = attempts[-1] if attempts else {}
+    if str(latest.get("run_id") or "") != str(run_id or ""):
+        raise ValueError("manual review run_id must match the latest attempt")
+    safe_reason = _sanitize_text(reason)
+    if not safe_reason:
+        raise ValueError("manual review reason is required")
+    reviews = updated.get("manual_reviews")
+    reviews = copy.deepcopy(reviews) if isinstance(reviews, dict) else {}
+    reviews[gate] = {
+        "status": status,
+        "reason": safe_reason,
+        "run_id": str(run_id),
+    }
+    updated["manual_reviews"] = reviews
+    updated["aggregate"][gate] = status
+    return updated
 
 
 def _apply_gate(streak, status):
@@ -273,6 +328,8 @@ def render_comment(state):
     fingerprints = state.get("fingerprints") or {}
     judge = latest.get("judge") if isinstance(latest, dict) else {}
     judge = judge if isinstance(judge, dict) else {}
+    manual_reviews = state.get("manual_reviews")
+    manual_reviews = manual_reviews if isinstance(manual_reviews, dict) else {}
 
     def reasons_for(gate):
         reasons = _gate_reasons(state, gate)
@@ -298,6 +355,12 @@ def render_comment(state):
         (f"- Current streaks: selection: {int(streaks.get('selection') or 0)}, "
          f"trajectory: {int(streaks.get('trajectory') or 0)}"),
     ]
+    for gate in ("selection", "trajectory"):
+        review = manual_reviews.get(gate)
+        if isinstance(review, dict):
+            lines.append(
+                f"- Manual {gate} review: **{review.get('status')}** — "
+                f"{review.get('reason')}")
     if (int(streaks.get("selection") or 0) >= 7
             and int(streaks.get("trajectory") or 0) >= 5):
         lines.append("- 状态：待人工最终确认")
@@ -316,7 +379,9 @@ def sync_issue(client, *, issue_number, date, incoming):
                      if current_comment is not None else None)
     attempts = merge_attempts(
         current_state.get("attempts", []) if current_state else [], incoming)
-    updated = build_daily_state(date, attempts)
+    updated = build_daily_state(
+        date, attempts,
+        manual_reviews=(current_state or {}).get("manual_reviews"))
 
     states_by_date = {}
     for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
@@ -331,6 +396,33 @@ def sync_issue(client, *, issue_number, date, incoming):
         response = client.create_comment(issue_number, body)
         return {"status": "created", "comment_id": response.get("id")}
     response = client.update_comment(current_comment["id"], body)
+    return {"status": "updated", "comment_id": response.get("id")}
+
+
+def manual_review_issue(client, *, issue_number, date, gate, status, reason,
+                        run_id):
+    """Apply an evidenced manual verdict through the trusted bot comment."""
+    issue = client.get_issue(issue_number)
+    if str(issue.get("state") or "").lower() != "open":
+        return {"status": "closed", "comment_id": None}
+
+    comments = client.list_comments(issue_number)
+    current_comment = find_daily_comment(comments, date)
+    current_state = (parse_machine_state(current_comment)
+                     if current_comment is not None else None)
+    if current_comment is None or current_state is None:
+        raise ValueError(f"no trusted rollout state exists for {date}")
+    updated = apply_manual_review(
+        current_state, gate=gate, status=status, reason=reason, run_id=run_id)
+
+    states_by_date = {}
+    for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
+        parsed = parse_machine_state(comment)
+        if parsed is not None and parsed["date"] not in states_by_date:
+            states_by_date[parsed["date"]] = parsed
+    states_by_date[str(date)] = updated
+    updated["streaks"] = compute_streaks(states_by_date.values())
+    response = client.update_comment(current_comment["id"], render_comment(updated))
     return {"status": "updated", "comment_id": response.get("id")}
 
 
@@ -401,6 +493,15 @@ def parse_cli_args(argv=None):
     sync.add_argument("--run-id", required=True)
     sync.add_argument("--run-attempt", required=True, type=int)
     sync.add_argument("--sha", required=True)
+    manual = subparsers.add_parser("manual-review")
+    manual.add_argument("--issue", type=int, default=15)
+    manual.add_argument("--date", required=True)
+    manual.add_argument(
+        "--gate", required=True, choices=("selection", "trajectory"))
+    manual.add_argument(
+        "--status", required=True, choices=("pass", "fail", "neutral"))
+    manual.add_argument("--reason", required=True)
+    manual.add_argument("--run-id", required=True)
     return parser.parse_args(argv)
 
 
@@ -434,13 +535,18 @@ def main(argv=None, *, environ=None, client_factory=GitHubClient):
         is_open = str(issue.get("state") or "").lower() == "open"
         _write_output(environ, "open", str(is_open).lower())
         result = {"status": "open" if is_open else "closed", "open": is_open}
-    else:
+    elif args.command == "sync":
         incoming = build_attempt(
             report=_load_report(args.report), publication=args.publication,
             publication_reason=args.publication_reason, run_id=args.run_id,
             run_attempt=args.run_attempt, sha=args.sha)
         result = sync_issue(
             client, issue_number=args.issue, date=args.date, incoming=incoming)
+    else:
+        result = manual_review_issue(
+            client, issue_number=args.issue, date=args.date,
+            gate=args.gate, status=args.status, reason=args.reason,
+            run_id=args.run_id)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return result
 
