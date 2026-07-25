@@ -26,6 +26,10 @@ on:
         description: Workflow run ID recorded in the daily ledger
         required: true
         type: string
+      run_attempt:
+        description: Workflow run attempt recorded in the daily ledger
+        required: true
+        type: string
       reason:
         description: Concise evidence summary without private source text
         required: true
@@ -49,11 +53,18 @@ jobs:
       - name: Apply manual review
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          REVIEW_DATE: ${{ inputs.date }}
+          REVIEW_GATE: ${{ inputs.gate }}
+          REVIEW_STATUS: ${{ inputs.status }}
+          REVIEW_RUN_ID: ${{ inputs.run_id }}
+          REVIEW_RUN_ATTEMPT: ${{ inputs.run_attempt }}
+          REVIEW_REASON: ${{ inputs.reason }}
         run: |
           python news-pipeline/issue_ledger.py manual-review \
             --issue 15 \
-            --date "${{ inputs.date }}" \
-            --gate "${{ inputs.gate }}" \
-            --status "${{ inputs.status }}" \
-            --run-id "${{ inputs.run_id }}" \
-            --reason "${{ inputs.reason }}"
+            --date "$REVIEW_DATE" \
+            --gate "$REVIEW_GATE" \
+            --status "$REVIEW_STATUS" \
+            --run-id "$REVIEW_RUN_ID" \
+            --run-attempt "$REVIEW_RUN_ATTEMPT" \
+            --reason "$REVIEW_REASON"

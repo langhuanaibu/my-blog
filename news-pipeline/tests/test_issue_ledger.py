@@ -107,11 +107,12 @@ def test_manual_review_can_only_replace_needs_review_for_the_same_run():
     reviewed = il.apply_manual_review(
         daily, gate="trajectory", status="pass",
         reason="Reviewed all public watches against the rollout artifact.",
-        run_id="10",
+        run_id="10", run_attempt=1,
     )
 
     assert reviewed["aggregate"]["trajectory"] == "pass"
     assert reviewed["manual_reviews"]["trajectory"]["run_id"] == "10"
+    assert reviewed["manual_reviews"]["trajectory"]["run_attempt"] == 1
 
     preserved = il.build_daily_state(
         "2026-07-25",
@@ -122,7 +123,7 @@ def test_manual_review_can_only_replace_needs_review_for_the_same_run():
 
     superseded = il.build_daily_state(
         "2026-07-25",
-        [attempt(11, 1, selection="pass", trajectory="needs_review")],
+        [attempt(10, 2, selection="pass", trajectory="needs_review")],
         manual_reviews=reviewed["manual_reviews"],
     )
     assert superseded["aggregate"]["trajectory"] == "needs_review"
@@ -139,7 +140,7 @@ def test_manual_review_rejects_automatic_failures():
         il.apply_manual_review(
             daily, gate="trajectory", status="pass",
             reason="Must not override a deterministic failure.",
-            run_id="10",
+            run_id="10", run_attempt=1,
         )
 
 
@@ -333,7 +334,8 @@ def test_sync_preserves_manual_review_for_an_unchanged_workflow_run():
     )
     existing = il.apply_manual_review(
         existing, gate="trajectory", status="pass",
-        reason="Reviewed the persisted rollout report.", run_id="10",
+        reason="Reviewed the persisted rollout report.",
+        run_id="10", run_attempt=1,
     )
     client = FakeClient(comments=[bot_comment(88, existing)])
 
@@ -367,7 +369,7 @@ def test_manual_review_issue_updates_the_trusted_comment_and_streaks():
         client, issue_number=15, date="2026-07-25",
         gate="trajectory", status="pass",
         reason="All watches were reviewed against report artifact 10.",
-        run_id="10",
+        run_id="10", run_attempt=1,
     )
 
     assert result == {"status": "updated", "comment_id": 88}
@@ -645,5 +647,11 @@ def test_manual_review_workflow_uses_bot_identity_and_bounded_inputs():
     assert workflow_doc["permissions"] == {"contents": "read", "issues": "write"}
     assert inputs["gate"]["options"] == ["selection", "trajectory"]
     assert inputs["status"]["options"] == ["pass", "fail", "neutral"]
-    assert "--run-id \"${{ inputs.run_id }}\"" in apply_step["run"]
     assert apply_step["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert apply_step["env"]["REVIEW_RUN_ID"] == "${{ inputs.run_id }}"
+    assert apply_step["env"]["REVIEW_RUN_ATTEMPT"] == "${{ inputs.run_attempt }}"
+    assert apply_step["env"]["REVIEW_REASON"] == "${{ inputs.reason }}"
+    assert "${{ inputs." not in apply_step["run"]
+    assert '--run-id "$REVIEW_RUN_ID"' in apply_step["run"]
+    assert '--run-attempt "$REVIEW_RUN_ATTEMPT"' in apply_step["run"]
+    assert '--reason "$REVIEW_REASON"' in apply_step["run"]

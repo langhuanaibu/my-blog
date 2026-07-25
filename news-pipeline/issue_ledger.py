@@ -63,14 +63,16 @@ def _latest_fingerprints(attempts):
     return result
 
 
-def _valid_manual_review(gate, review, latest_run_id):
+def _valid_manual_review(gate, review, latest):
     return (
         gate in {"selection", "trajectory"}
         and isinstance(review, dict)
         and review.get("status") in {"pass", "fail", "neutral"}
         and isinstance(review.get("reason"), str)
         and bool(review["reason"].strip())
-        and str(review.get("run_id") or "") == str(latest_run_id or "")
+        and str(review.get("run_id") or "") == str(latest.get("run_id") or "")
+        and int(review.get("run_attempt") or 0)
+        == int(latest.get("run_attempt") or 0)
     )
 
 
@@ -95,11 +97,10 @@ def build_daily_state(date, attempts, manual_reviews=None):
     }
     reviews = manual_reviews if isinstance(manual_reviews, dict) else {}
     applied = {}
-    latest_run_id = latest.get("run_id")
     for gate in ("selection", "trajectory"):
         review = reviews.get(gate)
         if (aggregate[gate] == "needs_review"
-                and _valid_manual_review(gate, review, latest_run_id)):
+                and _valid_manual_review(gate, review, latest)):
             applied[gate] = copy.deepcopy(review)
             aggregate[gate] = review["status"]
     if applied:
@@ -107,7 +108,7 @@ def build_daily_state(date, attempts, manual_reviews=None):
     return state
 
 
-def apply_manual_review(state, *, gate, status, reason, run_id):
+def apply_manual_review(state, *, gate, status, reason, run_id, run_attempt):
     """Replace only one needs-review result with an evidenced human verdict."""
     if gate not in {"selection", "trajectory"}:
         raise ValueError("manual review gate must be selection or trajectory")
@@ -124,6 +125,9 @@ def apply_manual_review(state, *, gate, status, reason, run_id):
     latest = attempts[-1] if attempts else {}
     if str(latest.get("run_id") or "") != str(run_id or ""):
         raise ValueError("manual review run_id must match the latest attempt")
+    if int(latest.get("run_attempt") or 0) != int(run_attempt or 0):
+        raise ValueError(
+            "manual review run_attempt must match the latest attempt")
     safe_reason = _sanitize_text(reason)
     if not safe_reason:
         raise ValueError("manual review reason is required")
@@ -133,6 +137,7 @@ def apply_manual_review(state, *, gate, status, reason, run_id):
         "status": status,
         "reason": safe_reason,
         "run_id": str(run_id),
+        "run_attempt": int(run_attempt),
     }
     updated["manual_reviews"] = reviews
     updated["aggregate"][gate] = status
@@ -400,7 +405,7 @@ def sync_issue(client, *, issue_number, date, incoming):
 
 
 def manual_review_issue(client, *, issue_number, date, gate, status, reason,
-                        run_id):
+                        run_id, run_attempt):
     """Apply an evidenced manual verdict through the trusted bot comment."""
     issue = client.get_issue(issue_number)
     if str(issue.get("state") or "").lower() != "open":
@@ -413,7 +418,8 @@ def manual_review_issue(client, *, issue_number, date, gate, status, reason,
     if current_comment is None or current_state is None:
         raise ValueError(f"no trusted rollout state exists for {date}")
     updated = apply_manual_review(
-        current_state, gate=gate, status=status, reason=reason, run_id=run_id)
+        current_state, gate=gate, status=status, reason=reason,
+        run_id=run_id, run_attempt=run_attempt)
 
     states_by_date = {}
     for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
@@ -502,6 +508,7 @@ def parse_cli_args(argv=None):
         "--status", required=True, choices=("pass", "fail", "neutral"))
     manual.add_argument("--reason", required=True)
     manual.add_argument("--run-id", required=True)
+    manual.add_argument("--run-attempt", required=True, type=int)
     return parser.parse_args(argv)
 
 
@@ -546,7 +553,7 @@ def main(argv=None, *, environ=None, client_factory=GitHubClient):
         result = manual_review_issue(
             client, issue_number=args.issue, date=args.date,
             gate=args.gate, status=args.status, reason=args.reason,
-            run_id=args.run_id)
+            run_id=args.run_id, run_attempt=args.run_attempt)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return result
 
