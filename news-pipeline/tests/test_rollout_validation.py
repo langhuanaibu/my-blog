@@ -644,6 +644,64 @@ def test_judge_infrastructure_failure_is_needs_review_not_fail():
     assert "judge" in " ".join(report["trajectory"]["reasons"]).lower()
 
 
+def test_judge_retries_a_malformed_batch_before_returning_needs_review():
+    rv = rollout()
+    case = valid_case()
+    valid_row = Judge().rows[0]
+
+    class RetryJudge:
+        def __init__(self):
+            self.calls = 0
+
+        def json_call(self, _system, _user):
+            self.calls += 1
+            if self.calls == 1:
+                return {"rows": [{"idx": 0}]}
+            return {"rows": [copy.deepcopy(valid_row)]}
+
+    judge = RetryJudge()
+    verdicts, error = rv._judge_verdicts([case], judge)
+
+    assert error is None
+    assert judge.calls == 2
+    assert verdicts[0]["decision"] == "pass"
+
+
+def test_judge_retries_a_response_with_extra_top_level_fields():
+    rv = rollout()
+    case = valid_case()
+    valid_row = Judge().rows[0]
+
+    class RetryJudge:
+        def __init__(self):
+            self.calls = 0
+
+        def json_call(self, _system, _user):
+            self.calls += 1
+            response = {"rows": [copy.deepcopy(valid_row)]}
+            if self.calls == 1:
+                response["unexpected"] = True
+            return response
+
+    judge = RetryJudge()
+    verdicts, error = rv._judge_verdicts([case], judge)
+
+    assert error is None
+    assert judge.calls == 2
+    assert verdicts[0]["decision"] == "pass"
+
+
+def test_judge_failure_report_does_not_persist_provider_exception_text():
+    rv = rollout()
+    report = rv.evaluate_rollout(
+        valid_evidence(), shadow_success=True,
+        judge_llm=Judge(error=RuntimeError("TOKEN=super-secret")))
+
+    serialized = json.dumps(report, ensure_ascii=False)
+    assert "super-secret" not in serialized
+    assert report["trajectory"]["status"] == "needs_review"
+
+
 def test_explicit_judge_failure_has_a_gate_reason():
     rv = rollout()
     rows = [{
@@ -657,6 +715,80 @@ def test_explicit_judge_failure_has_a_gate_reason():
         valid_evidence(), shadow_success=True, judge_llm=Judge(rows=rows))
     assert report["trajectory"]["status"] == "fail"
     assert report["trajectory"]["reasons"]
+
+
+def test_explicit_judge_failure_dominates_another_uncertain_verdict():
+    rv = rollout()
+    cases = [
+        valid_case(0),
+        valid_case(1, trusted=False),
+    ]
+    rows = passing_rows(cases)
+    rows[0].update({
+        "continuity": "fail",
+        "history_support": "pass",
+        "decision": "fail",
+        "certainty": "certain",
+        "reason_code": "unsupported",
+        "reason": "The continuation is contradicted by the evidence.",
+    })
+    rows[1].update({
+        "decision": "needs_review",
+        "certainty": "uncertain",
+        "reason_code": "ambiguous",
+        "reason": "The watch wording is ambiguous.",
+    })
+    evidence = valid_evidence(
+        cases=cases,
+        trajectory=valid_health(
+            candidate_matches=2,
+            continuity_accepted=1,
+            continuity_rejected=1,
+            final_watch_count=2,
+            final_trusted_continuation_count=1,
+            selected_count=2,
+            final_watch_coverage=1.0,
+        ),
+    )
+
+    report = rv.evaluate_rollout(
+        evidence, shadow_success=True, judge_llm=Judge(rows=rows))
+
+    assert report["trajectory"]["status"] == "fail"
+
+
+def test_watch_gate_fails_when_uncertain_rows_cannot_reach_eighty_percent():
+    rv = rollout()
+    cases = [valid_case(index, trusted=False) for index in range(10)]
+    rows = passing_rows(cases)
+    for row in rows[6:9]:
+        row["watch_has_variable"] = False
+        row["watch_has_landmark"] = False
+    rows[9].update({
+        "watch_has_variable": False,
+        "watch_has_landmark": False,
+        "decision": "needs_review",
+        "certainty": "uncertain",
+        "reason_code": "ambiguous",
+        "reason": "The watch wording is ambiguous.",
+    })
+    evidence = valid_evidence(
+        cases=cases,
+        trajectory=valid_health(
+            candidate_matches=1,
+            continuity_accepted=0,
+            final_watch_count=10,
+            final_trusted_continuation_count=0,
+            selected_count=10,
+            final_watch_coverage=1.0,
+        ),
+    )
+
+    report = rv.evaluate_rollout(
+        evidence, shadow_success=True, judge_llm=Judge(rows=rows))
+
+    assert report["trajectory"]["watch_ratio"] == 0.6
+    assert report["trajectory"]["status"] == "fail"
 
 
 def test_incomplete_evidence_envelope_needs_review_for_both_gates():

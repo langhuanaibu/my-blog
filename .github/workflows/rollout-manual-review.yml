@@ -1,0 +1,70 @@
+name: Rollout Manual Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Beijing rollout date (YYYY-MM-DD)
+        required: true
+        type: string
+      gate:
+        description: Gate to review
+        required: true
+        type: choice
+        options:
+          - selection
+          - trajectory
+      status:
+        description: Evidence-backed manual verdict
+        required: true
+        type: choice
+        options:
+          - pass
+          - fail
+          - neutral
+      run_id:
+        description: Workflow run ID recorded in the daily ledger
+        required: true
+        type: string
+      run_attempt:
+        description: Workflow run attempt recorded in the daily ledger
+        required: true
+        type: string
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-news-rollout-ledger
+  cancel-in-progress: false
+
+jobs:
+  review:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply manual review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REVIEW_DATE: ${{ inputs.date }}
+          REVIEW_GATE: ${{ inputs.gate }}
+          REVIEW_STATUS: ${{ inputs.status }}
+          REVIEW_RUN_ID: ${{ inputs.run_id }}
+          REVIEW_RUN_ATTEMPT: ${{ inputs.run_attempt }}
+        run: |
+          python news-pipeline/issue_ledger.py manual-review \
+            --issue 15 \
+            --date "$REVIEW_DATE" \
+            --gate "$REVIEW_GATE" \
+            --status "$REVIEW_STATUS" \
+            --run-id "$REVIEW_RUN_ID" \
+            --run-attempt "$REVIEW_RUN_ATTEMPT"

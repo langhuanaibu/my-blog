@@ -135,8 +135,11 @@ jobs:
 
   rollout-review:
     needs: [generate, shadow]
-    if: ${{ always() }}
+    if: ${{ always() && github.ref == 'refs/heads/main' }}
     continue-on-error: true
+    concurrency:
+      group: daily-news-rollout-ledger
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 12
     permissions:
@@ -147,6 +150,8 @@ jobs:
       REVIEW_DIR: /tmp/daily-news-rollout-review
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: main
 
       - name: Check rollout issue
         id: issue
@@ -261,6 +266,15 @@ jobs:
           if "needs_review" in statuses:
               print("::warning::Rollout Judge needs review; the Issue ledger will record it.")
           PY
+
+      - name: Upload rollout report
+        if: ${{ always() && steps.issue.outputs.open == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: rollout-report
+          path: ${{ env.REVIEW_DIR }}/rollout-report.json
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Update rollout issue ledger
         id: ledger
