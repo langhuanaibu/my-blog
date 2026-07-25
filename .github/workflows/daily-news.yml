@@ -82,6 +82,7 @@ jobs:
     env:
       TZ: Asia/Shanghai
       SHADOW_STATUS_PATH: /tmp/daily-news-shadow-status.json
+      SHADOW_SUMMARY_PATH: /tmp/daily-news-shadow-summary.json
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -133,6 +134,15 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
+      - name: Upload shadow summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: shadow-summary
+          path: ${{ env.SHADOW_SUMMARY_PATH }}
+          if-no-files-found: warn
+          retention-days: 3
+
   rollout-review:
     needs: [generate, shadow]
     if: ${{ always() && github.ref == 'refs/heads/main' }}
@@ -175,6 +185,14 @@ jobs:
         with:
           name: shadow-status
           path: ${{ env.REVIEW_DIR }}/shadow-status
+
+      - name: Download shadow summary
+        if: ${{ steps.issue.outputs.open == 'true' }}
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: shadow-summary
+          path: ${{ env.REVIEW_DIR }}/shadow-summary
 
       - name: Prepare rollout review
         id: prepare
@@ -286,6 +304,10 @@ jobs:
           REVIEW_DATE: ${{ steps.prepare.outputs.date }}
           PUBLICATION: ${{ steps.prepare.outputs.publication }}
           PUBLICATION_REASON: ${{ steps.prepare.outputs.publication_reason }}
+          SHADOW_OUTCOME: ${{ steps.prepare.outputs.shadow_outcome }}
+          SHADOW_SUMMARY: ${{ env.REVIEW_DIR }}/shadow-summary/daily-news-shadow-summary.json
+          QUALITY_HEALTH: ${{ github.workspace }}/source/news/data/quality-health.json
+          SOURCE_HEALTH: ${{ github.workspace }}/source/news/data/source_health.json
         run: |
           python news-pipeline/issue_ledger.py sync \
             --issue 15 \
@@ -293,6 +315,10 @@ jobs:
             --publication "$PUBLICATION" \
             --publication-reason "$PUBLICATION_REASON" \
             --report "$REPORT_PATH" \
+            --shadow-summary "$SHADOW_SUMMARY" \
+            --shadow-outcome "$SHADOW_OUTCOME" \
+            --quality-health "$QUALITY_HEALTH" \
+            --source-health "$SOURCE_HEALTH" \
             --run-id "${{ github.run_id }}" \
             --run-attempt "${{ github.run_attempt }}" \
             --sha "${{ github.sha }}"

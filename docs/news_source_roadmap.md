@@ -13,7 +13,8 @@
 - `pass` 仅让对应门 +1，`fail` 仅清零对应门，`neutral` / `needs_review` 冻结对应时钟。选材/共享运行时指纹变化重置两门，仅轨迹 UI 指纹变化只重置轨迹门；观察期内冻结这些范围，必要变更按所属阶段重计。
 - 同一北京日期重跑只更新当日台账，不增加日数；任一次发布失败都使当日两门按失败处理，后续成功重跑不覆盖。初验、Judge 或台账异常只告警，不阻断发布、不自动回滚。
 - 选材 7 日和轨迹 5 日都达标后只标记「待人工最终确认」，不自动关闭 #15 或 #10，也不替代下列 enrich、客观性和信源观察门。
-- 当前云端 `rollout-review` 只自动处理选材与轨迹。下列 enrich 内容抽样、客观性内容复核和信源指标复核仍需人工执行；45 条客观性夹具使用独立的、仅限 `main` 的手动 `Objectivity Acceptance` workflow，不属于每日自动台账。
+- 云端 `rollout-review` 现已一次性记录**五门**：选材、轨迹、enrich 安全指标、客观性 shadow、信源指标。仍需人工执行的只剩 enrich 的三项**文字质量**判断（台账每天确定性点名待查条目，人工用 `Rollout Manual Review` 回填 `samples_passed` / `samples_total`）。45 条客观性夹具使用独立的、仅限 `main` 的手动 `Objectivity Acceptance` workflow，不属于每日自动台账。
+- 连续型门（选材、轨迹、客观性 shadow）失败即清零；累计型门（enrich、信源指标）只统计有效日，缺数据的一天冻结而不清零。`Rollout Heartbeat` 每日北京 02:00 检查前一日是否留下台账，缺失则补 `neutral` 缺口行——冻结全部门，不计入也不清零。
 - `objectivity.mode` 继续保持 `interim`。客观性 Judge 已增加非法批次递归拆分、单条重试和每轮 60 次调用预算；只有真实三轮同时满足红线 0、归因至少 95%、结构 100%，并完成 7 日 shadow 观察，才获得 active 人工评审资格，不自动切换公开模式。
 
 ## 📅 enrich prompt 五日产出验收（待完成）

@@ -1,0 +1,76 @@
+# 日报验收心跳：确认前一北京日期确实留下了台账记录
+#
+# - 每日台账由 daily-news.yml 的 rollout-review job 写入；本 workflow 只做缺口检测。
+# - 若前一日完全没有台账评论（Actions 停跑、定时任务被跳过等），补一条 neutral 缺口行：
+#   所有门冻结，不计入也不清零，并发出告警。
+# - 不调用 LLM，不改配置，不关闭任何 Issue。
+name: Rollout Heartbeat
+
+on:
+  schedule:
+    # 18:00 UTC = 北京 02:00，晚于当日 07:00 的日报跑批
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: Beijing date to check (defaults to yesterday)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-news-rollout-ledger
+  cancel-in-progress: false
+
+jobs:
+  heartbeat:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TZ: Asia/Shanghai
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Check rollout issue
+        id: issue
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python news-pipeline/issue_ledger.py check-open --issue 15
+
+      - name: Resolve target date
+        id: target
+        if: ${{ steps.issue.outputs.open == 'true' }}
+        env:
+          REQUESTED_DATE: ${{ inputs.date }}
+        run: |
+          python - <<'PY'
+          import os
+          from datetime import date, timedelta
+          from pathlib import Path
+
+          requested = str(os.environ.get("REQUESTED_DATE") or "").strip()
+          target = requested or (date.today() - timedelta(days=1)).isoformat()
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"date={target}\n")
+          PY
+
+      - name: Record heartbeat
+        if: ${{ steps.issue.outputs.open == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REVIEW_DATE: ${{ steps.target.outputs.date }}
+        run: |
+          python news-pipeline/issue_ledger.py heartbeat \
+            --issue 15 \
+            --date "$REVIEW_DATE"

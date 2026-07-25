@@ -311,6 +311,46 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
     }
 
 
+def write_shadow_summary(summary, environ=None):
+    """Persist the allow-listed shadow aggregate so the rollout ledger can read it.
+
+    Mirrors ROLLOUT_EVIDENCE_PATH: without the env var nothing is written, so
+    local runs stay unchanged. `build_shadow_summary` already restricts the
+    payload to counts and rates, so no article text can reach this file.
+    """
+    environ = os.environ if environ is None else environ
+    target = str(environ.get("SHADOW_SUMMARY_PATH") or "").strip()
+    if not target:
+        return False
+    path = Path(target)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(summary, ensure_ascii=False, sort_keys=True) + "\n",
+        encoding="utf-8")
+    return True
+
+
+def build_enrich_sample(picked, date_str):
+    """Choose one item per non-empty category as that day's enrich review list.
+
+    The choice is derived from the date so a same-day rerun names the same
+    items and the human review list never shifts underneath the ledger.
+    """
+    by_category = {}
+    for item in picked or []:
+        category = str(item.get("category") or "")
+        item_id = str(item.get("id") or "")
+        if category in CATEGORIES and item_id:
+            by_category.setdefault(category, []).append(item_id)
+    sample = {}
+    for category, ids in by_category.items():
+        ordered = sorted(set(ids))
+        digest = hashlib.sha1(
+            f"{date_str}:{category}".encode("utf-8")).hexdigest()
+        sample[category] = [ordered[int(digest, 16) % len(ordered)]]
+    return dict(sorted(sample.items()))
+
+
 def append_github_shadow_summary(summary, environ=None):
     environ = os.environ if environ is None else environ
     target = str(environ.get("GITHUB_STEP_SUMMARY") or "").strip()
@@ -378,7 +418,7 @@ def append_github_selection_summary(summary, environ=None):
 
 def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
                           trajectory_health, review_cases, data_dir,
-                          config, environ=None):
+                          config, enrich_sample=None, environ=None):
     """Write acceptance evidence without coupling it to publication output."""
     environ = os.environ if environ is None else environ
     if not str(environ.get("ROLLOUT_EVIDENCE_PATH") or "").strip():
@@ -406,6 +446,7 @@ def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
             ROOT.parent / "source" / "news" / "news.css",
         ],
         config=config,
+        enrich_sample=enrich_sample or {},
     )
     return rollout_validation.write_rollout_evidence(
         evidence, data_dir=data_dir, environ=environ)
@@ -6806,7 +6847,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         emit_rollout_evidence(
             date_str, policy, time.perf_counter() - started_at,
             selection_stats, trajectory_health, trajectory_review_cases,
-            _data_dir, cfg)
+            _data_dir, cfg, enrich_sample=build_enrich_sample(picked, date_str))
     except Exception as exc:
         log(f"  rollout evidence 写入失败（不影响当日日报）: {exc}")
 
@@ -6816,6 +6857,7 @@ def _run_pipeline(started_at, args, cfg, policy):
             runtime_seconds=time.perf_counter() - started_at)
         print(json.dumps(summary, ensure_ascii=False, sort_keys=True), flush=True)
         append_github_shadow_summary(summary)
+        write_shadow_summary(summary)
         return
 
     save_news_seen(_data_dir, date_str, accepted_items, news_seen, dedup_keep_days)
