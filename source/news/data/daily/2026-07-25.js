@@ -27,7 +27,7 @@ window.NEWS_DATA["2026-07-25"] = {
    "id": "pick-2",
    "tier": "pick",
    "category": "ai",
-   "title": "Anthropic发布Claude Opus 5，性能接近F",
+   "title": "Anthropic发布Claude Opus 5，性能接近Fable 5",
    "summary": "Anthropic发布Claude Opus 5，智能水平接近Fable 5但价格减半，即日起成为Claude Max默认模型和Claude Pro最强模型。",
    "status": "已确认",
    "tags": [
@@ -81,7 +81,7 @@ window.NEWS_DATA["2026-07-25"] = {
    "id": "pick-97",
    "tier": "pick",
    "category": "world",
-   "title": "美国指控月之暗面通过知识蒸馏窃取Anthropic技术开发K",
+   "title": "美国指控月之暗面蒸馏Anthropic模型开发Kimi K3",
    "summary": "白宫指控中国AI公司月之暗面通过蒸馏Anthropic的Fable模型能力开发Kimi K3模型。英方评估显示Kimi K3在漏洞利用测试中得分远低于美国前沿模型。",
    "status": "发展中",
    "tags": [
@@ -562,7 +562,7 @@ window.NEWS_DATA["2026-07-25"] = {
    "id": "pick-7",
    "tier": "pick",
    "category": "ai",
-   "title": "Anthropic发布Drone-Bench评估AI操控无人",
+   "title": "Anthropic发布Drone-Bench评估AI操控无人机",
    "summary": "Anthropic联合Andon Labs发布Drone-Bench基准，用于评估AI模型自主操控无人机执行室内定位追踪任务的能力。",
    "status": "已确认",
    "tags": [
@@ -793,7 +793,7 @@ window.NEWS_DATA["2026-07-25"] = {
    "id": "pick-5",
    "tier": "pick",
    "category": "ai",
-   "title": "Anthropic为Claude 5代模型精简系统提示词超8",
+   "title": "Anthropic为Claude 5代模型精简超80%系统提示词",
    "summary": "Anthropic为Claude Opus 5和Fable 5等新模型删除了Claude Code超过80%的系统提示词，且编码评测无显著损失。",
    "status": "已确认",
    "tags": [

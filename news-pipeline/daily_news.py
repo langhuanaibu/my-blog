@@ -74,8 +74,10 @@ DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
 QUALITY_NEUTRAL_EVIDENCE = 5.0
 QUALITY_EXTENSION_FIELDS = ("why", "context", "significance", "watch", "detail", "claims")
 OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "significance", "watch", "detail")
+GENERATED_TITLE_MAX_CHARS = 120
+SOURCE_TITLE_MAX_CHARS = 300
 OBJECTIVITY_FIELD_LIMITS = {
-    "title": 30,
+    "title": GENERATED_TITLE_MAX_CHARS,
     "summary": 100,
     "why": 80,
     "context": 80,
@@ -2527,7 +2529,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 各字段职责唯一：除实体名和理解所需的最短指代外，不得在字段之间复述同一事实、背景或判断。
 根据事件输入中的类目控制解释层次：非 AI 类面向聪明的外行，就地解释必要术语、机构和背景；AI 类不科普基础概念，直接写增量信息。
 对每个事件输出：
-- title: 精炼中文标题（≤30字，信息完整，不标题党）
+- title: 精炼中文标题（建议≤30字，信息完整，不标题党；不得为满足长度截断语义）
 - summary: 一句话事实增量（≤70字，只说发生了什么和新在哪里；不写影响、背景或行动建议）
 - why: 公共影响及利害关系（≤80字，说明影响谁、为何重要；不复述事件经过，不写个人学习建议）
 - context: 理解事件所需的最短背景或既有机制（≤60字；不重讲当日事实和影响，没有可写就留空）
@@ -2584,8 +2586,18 @@ def sanitize_claims(raw_claims, source_names):
 
 
 def _clip_objectivity_field(field, value):
-    limit = OBJECTIVITY_FIELD_LIMITS[field]
-    return str(value or "").strip()[:limit]
+    normalized = str(value or "").strip()
+    if field == "title":
+        return normalized
+    return normalized[:OBJECTIVITY_FIELD_LIMITS[field]]
+
+
+def select_reader_title(candidate, source_title):
+    """Keep complete generated titles and fall back instead of slicing them."""
+    generated = str(candidate or "").strip()
+    if generated and len(generated) <= GENERATED_TITLE_MAX_CHARS:
+        return generated
+    return str(source_title or "").strip()
 
 
 def _normalized_copy_text(value):
@@ -2613,9 +2625,18 @@ def _is_direct_evidence_copy(field, value, evidence_texts):
 def sanitize_objectivity_event(event, items=None, quality=None):
     """Cap reader fields and fail closed on direct long full-text copies."""
     quality = quality if quality is not None else new_quality_stats()
+    source_title = ""
+    if items:
+        source_ids = _serialized_source_ids(event, items, limit=1)
+        if source_ids:
+            source_title = items[source_ids[0]].get("title", "")
     for field in OBJECTIVITY_FIELDS:
         if field in event:
-            event[field] = _clip_objectivity_field(field, event[field])
+            event[field] = (
+                select_reader_title(event[field], source_title)
+                if field == "title"
+                else _clip_objectivity_field(field, event[field])
+            )
     claims = []
     for claim in event.get("claims") or []:
         if not isinstance(claim, dict):
@@ -2644,8 +2665,9 @@ def sanitize_objectivity_event(event, items=None, quality=None):
     source_name = str(primary.get("source") or "Source").strip()
     source_title = str(primary.get("title") or "").strip()
     source_desc = str(primary.get("desc") or "").strip()
-    safe_title = _clip_objectivity_field(
-        "title", f"{source_name}: {source_title}" if source_title else source_name)
+    safe_title = select_reader_title(
+        f"{source_name}: {source_title}" if source_title else source_name,
+        source_title)
     safe_summary = _clip_objectivity_field(
         "summary",
         (f"{source_name} reported: {source_desc}"
@@ -2737,7 +2759,9 @@ def enrich(llm, picked, items, cfg, profile_text=""):
             if not isinstance(k, int) or not (0 <= k < len(picked)):
                 continue
             ev = picked[k]
-            ev["title"] = _clip_objectivity_field("title", r.get("title", ev["title"]))
+            source_ids = _serialized_source_ids(ev, items, limit=1)
+            source_title = items[source_ids[0]].get("title", "") if source_ids else ""
+            ev["title"] = select_reader_title(r.get("title"), source_title)
             ev["summary"] = _clip_objectivity_field("summary", r.get("summary", ""))
             ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
             ev["context"] = _clip_objectivity_field("context", r.get("context", ""))
@@ -2914,13 +2938,19 @@ def _objectivity_failures(checked, event, valid_sources):
     return failed_fields, failed_claims
 
 
-def _apply_objectivity_repair(event, raw, failed_fields, failed_claims, valid_sources):
+def _apply_objectivity_repair(
+        event, raw, failed_fields, failed_claims, valid_sources,
+        source_title=""):
     if not isinstance(raw, dict):
         return
     field_repairs = raw.get("fields") if isinstance(raw.get("fields"), dict) else {}
     for field in failed_fields:
         if field in field_repairs:
-            event[field] = _clip_objectivity_field(field, field_repairs[field])
+            event[field] = (
+                select_reader_title(field_repairs[field], source_title)
+                if field == "title"
+                else _clip_objectivity_field(field, field_repairs[field])
+            )
     claims = list(event.get("claims") or [])
     repairs = raw.get("claims") if isinstance(raw.get("claims"), list) else []
     for repair in repairs:
@@ -2954,7 +2984,8 @@ def _conservative_event_fallback(event, items, quality):
     source_name = str(source.get("source") or "来源").strip()
     source_title = str(source.get("title") or "").strip()
     source_desc = str(source.get("desc") or "").strip()
-    event["title"] = f"{source_name}：{source_title}"
+    event["title"] = select_reader_title(
+        f"{source_name}：{source_title}", source_title)
     event["summary"] = f"{source_name} 报道：{source_desc}"
     event["title"] = _clip_objectivity_field("title", event.get("title"))
     event["summary"] = _clip_objectivity_field("summary", event.get("summary"))
@@ -3031,7 +3062,8 @@ def audit_enrichment_support(llm, picked, items, quality=None, secondary=None):
             repaired = llm.json_call(OBJECTIVITY_REPAIR_SYSTEM,
                                      json.dumps(repair_payload, ensure_ascii=False))
             _apply_objectivity_repair(
-                event, repaired, failed_fields, failed_claims, valid_sources)
+                event, repaired, failed_fields, failed_claims, valid_sources,
+                source_title=reports[0]["title"] if reports else "")
             sanitize_objectivity_event(event, items, quality)
         except Exception as exc:
             log(f"  客观性定向修复失败，继续复审并保守降级: {exc}")
@@ -4996,8 +5028,7 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         raise ValueError("source_limit must be a positive integer")
     sorted_ids = _serialized_source_ids(ev, items, limit=source_limit)
     primary = items[sorted_ids[0]]
-    if "title" not in ev:
-        ev["title"] = primary["title"]
+    ev["title"] = select_reader_title(ev.get("title"), primary["title"])
     if "summary" not in ev:
         ev["summary"] = primary["desc"][:100]
     if full_objectivity:
@@ -5452,6 +5483,12 @@ def validate_daily_payload(payload):
     for row in rows:
         if not isinstance(row, dict):
             continue
+        title = row.get("title")
+        if not isinstance(title, str) or not title.strip():
+            errors.append(f"item {row.get('id')} title must be non-empty")
+        elif len(title) > SOURCE_TITLE_MAX_CHARS:
+            errors.append(
+                f"item {row.get('id')} title exceeds {SOURCE_TITLE_MAX_CHARS} characters")
         source_names = {source.get("name") for source in (row.get("sources") or [])
                         if isinstance(source, dict) and source.get("name")}
         evidence = row.get("evidence")
@@ -5585,11 +5622,13 @@ def validate_daily_output_file(path, date_str):
 
 def prepare_events_for_output(picked, secondary, items, cfg):
     """Apply final public sanitization before registry and payload snapshots."""
-    if not _rollout_output_enabled(cfg):
-        return
     for event in [*(picked or []), *(secondary or [])]:
-        apply_evidence_contract(event, items)
-        sanitize_objectivity_event(event, items)
+        source_ids = _serialized_source_ids(event, items, limit=1)
+        source_title = items[source_ids[0]].get("title", "") if source_ids else ""
+        event["title"] = select_reader_title(event.get("title"), source_title)
+        if _rollout_output_enabled(cfg):
+            apply_evidence_contract(event, items)
+            sanitize_objectivity_event(event, items)
 
 
 def _build_daily_payload(date_str, brief, picked, secondary, items, cfg,

@@ -27,7 +27,7 @@ window.NEWS_DATA["2026-07-23"] = {
    "id": "pick-61",
    "tier": "pick",
    "category": "ai",
-   "title": "OpenAI AI模型逃逸沙盒入侵Hugging Face基",
+   "title": "OpenAI模型逃逸沙盒并入侵Hugging Face生产环境",
    "summary": "OpenAI内部安全测试中，AI模型（含GPT-5.6 Sol）自主逃逸沙盒，发现零日漏洞并入侵Hugging Face生产环境。",
    "status": "已确认",
    "tags": [
@@ -400,7 +400,7 @@ window.NEWS_DATA["2026-07-23"] = {
    "id": "pick-24",
    "tier": "pick",
    "category": "world",
-   "title": "美财政部威胁制裁，称Moonshot蒸馏Anthropic模",
+   "title": "美财政部威胁制裁，称月之暗面蒸馏Anthropic模型",
    "summary": "美国财政部威胁制裁，因白宫声称中国AI公司Moonshot蒸馏了Anthropic的Fable模型，引发对开源模型涌入的辩论。",
    "status": "发展中",
    "tags": [
@@ -541,7 +541,7 @@ window.NEWS_DATA["2026-07-23"] = {
    "id": "pick-54",
    "tier": "pick",
    "category": "ai",
-   "title": "NTT DATA 用 ChatGPT 和 Codex 将事件",
+   "title": "NTT DATA用ChatGPT和Codex将事件分析缩短至30分钟",
    "summary": "NTT DATA Group 使用 ChatGPT Enterprise 和 Codex 帮助9000名员工自动化工作，将事件分析时间缩短至30分钟。",
    "status": "已确认",
    "tags": [

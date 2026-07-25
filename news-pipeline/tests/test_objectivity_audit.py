@@ -330,6 +330,25 @@ def source_item(title="OpenAI 发布模型", desc="OpenAI 发布模型并公布�
     }
 
 
+def test_reader_title_keeps_complete_generated_title_above_soft_target():
+    title = "T" * 31
+
+    assert dn.select_reader_title(title, "Source title") == title
+
+
+def test_reader_title_accepts_generated_title_at_hard_boundary():
+    title = "T" * 120
+
+    assert dn.select_reader_title(title, "Source title") == title
+
+
+@pytest.mark.parametrize("candidate", ["", "T" * 121])
+def test_reader_title_falls_back_to_complete_source_title(candidate):
+    source_title = "S" * 300
+
+    assert dn.select_reader_title(candidate, source_title) == source_title
+
+
 def enriched_event(item_id=0, title="OpenAI 发布模型"):
     return {
         "ids": [item_id], "category": "ai", "title": title,
@@ -745,7 +764,7 @@ def evidence_payload(sources, basis, publisher_count, chain_count=0):
     return {
         "quality": dn.new_quality_stats(),
         "items": [{
-            "id": "pick-0", "sources": sources,
+            "id": "pick-0", "title": "Reader title", "sources": sources,
             "evidence": {"basis": basis, "publisher_count": publisher_count,
                          "independent_chain_count": chain_count, "degraded": True},
         }],
@@ -1415,7 +1434,7 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
 
     assert "FULLTEXT_ONLY_MARKER" not in interim_llm.calls[0][1]
     assert {field: len(interim_event[field]) for field in long_values} == {
-        "title": 30, "summary": 100, "why": 80, "context": 80,
+        "title": len(long_values["title"]), "summary": 100, "why": 80, "context": 80,
         "significance": 70, "watch": 80, "detail": 800,
     }
     interim_output_item = dict(item)
@@ -1423,7 +1442,7 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
     interim_output_item["evidence_basis"] = "snippet"
     serialized_interim = dn.event_to_item(
         interim_event, [interim_output_item], "pick")
-    assert len(serialized_interim["title"]) == 30
+    assert serialized_interim["title"] == long_values["title"]
     assert len(serialized_interim["summary"]) == 100
     assert len(serialized_interim["why"]) == 80
     assert len(serialized_interim["watch"]) == 80
@@ -1442,6 +1461,6 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
 
     assert "FULLTEXT_ONLY_MARKER" in active_llm.calls[0][1]
     assert {field: len(active_event[field]) for field in long_values} == {
-        "title": 30, "summary": 100, "why": 80, "context": 80,
+        "title": len(long_values["title"]), "summary": 100, "why": 80, "context": 80,
         "significance": 70, "watch": 80, "detail": 800,
     }

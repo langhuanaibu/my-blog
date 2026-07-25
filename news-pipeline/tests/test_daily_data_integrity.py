@@ -1,6 +1,7 @@
 import json
 import re
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -11,6 +12,24 @@ import daily_news as dn
 
 ROOT = Path(__file__).resolve().parents[2]
 DAILY_DIR = ROOT / "source" / "news" / "data" / "daily"
+DATA_DIR = DAILY_DIR.parent
+
+REPAIRED_TITLES = {
+    ("2026-07-23", "pick-61"): "OpenAI模型逃逸沙盒并入侵Hugging Face生产环境",
+    ("2026-07-23", "pick-24"): "美财政部威胁制裁，称月之暗面蒸馏Anthropic模型",
+    ("2026-07-23", "pick-54"): "NTT DATA用ChatGPT和Codex将事件分析缩短至30分钟",
+    ("2026-07-24", "pick-120"): "AMD发布Helios AI服务器，预测2030年AI加速器市场达1.4万亿美元",
+    ("2026-07-24", "pick-29"): "Google Gemini月活接近10亿，市场份额升至27.7%",
+    ("2026-07-24", "pick-18"): "Anthropic扩展Claude语音模式至Opus、Sonnet和Haiku",
+    ("2026-07-24", "pick-66"): "北京智能体新政首次写入Harness Engineering",
+    ("2026-07-24", "pick-60"): "OpenAI Workspace Agents曝AgentForger漏洞",
+    ("2026-07-24", "pick-44"): "美国国会提出AI Kill Switch法案，授权关闭失控AI系统",
+    ("2026-07-24", "pick-4"): "GitHub Mobile支持用Copilot修复失败的Actions检查",
+    ("2026-07-25", "pick-2"): "Anthropic发布Claude Opus 5，性能接近Fable 5",
+    ("2026-07-25", "pick-97"): "美国指控月之暗面蒸馏Anthropic模型开发Kimi K3",
+    ("2026-07-25", "pick-7"): "Anthropic发布Drone-Bench评估AI操控无人机",
+    ("2026-07-25", "pick-5"): "Anthropic为Claude 5代模型精简超80%系统提示词",
+}
 
 
 def _load_daily(path):
@@ -67,3 +86,56 @@ def test_all_daily_claims_and_themes_reference_published_rows():
                     f"{path.name}: unknown theme members {unknown}")
 
     assert failures == []
+
+
+def test_repaired_titles_match_daily_registry_feed_and_search_index():
+    daily_titles = {}
+    for date in {date for date, _item_id in REPAIRED_TITLES}:
+        payload = _load_daily(DAILY_DIR / f"{date}.js")
+        daily_titles.update({
+            (date, item["id"]): item["title"]
+            for item in payload.get("items") or []
+        })
+    assert {
+        key: daily_titles.get(key) for key in REPAIRED_TITLES
+    } == REPAIRED_TITLES
+
+    registry = json.loads(
+        (DATA_DIR / "events.json").read_text(encoding="utf-8"))
+    registered = {}
+    for event in registry.get("events") or []:
+        for row in event.get("history") or []:
+            item_ref = row.get("item_ref", "")
+            if ":" not in item_ref:
+                continue
+            date, item_id = item_ref.split(":", 1)
+            key = (date, item_id)
+            if key in REPAIRED_TITLES:
+                registered[key] = (row.get("title"), event.get("title"))
+    assert registered == {
+        key: (title, title) for key, title in REPAIRED_TITLES.items()
+    }
+
+    index_raw = (DATA_DIR / "search_index.js").read_text(encoding="utf-8")
+    index_match = re.fullmatch(
+        r"window\.NEWS_INDEX = (\[.*\]);\s*", index_raw, re.S)
+    assert index_match
+    index_titles = {
+        (row[0], row[1]): row[4]
+        for row in json.loads(index_match.group(1))
+        if len(row) >= 5
+    }
+    assert {
+        key: index_titles.get(key) for key in REPAIRED_TITLES
+    } == REPAIRED_TITLES
+
+    feed = ET.parse(DATA_DIR / "feed.xml")
+    feed_titles = {
+        tuple(item.findtext("guid").split(":", 1)): item.findtext("title")
+        for item in feed.findall("./channel/item")
+        if ":" in (item.findtext("guid") or "")
+    }
+    assert all(
+        feed_titles[key].endswith(title)
+        for key, title in REPAIRED_TITLES.items()
+    )

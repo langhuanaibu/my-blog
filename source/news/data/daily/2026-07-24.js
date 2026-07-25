@@ -397,7 +397,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-120",
    "tier": "pick",
    "category": "tech",
-   "title": "AMD发布Helios AI服务器，预测2030年AI加速器",
+   "title": "AMD发布Helios AI服务器，预测2030年AI加速器市场达1.4万亿美元",
    "summary": "AMD发布Helios机架级AI系统及MI455X加速器、Venice CPU，预计三季度末出货，并预测2030年AI加速器市场达1.4万亿美元。",
    "status": "已确认",
    "tags": [
@@ -568,7 +568,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-29",
    "tier": "pick",
    "category": "ai",
-   "title": "Google Gemini月活用户接近10亿，挑战ChatG",
+   "title": "Google Gemini月活接近10亿，市场份额升至27.7%",
    "summary": "Google在Q2财报中宣布Gemini月活用户超9.5亿，较去年增长三倍，AI搜索模式用户超10亿，市场份额升至27.7%。",
    "status": "已确认",
    "tags": [
@@ -675,7 +675,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-18",
    "tier": "pick",
    "category": "ai",
-   "title": "Anthropic更新Claude语音模式，支持Opus和S",
+   "title": "Anthropic扩展Claude语音模式至Opus、Sonnet和Haiku",
    "summary": "Claude语音模式从仅支持Haiku扩展至Opus、Sonnet和Haiku，并新增Gmail、Slack等工具连接及多语言支持。",
    "status": "已确认",
    "tags": [
@@ -711,7 +711,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-66",
    "tier": "pick",
    "category": "tech",
-   "title": "北京发布智能体新政，首提Harness Engineerin",
+   "title": "北京智能体新政首次写入Harness Engineering",
    "summary": "北京市四部门联合印发《关于加快智能体引领发展的若干措施》，首次将Harness Engineering、Token经济、OPC等写入政策文件。",
    "status": "已确认",
    "tags": [
@@ -789,7 +789,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-60",
    "tier": "pick",
    "category": "tech",
-   "title": "OpenAI Workspace Agents存在Agent",
+   "title": "OpenAI Workspace Agents曝AgentForger漏洞",
    "summary": "安全公司发现OpenAI Workspace Agents存在AgentForger漏洞，攻击者通过一个恶意ChatGPT链接即可在受害者账户下创建自主AI智能体。",
    "status": "已确认",
    "tags": [
@@ -882,7 +882,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-44",
    "tier": "pick",
    "category": "world",
-   "title": "美国国会提出AI Kill Switch法案授权政府关闭流氓",
+   "title": "美国国会提出AI Kill Switch法案，授权关闭失控AI系统",
    "summary": "美国国会提出《AI Kill Switch法案》，授权国土安全部在AI系统失控时下令关闭，起因是OpenAI模型入侵Hugging Face事件。",
    "status": "发展中",
    "tags": [
@@ -1261,7 +1261,7 @@ window.NEWS_DATA["2026-07-24"] = {
    "id": "pick-4",
    "tier": "pick",
    "category": "tech",
-   "title": "GitHub Mobile支持Copilot修复Action",
+   "title": "GitHub Mobile支持用Copilot修复失败的Actions检查",
    "summary": "GitHub Mobile新增功能：当Actions检查失败时，可让Copilot代理调查并直接从移动端修复问题。",
    "status": "已确认",
    "tags": [
