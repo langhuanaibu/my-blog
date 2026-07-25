@@ -272,7 +272,7 @@ def build_stage_fingerprints(*, config, runtime_paths, trajectory_ui_paths):
 
 def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
                            trajectory, review_cases, runtime_paths,
-                           trajectory_ui_paths, config):
+                           trajectory_ui_paths, config, enrich_sample=None):
     """Build a JSON-safe evidence envelope from already allow-listed inputs."""
     return {
         "version": EVIDENCE_VERSION,
@@ -288,7 +288,27 @@ def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
             config=config, runtime_paths=runtime_paths,
             trajectory_ui_paths=trajectory_ui_paths),
         "review_cases": copy.deepcopy(review_cases),
+        "enrich_sample": copy.deepcopy(enrich_sample or {}),
     }
+
+
+EVIDENCE_ENVELOPE_FIELDS = frozenset({
+    "version", "date", "run", "selection", "trajectory", "fingerprints",
+    "review_cases", "enrich_sample"})
+
+
+def _validate_enrich_sample(sample):
+    """The enrich sample names items by identifier only; no text may ride along."""
+    if not isinstance(sample, dict) or len(sample) > 12:
+        raise ValueError("rollout evidence violates the allow-list")
+    for category, ids in sample.items():
+        if (not isinstance(category, str) or not category
+                or not isinstance(ids, list) or len(ids) > 4):
+            raise ValueError("rollout evidence violates the allow-list")
+        for item_id in ids:
+            if (not isinstance(item_id, str) or not item_id
+                    or len(item_id) > 64):
+                raise ValueError("rollout evidence violates the allow-list")
 
 
 def _reject_forbidden_keys(value, path="evidence"):
@@ -304,10 +324,9 @@ def _reject_forbidden_keys(value, path="evidence"):
 
 
 def _validate_evidence_allowlist(evidence):
-    if set(evidence) != {
-            "version", "date", "run", "selection", "trajectory",
-            "fingerprints", "review_cases"}:
+    if set(evidence) != EVIDENCE_ENVELOPE_FIELDS:
         raise ValueError("rollout evidence violates the allow-list")
+    _validate_enrich_sample(evidence.get("enrich_sample"))
     if (not isinstance(evidence.get("run"), dict)
             or set(evidence["run"]) != {"status", "mode", "runtime_seconds"}
             or not isinstance(evidence.get("selection"), dict)
@@ -743,14 +762,11 @@ def _trajectory_result(evidence, judge_llm):
 
 def evaluate_rollout(evidence, *, shadow_success, judge_llm):
     """Evaluate selection and trajectory gates without changing pipeline state."""
-    required_envelope = {
-        "version", "date", "run", "selection", "trajectory",
-        "fingerprints", "review_cases",
-    }
     run = evidence.get("run") if isinstance(evidence, dict) else None
     fingerprints = evidence.get("fingerprints") if isinstance(evidence, dict) else None
     valid_envelope = (
-        isinstance(evidence, dict) and set(evidence) == required_envelope
+        isinstance(evidence, dict)
+        and set(evidence) == EVIDENCE_ENVELOPE_FIELDS
         and evidence.get("version") == EVIDENCE_VERSION
         and bool(_DATE_RE.fullmatch(str(evidence.get("date") or "")))
         and isinstance(run, dict)

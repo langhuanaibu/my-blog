@@ -14,6 +14,9 @@ on:
         options:
           - selection
           - trajectory
+          - enrich
+          - objectivity_shadow
+          - source_metrics
       status:
         description: Evidence-backed manual verdict
         required: true
@@ -29,6 +32,14 @@ on:
       run_attempt:
         description: Workflow run attempt recorded in the daily ledger
         required: true
+        type: string
+      samples_passed:
+        description: "enrich only: sampled items that passed all applicable checks"
+        required: false
+        type: string
+      samples_total:
+        description: "enrich only: sampled items reviewed that day"
+        required: false
         type: string
 permissions:
   contents: read
@@ -60,11 +71,17 @@ jobs:
           REVIEW_STATUS: ${{ inputs.status }}
           REVIEW_RUN_ID: ${{ inputs.run_id }}
           REVIEW_RUN_ATTEMPT: ${{ inputs.run_attempt }}
+          REVIEW_SAMPLES_PASSED: ${{ inputs.samples_passed }}
+          REVIEW_SAMPLES_TOTAL: ${{ inputs.samples_total }}
         run: |
-          python news-pipeline/issue_ledger.py manual-review \
-            --issue 15 \
+          set -- --issue 15 \
             --date "$REVIEW_DATE" \
             --gate "$REVIEW_GATE" \
             --status "$REVIEW_STATUS" \
             --run-id "$REVIEW_RUN_ID" \
             --run-attempt "$REVIEW_RUN_ATTEMPT"
+          if [ -n "$REVIEW_SAMPLES_TOTAL" ]; then
+            set -- "$@" --samples-passed "$REVIEW_SAMPLES_PASSED" \
+              --samples-total "$REVIEW_SAMPLES_TOTAL"
+          fi
+          python news-pipeline/issue_ledger.py manual-review "$@"

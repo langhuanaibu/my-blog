@@ -12,6 +12,33 @@ from pathlib import Path
 
 
 GATE_STATUSES = {"pass", "fail", "neutral", "needs_review"}
+
+# Selection and trajectory are judged from the rollout report; the remaining
+# three gates are judged from committed health data plus the shadow summary.
+GATES = ("selection", "trajectory", "enrich", "objectivity_shadow",
+         "source_metrics")
+# Consecutive gates reset to zero on a failed day; cumulative gates only count
+# valid days, so a day without usable data never erases banked observations.
+CONSECUTIVE_GATES = ("selection", "trajectory", "objectivity_shadow")
+GATE_TARGETS = {
+    "selection": 7,
+    "trajectory": 5,
+    "objectivity_shadow": 7,
+    "enrich": 5,
+    "source_metrics": 14,
+}
+# A shared runtime change restarts every clock: the sample composition moved, so
+# pre-change and post-change evidence must never be mixed. A trajectory-UI-only
+# change restarts trajectory alone.
+RUNTIME_RESET_GATES = GATES
+TRAJECTORY_UI_RESET_GATES = ("trajectory",)
+ENRICH_CONTENT_TARGET = 0.80
+ENRICH_SAFETY_MULTIPLIER = 1.2
+ENRICH_BASELINE_DAYS = 3
+
+STATE_VERSION = "issue-ledger-v2"
+LEGACY_STATE_VERSIONS = ("issue-ledger-v1",)
+
 TRUSTED_BOT = "github-actions[bot]"
 MARKER_TEMPLATE = "<!-- daily-news-rollout:{date} -->"
 STATE_PREFIX = "<!-- daily-news-rollout-state:"
@@ -65,7 +92,7 @@ def _latest_fingerprints(attempts):
 
 def _valid_manual_review(gate, review, latest):
     return (
-        gate in {"selection", "trajectory"}
+        gate in GATES
         and isinstance(review, dict)
         and review.get("status") in {"pass", "fail", "neutral"}
         and review.get("reason_code") == "artifact_reviewed"
@@ -75,28 +102,36 @@ def _valid_manual_review(gate, review, latest):
     )
 
 
+def _enrich_samples(attempt):
+    """Read the deterministic sample counts recorded for the enrich gate."""
+    source = attempt.get("enrich") if isinstance(attempt, dict) else None
+    source = source if isinstance(source, dict) else {}
+    sample = source.get("sample")
+    return sample if isinstance(sample, dict) else {}
+
+
 def build_daily_state(date, attempts, manual_reviews=None):
     """Aggregate all attempts for one Beijing date."""
     ordered = sorted((copy.deepcopy(row) for row in attempts), key=_attempt_key)
     latest = ordered[-1] if ordered else {}
     publication_failed = any(
         row.get("publication") == "failure" for row in ordered)
-    aggregate = {
-        "publication": "failure" if publication_failed else "success",
-        "selection": "fail" if publication_failed else _gate_status(latest, "selection"),
-        "trajectory": "fail" if publication_failed else _gate_status(latest, "trajectory"),
-    }
+    aggregate = {"publication": "failure" if publication_failed else "success"}
+    for gate in GATES:
+        aggregate[gate] = ("fail" if publication_failed
+                           else _gate_status(latest, gate))
     state = {
-        "version": "issue-ledger-v1",
+        "version": STATE_VERSION,
         "date": str(date),
         "attempts": ordered,
         "aggregate": aggregate,
         "fingerprints": _latest_fingerprints(ordered),
-        "streaks": {"selection": 0, "trajectory": 0},
+        "streaks": {gate: 0 for gate in GATES},
+        "enrich_sample": _enrich_samples(latest),
     }
     reviews = manual_reviews if isinstance(manual_reviews, dict) else {}
     applied = {}
-    for gate in ("selection", "trajectory"):
+    for gate in GATES:
         review = reviews.get(gate)
         if (aggregate[gate] == "needs_review"
                 and _valid_manual_review(gate, review, latest)):
@@ -107,12 +142,29 @@ def build_daily_state(date, attempts, manual_reviews=None):
     return state
 
 
-def apply_manual_review(state, *, gate, status, run_id, run_attempt):
+def _review_sample_counts(gate, samples_passed, samples_total):
+    """Validate the optional per-day enrich sample tally supplied by a human."""
+    if samples_passed is None and samples_total is None:
+        return None
+    if gate != "enrich":
+        raise ValueError("sample counts apply only to the enrich gate")
+    passed = int(samples_passed or 0)
+    total = int(samples_total or 0)
+    if total <= 0:
+        raise ValueError("samples_total must be positive")
+    if not 0 <= passed <= total:
+        raise ValueError("samples_passed must be between 0 and samples_total")
+    return {"passed": passed, "total": total}
+
+
+def apply_manual_review(state, *, gate, status, run_id, run_attempt,
+                        samples_passed=None, samples_total=None):
     """Replace only one needs-review result with an evidenced human verdict."""
-    if gate not in {"selection", "trajectory"}:
-        raise ValueError("manual review gate must be selection or trajectory")
+    if gate not in GATES:
+        raise ValueError(f"manual review gate must be one of {', '.join(GATES)}")
     if status not in {"pass", "fail", "neutral"}:
         raise ValueError("manual review status must be pass, fail, or neutral")
+    counts = _review_sample_counts(gate, samples_passed, samples_total)
     updated = copy.deepcopy(state)
     aggregate = updated.get("aggregate")
     aggregate = aggregate if isinstance(aggregate, dict) else {}
@@ -135,22 +187,29 @@ def apply_manual_review(state, *, gate, status, run_id, run_attempt):
         "run_id": str(run_id),
         "run_attempt": int(run_attempt),
     }
+    if counts is not None:
+        reviews[gate]["samples"] = counts
     updated["manual_reviews"] = reviews
     updated["aggregate"][gate] = status
     return updated
 
 
-def _apply_gate(streak, status):
+def _apply_gate(streak, status, gate):
     if status == "pass":
         return streak + 1
-    if status == "fail":
+    if status == "fail" and gate in CONSECUTIVE_GATES:
         return 0
     return streak
 
 
+def _reset(streaks, gates):
+    for gate in gates:
+        streaks[gate] = 0
+
+
 def compute_streaks(states):
     """Compute independent gate streaks over chronological daily states."""
-    streaks = {"selection": 0, "trajectory": 0}
+    streaks = {gate: 0 for gate in GATES}
     previous = {"runtime": "", "trajectory_ui": ""}
     for state in sorted(states, key=lambda row: str(row.get("date") or "")):
         fingerprints = state.get("fingerprints")
@@ -158,24 +217,50 @@ def compute_streaks(states):
         runtime = fingerprints.get("runtime")
         trajectory_ui = fingerprints.get("trajectory_ui")
         if previous["runtime"] and runtime and runtime != previous["runtime"]:
-            streaks = {"selection": 0, "trajectory": 0}
+            _reset(streaks, RUNTIME_RESET_GATES)
         elif (previous["trajectory_ui"] and trajectory_ui
               and trajectory_ui != previous["trajectory_ui"]):
-            streaks["trajectory"] = 0
+            _reset(streaks, TRAJECTORY_UI_RESET_GATES)
 
         aggregate = state.get("aggregate")
         aggregate = aggregate if isinstance(aggregate, dict) else {}
         if aggregate.get("publication") == "failure":
-            streaks = {"selection": 0, "trajectory": 0}
+            _reset(streaks, CONSECUTIVE_GATES)
         else:
-            for gate in ("selection", "trajectory"):
-                streaks[gate] = _apply_gate(streaks[gate], aggregate.get(gate))
+            for gate in GATES:
+                streaks[gate] = _apply_gate(
+                    streaks[gate], aggregate.get(gate), gate)
 
         if runtime:
             previous["runtime"] = runtime
         if trajectory_ui:
             previous["trajectory_ui"] = trajectory_ui
     return streaks
+
+
+def enrich_content_ratio(states):
+    """Aggregate the human-recorded enrich sample tally across the window."""
+    passed = total = 0
+    for state in states:
+        reviews = state.get("manual_reviews")
+        reviews = reviews if isinstance(reviews, dict) else {}
+        samples = reviews.get("enrich", {}).get("samples")
+        if not isinstance(samples, dict):
+            continue
+        passed += int(samples.get("passed") or 0)
+        total += int(samples.get("total") or 0)
+    if total <= 0:
+        return None, 0, 0
+    return round(passed / total, 4), passed, total
+
+
+def gates_met(streaks, content_ratio):
+    """Report which acceptance gates have reached their documented target."""
+    met = {gate: int(streaks.get(gate) or 0) >= GATE_TARGETS[gate]
+           for gate in GATES}
+    met["enrich"] = met["enrich"] and (
+        content_ratio is not None and content_ratio >= ENRICH_CONTENT_TARGET)
+    return met
 
 
 def marker_for_date(date):
@@ -207,6 +292,49 @@ def _project_gate(report, gate):
     }
 
 
+def _project_metrics(value):
+    """Copy only finite numeric metrics; free text never reaches the ledger."""
+    if not isinstance(value, dict):
+        return {}
+    projected = {}
+    for name, metric in list(value.items())[:8]:
+        if isinstance(metric, bool) or not isinstance(metric, (int, float)):
+            continue
+        projected[_sanitize_text(name, limit=40)] = round(float(metric), 4)
+    return projected
+
+
+def _project_evaluation(evaluation):
+    """Project a health-data evaluation into the compact ledger gate schema."""
+    source = evaluation if isinstance(evaluation, dict) else {}
+    status = source.get("status")
+    projected = {
+        "status": status if status in GATE_STATUSES else "needs_review",
+        "reasons": _project_reasons(source.get("reasons")),
+    }
+    if not isinstance(evaluation, dict):
+        projected["reasons"] = ["gate evaluation unavailable"]
+    metrics = _project_metrics(source.get("metrics"))
+    if metrics:
+        projected["metrics"] = metrics
+    return projected
+
+
+def _project_enrich_sample(sample):
+    """Record which items a human must review, by identifier only."""
+    if not isinstance(sample, dict):
+        return {}
+    projected = {}
+    for category, ids in list(sample.items())[:12]:
+        if not isinstance(ids, list):
+            continue
+        cleaned = [_sanitize_text(row, limit=64) for row in ids[:4]]
+        cleaned = [row for row in cleaned if row]
+        if cleaned:
+            projected[_sanitize_text(category, limit=32)] = cleaned
+    return projected
+
+
 def _project_fingerprints(report):
     source = report.get("fingerprints") if isinstance(report, dict) else None
     source = source if isinstance(source, dict) else {}
@@ -235,19 +363,140 @@ def _judge_summary(report):
     return counts
 
 
+SHADOW_REQUIRED_FIELDS = (
+    "selected_before_audit", "selected_after_audit", "audited_candidate_count",
+    "demoted_from_selected", "source_reference_concentration")
+SOURCE_REQUIRED_FIELDS = (
+    "high_risk_single_source_rate", "independent_chain_distribution",
+    "source_reference_concentration")
+
+
+def _median(values):
+    ordered = sorted(values)
+    if not ordered:
+        return None
+    middle = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[middle]
+    return (ordered[middle - 1] + ordered[middle]) / 2
+
+
+def _quality_ratio(record):
+    audited = int(record.get("audited_events") or 0)
+    if audited <= 0:
+        return None
+    return int(record.get("removed_fields") or 0) / audited
+
+
+def enrich_baseline(quality_health, before_date):
+    """Median removed-field ratio over the output days preceding the window."""
+    records = (quality_health or {}).get("records")
+    records = records if isinstance(records, list) else []
+    prior = [row for row in records
+             if isinstance(row, dict) and str(row.get("date") or "") < str(before_date)]
+    prior.sort(key=lambda row: str(row.get("date") or ""))
+    ratios = [ratio for ratio in
+              (_quality_ratio(row) for row in prior[-ENRICH_BASELINE_DAYS:])
+              if ratio is not None]
+    return _median(ratios)
+
+
+def evaluate_enrich(quality_health, *, date, window_start):
+    """Judge only the mechanical enrich safety metric.
+
+    Content quality is deliberately left at `needs_review`: the three per-item
+    checks require human judgement, and an unreviewed day must never be
+    credited as a pass.
+    """
+    records = (quality_health or {}).get("records")
+    records = records if isinstance(records, list) else []
+    today = next((row for row in records
+                  if isinstance(row, dict) and str(row.get("date") or "") == str(date)),
+                 None)
+    if today is None:
+        return {"status": "needs_review", "reasons": ["no enrich quality record for the date"]}
+    ratio = _quality_ratio(today)
+    if ratio is None:
+        return {"status": "needs_review", "reasons": ["no audited events to measure"]}
+    baseline = enrich_baseline(quality_health, window_start)
+    if baseline is None:
+        return {"status": "needs_review",
+                "reasons": ["no pre-window baseline to compare against"],
+                "metrics": {"ratio": round(ratio, 4)}}
+    limit = baseline * ENRICH_SAFETY_MULTIPLIER
+    metrics = {"ratio": round(ratio, 4), "baseline": round(baseline, 4),
+               "limit": round(limit, 4)}
+    if ratio > limit:
+        return {"status": "fail",
+                "reasons": [f"removed-field ratio {ratio:.3f} exceeds limit {limit:.3f}"],
+                "metrics": metrics}
+    return {"status": "needs_review",
+            "reasons": ["safety metric within limit; content sampling awaits human review"],
+            "metrics": metrics}
+
+
+def evaluate_objectivity_shadow(shadow_summary, *, shadow_outcome):
+    """Judge the daily objectivity shadow observation."""
+    if shadow_outcome != "success":
+        return {"status": "fail", "reasons": ["objectivity shadow run did not succeed"]}
+    if not isinstance(shadow_summary, dict):
+        return {"status": "needs_review", "reasons": ["shadow summary unavailable"]}
+    missing = [name for name in SHADOW_REQUIRED_FIELDS
+               if shadow_summary.get(name) is None]
+    if missing:
+        return {"status": "needs_review",
+                "reasons": [f"shadow summary missing {', '.join(sorted(missing))}"]}
+    return {"status": "pass", "reasons": [],
+            "metrics": {name: shadow_summary.get(name)
+                        for name in ("selected_before_audit", "selected_after_audit",
+                                     "demoted_from_selected")}}
+
+
+def evaluate_source_metrics(source_health, shadow_summary, *, date):
+    """Judge whether one day contributes a complete source-metric observation."""
+    days = (source_health or {}).get("days")
+    rows = days.get(str(date)) if isinstance(days, dict) else None
+    if not isinstance(rows, dict) or not rows:
+        return {"status": "neutral", "reasons": ["no source health record for the date"]}
+    if not isinstance(shadow_summary, dict):
+        return {"status": "neutral", "reasons": ["shadow metrics unavailable for the date"]}
+    missing = [name for name in SOURCE_REQUIRED_FIELDS
+               if shadow_summary.get(name) is None]
+    if missing:
+        return {"status": "neutral",
+                "reasons": [f"shadow metrics missing {', '.join(sorted(missing))}"]}
+    errored = sum(1 for row in rows.values()
+                  if isinstance(row, dict) and row.get("error"))
+    empty = sum(1 for row in rows.values()
+                if isinstance(row, dict) and not int(row.get("count") or 0))
+    return {"status": "pass", "reasons": [],
+            "metrics": {"sources": len(rows), "errored": errored, "zero_update": empty}}
+
+
 def build_attempt(*, report, publication, publication_reason, run_id,
-                  run_attempt, sha):
+                  run_attempt, sha, enrich=None, objectivity_shadow=None,
+                  source_metrics=None, enrich_sample=None):
     """Project a report into the compact, non-sensitive ledger schema."""
     publication = "success" if publication == "success" else "failure"
     selection = _project_gate(report, "selection")
     trajectory = _project_gate(report, "trajectory")
+    gates = {
+        "enrich": _project_evaluation(enrich),
+        "objectivity_shadow": _project_evaluation(objectivity_shadow),
+        "source_metrics": _project_evaluation(source_metrics),
+    }
     reason = _sanitize_text(publication_reason)
     if publication == "failure":
-        selection = {"status": "fail", "reasons": [reason or "publication failed"]}
-        trajectory = {"status": "fail", "reasons": [reason or "publication failed"]}
+        failed = {"status": "fail", "reasons": [reason or "publication failed"]}
+        selection = copy.deepcopy(failed)
+        trajectory = copy.deepcopy(failed)
+        gates = {gate: copy.deepcopy(failed) for gate in gates}
     elif not isinstance(report, dict):
         selection = trajectory = {
             "status": "needs_review", "reasons": ["rollout report unavailable"]}
+    sample = _project_enrich_sample(enrich_sample)
+    if sample:
+        gates["enrich"]["sample"] = sample
     return {
         "run_id": str(run_id),
         "run_attempt": int(run_attempt),
@@ -255,6 +504,7 @@ def build_attempt(*, report, publication, publication_reason, run_id,
         "publication": publication,
         "selection": selection,
         "trajectory": trajectory,
+        **gates,
         "judge": _judge_summary(report),
         "fingerprints": _project_fingerprints(report),
     }
@@ -268,12 +518,36 @@ def _trusted_bot_comment(comment):
 
 def _valid_machine_state(state):
     return (isinstance(state, dict)
-            and state.get("version") == "issue-ledger-v1"
+            and state.get("version") in (STATE_VERSION, *LEGACY_STATE_VERSIONS)
             and isinstance(state.get("date"), str)
             and isinstance(state.get("attempts"), list)
             and isinstance(state.get("aggregate"), dict)
             and isinstance(state.get("fingerprints"), dict)
             and isinstance(state.get("streaks"), dict))
+
+
+def migrate_state(state):
+    """Lift a legacy state to the current schema without inventing evidence.
+
+    Days recorded before the three extra gates existed carry no enrich,
+    objectivity-shadow or source-metric measurement, so those gates become
+    `neutral`: they freeze their clock instead of crediting an unobserved day.
+    """
+    if state.get("version") == STATE_VERSION:
+        return state
+    migrated = copy.deepcopy(state)
+    migrated["version"] = STATE_VERSION
+    aggregate = migrated.get("aggregate")
+    aggregate = aggregate if isinstance(aggregate, dict) else {}
+    streaks = migrated.get("streaks")
+    streaks = streaks if isinstance(streaks, dict) else {}
+    for gate in GATES:
+        aggregate.setdefault(gate, "neutral")
+        streaks.setdefault(gate, 0)
+    migrated["aggregate"] = aggregate
+    migrated["streaks"] = streaks
+    migrated.setdefault("enrich_sample", {})
+    return migrated
 
 
 def parse_machine_state(comment):
@@ -293,7 +567,7 @@ def parse_machine_state(comment):
     if (not _valid_machine_state(state)
             or marker_for_date(state["date"]) not in body):
         return None
-    return state
+    return migrate_state(state)
 
 
 def find_daily_comment(comments, date):
@@ -318,7 +592,16 @@ def _gate_reasons(state, gate):
     return projected.get("reasons") if isinstance(projected, dict) else []
 
 
-def render_comment(state):
+GATE_LABELS = {
+    "selection": "Selection",
+    "trajectory": "Trajectory",
+    "enrich": "Enrich",
+    "objectivity_shadow": "Objectivity shadow",
+    "source_metrics": "Source metrics",
+}
+
+
+def render_comment(state, *, content_ratio=None, content_counts=(0, 0)):
     """Render one readable daily comment plus compact hidden machine state."""
     machine = json.dumps(state, ensure_ascii=False, sort_keys=True,
                          separators=(",", ":"))
@@ -341,34 +624,105 @@ def render_comment(state):
         f"{STATE_PREFIX}{machine}{STATE_SUFFIX}",
         f"## 日报验收 · {state.get('date', '')}",
         "",
-        (f"- Run: {latest.get('run_id', '')} / attempt "
-         f"{latest.get('run_attempt', '')} · `{str(latest.get('sha', ''))[:7]}`"),
-        f"- Publication: **{aggregate.get('publication', 'needs_review')}**",
-        (f"- Selection: **{aggregate.get('selection', 'needs_review')}** — "
-         f"{reasons_for('selection')}"),
-        (f"- Trajectory: **{aggregate.get('trajectory', 'needs_review')}** — "
-         f"{reasons_for('trajectory')}"),
+    ]
+    if state.get("gap"):
+        lines.append(
+            "- Run: 无（当日没有任何日报台账记录，所有门冻结、不计入也不清零）")
+    else:
+        lines.append(
+            f"- Run: {latest.get('run_id', '')} / attempt "
+            f"{latest.get('run_attempt', '')} · `{str(latest.get('sha', ''))[:7]}`")
+    lines.append(
+        f"- Publication: **{aggregate.get('publication', 'needs_review')}**")
+    lines.extend(
+        f"- {GATE_LABELS[gate]}: **{aggregate.get(gate, 'needs_review')}** — "
+        f"{reasons_for(gate)}"
+        for gate in GATES)
+    lines.extend([
         (f"- Judge: pass={judge.get('pass', 0)}, fail={judge.get('fail', 0)}, "
          f"needs_review={judge.get('needs_review', 0)}, "
          f"watch_ratio={judge.get('watch_ratio') if judge.get('watch_ratio') is not None else 'n/a'}"),
         (f"- Fingerprints: runtime=`{str(fingerprints.get('runtime') or '')[:12]}`, "
          f"trajectory_ui=`{str(fingerprints.get('trajectory_ui') or '')[:12]}`"),
-        (f"- Current streaks: selection: {int(streaks.get('selection') or 0)}, "
-         f"trajectory: {int(streaks.get('trajectory') or 0)}"),
-    ]
-    for gate in ("selection", "trajectory"):
+        "- Current progress: " + ", ".join(
+            f"{GATE_LABELS[gate]} {int(streaks.get(gate) or 0)}/{GATE_TARGETS[gate]}"
+            for gate in GATES),
+    ])
+    sample = state.get("enrich_sample")
+    if isinstance(sample, dict) and sample:
+        lines.append("- Enrich sample awaiting review: " + ", ".join(
+            f"{category}={'/'.join(ids)}"
+            for category, ids in sorted(sample.items())))
+    passed, total = content_counts
+    if total:
+        lines.append(
+            f"- Enrich content samples: {passed}/{total} passed "
+            f"({content_ratio:.1%}; target {ENRICH_CONTENT_TARGET:.0%})")
+    for gate in GATES:
         review = manual_reviews.get(gate)
         if isinstance(review, dict):
             lines.append(
                 f"- Manual {gate} review: **{review.get('status')}** — "
                 "reviewed against the retained rollout artifact")
-    if (int(streaks.get("selection") or 0) >= 7
-            and int(streaks.get("trajectory") or 0) >= 5):
+    met = gates_met(streaks, content_ratio)
+    if all(met.values()):
         lines.append("- 状态：待人工最终确认")
+    else:
+        pending = [GATE_LABELS[gate] for gate in GATES if not met[gate]]
+        lines.append("- 未达标门：" + ", ".join(pending))
     return "\n".join(lines) + "\n"
 
 
-def sync_issue(client, *, issue_number, date, incoming):
+def _states_by_date(comments):
+    """Index the earliest trusted state per date, oldest comment winning."""
+    states = {}
+    for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
+        parsed = parse_machine_state(comment)
+        if parsed is not None and parsed["date"] not in states:
+            states[parsed["date"]] = parsed
+    return states
+
+
+def window_start(states, date):
+    """First date of the observation window the given date belongs to.
+
+    The window restarts whenever the shared runtime fingerprint changes, which
+    is exactly when pre-change and post-change evidence must not be mixed.
+    """
+    ordered = sorted(states, key=lambda row: str(row.get("date") or ""))
+    start = str(date)
+    previous = ""
+    for state in ordered:
+        current_date = str(state.get("date") or "")
+        if current_date > str(date):
+            break
+        fingerprints = state.get("fingerprints")
+        fingerprints = fingerprints if isinstance(fingerprints, dict) else {}
+        runtime = fingerprints.get("runtime") or ""
+        if not previous or (runtime and runtime != previous):
+            start = current_date
+        if runtime:
+            previous = runtime
+    return start
+
+
+def _window_states(states, date):
+    start = window_start(states, date)
+    return [state for state in states
+            if start <= str(state.get("date") or "") <= str(date)]
+
+
+def _finalize(states_by_date, date, updated):
+    """Recompute streaks over the whole ledger and render the daily comment."""
+    states_by_date[str(date)] = updated
+    values = list(states_by_date.values())
+    updated["streaks"] = compute_streaks(values)
+    ratio, passed, total = enrich_content_ratio(_window_states(values, date))
+    return render_comment(updated, content_ratio=ratio,
+                          content_counts=(passed, total))
+
+
+def sync_issue(client, *, issue_number, date, incoming=None, attempt_builder=None):
     """Idempotently create or update the trusted comment for one date."""
     issue = client.get_issue(issue_number)
     if str(issue.get("state") or "").lower() != "open":
@@ -378,20 +732,18 @@ def sync_issue(client, *, issue_number, date, incoming):
     current_comment = find_daily_comment(comments, date)
     current_state = (parse_machine_state(current_comment)
                      if current_comment is not None else None)
+    states_by_date = _states_by_date(comments)
+    if incoming is None:
+        if attempt_builder is None:
+            raise ValueError("sync_issue needs incoming or attempt_builder")
+        prior = [state for name, state in states_by_date.items() if name != str(date)]
+        incoming = attempt_builder(window_start(prior + [{"date": str(date)}], date))
     attempts = merge_attempts(
         current_state.get("attempts", []) if current_state else [], incoming)
     updated = build_daily_state(
         date, attempts,
         manual_reviews=(current_state or {}).get("manual_reviews"))
-
-    states_by_date = {}
-    for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
-        parsed = parse_machine_state(comment)
-        if parsed is not None and parsed["date"] not in states_by_date:
-            states_by_date[parsed["date"]] = parsed
-    states_by_date[str(date)] = updated
-    updated["streaks"] = compute_streaks(states_by_date.values())
-    body = render_comment(updated)
+    body = _finalize(states_by_date, date, updated)
 
     if current_comment is None:
         response = client.create_comment(issue_number, body)
@@ -400,8 +752,51 @@ def sync_issue(client, *, issue_number, date, incoming):
     return {"status": "updated", "comment_id": response.get("id")}
 
 
+def build_gap_state(date):
+    """State for a Beijing date whose daily run never reached the ledger.
+
+    A day with no output is not a failed day: every gate freezes rather than
+    resetting, and no publication verdict is claimed for work that never ran.
+    """
+    return {
+        "version": STATE_VERSION,
+        "date": str(date),
+        "attempts": [],
+        "aggregate": {"publication": "neutral",
+                      **{gate: "neutral" for gate in GATES}},
+        "fingerprints": {"runtime": "", "trajectory_ui": ""},
+        "streaks": {gate: 0 for gate in GATES},
+        "enrich_sample": {},
+        "gap": True,
+    }
+
+
+def heartbeat_issue(client, *, issue_number, date):
+    """Record a neutral gap row when a date produced no daily ledger comment."""
+    issue = client.get_issue(issue_number)
+    if str(issue.get("state") or "").lower() != "open":
+        return {"status": "closed", "comment_id": None}
+
+    comments = client.list_comments(issue_number)
+    existing = find_daily_comment(comments, date)
+    states_by_date = _states_by_date(comments)
+    if existing is not None:
+        streaks = compute_streaks(list(states_by_date.values()))
+        ratio, _passed, _total = enrich_content_ratio(
+            _window_states(list(states_by_date.values()), date))
+        return {"status": "present", "comment_id": existing.get("id"),
+                "streaks": streaks, "gates_met": gates_met(streaks, ratio)}
+
+    updated = build_gap_state(date)
+    body = _finalize(states_by_date, date, updated)
+    response = client.create_comment(issue_number, body)
+    return {"status": "gap_recorded", "comment_id": response.get("id"),
+            "streaks": updated["streaks"]}
+
+
 def manual_review_issue(client, *, issue_number, date, gate, status,
-                        run_id, run_attempt):
+                        run_id, run_attempt, samples_passed=None,
+                        samples_total=None):
     """Apply an evidenced manual verdict through the trusted bot comment."""
     issue = client.get_issue(issue_number)
     if str(issue.get("state") or "").lower() != "open":
@@ -415,16 +810,10 @@ def manual_review_issue(client, *, issue_number, date, gate, status,
         raise ValueError(f"no trusted rollout state exists for {date}")
     updated = apply_manual_review(
         current_state, gate=gate, status=status,
-        run_id=run_id, run_attempt=run_attempt)
-
-    states_by_date = {}
-    for comment in sorted(comments, key=lambda row: int(row.get("id") or 0)):
-        parsed = parse_machine_state(comment)
-        if parsed is not None and parsed["date"] not in states_by_date:
-            states_by_date[parsed["date"]] = parsed
-    states_by_date[str(date)] = updated
-    updated["streaks"] = compute_streaks(states_by_date.values())
-    response = client.update_comment(current_comment["id"], render_comment(updated))
+        run_id=run_id, run_attempt=run_attempt,
+        samples_passed=samples_passed, samples_total=samples_total)
+    body = _finalize(_states_by_date(comments), date, updated)
+    response = client.update_comment(current_comment["id"], body)
     return {"status": "updated", "comment_id": response.get("id")}
 
 
@@ -486,24 +875,33 @@ def parse_cli_args(argv=None):
     subparsers = parser.add_subparsers(dest="command", required=True)
     check = subparsers.add_parser("check-open")
     check.add_argument("--issue", type=int, default=15)
+    heartbeat = subparsers.add_parser("heartbeat")
+    heartbeat.add_argument("--issue", type=int, default=15)
+    heartbeat.add_argument("--date", required=True)
     sync = subparsers.add_parser("sync")
     sync.add_argument("--issue", type=int, default=15)
     sync.add_argument("--date", required=True)
     sync.add_argument("--publication", required=True, choices=("success", "failure"))
     sync.add_argument("--publication-reason", default="")
     sync.add_argument("--report", default="")
+    sync.add_argument("--shadow-summary", default="")
+    sync.add_argument("--shadow-outcome", default="failure",
+                      choices=("success", "failure"))
+    sync.add_argument("--quality-health", default="")
+    sync.add_argument("--source-health", default="")
     sync.add_argument("--run-id", required=True)
     sync.add_argument("--run-attempt", required=True, type=int)
     sync.add_argument("--sha", required=True)
     manual = subparsers.add_parser("manual-review")
     manual.add_argument("--issue", type=int, default=15)
     manual.add_argument("--date", required=True)
-    manual.add_argument(
-        "--gate", required=True, choices=("selection", "trajectory"))
+    manual.add_argument("--gate", required=True, choices=GATES)
     manual.add_argument(
         "--status", required=True, choices=("pass", "fail", "neutral"))
     manual.add_argument("--run-id", required=True)
     manual.add_argument("--run-attempt", required=True, type=int)
+    manual.add_argument("--samples-passed", type=int, default=None)
+    manual.add_argument("--samples-total", type=int, default=None)
     return parser.parse_args(argv)
 
 
@@ -537,18 +935,42 @@ def main(argv=None, *, environ=None, client_factory=GitHubClient):
         is_open = str(issue.get("state") or "").lower() == "open"
         _write_output(environ, "open", str(is_open).lower())
         result = {"status": "open" if is_open else "closed", "open": is_open}
+    elif args.command == "heartbeat":
+        result = heartbeat_issue(
+            client, issue_number=args.issue, date=args.date)
+        if result["status"] == "gap_recorded":
+            print(f"::warning::No daily ledger entry for {args.date}; "
+                  "recorded a neutral gap row.")
     elif args.command == "sync":
-        incoming = build_attempt(
-            report=_load_report(args.report), publication=args.publication,
-            publication_reason=args.publication_reason, run_id=args.run_id,
-            run_attempt=args.run_attempt, sha=args.sha)
+        report = _load_report(args.report)
+        shadow_summary = _load_report(args.shadow_summary)
+        quality_health = _load_report(args.quality_health)
+        source_health = _load_report(args.source_health)
+        enrich_sample = (report or {}).get("enrich_sample")
+
+        def attempt_builder(start):
+            return build_attempt(
+                report=report, publication=args.publication,
+                publication_reason=args.publication_reason, run_id=args.run_id,
+                run_attempt=args.run_attempt, sha=args.sha,
+                enrich=evaluate_enrich(
+                    quality_health, date=args.date, window_start=start),
+                objectivity_shadow=evaluate_objectivity_shadow(
+                    shadow_summary, shadow_outcome=args.shadow_outcome),
+                source_metrics=evaluate_source_metrics(
+                    source_health, shadow_summary, date=args.date),
+                enrich_sample=enrich_sample)
+
         result = sync_issue(
-            client, issue_number=args.issue, date=args.date, incoming=incoming)
+            client, issue_number=args.issue, date=args.date,
+            attempt_builder=attempt_builder)
     else:
         result = manual_review_issue(
             client, issue_number=args.issue, date=args.date,
             gate=args.gate, status=args.status,
-            run_id=args.run_id, run_attempt=args.run_attempt)
+            run_id=args.run_id, run_attempt=args.run_attempt,
+            samples_passed=args.samples_passed,
+            samples_total=args.samples_total)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return result
 

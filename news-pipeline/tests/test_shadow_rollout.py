@@ -1464,3 +1464,50 @@ def test_rollout_docs_state_interim_and_unmet_acceptance_contract():
         "source_reference_concentration",
     ):
         assert metric_name in combined
+
+
+def test_shadow_summary_is_only_persisted_when_the_env_var_is_set(tmp_path):
+    summary = {"mode": "shadow", "selected_before_audit": 36}
+    target = tmp_path / "nested" / "shadow-summary.json"
+
+    assert dn.write_shadow_summary(summary, environ={}) is False
+    assert dn.write_shadow_summary(summary, environ={"SHADOW_SUMMARY_PATH": ""}) is False
+    assert dn.write_shadow_summary(
+        summary, environ={"SHADOW_SUMMARY_PATH": str(target)}) is True
+    assert json.loads(target.read_text(encoding="utf-8")) == summary
+
+
+def test_enrich_sample_picks_one_stable_item_per_non_empty_category():
+    picked = [
+        {"id": "top-1", "category": "ai"},
+        {"id": "top-2", "category": "ai"},
+        {"id": "top-3", "category": "ai"},
+        {"id": "more-4", "category": "world"},
+        {"id": "", "category": "tech"},
+        {"id": "top-5", "category": "unknown-category"},
+    ]
+
+    sample = dn.build_enrich_sample(picked, "2026-07-26")
+
+    # One item per category that actually has content, identifiers only.
+    assert set(sample) == {"ai", "world"}
+    assert sample["ai"][0] in {"top-1", "top-2", "top-3"}
+    assert sample["world"] == ["more-4"]
+    # A same-day rerun must name the same items; a new day may differ.
+    assert dn.build_enrich_sample(picked, "2026-07-26") == sample
+    assert dn.build_enrich_sample(list(reversed(picked)), "2026-07-26") == sample
+    assert dn.build_enrich_sample([], "2026-07-26") == {}
+
+
+def test_enrich_sample_is_allow_listed_and_rejects_smuggled_text():
+    rv_path = PIPELINE_DIR / "rollout_validation.py"
+    rv_spec = importlib.util.spec_from_file_location("rv_enrich_test", rv_path)
+    rv = importlib.util.module_from_spec(rv_spec)
+    sys.modules[rv_spec.name] = rv
+    rv_spec.loader.exec_module(rv)
+
+    rv._validate_enrich_sample({"ai": ["top-1"]})
+    for bad in ({"ai": "top-1"}, {"ai": ["x" * 65]}, {"": ["top-1"]},
+                {"ai": [""]}, {"ai": ["a", "b", "c", "d", "e"]}, []):
+        with pytest.raises(ValueError):
+            rv._validate_enrich_sample(bad)

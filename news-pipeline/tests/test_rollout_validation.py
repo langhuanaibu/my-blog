@@ -114,6 +114,7 @@ def valid_evidence(cases=None, **overrides):
         "trajectory": valid_health(),
         "fingerprints": {"runtime": "a" * 64, "trajectory_ui": "b" * 64},
         "review_cases": list(cases if cases is not None else [valid_case()]),
+        "enrich_sample": {"ai": ["top-1"], "world": ["more-2"]},
     }
     evidence.update(overrides)
     return evidence
