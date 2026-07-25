@@ -8,7 +8,7 @@
 
 | 目录层级 | 存放内容说明 | 存放规则与边界 |
 | :--- | :--- | :--- |
-| **根目录 `/`** | 项目级配置与规范文档 | 仅限全局配置（如 `package.json`, `_config.yml`, `_config.fluid.yml`）和全局规范文档（如 `CLAUDE.md`, `AGENTS.md`, `readme.md`）。绝不能放具体业务代码、测试文件、临时记忆或一次性 skill 清单。 |
+| **根目录 `/`** | 项目级配置与规范文档 | 仅限全局配置（如 `package.json`, `_config.yml`, `_config.fluid.yml`）和全局规范文档（`CLAUDE.md`, `AGENTS.md`, `readme.md`, `CONTEXT.md`）。绝不能放具体业务代码、测试文件、临时记忆或一次性 skill 清单。 |
 | **`/source`** | Hexo 内容源 | 所有博客内容存放于此，Hexo 构建时以这里为入口。 |
 | ├── `/source/_posts` | 文章 Markdown | 文件名格式 `YYYY-MM-DD-slug.md`，包含 front matter（title, date, categories, index_img 等）。 |
 | ├── `/source/images` | 图片资源 | 存放博客文章插图、头像等（如 `my-avatar.jpg`, `img_*.png`），含 `covers/` 子目录。 |
@@ -21,8 +21,8 @@
 | **`/api`** | Vercel Serverless 接口 | 后端业务逻辑。**一个文件对应一个明确的接口职责**。包括后台文章/设置接口，以及日报反馈、收藏、稍后读和漏读写回接口；`vocab.js` 仅为停用功能保留，非接口逻辑不要放进这里。 |
 | **`/tools`** | 迁移和维护工具 | 存放如 `export-articles-to-hexo.mjs`、字体字符清单与生成脚本等一次性或维护工具；字体源 OTF 和工具中间产物不得入库。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
-| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流，例如每日生成与云端验收台账 `daily-news.yml`、手动只读夹具验收 `objectivity-acceptance.yml`。 |
-| **`/docs`** | 项目维护文档 | 根层存现行维护规范；`archive/` 只存仍有兼容、迁移或排障价值的历史记录；`visual-baselines/` 存页面回归基准图。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
+| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流：每日生成与云端五门验收台账 `daily-news.yml`、手动只读夹具验收 `objectivity-acceptance.yml`、人工复核回填 `rollout-manual-review.yml`、台账缺口检测 `rollout-heartbeat.yml`。只有 `daily-news.yml` 允许自动 push，且仅限 `source/news/data/`。 |
+| **`/docs`** | 项目维护文档 | 根层存现行维护规范；`adr/` 存架构决策记录（顺序编号，只增不改）；`agents/` 存工程 Skill 的仓库级读写约定；`archive/` 只存仍有兼容、迁移或排障价值的历史记录；`visual-baselines/` 存页面回归基准图。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
 
 ---
 
