@@ -106,7 +106,6 @@ def test_manual_review_can_only_replace_needs_review_for_the_same_run():
 
     reviewed = il.apply_manual_review(
         daily, gate="trajectory", status="pass",
-        reason="Reviewed all public watches against the rollout artifact.",
         run_id="10", run_attempt=1,
     )
 
@@ -139,7 +138,6 @@ def test_manual_review_rejects_automatic_failures():
     with pytest.raises(ValueError, match="needs_review"):
         il.apply_manual_review(
             daily, gate="trajectory", status="pass",
-            reason="Must not override a deterministic failure.",
             run_id="10", run_attempt=1,
         )
 
@@ -334,7 +332,6 @@ def test_sync_preserves_manual_review_for_an_unchanged_workflow_run():
     )
     existing = il.apply_manual_review(
         existing, gate="trajectory", status="pass",
-        reason="Reviewed the persisted rollout report.",
         run_id="10", run_attempt=1,
     )
     client = FakeClient(comments=[bot_comment(88, existing)])
@@ -368,7 +365,6 @@ def test_manual_review_issue_updates_the_trusted_comment_and_streaks():
     result = il.manual_review_issue(
         client, issue_number=15, date="2026-07-25",
         gate="trajectory", status="pass",
-        reason="All watches were reviewed against report artifact 10.",
         run_id="10", run_attempt=1,
     )
 
@@ -579,7 +575,8 @@ def test_review_checks_open_issue_before_dependencies_or_judge():
     judge_index = names.index("Evaluate rollout")
 
     assert review["needs"] == ["generate", "shadow"]
-    assert review["if"] == "${{ always() }}"
+    assert review["if"] == (
+        "${{ always() && github.ref == 'refs/heads/main' }}")
     assert issue_index < install_index < judge_index
     assert step_named(review, "Check rollout issue")["id"] == "issue"
     assert "steps.issue.outputs.open == 'true'" in step_named(
@@ -645,13 +642,33 @@ def test_manual_review_workflow_uses_bot_identity_and_bounded_inputs():
     apply_step = step_named(job, "Apply manual review")
 
     assert workflow_doc["permissions"] == {"contents": "read", "issues": "write"}
+    assert workflow_doc["concurrency"] == {
+        "group": "daily-news-rollout-ledger",
+        "cancel-in-progress": False,
+    }
+    assert job["if"] == "github.ref == 'refs/heads/main'"
     assert inputs["gate"]["options"] == ["selection", "trajectory"]
     assert inputs["status"]["options"] == ["pass", "fail", "neutral"]
     assert apply_step["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
     assert apply_step["env"]["REVIEW_RUN_ID"] == "${{ inputs.run_id }}"
     assert apply_step["env"]["REVIEW_RUN_ATTEMPT"] == "${{ inputs.run_attempt }}"
-    assert apply_step["env"]["REVIEW_REASON"] == "${{ inputs.reason }}"
+    assert "reason" not in inputs
+    assert "REVIEW_REASON" not in apply_step["env"]
     assert "${{ inputs." not in apply_step["run"]
     assert '--run-id "$REVIEW_RUN_ID"' in apply_step["run"]
     assert '--run-attempt "$REVIEW_RUN_ATTEMPT"' in apply_step["run"]
-    assert '--reason "$REVIEW_REASON"' in apply_step["run"]
+    assert "--reason" not in apply_step["run"]
+    checkout = job["steps"][0]
+    assert checkout["with"]["ref"] == "main"
+
+
+def test_daily_and_manual_ledger_writes_share_one_concurrency_group():
+    daily_review = workflow()["jobs"]["rollout-review"]
+
+    assert daily_review["if"] == (
+        "${{ always() && github.ref == 'refs/heads/main' }}")
+    assert daily_review["concurrency"] == {
+        "group": "daily-news-rollout-ledger",
+        "cancel-in-progress": False,
+    }
+    assert daily_review["steps"][0]["with"]["ref"] == "main"

@@ -37,10 +37,12 @@ def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_repor
     assert set(workflow["jobs"]) == {"evaluate"}
 
     evaluate = workflow["jobs"]["evaluate"]
+    assert evaluate["if"] == "github.ref == 'refs/heads/main'"
     assert evaluate["permissions"] == {"contents": "read"}
     assert evaluate["env"]["LLM_API_KEY"] == "${{ secrets.LLM_API_KEY }}"
 
     steps = evaluate["steps"]
+    assert steps[0]["with"]["ref"] == "main"
     run_scripts = "\n".join(step.get("run", "") for step in steps)
     assert "python news-pipeline/objectivity_eval.py" in run_scripts
     assert "tee" in run_scripts
@@ -959,6 +961,49 @@ def test_production_harness_splits_invalid_judge_batches_until_rows_are_valid():
     assert [row["id"] for row in rows] == [
         fixtures[0]["id"], fixtures[1]["id"]
     ]
+
+
+def test_production_harness_stops_at_the_judge_call_budget():
+    evaluator = _load_eval_module()
+    fixtures = evaluator.load_checked_in_corpus()[:4]
+
+    class CandidateLLM:
+        def json_call(self, _system, _user):
+            return [{
+                "idx": index, "title": f"Safe candidate {index}",
+                "summary": "Safe summary.", "why": "", "context": "",
+                "significance": "", "watch": "", "detail": "", "claims": [],
+            } for index in range(4)]
+
+    class AuditLLM:
+        def json_call(self, _system, user):
+            content = json.loads(user)["content"]
+            return {
+                "fields": {key: True for key in content if key != "claims"},
+                "claims": [],
+            }
+
+    class InvalidJudge:
+        def __init__(self):
+            self.calls = 0
+
+        def json_call(self, _system, _user):
+            self.calls += 1
+            return {"cases": []}
+
+    judge = InvalidJudge()
+    runner = evaluator.ProductionHarnessRunner(
+        dn, CandidateLLM(), AuditLLM(), judge,
+        config={"topic_tags": [], "detail": {"enabled": True, "max_chars": 600}},
+        batch_size=4,
+        max_judge_calls=3,
+    )
+
+    rows = runner(fixtures, run_number=1)
+
+    assert judge.calls == 3
+    assert len(rows) == len(fixtures)
+    assert evaluator.score_run(fixtures, rows)["structure_validity"] < 1.0
 
 
 def test_production_harness_marks_validator_exceptions_as_invalid(monkeypatch):

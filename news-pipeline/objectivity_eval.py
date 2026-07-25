@@ -346,13 +346,14 @@ class ProductionHarnessRunner:
     """Drive production enrichment/audit, then ask a separate model to judge."""
 
     def __init__(self, pipeline, candidate_llm, audit_llm, judge_llm,
-                 config=None, batch_size=10):
+                 config=None, batch_size=10, max_judge_calls=60):
         self.pipeline = pipeline
         self.candidate_llm = candidate_llm
         self.audit_llm = audit_llm
         self.judge_llm = judge_llm
         self.config = config or {"topic_tags": [], "detail": {"enabled": True}}
         self.batch_size = int(batch_size)
+        self.max_judge_calls = int(max_judge_calls)
 
     def _production_candidates(self, fixtures):
         items = []
@@ -399,6 +400,7 @@ class ProductionHarnessRunner:
 
     def __call__(self, fixtures, run_number):
         del run_number
+        judge_calls = 0
         items, events = self._production_candidates(fixtures)
         final_cases = []
         for index, event in enumerate(events):
@@ -415,6 +417,12 @@ class ProductionHarnessRunner:
                 "candidate": candidate,
             })
         def judge_batch(batch, offset, retry_single=True):
+            nonlocal judge_calls
+            if judge_calls >= self.max_judge_calls:
+                return [
+                    (offset + index, None) for index in range(len(batch))
+                ]
+            judge_calls += 1
             try:
                 raw = self.judge_llm.json_call(
                     JUDGE_SYSTEM,
