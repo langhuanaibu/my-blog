@@ -25,6 +25,27 @@ function displayDate(date) {
   return match ? `${Number(match[2])}月${Number(match[3])}日` : "今日日报";
 }
 
+const BEIJING_STAMP = new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false });
+
+function detailMeta(item) {
+  const time = item.time ? new Date(item.time) : null;
+  const stamp = time && !Number.isNaN(time.getTime()) ? BEIJING_STAMP.format(time) : "";
+  const category = CATEGORY_LABELS[item.category] || item.category || "";
+  const parts = [stamp ? `发布 ${stamp}` : "", category].filter(Boolean);
+  return parts.length ? `<div class="detail-meta">${parts.map((part) => `<span>${escapeHtml(part)}</span>`).join("")}</div>` : "";
+}
+
+function primarySourceLink(item) {
+  const sources = item.sources?.length ? item.sources : (item.url ? [{ name: item.source || "原文", url: item.url }] : []);
+  const factual = sources.find((source) => source?.type === "事实源" && /^https?:\/\//i.test(source.url || ""));
+  const source = factual || sources.find((entry) => /^https?:\/\//i.test(entry?.url || ""));
+  if (!source) return "";
+  let host = "";
+  try { host = new URL(source.url).hostname.replace(/^www\./, ""); } catch { host = ""; }
+  const label = host || source.name || "原文";
+  return `<a class="detail-readorigin" href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">↗ 阅读原文 · ${escapeHtml(label)}</a>`;
+}
+
 export function sourceLinks(item) {
   const sources = item.sources?.length ? item.sources : (item.url ? [{ name: item.source || "原文", url: item.url }] : []);
   return sources.map((source) => `<a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.name || "原文")}</a>`).join("");
@@ -246,8 +267,10 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
     const recapData = item.trusted_continuation === true ? trajectoryRecap(item.context) : null;
     const contextText = recapData ? recapData.context : item.context;
     const context = item.trusted_continuation === true && contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
-    const currentParts = `${item.summary ? `<p class="detail-lede">${escapeHtml(item.summary)}</p>` : ""}${item.detail ? `<div class="detail-body"><p>${escapeHtml(item.detail)}</p></div>` : ""}${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}`;
-    const current = currentParts ? `<section data-trajectory="current"><h2 class="detail-sec-t">现状</h2>${currentParts}</section>` : "";
+    const summaryPart = item.summary ? `<section data-trajectory="current"><h2 class="detail-sec-t">AI 摘要</h2><p class="detail-lede">${escapeHtml(item.summary)}</p></section>` : "";
+    const whyPart = item.why ? `<section data-trajectory="why"><h2 class="detail-sec-t">为什么重要</h2><div class="kv why">${escapeHtml(item.why)}</div></section>` : "";
+    const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">正文</h2><div class="detail-body"><p>${escapeHtml(item.detail)}</p></div></section>` : "";
+    const current = `${summaryPart}${whyPart}${bodyPart}`;
     const recap = recapData ? `<div class="trajectory-recap recap-${recapData.status}"><span>走向回对 · ${recapData.status}</span>${escapeHtml(recapData.text)}</div>` : "";
     const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";
     const significance = item.significance ? `<section data-trajectory="significance"><h2 class="detail-sec-t">对我的意义</h2><div class="kv">${escapeHtml(item.significance)}</div></section>` : "";
@@ -255,7 +278,8 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   }
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;
-  return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${common}${update}${body}<div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type })}</article>`;
+  const head = type === "news" ? `${detailMeta(item)}${primarySourceLink(item)}` : "";
+  return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${head}${common}${update}${body}<div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type })}</article>`;
 }
 
 function refLink(ref, title) { const [date, ...rest] = String(ref || "").split(":"); const item = rest.join(":"); if (!date || !item) return ""; const type = item.startsWith("deep-") ? "deep" : item.startsWith("paper-") ? "paper" : "news"; return `<a data-ref="${escapeHtml(ref)}" href="${routeUrl({ view: "detail", date, type, item })}" data-route>${escapeHtml(title || ref)}</a>`; }

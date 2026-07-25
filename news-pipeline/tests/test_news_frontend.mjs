@@ -334,14 +334,14 @@ test("详情保留完整扩展字段", () => {
   for (const text of ["背景机制", "对我的意义", "后续关注", "长叙述", "事实"]) assert.match(html, new RegExp(text));
 });
 
-test("新闻详情按来龙现状走向和对我的意义组织阅读顺序", () => {
+test("新闻详情按来龙摘要意义正文走向和对我的意义组织阅读顺序", () => {
   const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true }, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "watch", "significance"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "现状", "走向", "对我的意义"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "why", "body", "watch", "significance"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "AI 摘要", "为什么重要", "正文", "走向", "对我的意义"]);
   assert.match(sections[1].textContent, /摘要/);
-  assert.match(sections[1].textContent, /长叙述/);
-  assert.match(sections[1].textContent, /为什么重要/);
+  assert.match(sections[2].textContent, /为什么重要/);
+  assert.match(sections[3].textContent, /长叙述/);
 });
 
 test("详情把末尾格式完整的四种走向回对独立显示", () => {
@@ -382,8 +382,8 @@ test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序",
   const item = { ...daily.items[0], context: "", watch: "", significance: "" };
   const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["current"]);
-  assert.equal(sections[0].querySelector("h2")?.textContent, "现状");
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["current", "why", "body"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["AI 摘要", "为什么重要", "正文"]);
 });
 
 test("新闻详情以可用证据概览区分发布源、独立链、证据基础与降级状态", () => {
