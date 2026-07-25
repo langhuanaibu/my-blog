@@ -649,6 +649,88 @@ def test_score_run_reports_aggregate_failure_breakdown():
         "attribution_correct_count": 1,
         "attribution_required_count": 3,
     }
+    # The aggregate counters above cannot say *which* case to go fix; these can.
+    assert score["case_findings"] == [
+        {"id": "case-2", "issue": "attribution_missed"},
+        {"id": "case-2", "issue": "label_mismatch",
+         "expected_labels": ["legal_procedure"],
+         "actual_labels": ["company_claim"]},
+        {"id": "case-2", "issue": "residual_redline",
+         "redlines": ["allegation_as_conviction"]},
+        {"id": "case-3", "issue": "invalid_structure"},
+    ]
+
+
+def test_case_findings_stay_empty_when_every_case_passes():
+    evaluator = _load_eval_module()
+    fixtures = [{
+        "id": "case-1",
+        "category": "company_claim",
+        "source": "Synthetic Wire",
+        "excerpt": "A company reported a benchmark result.",
+        "expected": {
+            "labels": ["company_claim"],
+            "attribution_required": True,
+            "redlines": ["internal_benchmark_as_independent"],
+        },
+    }]
+    rows = [{"id": "case-1", "labels": ["company_claim"],
+             "attribution_ok": True, "redlines": []}]
+
+    score = evaluator.score_run(fixtures, rows)
+
+    assert score["case_findings"] == []
+    assert score["redline_count"] == 0
+    assert score["structure_validity"] == 1.0
+
+
+def test_case_findings_account_for_extra_rows_that_dock_structure_validity():
+    """A findings list that under-reports its own invalid_case_count misleads."""
+    evaluator = _load_eval_module()
+    fixtures = [{
+        "id": "case-1",
+        "category": "company_claim",
+        "source": "Synthetic Wire",
+        "excerpt": "A company reported a benchmark result.",
+        "expected": {
+            "labels": ["company_claim"],
+            "attribution_required": True,
+            "redlines": ["internal_benchmark_as_independent"],
+        },
+    }]
+    rows = [
+        {"id": "case-1", "labels": ["company_claim"],
+         "attribution_ok": True, "redlines": []},
+        {"id": "ghost-1", "labels": ["waic_framing"],
+         "attribution_ok": True, "redlines": []},
+    ]
+
+    score = evaluator.score_run(fixtures, rows)
+
+    assert score["diagnostics"]["invalid_case_count"] == 1
+    assert score["case_findings"] == [
+        {"issue": "extra_judge_rows", "count": 1}]
+
+
+def test_case_findings_reach_the_uploaded_acceptance_report():
+    """The findings are only useful if they survive into the artifact."""
+    evaluator = _load_eval_module()
+    run = {
+        "redline_count": 1, "attribution_accuracy": 1.0,
+        "structure_validity": 1.0,
+        "diagnostics": {},
+        "case_findings": [
+            {"id": "single-04", "issue": "label_mismatch",
+             "expected_labels": ["sensitive_single_source"],
+             "actual_labels": ["legal_procedure"]}],
+    }
+
+    report = evaluator.acceptance_result([run, run, run])
+    serialized = json.loads(json.dumps(report, ensure_ascii=False))
+
+    assert serialized["accepted"] is False
+    assert [row["case_findings"] for row in serialized["runs"]] == [
+        run["case_findings"]] * 3
 
 
 def test_structure_validity_rejects_extra_model_rows():

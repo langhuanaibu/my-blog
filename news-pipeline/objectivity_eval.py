@@ -280,24 +280,55 @@ def score_run(fixtures, rows):
     redline_count = 0
     label_mismatch_count = 0
     reported_redline_count = 0
+    # Which cases failed, not just how many. The aggregate counters alone
+    # cannot tell anyone what to fix; these findings are produced after the
+    # judge has answered and never reach the judge or the candidate path.
+    findings = []
     for fixture in fixtures:
         expected = fixture["expected"]
         if expected["attribution_required"]:
             attribution_total += 1
         row = by_id.get(fixture["id"])
         if fixture["id"] in duplicates or not _valid_result(row, fixture["id"]):
+            findings.append({
+                "id": fixture["id"],
+                "issue": "duplicate_row" if fixture["id"] in duplicates
+                         else "invalid_structure",
+            })
             continue
         valid_count += 1
-        if expected["attribution_required"] and row["attribution_ok"]:
-            attribution_correct += 1
+        if expected["attribution_required"]:
+            if row["attribution_ok"]:
+                attribution_correct += 1
+            else:
+                findings.append(
+                    {"id": fixture["id"], "issue": "attribution_missed"})
         if set(row["labels"]) != set(expected["labels"]):
             redline_count += 1
             label_mismatch_count += 1
+            findings.append({
+                "id": fixture["id"],
+                "issue": "label_mismatch",
+                "expected_labels": sorted(expected["labels"]),
+                "actual_labels": sorted(row["labels"]),
+            })
         row_redline_count = len(row["redlines"])
+        if row_redline_count:
+            findings.append({
+                "id": fixture["id"],
+                "issue": "residual_redline",
+                "redlines": sorted(row["redlines"]),
+            })
         redline_count += row_redline_count
         reported_redline_count += row_redline_count
     total = len(fixtures)
-    valid_count = max(0, valid_count - max(0, len(rows) - total))
+    extra_rows = max(0, len(rows) - total)
+    if extra_rows:
+        # Extra rows dock structure validity without belonging to any fixture,
+        # so record them too; otherwise the findings list would under-report
+        # the invalid_case_count printed beside it.
+        findings.append({"issue": "extra_judge_rows", "count": extra_rows})
+    valid_count = max(0, valid_count - extra_rows)
     return {
         "redline_count": redline_count,
         "attribution_accuracy": (
@@ -311,6 +342,7 @@ def score_run(fixtures, rows):
             "attribution_correct_count": attribution_correct,
             "attribution_required_count": attribution_total,
         },
+        "case_findings": findings,
     }
 
 
