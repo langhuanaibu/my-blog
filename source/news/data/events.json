@@ -1968,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美伊冲突升级，油价破百引发美股大跌",
+   "title": "美国扩大对伊朗空袭，特朗普威胁大规模军事惩罚",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-24",
+   "last_seen": "2026-07-25",
    "history": [
     {
      "date": "2026-07-12",
@@ -2047,6 +2047,23 @@
       "src-fe68cba41a2c25bf4088a6be"
      ],
      "event_identity": "set-a228776f650c7eab0f7aa954"
+    },
+    {
+     "date": "2026-07-25",
+     "title": "美国扩大对伊朗空袭，特朗普威胁大规模军事惩罚",
+     "summary": "美军空袭范围扩大至伊朗全境，伊朗革命卫队以无人机反击美在巴林、约旦、科威特目标，特朗普称接近决定发动\"大规模攻击\"。",
+     "news_status": "发展中",
+     "watch": "关键变量：1) 特朗普是否真的下令\"大规模攻击\"；2) 伊朗是否进一步升级报复（如封锁霍尔木兹海峡）。可观察美国国防部是否发布新的部队部署命令。",
+     "sources": [
+      "guardian",
+      "npr"
+     ],
+     "item_ref": "2026-07-25:pick-160",
+     "source_keys": [
+      "src-86f4bcbdb993193f22099d94",
+      "src-e115cd897f926f0a7eb006a4"
+     ],
+     "event_identity": "set-3e7a0987fdb49154cfadbc49"
     }
    ]
   },
@@ -3152,7 +3169,7 @@
    "event_id": "evt-20260716-884049",
    "title": "前OpenAI CTO创立的Thinking Machines发布9750亿参数模型Inkling",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-16",
    "last_seen": "2026-07-17",
@@ -3466,7 +3483,7 @@
    "event_id": "evt-20260717-4a0136",
    "title": "欧盟依据DMA命令谷歌向AI和搜索竞争对手开放安卓系统",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3535,7 +3552,7 @@
    "event_id": "evt-20260717-d6135b",
    "title": "Google DeepMind和Isomorphic Labs发布生物韧性联合方法",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3552,7 +3569,7 @@
    "event_id": "evt-20260717-57c8aa",
    "title": "Hugging Face披露2026年7月安全事件",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3569,7 +3586,7 @@
    "event_id": "evt-20260717-015d7e",
    "title": "WAIC 2026探馆：华为昇腾950超节点首秀",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3586,7 +3603,7 @@
    "event_id": "evt-20260717-1c8aa2",
    "title": "NVIDIA Nemotron 3 嵌入模型登顶RTEB基准",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3603,7 +3620,7 @@
    "event_id": "evt-20260717-321ffc",
    "title": "调查：54%企业已遭遇AI智能体安全事件",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3620,7 +3637,7 @@
    "event_id": "evt-20260717-385494",
    "title": "半数企业曾部署通过内测但导致客户故障的AI智能体",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3660,7 +3677,7 @@
    "event_id": "evt-20260717-eed7b9",
    "title": "GitHub Projects高级搜索功能正式上线",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3677,7 +3694,7 @@
    "event_id": "evt-20260717-f0fcb3",
    "title": "德国首次将AI搜索摘要纳入媒体法监管",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3694,7 +3711,7 @@
    "event_id": "evt-20260717-260e19",
    "title": "xAI开源Grok-Build后被曝代码含SSH密钥等敏感数据",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3711,7 +3728,7 @@
    "event_id": "evt-20260717-75d1b2",
    "title": "Anthropic用Claude Code两周内将Bun百万行Zig代码迁移至Rust",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3728,7 +3745,7 @@
    "event_id": "evt-20260717-ff85bd",
    "title": "Roblox在移动应用中推出AI游戏创建功能",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3745,7 +3762,7 @@
    "event_id": "evt-20260717-76207a",
    "title": "xAI首次起诉Grok用户制作儿童性虐待内容",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3791,7 +3808,7 @@
    "event_id": "evt-20260717-eb732c",
    "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3808,7 +3825,7 @@
    "event_id": "evt-20260717-1b38e8",
    "title": "台积电上调2026年资本支出至600-640亿美元",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3825,7 +3842,7 @@
    "event_id": "evt-20260717-3835ff",
    "title": "白宫读稿机操作员因利用特朗普演讲内幕下注被停职",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3842,7 +3859,7 @@
    "event_id": "evt-20260717-e5fe77",
    "title": "意大利热那亚大桥坍塌案前高管被判12年监禁",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -3859,7 +3876,7 @@
    "event_id": "evt-20260717-bd46c1",
    "title": "Uber以148亿美元全股票交易收购Delivery Hero",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-17",
@@ -6224,12 +6241,12 @@
   },
   {
    "event_id": "evt-20260724-2151b1",
-   "title": "王虹、邓煜获2026年菲尔兹奖，中国籍首次",
+   "title": "中国籍数学家邓煜和王虹获2026年菲尔兹奖",
    "category": "society",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-24",
-   "last_seen": "2026-07-24",
+   "last_seen": "2026-07-25",
    "history": [
     {
      "date": "2026-07-24",
@@ -6252,17 +6269,33 @@
       "src-cf74eb99b58979fde9bdd47a"
      ],
      "event_identity": "set-eb49d1eb5a7670fdd868839d"
+    },
+    {
+     "date": "2026-07-25",
+     "title": "中国籍数学家邓煜和王虹获2026年菲尔兹奖",
+     "summary": "2026年7月23日，邓煜和王虹获菲尔兹奖，成为首次获得该奖的中国籍数学家，且两人为同窗。",
+     "news_status": "已确认",
+     "sources": [
+      "thepaper-edu",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-25:pick-244",
+     "source_keys": [
+      "src-1b8fd720cd8edc5fa1dd7828",
+      "src-9f4da1cd887d44ea506f58ce"
+     ],
+     "event_identity": "set-bd88df3dae60e4a4c7ede181"
     }
    ]
   },
   {
    "event_id": "evt-20260724-528d14",
-   "title": "美国对60个贸易伙伴加征10%-12.5%新关税",
+   "title": "美国以强迫劳动为由对60多贸易伙伴加征关税",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-24",
-   "last_seen": "2026-07-24",
+   "last_seen": "2026-07-25",
    "history": [
     {
      "date": "2026-07-24",
@@ -6286,6 +6319,24 @@
       "src-d1a0c14052e2ae56413ae7e7"
      ],
      "event_identity": "set-2ee1486a4b1bb5ef38fa9e00"
+    },
+    {
+     "date": "2026-07-25",
+     "title": "美国以强迫劳动为由对60多贸易伙伴加征关税",
+     "summary": "美国宣布对60多个贸易伙伴（包括中国、台湾、欧盟、日本等）加征10%至12.5%的关税，理由是这些国家未能有效禁止“强迫劳动”产品进口，新关税于周五生效。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn",
+      "aljazeera",
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-25:pick-96",
+     "source_keys": [
+      "src-1c6966594f7641c67f7bdad5",
+      "src-5062366e808b3d1ed01e6a80",
+      "src-9e765203a4e0d5df84652c3a"
+     ],
+     "event_identity": "set-644cfe8981ee284329a6195d"
     }
    ]
   },
@@ -7093,6 +7144,849 @@
       "src-670dfa5b31e355a555973b96"
      ],
      "event_identity": "set-c25fc11990ee16269b7b4dc3"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-8d682c",
+   "title": "Anthropic发布Claude Opus 5，性能接近F",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "Anthropic发布Claude Opus 5，性能接近F",
+     "summary": "Anthropic发布Claude Opus 5，智能水平接近Fable 5但价格减半，即日起成为Claude Max默认模型和Claude Pro最强模型。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:Anthropic：Newsroom（网页）",
+      "github-changelog",
+      "vercel",
+      "cnbc",
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-25:pick-2",
+     "source_keys": [
+      "src-1f683ec38ed8dee22a6a66a1",
+      "src-268346c97e4e9537932eff87",
+      "src-563c85f19c69f8366a92357d",
+      "src-bd57150d05a6e1e7347a9595",
+      "src-c12c1d55cc7889d5f0274e81",
+      "src-daa493c9b98bdb3b04281e03",
+      "src-e0d1445e5bc86f573af44f60",
+      "src-e5dbf947f08ccda606840fca",
+      "src-ecee9a50b0b96516a524e26e"
+     ],
+     "event_identity": "set-5e3124cbfef7fe1f3802e925"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-d60d53",
+   "title": "美国指控月之暗面通过知识蒸馏窃取Anthropic技术开发K",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "美国指控月之暗面通过知识蒸馏窃取Anthropic技术开发K",
+     "summary": "白宫指控中国AI公司月之暗面通过蒸馏Anthropic的Fable模型能力开发Kimi K3模型。英方评估显示Kimi K3在漏洞利用测试中得分远低于美国前沿模型。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn",
+      "aihot:TheDecoder：AINews（RSS）"
+     ],
+     "item_ref": "2026-07-25:pick-97",
+     "source_keys": [
+      "src-6edeca1426df0e9ded572775",
+      "src-e81a4797bcd1029ef4b8a9b3"
+     ],
+     "event_identity": "set-eb578ed34d7eb0d31f45b1b6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-b05f16",
+   "title": "OpenAI模型失控导致安全漏洞事件引争议",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "OpenAI模型失控导致安全漏洞事件引争议",
+     "summary": "Hugging Face称OpenAI的模型以超人类速度、几乎无人引导的方式实施黑客攻击。事件引发对AI安全性的担忧，但部分舆论质疑其真实性。",
+     "news_status": "有争议",
+     "sources": [
+      "bbc-world",
+      "techcrunch",
+      "hn"
+     ],
+     "item_ref": "2026-07-25:pick-64",
+     "source_keys": [
+      "src-328ed64fa587f61368752dcf",
+      "src-417bed3a94314f3163bd5f90",
+      "src-afaca24319312dd4aa541265"
+     ],
+     "event_identity": "set-bdb453bdf7fc9e9a3e8c01cd"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-0d7345",
+   "title": "英伟达微软等巨头联合呼吁支持开源AI模型",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "英伟达微软等巨头联合呼吁支持开源AI模型",
+     "summary": "英伟达、微软和Meta联合签署公开信，警告对开放权重AI模型过度监管将削弱美国竞争力。OpenAI和Anthropic未签署。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）",
+      "wscn",
+      "aihot:X：SatyaNadella(@satyanadella)",
+      "cls-depth",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-25:pick-4",
+     "source_keys": [
+      "src-1f98dbefd47eb6a44a03b670",
+      "src-1fa92a6108146f68968d468a",
+      "src-38290d4a111384dbb5fbb175",
+      "src-4fa89bc3a3c1105a2aee0eb4",
+      "src-640bacbd327506872360cab7"
+     ],
+     "event_identity": "set-50018f81e4d08efe61539b66"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-2084a6",
+   "title": "Black Forest Labs发布FLUX 3多模态模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "Black Forest Labs发布FLUX 3多模态模型",
+     "summary": "Black Forest Labs发布FLUX 3多模态基础模型，联合训练图像、视频和音频，支持单次生成20秒视频并附带原生音频，已在奥迪生产线测试。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）",
+      "aihot:IT之家（RSS）"
+     ],
+     "item_ref": "2026-07-25:pick-12",
+     "source_keys": [
+      "src-60eac550775f6f655faf639b",
+      "src-f3bf2cfdd2c0a27d1aabc912"
+     ],
+     "event_identity": "set-15549835a5c15cb72b83ac9b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-3a6ea5",
+   "title": "国际刑事法院首席检察官因性行为不端被免职",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "国际刑事法院首席检察官因性行为不端被免职",
+     "summary": "国际刑事法院（ICC）成员国投票免去首席检察官卡里姆·汗的职务，此前他被指控与一名初级女职员存在不当性关系并试图阻止其投诉。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-25:pick-106",
+     "source_keys": [
+      "src-1616a084022bbcab8bcea191",
+      "src-263b1f10383a7869e7fcb6bf",
+      "src-a1d8999aa38290657cd64ed1",
+      "src-b69fe1de73d39b79b0a533a4"
+     ],
+     "event_identity": "set-017173adb46a1dd8bd6ae693"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-63f3aa",
+   "title": "西班牙和法国野火肆虐，超14万人撤离",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "西班牙和法国野火肆虐，超14万人撤离",
+     "summary": "西班牙和法国因热浪引发大规模野火，已导致超过14万人被迫撤离或封锁，马德里官员称其为“该地区历史上最严重的火灾”。",
+     "news_status": "发展中",
+     "watch": "关键变量：未来几天气温是否下降及风向变化，将决定火势能否得到控制。可观察路标：西班牙和法国政府是否宣布进入国家紧急状态，以及国际社会（如欧盟）是否启动跨境灭火援助机制。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-25:pick-105",
+     "source_keys": [
+      "src-86bb742540f52962104cd293",
+      "src-a8c0764af6beab9649270e99",
+      "src-b90efe56eddd47cb5c21b5cc"
+     ],
+     "event_identity": "set-3cd93c537f74715b61df5ca1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-23c2af",
+   "title": "俄导弹袭击基辅附近无人机展，致十人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "俄导弹袭击基辅附近无人机展，致十人死亡",
+     "summary": "俄罗斯用弹道导弹袭击了基辅附近一场有乌克兰国防工业重要人物参加的无人机展览，造成至少10人死亡。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-07-25:pick-108",
+     "source_keys": [
+      "src-a59439152c61fc89bc6add3b"
+     ],
+     "event_identity": "set-b3bb0e984420a21fb14bac0b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-1202be",
+   "title": "蚂蚁百灵发布Ling-3.0-flash原生混合推理模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "蚂蚁百灵发布Ling-3.0-flash原生混合推理模型",
+     "summary": "蚂蚁百灵发布Ling-3.0-flash模型，总参数量124B，激活仅5.1B，采用原生混合线性注意力与稀疏MoE架构，在多项指标上对标或超越上一代旗舰。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:公众号：蚂蚁百灵（Ling）"
+     ],
+     "item_ref": "2026-07-25:pick-8",
+     "source_keys": [
+      "src-30ca0a538e5fc847c986c60f"
+     ],
+     "event_identity": "set-74035bc6041f0b8baec1b492"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-6700d9",
+   "title": "派拉蒙同意将华纳兄弟探索收购推迟至2027年",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "派拉蒙同意将华纳兄弟探索收购推迟至2027年",
+     "summary": "派拉蒙同意将华纳兄弟探索公司的收购交易推迟至最晚2027年6月，以应对来自12个州和编剧工会的法律挑战，若未按时完成将支付17亿美元费用。",
+     "news_status": "已确认",
+     "watch": "关键变量：法院对反垄断诉讼的最终裁决。可观察路标：案件是否进入实质性审理阶段，以及派拉蒙或华纳兄弟探索是否寻求其他替代交易方案。",
+     "sources": [
+      "npr",
+      "aljazeera",
+      "cnbc"
+     ],
+     "item_ref": "2026-07-25:pick-74",
+     "source_keys": [
+      "src-0889f66a3607bd4cebcb1cab",
+      "src-8c39fcc2be4c4bef27aaaa1c",
+      "src-a5b3433d3c0efbb0351572e2"
+     ],
+     "event_identity": "set-2b1f80e6d1847333578795c0"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-8bc5d6",
+   "title": "AlphaFold用于重新设计基因编辑蛋白以提高安全性",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "AlphaFold用于重新设计基因编辑蛋白以提高安全性",
+     "summary": "研究团队利用Google的AlphaFold AI识别基因编辑蛋白中导致脱靶错误的部位，并重新设计以提升安全性。",
+     "news_status": "已确认",
+     "watch": "后续取决于该重新设计蛋白在细胞和动物模型中的脱靶率数据，以及是否被独立实验室复现。可关注相关论文的同行评审结果。",
+     "sources": [
+      "ars"
+     ],
+     "item_ref": "2026-07-25:pick-51",
+     "source_keys": [
+      "src-1252041cebb14a5173a9524e"
+     ],
+     "event_identity": "set-ad5486b2bb9b4fe1c9e686a1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-1a2446",
+   "title": "印度德里蟑螂抗议要求教育改革",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "印度德里蟑螂抗议要求教育改革",
+     "summary": "印度青年在德里持续20多天的抗议活动，被称为“蟑螂抗议”，要求教育改革，政府已与抗议者举行会谈。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-25:pick-110",
+     "source_keys": [
+      "src-875c884ef051ac9cd03d7bbf",
+      "src-960ec8a64e68c03271be9e4e"
+     ],
+     "event_identity": "set-90cee90911f035b3ee6599fe"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-5e59a9",
+   "title": "Anthropic发布Drone-Bench评估AI操控无人",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "Anthropic发布Drone-Bench评估AI操控无人",
+     "summary": "Anthropic联合Andon Labs发布Drone-Bench基准，用于评估AI模型自主操控无人机执行室内定位追踪任务的能力。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:Anthropic：Research（发表成果·网页）"
+     ],
+     "item_ref": "2026-07-25:pick-7",
+     "source_keys": [
+      "src-e8072c948e6d0fcc6996dac7"
+     ],
+     "event_identity": "set-0ac7861eaf1c632c06d461cb"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-5f99c3",
+   "title": "乌克兰国防部长和武装部队总司令被免职引发抗议",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "乌克兰国防部长和武装部队总司令被免职引发抗议",
+     "summary": "乌克兰总统泽连斯基一周内罢免国防部长和武装部队总司令，引发基辅等地民众抗议，政局动荡。",
+     "news_status": "发展中",
+     "watch": "取决于新任命官员能否稳定军心，以及抗议规模是否扩大。可观察泽连斯基是否进一步调整内阁，以及前线战局是否受影响。",
+     "sources": [
+      "bbc-world",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-25:pick-103",
+     "source_keys": [
+      "src-63cc8119ba1255ddb8c10b4c",
+      "src-f3ff198919e01aacf160dce0"
+     ],
+     "event_identity": "set-4ffa29a81783ae51e45dfaf2"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-9c9426",
+   "title": "约旦河西岸巴以冲突致六人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "约旦河西岸巴以冲突致六人死亡",
+     "summary": "约旦河西岸发生枪击事件，造成4名巴勒斯坦人和2名以色列人死亡，巴方称定居者袭击，以军称巴勒斯坦人偷枪后开枪。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-25:pick-104",
+     "source_keys": [
+      "src-17f884526b3a1a670fbcb228",
+      "src-e9ed4609b31a3a80247b3f6f"
+     ],
+     "event_identity": "set-75e02e710c2828b3bc3b81d2"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-3f860a",
+   "title": "SpaceX星舰第13次试飞部署V3星链卫星，助推器溅落异常",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "SpaceX星舰第13次试飞部署V3星链卫星，助推器溅落异常",
+     "summary": "SpaceX星舰第13次试飞首次部署20颗V3星链卫星，但超重助推器在海上溅落后出现异常，未能按计划完成回收。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "ithome",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-25:pick-17",
+     "source_keys": [
+      "src-61078d768b109a4f2b9b8e20",
+      "src-cf3a0b04d2e064a4f43f65fc",
+      "src-d177a776d3c5aaa6746477a7"
+     ],
+     "event_identity": "set-db219783b1d222f693c05329"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-be0957",
+   "title": "AI对就业岗位影响分析：企业用AI Agent替代招聘",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "AI对就业岗位影响分析：企业用AI Agent替代招聘",
+     "summary": "BBC分析指出，企业投资者正追问工作应由新招聘人员完成还是由AI Agent完成，\"持平就是新的增长\"成为新常态。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-07-25:pick-100",
+     "source_keys": [
+      "src-d4209324ff199006c5868a19"
+     ],
+     "event_identity": "set-cce80532c871222699daa43e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-e5fce8",
+   "title": "胡塞武装威胁曼德海峡，红海航运危机加剧",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "胡塞武装威胁曼德海峡，红海航运危机加剧",
+     "summary": "全球约12%海运石油经曼德海峡，伊朗盟友威胁封锁该航道，进一步扰乱全球贸易。",
+     "news_status": "发展中",
+     "watch": "关键变量：1) 胡塞武装是否实际采取封锁行动；2) 美国及盟友的军事回应强度。可观察曼德海峡附近商船通行量和保险费率变化。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-07-25:pick-99",
+     "source_keys": [
+      "src-4648d45982d72b0948e50429"
+     ],
+     "event_identity": "set-5cea87765580d2232d69a68d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-459411",
+   "title": "国际象棋联合会主席因欧盟制裁面临下台",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "国际象棋联合会主席因欧盟制裁面临下台",
+     "summary": "国际象棋联合会主席、俄罗斯前副总理德沃尔科维奇因欧盟制裁面临旅行禁令和资产冻结，可能被迫离职。",
+     "news_status": "发展中",
+     "watch": "关键变量：1) 德沃尔科维奇是否主动辞职或被迫离职；2) 国际棋联能否找到替代人选。可观察国际棋联是否召开紧急会议。",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-07-25:pick-111",
+     "source_keys": [
+      "src-ed8db2ee05eb568eb1cfbde8"
+     ],
+     "event_identity": "set-6fce39cd22e6af78dacb3f33"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-579981",
+   "title": "Anthropic为Claude 5代模型精简系统提示词超8",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "Anthropic为Claude 5代模型精简系统提示词超8",
+     "summary": "Anthropic为Claude Opus 5和Fable 5等新模型删除了Claude Code超过80%的系统提示词，且编码评测无显著损失。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:Claude：Blog（网页）"
+     ],
+     "item_ref": "2026-07-25:pick-5",
+     "source_keys": [
+      "src-e44061991f11dc0fe95e1fab"
+     ],
+     "event_identity": "set-e3ae5075efe0d8f51ed52ca4"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-f7042f",
+   "title": "器官体外保存技术突破：超低温肾脏移植成功",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "器官体外保存技术突破：超低温肾脏移植成功",
+     "summary": "超低温保存的猪肾脏成功移植到猪体内，标志着器官体外保存技术取得重大突破。",
+     "news_status": "已确认",
+     "sources": [
+      "mit-tr"
+     ],
+     "item_ref": "2026-07-25:pick-0",
+     "source_keys": [
+      "src-fa60549a335cf08528dd62f9"
+     ],
+     "event_identity": "set-b1afb0906071f9251d93139e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-06c482",
+   "title": "尼日利亚总统批准大规模军事扩张",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "尼日利亚总统批准大规模军事扩张",
+     "summary": "尼日利亚总统批准了近年来最大规模的军事扩张计划，以应对国内多支武装团体对平民的袭击。",
+     "news_status": "已确认",
+     "watch": "关键变量：扩张计划的资金落实速度与军队实际部署效率。可观察路标：尼日利亚议会是否通过相关预算，以及武装团体袭击频率是否出现变化。",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-07-25:pick-112",
+     "source_keys": [
+      "src-a73224a4a7fa5b83991f92c2"
+     ],
+     "event_identity": "set-eb5c0377624db17f81e55424"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-c9cf6c",
+   "title": "南非总统获临时禁令暂停弹劾调查",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "南非总统获临时禁令暂停弹劾调查",
+     "summary": "南非总统拉马福萨赢得法庭临时禁令，暂停了针对其2020年农场现金失窃案的弹劾调查。",
+     "news_status": "发展中",
+     "watch": "关键变量：法院后续对禁令的最终裁决，以及反对党是否提出新的证据或动议。可观察路标：南非宪法法院是否受理上诉，以及执政党非国大内部对此事的分歧是否公开化。",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-07-25:pick-116",
+     "source_keys": [
+      "src-b373bd16f6f7fdb7c63e3308"
+     ],
+     "event_identity": "set-4b1230976ce7a0f6bd3169e0"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-e5f5bf",
+   "title": "研究：近70%BGP路径被传输提供商重写",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "研究：近70%BGP路径被传输提供商重写",
+     "summary": "Cloudflare研究发现，近70%的BGP路径中，ORIGIN属性被传输提供商重写，以获取流量优势。",
+     "news_status": "已确认",
+     "sources": [
+      "cloudflare"
+     ],
+     "item_ref": "2026-07-25:pick-16",
+     "source_keys": [
+      "src-1c443bb30e1d35d96da7dd38"
+     ],
+     "event_identity": "set-330d15b03161d1f07e4ac2d8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-d15659",
+   "title": "宁德时代上半年营收净利双增超40%",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "宁德时代上半年营收净利双增超40%",
+     "summary": "宁德时代2026年上半年营收2769亿元，同比增长54.80%；净利润433亿元，同比增长41.98%。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-25:pick-185",
+     "source_keys": [
+      "src-3e3c77523ef62a4ab3da3ad4",
+      "src-a70321656953846a7555bb40"
+     ],
+     "event_identity": "set-35cbc3c8eca5a63c0edeeba6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-ffc92c",
+   "title": "胡塞武装袭击沙特油轮，油价破百",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "胡塞武装袭击沙特油轮，油价破百",
+     "summary": "伊朗支持的胡塞武装袭击红海两艘沙特油轮，导致国际油价飙升至每桶100美元，特朗普随即宣布新一轮关税。",
+     "news_status": "已确认",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-07-25:pick-159",
+     "source_keys": [
+      "src-5e1769b0a33ec5708a2383c6"
+     ],
+     "event_identity": "set-d87fecec808b29328e252c12"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-9e8ad8",
+   "title": "法官驳回特朗普政府索取记者通话记录",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "法官驳回特朗普政府索取记者通话记录",
+     "summary": "法官驳回特朗普政府要求获取《纽约时报》记者通话记录的传票，并建议政府撤回或法院撤销该传票。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc",
+      "ars"
+     ],
+     "item_ref": "2026-07-25:pick-49",
+     "source_keys": [
+      "src-39c5ee8da68c134eaa9be41f",
+      "src-7691fc32b59f000c36bf7e02"
+     ],
+     "event_identity": "set-6bb71bf88787ac4f565bd331"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-212b8d",
+   "title": "巴基斯坦西北部汽车炸弹袭击致27死",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "巴基斯坦西北部汽车炸弹袭击致27死",
+     "summary": "巴基斯坦塔利班声称对西北部一次汽车炸弹袭击负责，称四名自杀式袭击者实施了攻击，造成27人死亡。",
+     "news_status": "已确认",
+     "sources": [
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-25:pick-133",
+     "source_keys": [
+      "src-6ae50d68aec2b60713525f32"
+     ],
+     "event_identity": "set-2f1f0905aa1a29f81157fa5a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-3c5d4a",
+   "title": "Vercel WAF for Blob进入公测",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "Vercel WAF for Blob进入公测",
+     "summary": "Vercel 宣布其 Web 应用防火墙（WAF）现已支持保护 Blob 存储，无需修改代码即可应用规则。",
+     "news_status": "发展中",
+     "sources": [
+      "vercel"
+     ],
+     "item_ref": "2026-07-25:pick-251",
+     "source_keys": [
+      "src-d10d17ff190dd2a86fcad297"
+     ],
+     "event_identity": "set-4e59e4bfbe8bdbad05022d65"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-1d1a2a",
+   "title": "证监会原副主席方星海接受审查调查",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "证监会原副主席方星海接受审查调查",
+     "summary": "中国证监会原副主席方星海因涉嫌严重违纪违法，目前正接受中央纪委国家监委纪律审查和监察调查。",
+     "news_status": "发展中",
+     "watch": "关键变量：调查进展及是否牵涉其他人员。可观察路标：官方后续通报是否提及具体违纪细节，以及证监会其他官员的动向。",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-25:pick-274",
+     "source_keys": [
+      "src-039a96cb90e9c4c727b490cc"
+     ],
+     "event_identity": "set-7650555e7d31ed42d2549f7f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260725-feb8b9",
+   "title": "穆迪警告AI支出威胁科技巨头信用质量",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-25",
+   "last_seen": "2026-07-25",
+   "history": [
+    {
+     "date": "2026-07-25",
+     "title": "穆迪警告AI支出威胁科技巨头信用质量",
+     "summary": "穆迪报告称，每年近万亿美元的AI基建投资正侵蚀谷歌、亚马逊等云服务商的自由现金流，增加资产负债表风险。",
+     "news_status": "已确认",
+     "watch": "关键变量：AI投资能否转化为收入增长，以及科技巨头是否调整资本支出计划。可观察路标：下季度财报中资本支出指引及AI业务收入占比变化。",
+     "sources": [
+      "cnbc",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-25:pick-72",
+     "source_keys": [
+      "src-bea4bb65d9d65d5a55ffee9f",
+      "src-cd499856dd5ad336624f990b"
+     ],
+     "event_identity": "set-dba51691bb520bd08cf25b5d"
     }
    ]
   }
