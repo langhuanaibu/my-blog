@@ -31,9 +31,12 @@
 ## 📅 客观性 shadow 验收（待完成）
 
 2026-07-18 公开路径落地的是 **interim wording hotfix**，不是已验收的完整证据系统。
-`--objectivity-shadow` 的 7-day 指标门和 45-case / three-run 夹具门都通过前，
-**active mode is not enabled**，**live acceptance has not occurred**。详细阈值与安全边界见
-`docs/news_objectivity_plan.md`。
+
+**45-case / three-run 夹具门已于 2026-07-25 通过**（Run #30159234858，最差轮残留红线 0 /
+标签一致性 93.33% / 归因 100% / 结构 100%）。但 `--objectivity-shadow` 的 7-day 指标门
+**仍未通过**，人工评审也未进行，因此 **active mode is not enabled**，
+**live acceptance has not occurred**。夹具门通过只授予 active 的人工评审资格。
+详细阈值与安全边界见 `docs/news_objectivity_plan.md`。
 
 - 每天保存 GitHub step summary 中的运行时间、全文/混合/摘要分布、抓取重试、
   修复/降级、独立链分布，以及同口径的 `selected_before_audit`、
