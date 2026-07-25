@@ -56,10 +56,18 @@ jobs:
         run: |
           python - <<'PY'
           import os
+          import re
           from datetime import date, timedelta
           from pathlib import Path
 
+          # A dispatch input reaches GITHUB_OUTPUT here; anything but a real
+          # date could smuggle a newline and forge further step outputs, and
+          # would later be interpolated into a trusted ledger comment.
           requested = str(os.environ.get("REQUESTED_DATE") or "").strip()
+          if requested and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", requested):
+              raise SystemExit(f"date input must be YYYY-MM-DD, got: {requested!r}")
+          if requested:
+              date.fromisoformat(requested)
           target = requested or (date.today() - timedelta(days=1)).isoformat()
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
               handle.write(f"date={target}\n")

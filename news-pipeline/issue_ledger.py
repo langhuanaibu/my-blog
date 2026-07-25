@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import datetime
 import json
 import os
 import re
@@ -870,6 +871,27 @@ class GitHubClient:
             "PATCH", f"issues/comments/{int(comment_id)}", {"body": body})
 
 
+def beijing_date(value):
+    """Reject anything that is not a real YYYY-MM-DD date.
+
+    The date is interpolated into the HTML comment marker of a ledger entry
+    written under the workflow bot's identity. Without this check a crafted
+    `--date` closes the comment early and injects arbitrary content — or a
+    second state block — into the audit record the acceptance gates trust.
+    Workflow inputs reach this argument directly, so validate at the boundary.
+    """
+    text = str(value or "")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        raise argparse.ArgumentTypeError(
+            "date must be a real calendar date in YYYY-MM-DD format")
+    try:
+        datetime.date.fromisoformat(text)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "date must be a real calendar date in YYYY-MM-DD format") from exc
+    return text
+
+
 def parse_cli_args(argv=None):
     parser = argparse.ArgumentParser(description="Update the rollout Issue ledger")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -877,10 +899,10 @@ def parse_cli_args(argv=None):
     check.add_argument("--issue", type=int, default=15)
     heartbeat = subparsers.add_parser("heartbeat")
     heartbeat.add_argument("--issue", type=int, default=15)
-    heartbeat.add_argument("--date", required=True)
+    heartbeat.add_argument("--date", required=True, type=beijing_date)
     sync = subparsers.add_parser("sync")
     sync.add_argument("--issue", type=int, default=15)
-    sync.add_argument("--date", required=True)
+    sync.add_argument("--date", required=True, type=beijing_date)
     sync.add_argument("--publication", required=True, choices=("success", "failure"))
     sync.add_argument("--publication-reason", default="")
     sync.add_argument("--report", default="")
@@ -894,7 +916,7 @@ def parse_cli_args(argv=None):
     sync.add_argument("--sha", required=True)
     manual = subparsers.add_parser("manual-review")
     manual.add_argument("--issue", type=int, default=15)
-    manual.add_argument("--date", required=True)
+    manual.add_argument("--date", required=True, type=beijing_date)
     manual.add_argument("--gate", required=True, choices=GATES)
     manual.add_argument(
         "--status", required=True, choices=("pass", "fail", "neutral"))

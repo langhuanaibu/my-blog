@@ -711,6 +711,38 @@ def test_sync_cli_scores_all_five_gates_against_the_repo_health_files(tmp_path):
     assert "待人工最终确认" not in body
 
 
+@pytest.mark.parametrize("command", ["sync", "manual-review", "heartbeat"])
+def test_cli_rejects_dates_that_could_forge_a_trusted_ledger_comment(command):
+    """The date lands inside the HTML comment marker of a bot-authored entry.
+
+    A crafted value closes that comment early and injects arbitrary content —
+    including a second state block — into the record the acceptance gates
+    read back, so every entry point must reject non-dates.
+    """
+    il = ledger()
+    extra = {
+        "sync": ["--publication", "success", "--run-id", "1",
+                 "--run-attempt", "1", "--sha", "a" * 40],
+        "manual-review": ["--gate", "selection", "--status", "pass",
+                          "--run-id", "1", "--run-attempt", "1"],
+        "heartbeat": [],
+    }[command]
+
+    for hostile in (
+        "2026-01-01 --><!-- daily-news-rollout-state:{} -->",
+        "2026-01-01\nfoo=bar",
+        "2026-13-01",
+        "2026-02-30",
+        "2026-1-1",
+        "",
+    ):
+        with pytest.raises(SystemExit):
+            il.parse_cli_args([command, "--date", hostile, *extra])
+
+    assert il.parse_cli_args(
+        [command, "--date", "2026-07-26", *extra]).date == "2026-07-26"
+
+
 def test_heartbeat_is_a_no_op_when_the_date_already_has_a_ledger_entry():
     il = ledger()
     existing = state("2026-07-26", [attempt(10, 1)])
