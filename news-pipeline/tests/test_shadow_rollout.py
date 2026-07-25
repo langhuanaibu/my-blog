@@ -1017,9 +1017,13 @@ def test_objectivity_field_caps_apply_to_enrichment_repair_and_serialization():
         list(dn.OBJECTIVITY_FIELDS),
         [],
         {"Synthetic Wire"},
+        source_title="Safe source title",
     )
 
-    assert all(len(event[field]) <= limits[field] for field in dn.OBJECTIVITY_FIELDS)
+    assert event["title"] == "Safe source title"
+    assert all(
+        len(event[field]) <= limits[field]
+        for field in dn.OBJECTIVITY_FIELDS if field != "title")
 
     evidence_text = "FULLTEXT_SENTINEL_DO_NOT_PERSIST_" + ("z" * 900)
     item = {

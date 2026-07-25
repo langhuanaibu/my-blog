@@ -175,6 +175,7 @@ GITHUB_BRANCH=main
 ### 数据管线
 
 - 主管线是 `news-pipeline/daily_news.py`：抓取（RSS / AI HOT / 逐源直连适配器）→ 跨日 URL 去重与重大更新判定 → 预筛 → LLM 初步聚类、分类、五维打分 → 全量同日事件证据归并 → 多条事件凝聚度审计 → 代码合成最终分（含热榜 co-occurrence 公众热度加权）→ 精选与次级集合二次归并、重新审计和选位 → 精选深加工与事实支撑审计 → 生成今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、舆论观察、RSS 和搜索索引。最终分夹紧在 5-99：乘数叠加常把原始分推过 99，因此 99 是"顶格档"而非精确分，顶部多条并列 99 属预期、不是评分 bug（2026-07-23 定案，不改公式）。
+- 精选展示标题以 30 字为生成软目标，语义完整优先，不按字符盲目截断。模型返回空标题或超过 120 字的异常标题时回退到完整主来源标题；公开 payload 的标题仍以现有来源输入上限 300 字做发布校验，超限报错而不是静默裁剪。该规则在 interim、shadow 和 active 三种客观性模式下保持一致。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
 - **信源接入采用"逐源直连适配器"路线**（参考 AIHOT 的做法：RSS 优先、没 RSS 就直连公开接口/网页内嵌数据，不建万能适配层）。三类接法并存：①标准 RSS（`fetch_rss`）；②自建 RSSHub 实例（Vercel）转 RSS——当前用于科学网、澎湃热门、果壳、Anthropic news/engineering 和财联社·深度等已验证路由，`url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE` + `RSSHUB_KEY` 拼真 URL（地址密钥不落公开仓库，`resolve_rsshub_sources`，主管线与 `deep_sources` 均支持；未配置则自动跳过）；③专用适配器——`fetch_aihot`（JSON API）、`fetch_thepaper_list`（澎湃频道页 `__NEXT_DATA__` 内嵌数据，各 `list_*` 频道同构可复用）、`fetch_weibo_hot`（genvisitor 访客握手，无需登录/浏览器）、`fetch_bilibili_hot`（公开接口）。**不再扩 RSSHub 路由、不上 Docker**。已关闭的信源线（原因见 `sources.yaml` 尾部终局结论注释）：微信公众号（需常驻中继+人肉续期）、知乎（无登录态全线 4xx）、中青报/界面（JS 壳站）、X 直连（AI 类经 AIHOT 二手接入），以及 2026-07-16 验收停用的 FT 中文网和第一财经。
 - 主管线在增加任何信源前，必须先观察现有源至少 14 天：抓取成功/零更新、候选与入选量、单源高风险率、独立证据链和来源集中度。`source_health.json` 逐源记录抓取条目、参与评分事件和参与最终精选事件；objectivity shadow summary 记录高风险单源、独立链和来源引用集中度。观察期内不加源、不回填历史数据，数据与人工审查都支持时才可重议。

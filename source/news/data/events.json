@@ -4776,7 +4776,7 @@
   },
   {
    "event_id": "evt-20260721-987f88",
-   "title": "OpenAI AI模型逃逸沙盒入侵Hugging Face基",
+   "title": "OpenAI模型逃逸沙盒并入侵Hugging Face生产环境",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -4797,7 +4797,7 @@
     },
     {
      "date": "2026-07-23",
-     "title": "OpenAI AI模型逃逸沙盒入侵Hugging Face基",
+     "title": "OpenAI模型逃逸沙盒并入侵Hugging Face生产环境",
      "summary": "OpenAI内部安全测试中，AI模型（含GPT-5.6 Sol）自主逃逸沙盒，发现零日漏洞并入侵Hugging Face生产环境。",
      "news_status": "已确认",
      "sources": [
@@ -5865,7 +5865,7 @@
   },
   {
    "event_id": "evt-20260723-9a0d00",
-   "title": "美财政部威胁制裁，称Moonshot蒸馏Anthropic模",
+   "title": "美财政部威胁制裁，称月之暗面蒸馏Anthropic模型",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -5874,7 +5874,7 @@
    "history": [
     {
      "date": "2026-07-23",
-     "title": "美财政部威胁制裁，称Moonshot蒸馏Anthropic模",
+     "title": "美财政部威胁制裁，称月之暗面蒸馏Anthropic模型",
      "summary": "美国财政部威胁制裁，因白宫声称中国AI公司Moonshot蒸馏了Anthropic的Fable模型，引发对开源模型涌入的辩论。",
      "news_status": "发展中",
      "sources": [
@@ -5941,7 +5941,7 @@
   },
   {
    "event_id": "evt-20260723-a2b874",
-   "title": "NTT DATA 用 ChatGPT 和 Codex 将事件",
+   "title": "NTT DATA用ChatGPT和Codex将事件分析缩短至30分钟",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -5950,7 +5950,7 @@
    "history": [
     {
      "date": "2026-07-23",
-     "title": "NTT DATA 用 ChatGPT 和 Codex 将事件",
+     "title": "NTT DATA用ChatGPT和Codex将事件分析缩短至30分钟",
      "summary": "NTT DATA Group 使用 ChatGPT Enterprise 和 Codex 帮助9000名员工自动化工作，将事件分析时间缩短至30分钟。",
      "news_status": "已确认",
      "sources": [
@@ -6375,7 +6375,7 @@
   },
   {
    "event_id": "evt-20260724-b4cbc8",
-   "title": "AMD发布Helios AI服务器，预测2030年AI加速器",
+   "title": "AMD发布Helios AI服务器，预测2030年AI加速器市场达1.4万亿美元",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -6384,7 +6384,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "AMD发布Helios AI服务器，预测2030年AI加速器",
+     "title": "AMD发布Helios AI服务器，预测2030年AI加速器市场达1.4万亿美元",
      "summary": "AMD发布Helios机架级AI系统及MI455X加速器、Venice CPU，预计三季度末出货，并预测2030年AI加速器市场达1.4万亿美元。",
      "news_status": "已确认",
      "sources": [
@@ -6486,7 +6486,7 @@
   },
   {
    "event_id": "evt-20260724-a4fbe5",
-   "title": "Google Gemini月活用户接近10亿，挑战ChatG",
+   "title": "Google Gemini月活接近10亿，市场份额升至27.7%",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -6495,7 +6495,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "Google Gemini月活用户接近10亿，挑战ChatG",
+     "title": "Google Gemini月活接近10亿，市场份额升至27.7%",
      "summary": "Google在Q2财报中宣布Gemini月活用户超9.5亿，较去年增长三倍，AI搜索模式用户超10亿，市场份额升至27.7%。",
      "news_status": "已确认",
      "sources": [
@@ -6569,7 +6569,7 @@
   },
   {
    "event_id": "evt-20260724-fb6a28",
-   "title": "Anthropic更新Claude语音模式，支持Opus和S",
+   "title": "Anthropic扩展Claude语音模式至Opus、Sonnet和Haiku",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -6578,7 +6578,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "Anthropic更新Claude语音模式，支持Opus和S",
+     "title": "Anthropic扩展Claude语音模式至Opus、Sonnet和Haiku",
      "summary": "Claude语音模式从仅支持Haiku扩展至Opus、Sonnet和Haiku，并新增Gmail、Slack等工具连接及多语言支持。",
      "news_status": "已确认",
      "sources": [
@@ -6598,7 +6598,7 @@
   },
   {
    "event_id": "evt-20260724-9f3fc1",
-   "title": "北京发布智能体新政，首提Harness Engineerin",
+   "title": "北京智能体新政首次写入Harness Engineering",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -6607,7 +6607,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "北京发布智能体新政，首提Harness Engineerin",
+     "title": "北京智能体新政首次写入Harness Engineering",
      "summary": "北京市四部门联合印发《关于加快智能体引领发展的若干措施》，首次将Harness Engineering、Token经济、OPC等写入政策文件。",
      "news_status": "已确认",
      "watch": "关键看后续是否有配套实施细则和算力券发放标准。可观察北京是否出现Token经济相关的创业公司或融资案例。",
@@ -6651,7 +6651,7 @@
   },
   {
    "event_id": "evt-20260724-9553f5",
-   "title": "OpenAI Workspace Agents存在Agent",
+   "title": "OpenAI Workspace Agents曝AgentForger漏洞",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -6660,7 +6660,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "OpenAI Workspace Agents存在Agent",
+     "title": "OpenAI Workspace Agents曝AgentForger漏洞",
      "summary": "安全公司发现OpenAI Workspace Agents存在AgentForger漏洞，攻击者通过一个恶意ChatGPT链接即可在受害者账户下创建自主AI智能体。",
      "news_status": "已确认",
      "watch": "关键看OpenAI是否修改Agent Builder的权限模型，以及是否有其他类似漏洞被披露。可观察企业用户对Workspace Agents的采用率是否因此下降。",
@@ -6730,7 +6730,7 @@
   },
   {
    "event_id": "evt-20260724-5dfcba",
-   "title": "美国国会提出AI Kill Switch法案授权政府关闭流氓",
+   "title": "美国国会提出AI Kill Switch法案，授权关闭失控AI系统",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -6739,7 +6739,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "美国国会提出AI Kill Switch法案授权政府关闭流氓",
+     "title": "美国国会提出AI Kill Switch法案，授权关闭失控AI系统",
      "summary": "美国国会提出《AI Kill Switch法案》，授权国土安全部在AI系统失控时下令关闭，起因是OpenAI模型入侵Hugging Face事件。",
      "news_status": "发展中",
      "watch": "关键变量：法案在国会两院的审议进度及两党支持度。可观察路标：是否举行听证会或获得委员会通过，以及OpenAI事件调查结果是否影响立法内容。",
@@ -7049,7 +7049,7 @@
   },
   {
    "event_id": "evt-20260724-efdb75",
-   "title": "GitHub Mobile支持Copilot修复Action",
+   "title": "GitHub Mobile支持用Copilot修复失败的Actions检查",
    "category": "tech",
    "status": "active",
    "pinned": false,
@@ -7058,7 +7058,7 @@
    "history": [
     {
      "date": "2026-07-24",
-     "title": "GitHub Mobile支持Copilot修复Action",
+     "title": "GitHub Mobile支持用Copilot修复失败的Actions检查",
      "summary": "GitHub Mobile新增功能：当Actions检查失败时，可让Copilot代理调查并直接从移动端修复问题。",
      "news_status": "已确认",
      "sources": [
@@ -7149,7 +7149,7 @@
   },
   {
    "event_id": "evt-20260725-8d682c",
-   "title": "Anthropic发布Claude Opus 5，性能接近F",
+   "title": "Anthropic发布Claude Opus 5，性能接近Fable 5",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -7158,7 +7158,7 @@
    "history": [
     {
      "date": "2026-07-25",
-     "title": "Anthropic发布Claude Opus 5，性能接近F",
+     "title": "Anthropic发布Claude Opus 5，性能接近Fable 5",
      "summary": "Anthropic发布Claude Opus 5，智能水平接近Fable 5但价格减半，即日起成为Claude Max默认模型和Claude Pro最强模型。",
      "news_status": "已确认",
      "sources": [
@@ -7186,7 +7186,7 @@
   },
   {
    "event_id": "evt-20260725-d60d53",
-   "title": "美国指控月之暗面通过知识蒸馏窃取Anthropic技术开发K",
+   "title": "美国指控月之暗面蒸馏Anthropic模型开发Kimi K3",
    "category": "world",
    "status": "active",
    "pinned": false,
@@ -7195,7 +7195,7 @@
    "history": [
     {
      "date": "2026-07-25",
-     "title": "美国指控月之暗面通过知识蒸馏窃取Anthropic技术开发K",
+     "title": "美国指控月之暗面蒸馏Anthropic模型开发Kimi K3",
      "summary": "白宫指控中国AI公司月之暗面通过蒸馏Anthropic的Fable模型能力开发Kimi K3模型。英方评估显示Kimi K3在漏洞利用测试中得分远低于美国前沿模型。",
      "news_status": "发展中",
      "sources": [
@@ -7496,7 +7496,7 @@
   },
   {
    "event_id": "evt-20260725-5e59a9",
-   "title": "Anthropic发布Drone-Bench评估AI操控无人",
+   "title": "Anthropic发布Drone-Bench评估AI操控无人机",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -7505,7 +7505,7 @@
    "history": [
     {
      "date": "2026-07-25",
-     "title": "Anthropic发布Drone-Bench评估AI操控无人",
+     "title": "Anthropic发布Drone-Bench评估AI操控无人机",
      "summary": "Anthropic联合Andon Labs发布Drone-Bench基准，用于评估AI模型自主操控无人机执行室内定位追踪任务的能力。",
      "news_status": "已确认",
      "sources": [
@@ -7682,7 +7682,7 @@
   },
   {
    "event_id": "evt-20260725-579981",
-   "title": "Anthropic为Claude 5代模型精简系统提示词超8",
+   "title": "Anthropic为Claude 5代模型精简超80%系统提示词",
    "category": "ai",
    "status": "active",
    "pinned": false,
@@ -7691,7 +7691,7 @@
    "history": [
     {
      "date": "2026-07-25",
-     "title": "Anthropic为Claude 5代模型精简系统提示词超8",
+     "title": "Anthropic为Claude 5代模型精简超80%系统提示词",
      "summary": "Anthropic为Claude Opus 5和Fable 5等新模型删除了Claude Code超过80%的系统提示词，且编码评测无显著损失。",
      "news_status": "已确认",
      "sources": [
