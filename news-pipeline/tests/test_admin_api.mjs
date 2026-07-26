@@ -171,6 +171,36 @@ test("misses date validation rejects impossible calendar dates", () => {
   }));
 });
 
+test("state type allowlist rejects inherited object keys", () => {
+  // 取值判真会让 __proto__ / constructor 通过白名单，并把 Object.prototype
+  // 当作写入路径送进 GitHub 接口；未知 type 还会落进 favorites 的兜底分支。
+  for (const type of ["__proto__", "constructor", "toString", "hasOwnProperty", "valueOf"]) {
+    assert.throws(
+      () => newsState._test.validateEntry(type, {
+        date: "2026-07-15",
+        item_id: "pick-1",
+        op: "add",
+      }),
+      /Invalid type/i,
+      `${type} must not pass the allowlist`,
+    );
+  }
+});
+
+test("state type allowlist still accepts the four real types", () => {
+  for (const type of Object.keys(newsState._test.STATE_FILES)) {
+    assert.doesNotThrow(() => newsState._test.validateEntry(type, {
+      date: "2026-07-15",
+      item_id: "pick-1",
+      title: "标题",
+      action: "not_interested",
+      reason: "deep_read",
+      op: "add",
+      url: "https://example.com/a",
+    }), `${type} must remain valid`);
+  }
+});
+
 test("admin frontend does not persist the bearer token in browser storage", async () => {
   const source = await readFile(new URL("../../source/admin/index.html", import.meta.url), "utf8");
   assert.doesNotMatch(source, /localStorage\.(?:getItem|setItem)\(['"]aoiblog_admin_token/);

@@ -1404,7 +1404,8 @@ def test_article_redirect_receives_only_remaining_attempt_budget():
 
 
 def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
-    item = source_item(desc="旧摘要" * 80)
+    # 起因片段同时放进摘要与正文：interim 只核对摘要前 200 字，全文模式核对正文
+    item = source_item(desc="正文证据正文证据正文证据" + "旧摘要" * 80)
     item["evidence_text"] = "FULLTEXT_ONLY_MARKER " + ("正文证据" * 200)
     long_values = {
         "title": "题" * 45,

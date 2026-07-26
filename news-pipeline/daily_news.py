@@ -2659,28 +2659,34 @@ CAUSE_EVIDENCE_MATCH_RATIO = 0.9
 # 引文可以是真的，从它推出的动机却是模型加的，这正是客观性规范禁止的那一类。
 CAUSE_SPECULATION_RE = re.compile(
     r"可能|或许|大概|据信|疑似|恐将|料将|意在|旨在|企图|似乎|理论上")
+# "称" 单字不够：名称/简称/职称/对称 这类构词会把未归因推测放行，
+# 所以排除这些前缀，并挡掉 称号/称呼/称赞 这类非引述用法。
 CAUSE_ATTRIBUTION_RE = re.compile(
-    r"称|表示|指出|认为|报道|披露|声明|通报|发言人|回应")
+    r"(?<![名简全别昵俗代职尊对人通统并著相匀堪])称(?![号呼赞])"
+    r"|表示|指出|认为|报道|披露|声明|通报|发言人|回应")
 
 
-def _event_evidence_texts(event, items):
-    """Return the same source texts enrich was shown, for verbatim checking.
+def _event_evidence_texts(event, items, full_objectivity=False):
+    """Return exactly the source texts enrich was shown, for verbatim checking.
 
-    This mirrors the prompt: evidence_text only exists once the full-text
-    evidence stage has run, and that stage runs exactly when the prompt
-    switches from the RSS summary to the article body.
+    The slicing has to match the prompt in `enrich`: the interim prompt shows
+    only the first 200 characters of the RSS summary, so verifying against the
+    whole summary would accept a span the model could never have read.
     """
     texts = []
     for index in _serialized_source_ids(event, items, limit=4):
         source = items[index]
-        raw = source.get("evidence_text") or source.get("desc") or ""
+        raw = (
+            (source.get("evidence_text") or source.get("desc", ""))[:ARTICLE_MAX_CHARS]
+            if full_objectivity else str(source.get("desc") or "")[:200]
+        )
         normalized = _normalized_copy_text(raw)
         if normalized:
             texts.append(normalized)
     return texts
 
 
-def verify_cause_evidence(event, items, quality=None):
+def verify_cause_evidence(event, items, quality=None, full_objectivity=False):
     """Blank a cause whose quoted source span is not verbatim in the evidence.
 
     The model is asked to name the sentence it read the cause from. Research on
@@ -2697,7 +2703,7 @@ def verify_cause_evidence(event, items, quality=None):
     normalized_span = _normalized_copy_text(span)
     matched = False
     if len(normalized_span) >= CAUSE_EVIDENCE_MIN_CHARS:
-        for evidence in _event_evidence_texts(event, items):
+        for evidence in _event_evidence_texts(event, items, full_objectivity):
             if normalized_span in evidence:
                 matched = True
                 break
@@ -2902,7 +2908,7 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
             ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
             ev["context"] = _clip_objectivity_field("context", r.get("context", ""))
             ev["context_evidence"] = r.get("context_evidence", "")
-            verify_cause_evidence(ev, items, quality)
+            verify_cause_evidence(ev, items, quality, full_objectivity)
             ev["significance"] = _clip_objectivity_field(
                 "significance", r.get("significance", ""))
             ev["watch"] = _clip_objectivity_field("watch", r.get("watch", ""))

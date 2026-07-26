@@ -17,7 +17,8 @@ ARTICLE = (
 def _items(evidence_text=ARTICLE):
     return [{
         "title": "新关税生效数小时后即遭起诉",
-        "desc": "新关税遭到起诉。",
+        # 摘要里也带上那句原文，好让 interim 与全文两条路径共用同一批用例
+        "desc": "新关税遭到起诉。白宫随即改用第301条重新加征，并选在旧关税到期当天生效。",
         "evidence_text": evidence_text,
         "source": "Synthetic Wire",
         "source_id": "synthetic-wire",
@@ -42,7 +43,7 @@ def test_verbatim_span_keeps_the_cause():
         "白宫随即改用第301条重新加征，并选在旧关税到期当天生效。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is True
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is True
     assert event["context"].startswith("最高法院裁定")
     assert quality["cause_evidence_rejected"] == 0
     # 内部字段不得泄漏到后续阶段
@@ -55,7 +56,7 @@ def test_span_absent_from_sources_drops_the_cause():
         "白宫官员表示此举意在向北京施压。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is False
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is False
     assert "context" not in event
     assert "context_evidence" not in event
     assert quality["cause_evidence_rejected"] == 1
@@ -68,7 +69,7 @@ def test_paraphrased_span_is_rejected():
         "由于最高法院作出了不利裁决，白宫方面决定更换加征关税所依据的法律条文。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is False
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is False
     assert "context" not in event
     assert quality["cause_evidence_rejected"] == 1
 
@@ -77,7 +78,7 @@ def test_trivially_short_span_cannot_vouch_for_a_cause():
     event = _event("白宫改用第301条。", "白宫")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is False
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is False
     assert quality["cause_evidence_rejected"] == 1
 
 
@@ -85,7 +86,7 @@ def test_empty_cause_needs_no_span_and_is_not_counted_as_rejected():
     event = _event("", "")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is False
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is False
     # 空起因保持 enrich 的空串约定，不是被闸门拒绝
     assert event["context"] == ""
     assert "context_evidence" not in event
@@ -98,7 +99,7 @@ def test_punctuation_and_width_differences_still_match():
         "白宫随即改用第３０１条重新加征，并选在旧关税到期当天生效")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is True
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is True
     assert quality["cause_evidence_rejected"] == 0
 
 
@@ -182,7 +183,7 @@ def test_unattributed_speculation_is_dropped_even_with_a_real_span():
         "ARC-AGI-3的格式和任务类型在Opus 5开发前已公开。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _speculation_items(), quality) is False
+    assert dn.verify_cause_evidence(event, _speculation_items(), quality, full_objectivity=True) is False
     assert "context" not in event
     assert quality["cause_speculation_rejected"] == 1
     # 片段本身是能对上的，拦下它的是未归因推测这一条
@@ -195,8 +196,30 @@ def test_attributed_speculation_survives():
         "Anthropic发言人称公司未针对该基准做专门训练。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _speculation_items(), quality) is True
+    assert dn.verify_cause_evidence(event, _speculation_items(), quality, full_objectivity=True) is True
     assert quality["cause_speculation_rejected"] == 0
+
+
+def test_compound_words_containing_cheng_do_not_count_as_attribution():
+    """名称/简称/职称/对称 里的"称"不是引述，不得放行未归因推测。"""
+    for cause in (
+        "该基准的名称在发布前已公开，厂商可能针对性地做了优化。",
+        "两家公司的简称相同，收购可能意在整合品牌。",
+        "监管机构的职称评定改革，可能旨在留住人才。",
+        "这套系统的对称结构使其可能更易受攻击。",
+    ):
+        assert dn.CAUSE_SPECULATION_RE.search(cause), cause
+        assert not dn.CAUSE_ATTRIBUTION_RE.search(cause), cause
+
+
+def test_real_attribution_forms_are_still_recognised():
+    for cause in (
+        "路透社报道称此举可能意在向北京施压。",
+        "官员称新规可能推迟生效。",
+        "公司声称此次调整旨在优化成本。",
+        "发言人回应称停产可能持续一个季度。",
+    ):
+        assert dn.CAUSE_ATTRIBUTION_RE.search(cause), cause
 
 
 def test_plain_factual_cause_is_untouched_by_the_speculation_guard():
@@ -205,7 +228,7 @@ def test_plain_factual_cause_is_untouched_by_the_speculation_guard():
         "白宫随即改用第301条重新加征，并选在旧关税到期当天生效。")
     quality = dn.new_quality_stats()
 
-    assert dn.verify_cause_evidence(event, _items(), quality) is True
+    assert dn.verify_cause_evidence(event, _items(), quality, full_objectivity=True) is True
     assert quality["cause_speculation_rejected"] == 0
 
 

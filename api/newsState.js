@@ -64,7 +64,9 @@ function isRealIsoDate(value) {
 }
 
 function validateEntry(type, payload) {
-  if (!STATE_FILES[type]) {
+  // 用 hasOwn 而不是取值判真：__proto__ / constructor 这类原型键取出来是真值，
+  // 会绕过白名单并把 Object.prototype 当成写入路径送进 GitHub 接口。
+  if (!Object.hasOwn(STATE_FILES, type)) {
     throw createHttpError(400, `Invalid type: ${type}`);
   }
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
@@ -273,7 +275,7 @@ async function handler(req, res) {
 
     if (req.method === 'GET') {
       const type = String(req.query?.type || '');
-      if (!STATE_FILES[type]) {
+      if (!Object.hasOwn(STATE_FILES, type)) {
         throw createHttpError(400, `Invalid type: ${type}`);
       }
       const { state } = await readState(type);
