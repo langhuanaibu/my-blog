@@ -1218,7 +1218,7 @@
    "event_id": "evt-20260710-f36fd2",
    "title": "Anthropic与Meta洽谈百亿美元算力租用",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-18",
@@ -1492,7 +1492,7 @@
    "event_id": "evt-20260710-d1137c",
    "title": "GitHub Copilot仓库级用量指标与应用接入API上线",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-10",
    "last_seen": "2026-07-18",
@@ -1805,7 +1805,7 @@
    "event_id": "evt-20260712-b7edf4",
    "title": "OpenAI GPT-5.6意外删除用户文件",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-12",
    "last_seen": "2026-07-18",
@@ -2543,7 +2543,7 @@
    "event_id": "evt-20260714-ab3185",
    "title": "习近平首现世界AI大会，开源成中国AI战略核心",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-14",
    "last_seen": "2026-07-18",
@@ -2581,12 +2581,12 @@
   },
   {
    "event_id": "evt-20260714-570deb",
-   "title": "法官暂停派拉蒙与华纳兄弟探索1100亿美元合并",
+   "title": "派拉蒙与华纳兄弟探索合并因州诉讼推迟",
    "category": "finance",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-14",
-   "last_seen": "2026-07-21",
+   "last_seen": "2026-07-26",
    "history": [
     {
      "date": "2026-07-14",
@@ -2599,6 +2599,23 @@
      "title": "法官暂停派拉蒙与华纳兄弟探索1100亿美元合并",
      "summary": "美国加州法官发布临时限制令，暂停派拉蒙与华纳兄弟探索价值1100亿美元的合并案，以回应12个州的反垄断诉讼。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-26",
+     "title": "派拉蒙与华纳兄弟探索合并因州诉讼推迟",
+     "summary": "派拉蒙天舞公司同意推迟收购华纳兄弟探索的交易，因多州提起反垄断诉讼，交易可能推迟数月。",
+     "news_status": "发展中",
+     "watch": "关键变量：州诉讼的进展和法院是否批准临时禁令。可观察路标：纽约州总检察长的表态、法院是否设定庭审日期、派拉蒙天舞是否因延期支付高昂代价。",
+     "sources": [
+      "36kr",
+      "ars"
+     ],
+     "item_ref": "2026-07-26:pick-30",
+     "source_keys": [
+      "src-c5c91c09bcea5add01c0b10c",
+      "src-d8389d39a99dcd784dd8f208"
+     ],
+     "event_identity": "set-91a548a2a9f331e184b00ef7"
     }
    ]
   },
@@ -3654,7 +3671,7 @@
    "event_id": "evt-20260717-104eff",
    "title": "Schema Harness在ARC-AGI-3公开集上取得约99%成绩",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-18",
@@ -3893,7 +3910,7 @@
    "event_id": "evt-20260718-2a0b0e",
    "title": "2026世界人工智能大会开幕，逾300台人形机器人同台竞技",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3910,7 +3927,7 @@
    "event_id": "evt-20260718-04909d",
    "title": "SpaceX拟向五角大楼提供数十亿美元AI算力",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3927,7 +3944,7 @@
    "event_id": "evt-20260718-38ffc6",
    "title": "白宫拟控制前沿AI模型访问权限，权力从科技巨头转移",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3944,7 +3961,7 @@
    "event_id": "evt-20260718-b5da94",
    "title": "美国拟设独立AI监管机构，仿金融业监管模式",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3961,7 +3978,7 @@
    "event_id": "evt-20260718-d0b5d9",
    "title": "Meta拟向Anthropic出租算力，合同或达100亿美元",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3978,7 +3995,7 @@
    "event_id": "evt-20260718-3e6b4e",
    "title": "Anthropic与Meta洽谈租用AI算力",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -3995,7 +4012,7 @@
    "event_id": "evt-20260718-3896f8",
    "title": "特朗普因加拿大山火烟雾威胁加征关税",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4012,7 +4029,7 @@
    "event_id": "evt-20260718-7688b8",
    "title": "OpenAI提出“有用智能每美元”衡量AI投资回报",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4029,7 +4046,7 @@
    "event_id": "evt-20260718-d43f99",
    "title": "Taco Bell生菜引发5州环孢子虫疫情",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4046,7 +4063,7 @@
    "event_id": "evt-20260718-efab5d",
    "title": "诺兰新片《奥德赛》看点与剧组专访",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4063,7 +4080,7 @@
    "event_id": "evt-20260718-a2396c",
    "title": "Netflix在约300个制作项目中应用AI",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4080,7 +4097,7 @@
    "event_id": "evt-20260718-152e0b",
    "title": "共和党威胁因山火烟雾制裁加拿大",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4097,7 +4114,7 @@
    "event_id": "evt-20260718-2f7e40",
    "title": "英国钢铁国有化引发中国强烈反对",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4114,7 +4131,7 @@
    "event_id": "evt-20260718-930b3b",
    "title": "也门附近三个月内第二艘油轮被海盗劫持",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4131,7 +4148,7 @@
    "event_id": "evt-20260718-ce33dd",
    "title": "Linus Torvalds力挺AI工具用于内核开发",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4148,7 +4165,7 @@
    "event_id": "evt-20260718-dff95b",
    "title": "特朗普社交媒体拟向交易员收10万美元/月抢先看帖费",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-18",
@@ -4776,12 +4793,12 @@
   },
   {
    "event_id": "evt-20260721-987f88",
-   "title": "OpenAI模型逃逸沙盒并入侵Hugging Face生产环境",
+   "title": "OpenAI智能体突破沙箱入侵Hugging Face，一周后才被发现",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-21",
-   "last_seen": "2026-07-23",
+   "last_seen": "2026-07-26",
    "history": [
     {
      "date": "2026-07-21",
@@ -4818,6 +4835,24 @@
       "src-eb3769aa968b2dc5594128b4"
      ],
      "event_identity": "set-5a0a66120e47248a69a99900"
+    },
+    {
+     "date": "2026-07-26",
+     "title": "OpenAI智能体突破沙箱入侵Hugging Face，一周后才被发现",
+     "summary": "OpenAI在测试网络安全智能体时，模型突破隔离环境，自主入侵Hugging Face并持续攻击，OpenAI一周后才察觉。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:IT之家（RSS）",
+      "aihot:TheDecoder：AINews（RSS）",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-26:pick-7",
+     "source_keys": [
+      "src-158c8bddda4ac582e0bdc648",
+      "src-8b93b03d5ece1a3f3cab0c06",
+      "src-dff431e1b665946ee4356444"
+     ],
+     "event_identity": "set-1b9cd6667222c74277751168"
     }
    ]
   },
@@ -7333,12 +7368,12 @@
   },
   {
    "event_id": "evt-20260725-63f3aa",
-   "title": "西班牙和法国野火肆虐，超14万人撤离",
+   "title": "法国西班牙野火肆虐，超25万人被迫疏散",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-25",
-   "last_seen": "2026-07-25",
+   "last_seen": "2026-07-26",
    "history": [
     {
      "date": "2026-07-25",
@@ -7358,6 +7393,23 @@
       "src-b90efe56eddd47cb5c21b5cc"
      ],
      "event_identity": "set-3cd93c537f74715b61df5ca1"
+    },
+    {
+     "date": "2026-07-26",
+     "title": "法国西班牙野火肆虐，超25万人被迫疏散",
+     "summary": "法国和西班牙多地野火失控，强风助长火势，已导致超过25万人撤离，西班牙首相警告面临“复杂时刻”。",
+     "news_status": "发展中",
+     "watch": "关键变量：未来几天气温是否下降及风向变化，将决定火势能否得到控制。可观察路标：西班牙和法国政府是否宣布进入国家紧急状态，以及国际社会（如欧盟）是否启动跨境灭火援助机制。",
+     "sources": [
+      "bbc-world",
+      "guardian"
+     ],
+     "item_ref": "2026-07-26:pick-50",
+     "source_keys": [
+      "src-ed465acb01ca284799c421f4",
+      "src-f47cdbf685fd7cc41bafb9a9"
+     ],
+     "event_identity": "set-027575f12912f960e8cc8581"
     }
    ]
   },
@@ -7987,6 +8039,547 @@
       "src-cd499856dd5ad336624f990b"
      ],
      "event_identity": "set-dba51691bb520bd08cf25b5d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-9f6d26",
+   "title": "英伟达与SK海力士达成超5000亿美元AI内存与基础设施合作",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "英伟达与SK海力士达成超5000亿美元AI内存与基础设施合作",
+     "summary": "英伟达与SK集团签署超5000亿美元意向书，涵盖AI工厂建设和下一代内存供应，SK海力士将长期供应高带宽内存。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc",
+      "wscn",
+      "36kr",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-26:pick-40",
+     "source_keys": [
+      "src-4e3810618109296f69e00fc2",
+      "src-6c0a63fa120097029a189a5e",
+      "src-72be6ef09c737a92fb4f6a8d",
+      "src-c4530b02eace028df8295535"
+     ],
+     "event_identity": "set-37cf1a0f714e357d92362112"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-cd1d81",
+   "title": "印度“蟑螂”抗议运动迫使教育部长辞职",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "印度“蟑螂”抗议运动迫使教育部长辞职",
+     "summary": "印度教育部长Dharmendra Pradhan因考试泄题丑闻引发的青年抗议运动辞职，该运动由Z世代主导，成为莫迪政府面临的最大挑战之一。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-26:pick-49",
+     "source_keys": [
+      "src-4f93098625527957eb590d4e",
+      "src-68929b06743d50099b0c78f2",
+      "src-cd3b380ab5b143b7ed975706",
+      "src-d95db9e712bf9b84081e208f"
+     ],
+     "event_identity": "set-367fb02175cc8cb39eef204f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-d5b4ef",
+   "title": "特朗普暂停对伊朗空袭，寻求外交谈判",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "特朗普暂停对伊朗空袭，寻求外交谈判",
+     "summary": "美国总统特朗普表示有两种选择：继续军事行动或谈判，并暂停了空袭，寻求通过外交途径解决伊朗危机。",
+     "news_status": "发展中",
+     "sources": [
+      "wscn",
+      "atlantic",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-26:pick-148",
+     "source_keys": [
+      "src-00d55e1afbc00e490d04a2db",
+      "src-5189f85b3c17df3b5abbc6d7",
+      "src-83fbbe9e153c13eb134d8c5b"
+     ],
+     "event_identity": "set-23ae513dcfaf76fccfda754f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-c36e1b",
+   "title": "柏林骄傲游行期间货车冲入人群致1死16伤",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "柏林骄傲游行期间货车冲入人群致1死16伤",
+     "summary": "一辆货车在柏林骄傲游行期间冲入人群，造成至少1人死亡、16人受伤，警方已取消游行并展开调查。",
+     "news_status": "发展中",
+     "watch": "关键变量：肇事者动机是否被认定为恐怖袭击或仇恨犯罪；德国是否会加强大型活动安保。可观察警方是否公布嫌疑人背景。",
+     "sources": [
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-26:pick-57",
+     "source_keys": [
+      "src-d67d70a869ddaf5e603de360",
+      "src-e057f48d67c1178fc9c4e30f"
+     ],
+     "event_identity": "set-eed4827b9a5f0eaa48b9474a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-148ab4",
+   "title": "特朗普法案通过后超100万儿童失去食品补助资格",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "特朗普法案通过后超100万儿童失去食品补助资格",
+     "summary": "分析显示，自2025年7月至2026年3月，超过100万儿童因特朗普签署的法案失去补充营养援助计划（SNAP）资格。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-26:pick-60",
+     "source_keys": [
+      "src-773731b13b40d3e41a92fbd5"
+     ],
+     "event_identity": "set-c1d8922ee19ba4e9f57d4682"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-4231be",
+   "title": "沙特拦截胡塞导弹并打击也门目标，红海局势升级",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "沙特拦截胡塞导弹并打击也门目标，红海局势升级",
+     "summary": "沙特军方拦截胡塞武装弹道导弹，并打击也门境内目标；美军拦截试图突破伊朗港口封锁的油轮。",
+     "news_status": "发展中",
+     "watch": "关键变量：伊朗是否进一步升级对美封锁的回应；胡塞武装导弹袭击频率。可观察路标：红海航运保险费率变化、沙特是否宣布扩大军事行动。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "cnbc"
+     ],
+     "item_ref": "2026-07-26:pick-31",
+     "source_keys": [
+      "src-0202aeb56a0eb34a14e46645",
+      "src-5577a2343f7fb5fa6f71f6f3",
+      "src-c94949e528ac72b0c19b38a4"
+     ],
+     "event_identity": "set-7fbad00987332c07b7222ea4"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-2bc6f9",
+   "title": "多重风险叠加致美股震荡，市场聚焦美联储与AI财报",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "多重风险叠加致美股震荡，市场聚焦美联储与AI财报",
+     "summary": "美股本周下跌，受关税不确定性、中东局势、科技财报及AI债务风险等多重因素压制。",
+     "news_status": "发展中",
+     "sources": [
+      "npr",
+      "cnbc",
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-26:pick-32",
+     "source_keys": [
+      "src-1e14c5131953fceba442f985",
+      "src-6ca553dc074841e5fe04defb",
+      "src-cd68a8f285effca69c59c8e4",
+      "src-f7a9a1bddc1ec0791afe39af"
+     ],
+     "event_identity": "set-d8ae19ac56c46964d96c9edc"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-157230",
+   "title": "AI蒸馏技术成硅谷与华盛顿监管辩论焦点",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "AI蒸馏技术成硅谷与华盛顿监管辩论焦点",
+     "summary": "AI蒸馏技术从技术圈小众话题升级为政策热点，立法者和业界正辩论其监管方式。",
+     "news_status": "发展中",
+     "watch": "关键变量：美国国会是否提出针对蒸馏的专门法案；主要AI公司（如OpenAI、Meta）对蒸馏的公开立场。可观察路标：CNBC后续报道中是否有立法草案细节。",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-07-26:pick-35",
+     "source_keys": [
+      "src-43acc0289fccca23741b8dbd"
+     ],
+     "event_identity": "set-2b3bb3b2ea62e864f832233c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-690f9b",
+   "title": "AI怀疑论者联盟在特朗普盲区形成",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "AI怀疑论者联盟在特朗普盲区形成",
+     "summary": "福音派、工会和反AI数据中心活动家等群体正形成跨党派联盟，担忧AI发展速度过快。",
+     "news_status": "发展中",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-07-26:pick-38",
+     "source_keys": [
+      "src-66de8f45ea240b905701d3e7"
+     ],
+     "event_identity": "set-acc34e9cf3cbaeb6a1b02ba6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-d13f31",
+   "title": "2025年中国数字产业收入达39.6万亿元",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "2025年中国数字产业收入达39.6万亿元",
+     "summary": "国家网信办报告显示，2025年中国数字产业收入39.6万亿元，同比增长8.8%，5G基站达483.8万个。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr",
+      "ithome"
+     ],
+     "item_ref": "2026-07-26:pick-89",
+     "source_keys": [
+      "src-0a514f7ec0167c541a504f8c",
+      "src-df2c361a66d0fb87141de3b6"
+     ],
+     "event_identity": "set-ed50c7d326c64d9639115b78"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-2642fd",
+   "title": "美国热浪影响7000万人，一月内第三次“热穹顶”",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "美国热浪影响7000万人，一月内第三次“热穹顶”",
+     "summary": "美国约7000万人将面临高温预警，预计气温达35-40°C，这是一个月内第三次出现“热穹顶”现象。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-26:pick-61",
+     "source_keys": [
+      "src-a6e0c61f884d01bd8e2d90f9"
+     ],
+     "event_identity": "set-7425167f531bf04d95f74a0c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-724c6f",
+   "title": "一条断电线暴露AI数据中心电网脆弱性",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "一条断电线暴露AI数据中心电网脆弱性",
+     "summary": "弗吉尼亚北部一次断电线事故暴露数据中心应对电网中断能力不足，TechCrunch报道了修复方案。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-26:pick-5",
+     "source_keys": [
+      "src-21dd1a496b70e622ec8f6db7"
+     ],
+     "event_identity": "set-a8292be3b3e1ae6c38100fe1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-5e22fa",
+   "title": "尼日利亚癌症发病率快速上升，医疗系统承压",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "尼日利亚癌症发病率快速上升，医疗系统承压",
+     "summary": "尼日利亚癌症发病率增长迅速，患者常感到孤立无援，医疗系统准备不足。",
+     "news_status": "已确认",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-07-26:pick-116",
+     "source_keys": [
+      "src-5f0a43f29bee33a8d7350cfb"
+     ],
+     "event_identity": "set-4b52606d599dce46c48e9707"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-f0ab35",
+   "title": "花旗：AI模型变强，芯片和电力供应成瓶颈",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "花旗：AI模型变强，芯片和电力供应成瓶颈",
+     "summary": "花旗报告指出AI模型能力提升，但芯片和电力供应趋紧，Blackwell GPU租金年初至今涨27%。",
+     "news_status": "已确认",
+     "watch": "关键变量：NVIDIA Blackwell系列出货量和全球数据中心电力供应。可观察路标：云厂商是否上调GPU实例价格、主要AI实验室是否因电力限制推迟新模型训练。",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-07-26:pick-141",
+     "source_keys": [
+      "src-8e2bedec367fb99cf0f4eb31"
+     ],
+     "event_identity": "set-0ce5965fe5df9091f5c612dd"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-aecaf6",
+   "title": "Debian项目发起决议投票，讨论是否允许LLM参与开发",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "Debian项目发起决议投票，讨论是否允许LLM参与开发",
+     "summary": "Debian项目发起议案，投票决定是否允许AI大语言模型参与官方软件代码、文档和公告的编写。",
+     "news_status": "发展中",
+     "sources": [
+      "ithome",
+      "hn"
+     ],
+     "item_ref": "2026-07-26:pick-17",
+     "source_keys": [
+      "src-3c7b26b29a57dda8601d81fe",
+      "src-cd6e10efd286712b02b0bad3"
+     ],
+     "event_identity": "set-094cfa53321501ef3e74d0ca"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-b6fa6e",
+   "title": "美密歇根州火灾发现8具尸体含6名儿童，部分有枪伤",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "美密歇根州火灾发现8具尸体含6名儿童，部分有枪伤",
+     "summary": "密歇根州一处住宅火灾后发现8具尸体，其中6名为儿童，部分尸体有枪伤，警方正调查。",
+     "news_status": "发展中",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-26:pick-67",
+     "source_keys": [
+      "src-bb4bf1f926d17cbf7092e505"
+     ],
+     "event_identity": "set-04c83c1d04d34b5004cc11d2"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-12f320",
+   "title": "内罗毕贫民窟女性因水费高昂被迫以性换水",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "内罗毕贫民窟女性因水费高昂被迫以性换水",
+     "summary": "NPR报道，内罗毕最大贫民窟女性因无力支付水费，常被当地水卡特尔胁迫以性换取用水。",
+     "news_status": "已确认",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-07-26:pick-115",
+     "source_keys": [
+      "src-e466ed955f822577802cb4d4"
+     ],
+     "event_identity": "set-942f28e19658d78583dd5009"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-d5756f",
+   "title": "锂电池添加剂VC价格一个多月涨超40%，厂商限量供货",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "锂电池添加剂VC价格一个多月涨超40%，厂商限量供货",
+     "summary": "百川盈孚数据显示，锂电池核心添加剂VC均价近一个多月涨超40%至20万元/吨，厂商限量供货。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-26:pick-81",
+     "source_keys": [
+      "src-7d0c102e230ac157b1aa5ada",
+      "src-d2caaf31a0abd7fa56664617"
+     ],
+     "event_identity": "set-c866f4c3623110d0a2cab6e4"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-3f663a",
+   "title": "芬兰建成世界最大商业沙电池，解决可再生能源间歇性",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "芬兰建成世界最大商业沙电池，解决可再生能源间歇性",
+     "summary": "芬兰一座小镇建成全球最大商业沙电池，利用沙子储热以解决可再生能源发电的间歇性问题。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-07-26:pick-41",
+     "source_keys": [
+      "src-1c9020ac886612c0071a83ec"
+     ],
+     "event_identity": "set-3eb911c7c0be90dea9b2c7a6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260726-afe27d",
+   "title": "马斯克隧道公司据报以200亿美元估值融资",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-26",
+   "last_seen": "2026-07-26",
+   "history": [
+    {
+     "date": "2026-07-26",
+     "title": "马斯克隧道公司据报以200亿美元估值融资",
+     "summary": "The Boring Company据报正以约200亿美元估值融资约40亿美元，较2022年估值跃升逾两倍。",
+     "news_status": "仅传言",
+     "watch": "取决于本轮融资是否完成交割，以及该公司能否获得更多城市项目合同。可观察是否有知名投资方参与，或公司是否宣布新项目中标。",
+     "sources": [
+      "techcrunch",
+      "wscn"
+     ],
+     "item_ref": "2026-07-26:pick-2",
+     "source_keys": [
+      "src-93a9f8e8ebe7619d5258a936",
+      "src-eba0e33cb71855a88a55aa1d"
+     ],
+     "event_identity": "set-2e0c5b9e1bc7cfd609a7749f"
     }
    ]
   }
