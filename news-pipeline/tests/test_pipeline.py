@@ -2026,6 +2026,10 @@ check("enrich prompt 要求起因只抽取不推断",
       all(token in _prompt_llm.system for token in (
           "只写原始报道中明确陈述或明确归因", "来源没有说明原因就留空",
           "禁止写名词解释")))
+check("enrich prompt 列出起因的四种禁止写法",
+      all(token in _prompt_llm.system for token in (
+          "任何推测性归因", "复述 title/summary 已有的当日事实",
+          "那是 watch 的职责", "无因果关系的并列背景")))
 check("enrich prompt 允许 claims 为空",
       "允许空数组" in _prompt_llm.system and _prompt_event[0]["claims"] == [])
 check("enrich 深度受摘要证据约束",
