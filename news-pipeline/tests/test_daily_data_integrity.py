@@ -103,17 +103,27 @@ def test_repaired_titles_match_daily_registry_feed_and_search_index():
     registry = json.loads(
         (DATA_DIR / "events.json").read_text(encoding="utf-8"))
     registered = {}
+    # An event's own title tracks its newest update, so it only has to match a
+    # repaired row while that row is still the line's latest one.
+    latest_registered = {}
     for event in registry.get("events") or []:
-        for row in event.get("history") or []:
+        history = event.get("history") or []
+        latest_ref = max(
+            history, key=lambda row: str(row.get("date") or ""),
+            default={}).get("item_ref", "")
+        for row in history:
             item_ref = row.get("item_ref", "")
             if ":" not in item_ref:
                 continue
             date, item_id = item_ref.split(":", 1)
             key = (date, item_id)
             if key in REPAIRED_TITLES:
-                registered[key] = (row.get("title"), event.get("title"))
-    assert registered == {
-        key: (title, title) for key, title in REPAIRED_TITLES.items()
+                registered[key] = row.get("title")
+                if item_ref == latest_ref:
+                    latest_registered[key] = event.get("title")
+    assert registered == REPAIRED_TITLES
+    assert latest_registered == {
+        key: REPAIRED_TITLES[key] for key in latest_registered
     }
 
     index_raw = (DATA_DIR / "search_index.js").read_text(encoding="utf-8")

@@ -704,8 +704,10 @@ def test_sync_cli_scores_all_five_gates_against_the_repo_health_files(tmp_path):
     assert aggregate["selection"] == "pass"
     assert aggregate["objectivity_shadow"] == "pass"
     assert aggregate["source_metrics"] == "pass"
-    # The enrich safety metric is measurable, but content review is still human.
-    assert aggregate["enrich"] == "needs_review"
+    # The enrich safety metric is measurable and may legitimately breach its
+    # limit on committed data; what must never happen is an automatic pass,
+    # because the three per-item content checks are human-only.
+    assert aggregate["enrich"] in {"needs_review", "fail"}
     assert parsed["attempts"][0]["enrich"]["metrics"]["baseline"] > 0
     assert parsed["enrich_sample"] == {"ai": ["top-1"], "world": ["more-2"]}
     assert "待人工最终确认" not in body

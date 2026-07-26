@@ -593,9 +593,11 @@ deep_sources:
     lang: en
     channel: ai_engineering
     enabled: true
+  # 2026-07-26 换址：原 importai.substack.com/feed 在 Actions 出口被封，
+  # 07-18~07-26 连续 9 天 fetch_failed（同一 URL 本地可取 200）。自有域名可达。
   - id: importai
     name: Import AI
-    url: https://importai.substack.com/feed
+    url: https://jack-clark.net/feed/
     lang: en
     channel: ai_engineering
     enabled: true
@@ -686,7 +688,11 @@ deep_sources:
     channel: tech_business
     enabled: true
 
-  # ---------- 第二阶段：晚点长报道（适配器已就绪，待第一阶段验收） ----------
+  # ---------- 第二阶段：晚点长报道（暂缓，对方 TLS 证书过期） ----------
+  # 阮一峰数据门已于 2026-07-26 判定通过（07-13~07-25 deep_health 零抓取失败、
+  # 全链路跑通），tech_business 观察位已释放，本源本应接替进入观察期。
+  # 但 2026-07-26 实测 www.latepost.com 证书已过期（SEC_E_CERT_EXPIRED），
+  # 适配器 100% 抓取失败。不得为此关闭证书校验；待对方续期后复测再启用。
   - id: latepost
     name: 晚点 LatePost
     type: latepost
@@ -696,14 +702,16 @@ deep_sources:
     enabled: false
 
   # ---------- 第三阶段：英文财经（顺序单源启用） ----------
+  # 2026-07-26 启用。URL 用自有域名而非 noahpinion.substack.com：
+  # *.substack.com 在 Actions 出口被封（见 importai 记录），自定义域不受影响。
   - id: noahpinion
     name: Noahpinion
     type: rss
-    url: https://noahpinion.substack.com/feed
+    url: https://www.noahpinion.blog/feed
     lang: en
     channel: society_finance
     topic_filter: finance
-    enabled: false
+    enabled: true
   - id: marginal-revolution
     name: Marginal Revolution
     type: rss
@@ -712,7 +720,8 @@ deep_sources:
     channel: society_finance
     topic_filter: finance
     enabled: false
-  # 低频源：历史文章只做资格审查，生产仍用 deep.window_hours 窗口。
+  # 2026-07-26 判死，退出候选队列：feed 可达且可解析，但最新一篇停在
+  # 2026-05-03，近三个月未更新；78 小时生产窗口下恒为 0 篇，不构成深读供给。
   - id: apricitas
     name: Apricitas Economics
     type: rss
@@ -721,6 +730,9 @@ deep_sources:
     channel: society_finance
     topic_filter: finance
     enabled: false
+  # 2026-07-26 判死，退出候选队列：kyla.substack.com 在 Actions 出口被封，
+  # kylascanlon.com/feed 返回 404（无自有域名镜像）；且源本身最新一篇停在
+  # 2026-05-28，两个月未更新，即使可达也不构成深读供给。
   - id: kyla-scanlon
     name: Kyla's Newsletter
     type: rss

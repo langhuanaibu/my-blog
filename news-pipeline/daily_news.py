@@ -330,16 +330,31 @@ def write_shadow_summary(summary, environ=None):
     return True
 
 
+def public_item_id(event, tier):
+    """The identifier `event_to_item` will publish for this event.
+
+    Kept as the single source of the formula so the enrich sample can name
+    items before the daily payload exists.
+    """
+    ids = event.get("ids") if isinstance(event, dict) else None
+    if not isinstance(ids, list) or not ids:
+        return ""
+    return f"{tier}-{ids[0]}"
+
+
 def build_enrich_sample(picked, date_str):
     """Choose one item per non-empty category as that day's enrich review list.
 
     The choice is derived from the date so a same-day rerun names the same
     items and the human review list never shifts underneath the ledger.
+    Selected events arrive here as raw events, whose public identifier is only
+    minted later in `event_to_item`, so derive the same `pick` identifier
+    rather than reading an `id` the event never carries.
     """
     by_category = {}
     for item in picked or []:
         category = str(item.get("category") or "")
-        item_id = str(item.get("id") or "")
+        item_id = str(item.get("id") or "") or public_item_id(item, "pick")
         if category in CATEGORIES and item_id:
             by_category.setdefault(category, []).append(item_id)
     sample = {}
@@ -5092,7 +5107,7 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
                 source["evidence_chain"] = chain
         sources.append(source)
     item = {
-        "id": f"{tier}-{ids[0]}",
+        "id": public_item_id(ev, tier),
         "tier": tier,
         "category": ev["category"],
         "title": ev.get("title", primary["title"]),

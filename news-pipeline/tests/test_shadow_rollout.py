@@ -1658,6 +1658,25 @@ def test_enrich_sample_picks_one_stable_item_per_non_empty_category():
     assert dn.build_enrich_sample([], "2026-07-26") == {}
 
 
+def test_enrich_sample_names_raw_selected_events():
+    # `main` samples the selected events, which only gain their public id later
+    # in `event_to_item`; naming them must not wait for the daily payload.
+    picked = [
+        {"ids": [11, 4], "category": "ai"},
+        {"ids": [7], "category": "finance"},
+        {"ids": [], "category": "world"},
+    ]
+
+    sample = dn.build_enrich_sample(picked, "2026-07-26")
+
+    assert set(sample) == {"ai", "finance"}
+    assert sample["ai"] == ["pick-11"]
+    assert sample["finance"] == ["pick-7"]
+    # The named identifier is the one readers see on the published item.
+    assert sample["ai"][0] == dn.public_item_id(picked[0], "pick")
+    assert dn.build_enrich_sample(picked, "2026-07-26") == sample
+
+
 def test_enrich_sample_is_allow_listed_and_rejects_smuggled_text():
     rv_path = PIPELINE_DIR / "rollout_validation.py"
     rv_spec = importlib.util.spec_from_file_location("rv_enrich_test", rv_path)
