@@ -113,7 +113,7 @@ ROLLOUT_QUALITY_FIELDS = {
     "article_http_requests", "evidence_fulltext_sources", "evidence_snippet_sources",
     "high_risk_single_publisher", "corroboration_candidates", "corroboration_matches",
     "objectivity_audited", "objectivity_repaired", "objectivity_degraded",
-    "high_risk_demoted", "cause_evidence_rejected",
+    "high_risk_demoted", "cause_evidence_rejected", "cause_speculation_rejected",
 }
 
 
@@ -143,6 +143,7 @@ def new_quality_stats():
         "objectivity_degraded": 0,
         "high_risk_demoted": 0,
         "cause_evidence_rejected": 0,
+        "cause_speculation_rejected": 0,
         "degraded": False,
     }
 
@@ -2654,6 +2655,12 @@ def sanitize_claims(raw_claims, source_names):
 CAUSE_EVIDENCE_MAX_CHARS = 160
 CAUSE_EVIDENCE_MIN_CHARS = 12
 CAUSE_EVIDENCE_MATCH_RATIO = 0.9
+# 起因只陈述事实。带推测或动机语气而不归属给任何一方的写法一律丢弃：
+# 引文可以是真的，从它推出的动机却是模型加的，这正是客观性规范禁止的那一类。
+CAUSE_SPECULATION_RE = re.compile(
+    r"可能|或许|大概|据信|疑似|恐将|料将|意在|旨在|企图|似乎|理论上")
+CAUSE_ATTRIBUTION_RE = re.compile(
+    r"称|表示|指出|认为|报道|披露|声明|通报|发言人|回应")
 
 
 def _event_evidence_texts(event, items):
@@ -2704,7 +2711,14 @@ def verify_cause_evidence(event, items, quality=None):
         event.pop("context", None)
         if quality is not None:
             quality["cause_evidence_rejected"] += 1
-    return matched
+        return False
+    if (CAUSE_SPECULATION_RE.search(cause)
+            and not CAUSE_ATTRIBUTION_RE.search(cause)):
+        event.pop("context", None)
+        if quality is not None:
+            quality["cause_speculation_rejected"] += 1
+        return False
+    return True
 
 
 def _clip_objectivity_field(field, value):
@@ -6864,8 +6878,9 @@ def _run_pipeline(started_at, args, cfg, policy):
 
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
     enrich(llm, picked, items, cfg, profile, quality)
-    if quality.get("cause_evidence_rejected"):
-        log(f"  起因原文核对：清空 {quality['cause_evidence_rejected']} 条无法回溯的起因")
+    if quality.get("cause_evidence_rejected") or quality.get("cause_speculation_rejected"):
+        log(f"  起因核对：清空 {quality['cause_evidence_rejected']} 条无法回溯、"
+            f"{quality['cause_speculation_rejected']} 条未归因推测")
     log("质量审计：核对精加工内容的事实支撑 ...")
     run_audit_enrichment_support_stage(
         policy, audit_llm, picked, secondary, items, quality)

@@ -162,6 +162,53 @@ def test_enrich_keeps_backed_cause_end_to_end():
     assert quality["cause_evidence_rejected"] == 0
 
 
+SPECULATION_ARTICLE = (
+    "ARC-AGI-3的格式和任务类型在Opus 5开发前已公开。"
+    "Anthropic发言人称公司未针对该基准做专门训练。"
+)
+
+
+def _speculation_items():
+    items = _items(SPECULATION_ARTICLE)
+    items[0]["title"] = "Opus 5 在 ARC-AGI-3 创纪录"
+    return items
+
+
+def test_unattributed_speculation_is_dropped_even_with_a_real_span():
+    """探针第三轮的真实产出：引文属实，但从它推出的动机是模型加的。"""
+    event = _event(
+        "ARC-AGI-3的格式和任务类型在Opus 5开发前已公开，"
+        "Anthropic可能针对性地进行了数据标注和强化学习训练。",
+        "ARC-AGI-3的格式和任务类型在Opus 5开发前已公开。")
+    quality = dn.new_quality_stats()
+
+    assert dn.verify_cause_evidence(event, _speculation_items(), quality) is False
+    assert "context" not in event
+    assert quality["cause_speculation_rejected"] == 1
+    # 片段本身是能对上的，拦下它的是未归因推测这一条
+    assert quality["cause_evidence_rejected"] == 0
+
+
+def test_attributed_speculation_survives():
+    event = _event(
+        "Anthropic发言人称公司未针对该基准做专门训练。",
+        "Anthropic发言人称公司未针对该基准做专门训练。")
+    quality = dn.new_quality_stats()
+
+    assert dn.verify_cause_evidence(event, _speculation_items(), quality) is True
+    assert quality["cause_speculation_rejected"] == 0
+
+
+def test_plain_factual_cause_is_untouched_by_the_speculation_guard():
+    event = _event(
+        "最高法院裁定旧关税违法，白宫改用第301条。",
+        "白宫随即改用第301条重新加征，并选在旧关税到期当天生效。")
+    quality = dn.new_quality_stats()
+
+    assert dn.verify_cause_evidence(event, _items(), quality) is True
+    assert quality["cause_speculation_rejected"] == 0
+
+
 def test_prompt_requires_a_verbatim_span():
     class CapturingLLM:
         system = ""
