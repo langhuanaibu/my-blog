@@ -1987,18 +1987,6 @@
     "scored_events": 0,
     "selected_events": 0
    },
-   "github-blog": {
-    "count": 0,
-    "error": false,
-    "scored_events": 0,
-    "selected_events": 0
-   },
-   "github-changelog": {
-    "count": 0,
-    "error": false,
-    "scored_events": 0,
-    "selected_events": 0
-   },
    "huggingface": {
     "count": 0,
     "error": false,
@@ -2011,20 +1999,8 @@
     "scored_events": 0,
     "selected_events": 0
    },
-   "techcrunch": {
-    "count": 10,
-    "error": false,
-    "scored_events": 7,
-    "selected_events": 2
-   },
-   "cloudflare": {
+   "github-changelog": {
     "count": 0,
-    "error": false,
-    "scored_events": 0,
-    "selected_events": 0
-   },
-   "aihot": {
-    "count": 3,
     "error": false,
     "scored_events": 0,
     "selected_events": 0
@@ -2035,47 +2011,71 @@
     "scored_events": 0,
     "selected_events": 0
    },
-   "hn": {
-    "count": 18,
+   "github-blog": {
+    "count": 0,
     "error": false,
-    "scored_events": 16,
-    "selected_events": 1
+    "scored_events": 0,
+    "selected_events": 0
    },
-   "ars": {
+   "cloudflare": {
+    "count": 0,
+    "error": false,
+    "scored_events": 0,
+    "selected_events": 0
+   },
+   "techcrunch": {
     "count": 6,
     "error": false,
     "scored_events": 6,
     "selected_events": 1
    },
-   "cnbc": {
-    "count": 14,
+   "verge": {
+    "count": 8,
     "error": false,
-    "scored_events": 12,
-    "selected_events": 6
-   },
-   "thedecoder": {
-    "count": 4,
-    "error": false,
-    "scored_events": 2,
+    "scored_events": 8,
     "selected_events": 1
    },
-   "verge": {
-    "count": 9,
+   "ars": {
+    "count": 2,
     "error": false,
-    "scored_events": 3,
+    "scored_events": 2,
     "selected_events": 0
    },
-   "bbc-world": {
-    "count": 15,
+   "hn": {
+    "count": 18,
     "error": false,
-    "scored_events": 3,
-    "selected_events": 3
+    "scored_events": 17,
+    "selected_events": 1
    },
-   "bbc-cn": {
-    "count": 1,
+   "aihot": {
+    "count": 5,
     "error": false,
     "scored_events": 0,
     "selected_events": 0
+   },
+   "cnbc": {
+    "count": 15,
+    "error": false,
+    "scored_events": 14,
+    "selected_events": 2
+   },
+   "thedecoder": {
+    "count": 5,
+    "error": false,
+    "scored_events": 5,
+    "selected_events": 4
+   },
+   "bbc-world": {
+    "count": 11,
+    "error": false,
+    "scored_events": 9,
+    "selected_events": 3
+   },
+   "bbc-cn": {
+    "count": 4,
+    "error": false,
+    "scored_events": 4,
+    "selected_events": 4
    },
    "guardian": {
     "count": 18,
@@ -2083,23 +2083,11 @@
     "scored_events": 16,
     "selected_events": 7
    },
-   "36kr": {
-    "count": 18,
-    "error": false,
-    "scored_events": 17,
-    "selected_events": 4
-   },
    "aljazeera": {
     "count": 18,
     "error": false,
-    "scored_events": 17,
-    "selected_events": 2
-   },
-   "npr": {
-    "count": 10,
-    "error": false,
-    "scored_events": 9,
-    "selected_events": 4
+    "scored_events": 16,
+    "selected_events": 3
    },
    "nyt-cn": {
     "count": 0,
@@ -2107,23 +2095,17 @@
     "scored_events": 0,
     "selected_events": 0
    },
-   "ithome": {
-    "count": 18,
-    "error": false,
-    "scored_events": 18,
-    "selected_events": 2
-   },
-   "wscn": {
-    "count": 16,
+   "npr": {
+    "count": 9,
     "error": false,
     "scored_events": 9,
     "selected_events": 5
    },
-   "atlantic": {
-    "count": 10,
+   "36kr": {
+    "count": 18,
     "error": false,
-    "scored_events": 2,
-    "selected_events": 1
+    "scored_events": 16,
+    "selected_events": 3
    },
    "vercel": {
     "count": 0,
@@ -2131,39 +2113,57 @@
     "scored_events": 0,
     "selected_events": 0
    },
-   "guokr": {
-    "count": 4,
+   "atlantic": {
+    "count": 6,
+    "error": false,
+    "scored_events": 0,
+    "selected_events": 0
+   },
+   "ithome": {
+    "count": 18,
+    "error": false,
+    "scored_events": 14,
+    "selected_events": 0
+   },
+   "wscn": {
+    "count": 13,
+    "error": false,
+    "scored_events": 12,
+    "selected_events": 3
+   },
+   "thepaper-edu": {
+    "count": 3,
     "error": false,
     "scored_events": 3,
+    "selected_events": 0
+   },
+   "anthropic": {
+    "count": 0,
+    "error": false,
+    "scored_events": 0,
+    "selected_events": 0
+   },
+   "guokr": {
+    "count": 3,
+    "error": false,
+    "scored_events": 0,
     "selected_events": 0
    },
    "cls-depth": {
     "count": 18,
     "error": false,
-    "scored_events": 13,
-    "selected_events": 4
-   },
-   "sciencenet": {
-    "count": 7,
-    "error": false,
-    "scored_events": 1,
-    "selected_events": 0
-   },
-   "anthropic": {
-    "count": 0,
-    "error": true,
-    "scored_events": 0,
-    "selected_events": 0
+    "scored_events": 18,
+    "selected_events": 5
    },
    "thepaper": {
-    "count": 0,
-    "error": true,
-    "scored_events": 0,
-    "selected_events": 0
+    "count": 18,
+    "error": false,
+    "scored_events": 17,
+    "selected_events": 2
    },
-   "thepaper-edu": {
-    "count": 0,
-    "error": true,
+   "sciencenet": {
+    "count": 8,
+    "error": false,
     "scored_events": 0,
     "selected_events": 0
    }
