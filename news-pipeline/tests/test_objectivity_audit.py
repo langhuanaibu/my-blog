@@ -1418,8 +1418,9 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
 
     def reply():
         return [[{
-            "idx": 0, **long_values, "claims": [],
-            "status": "已确认", "tags": [],
+            "idx": 0, **long_values,
+            "context_evidence": "正文证据正文证据正文证据",
+            "claims": [], "status": "已确认", "tags": [],
         }]]
 
     interim_event = {

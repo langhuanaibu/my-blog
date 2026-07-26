@@ -79,6 +79,7 @@ def test_enrich_uses_shared_reader_field_limits_in_every_objectivity_mode(
         "summary": "Pilot production has begun.",
         "why": "The result affects the production timetable.",
         "context": "c" * 40,
+        "context_evidence": "full production depends on yield tests",
         "significance": "s" * 40,
         "watch": "w" * 120,
         "claims": [],

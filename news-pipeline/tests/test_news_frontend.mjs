@@ -371,11 +371,26 @@ test("详情不移动非末尾或格式不完整的走向回对", () => {
   }
 });
 
-test("一次性条目的通用背景不被详情误标为来龙", () => {
+test("一次性条目的前情标为起因而不是来龙", () => {
   const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
-  assert.equal(doc.querySelector('[data-trajectory="context"]'), null);
-  assert.doesNotMatch(doc.body.textContent, /来龙|背景机制/);
-  assert.match(doc.body.textContent, /摘要|长叙述|为什么重要/);
+  const context = doc.querySelector('[data-trajectory="context"]');
+  assert.equal(context?.querySelector("h2")?.textContent, "起因");
+  assert.match(context?.textContent || "", /背景机制/);
+  assert.doesNotMatch(doc.body.textContent, /来龙/);
+});
+
+test("起因占据来龙同一槽位并保持阅读顺序", () => {
+  const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
+  const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "why", "body", "watch", "significance"]);
+  assert.equal(sections[0].querySelector("h2")?.textContent, "起因");
+});
+
+test("延续条目的走向回对不被起因标题吞掉", () => {
+  const item = { ...daily.items[0], trusted_continuation: true, context: "既有来龙。走向回对（兑现）：此前路标已有结论。" };
+  const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
+  assert.equal(doc.querySelector('[data-trajectory="context"]')?.querySelector("h2")?.textContent, "来龙");
+  assert.ok(doc.querySelector(".trajectory-recap.recap-兑现"));
 });
 
 test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序", () => {

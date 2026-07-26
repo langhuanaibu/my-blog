@@ -113,7 +113,7 @@ ROLLOUT_QUALITY_FIELDS = {
     "article_http_requests", "evidence_fulltext_sources", "evidence_snippet_sources",
     "high_risk_single_publisher", "corroboration_candidates", "corroboration_matches",
     "objectivity_audited", "objectivity_repaired", "objectivity_degraded",
-    "high_risk_demoted",
+    "high_risk_demoted", "cause_evidence_rejected",
 }
 
 
@@ -142,6 +142,7 @@ def new_quality_stats():
         "objectivity_repaired": 0,
         "objectivity_degraded": 0,
         "high_risk_demoted": 0,
+        "cause_evidence_rejected": 0,
         "degraded": False,
     }
 
@@ -2595,6 +2596,9 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
   （2）复述 title/summary 已有的当日事实，或给它加"首个/最大/最强"之类的定性
   （3）后续走向、市场预期、风险提示——那是 watch 的职责
   （4）与本事件无因果关系的并列背景或同类事件罗列
+- context_evidence: 你写 context 时依据的那一句原文，从上面来源正文里**逐字复制**（12-160字，不要改写、不要拼接、不要翻译）。
+  context 留空时它也留空。这一句会被程序拿去和原文精确比对，对不上 context 会被整条丢弃——
+  所以找不到能逐字支撑的原句时，正确做法是把 context 留空，而不是编一句
 - significance: 个人学习或行动参考（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），具体到该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势；与读者学习参考系无可操作关联就留空，禁止"值得关注""可以了解一下"类空话
 - watch: 走向（≤{watch_limit}字）：说明接下来取决于哪 1-2 个关键变量，并给出至少一个可观察路标。
   仅在当前来源明确提供既有趋势或可比历史时使用类比；禁止具体概率数字、无条件断言和来源外类比
@@ -2616,7 +2620,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - 立场性判断优先归入 claims（kind 用 analysis）并标 source_indexes，不要写进正文的叙述语气里。
 
 只输出 JSON 数组，每个元素：
-{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "significance": "...", "watch": "...", "claims": [{{"text":"...","kind":"fact","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
+{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "context_evidence": "...", "significance": "...", "watch": "...", "claims": [{{"text":"...","kind":"fact","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
 
 
@@ -2645,6 +2649,62 @@ def sanitize_claims(raw_claims, source_names):
         ))
         claims.append({"text": text, "kind": kind, "sources": names})
     return claims
+
+
+CAUSE_EVIDENCE_MAX_CHARS = 160
+CAUSE_EVIDENCE_MIN_CHARS = 12
+CAUSE_EVIDENCE_MATCH_RATIO = 0.9
+
+
+def _event_evidence_texts(event, items):
+    """Return the same source texts enrich was shown, for verbatim checking.
+
+    This mirrors the prompt: evidence_text only exists once the full-text
+    evidence stage has run, and that stage runs exactly when the prompt
+    switches from the RSS summary to the article body.
+    """
+    texts = []
+    for index in _serialized_source_ids(event, items, limit=4):
+        source = items[index]
+        raw = source.get("evidence_text") or source.get("desc") or ""
+        normalized = _normalized_copy_text(raw)
+        if normalized:
+            texts.append(normalized)
+    return texts
+
+
+def verify_cause_evidence(event, items, quality=None):
+    """Blank a cause whose quoted source span is not verbatim in the evidence.
+
+    The model is asked to name the sentence it read the cause from. Research on
+    event causality is clear that unstated causes get invented, so a cause that
+    cannot be traced back to the source text word-for-word is dropped rather
+    than trusted. Paraphrase is rejected on purpose — this gate trades coverage
+    for precision.
+    """
+    cause = str(event.get("context") or "").strip()
+    span = str(event.pop("context_evidence", "") or "").strip()[:CAUSE_EVIDENCE_MAX_CHARS]
+    if not cause:
+        # 空起因沿用 enrich 的既有约定留作空串，由后续清理阶段统一移除
+        return False
+    normalized_span = _normalized_copy_text(span)
+    matched = False
+    if len(normalized_span) >= CAUSE_EVIDENCE_MIN_CHARS:
+        for evidence in _event_evidence_texts(event, items):
+            if normalized_span in evidence:
+                matched = True
+                break
+            overlap = SequenceMatcher(
+                None, normalized_span, evidence,
+                autojunk=False).find_longest_match().size
+            if overlap / len(normalized_span) >= CAUSE_EVIDENCE_MATCH_RATIO:
+                matched = True
+                break
+    if not matched:
+        event.pop("context", None)
+        if quality is not None:
+            quality["cause_evidence_rejected"] += 1
+    return matched
 
 
 def _clip_objectivity_field(field, value):
@@ -2762,7 +2822,7 @@ def sanitize_objectivity_event(event, items=None, quality=None):
     return event
 
 
-def enrich(llm, picked, items, cfg, profile_text=""):
+def enrich(llm, picked, items, cfg, profile_text="", quality=None):
     tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
     tag_set = set(tag_vocab)
     dcfg = cfg.get("detail") or {}
@@ -2827,6 +2887,8 @@ def enrich(llm, picked, items, cfg, profile_text=""):
             ev["summary"] = _clip_objectivity_field("summary", r.get("summary", ""))
             ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
             ev["context"] = _clip_objectivity_field("context", r.get("context", ""))
+            ev["context_evidence"] = r.get("context_evidence", "")
+            verify_cause_evidence(ev, items, quality)
             ev["significance"] = _clip_objectivity_field(
                 "significance", r.get("significance", ""))
             ev["watch"] = _clip_objectivity_field("watch", r.get("watch", ""))
@@ -6801,7 +6863,9 @@ def _run_pipeline(started_at, args, cfg, policy):
         log(f"  全量档评分回填失败（不影响主管线）: {e}")
 
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
-    enrich(llm, picked, items, cfg, profile)
+    enrich(llm, picked, items, cfg, profile, quality)
+    if quality.get("cause_evidence_rejected"):
+        log(f"  起因原文核对：清空 {quality['cause_evidence_rejected']} 条无法回溯的起因")
     log("质量审计：核对精加工内容的事实支撑 ...")
     run_audit_enrichment_support_stage(
         policy, audit_llm, picked, secondary, items, quality)
