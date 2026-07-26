@@ -2145,7 +2145,8 @@ check("事实审计降级输出不重新注入空扩展字段",
 
 _quality_payload = {
     "date": "2026-07-15", "quality": dn.new_quality_stats(),
-    "items": [{"id": "pick-0", "sources": [{"name": "OpenAI", "url": "https://openai.com"}],
+    "items": [{"id": "pick-0", "title": "OpenAI 发布新模型",
+               "sources": [{"name": "OpenAI", "url": "https://openai.com"}],
                "claims": [{"text": "x", "kind": "fact", "sources": ["OpenAI"]}]}],
     "themes": [{"member_ids": ["pick-0"]}],
 }
