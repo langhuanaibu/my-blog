@@ -763,10 +763,11 @@ def test_continuity_rejects_latest_row_marked_irrelevant_despite_latest_flag():
     assert picked[0]["event_id"] != "evt-legacy"
     assert picked[0]["day_count"] == 1
     assert "trusted_continuation" not in picked[0]
-    assert "context" not in picked[0]
+    # 连续性门拒绝后按新事件处理，enrich 起因保留；没有可信延续标记就不会被当作来龙。
+    assert picked[0]["context"] == "Untrusted inherited context"
 
 
-def test_same_category_false_join_fails_closed_as_one_off_without_context():
+def test_same_category_false_join_fails_closed_as_one_off_keeping_cause():
     picked = [{**_picked_event(), "context": "Untrusted inherited context",
                "watch_recap": {"status": "兑现"}}]
     llm = TrustChainLLM([{
@@ -784,12 +785,12 @@ def test_same_category_false_join_fails_closed_as_one_off_without_context():
     assert picked[0]["day_count"] == 1
     assert picked[0]["history_prev"] == []
     assert "trusted_continuation" not in picked[0]
-    assert "context" not in picked[0]
+    assert picked[0]["context"] == "Untrusted inherited context"
     assert "watch_recap" not in picked[0]
     assert len(prepared["events"]) == 2
 
 
-def test_unmatched_one_off_does_not_publish_base_enrich_context():
+def test_unmatched_one_off_publishes_base_enrich_cause():
     picked = [{**_picked_event(), "context": "Generic product background."}]
 
     dn.prepare_registry_transaction(
@@ -797,8 +798,27 @@ def test_unmatched_one_off_does_not_publish_base_enrich_context():
         {"events": {}, "trajectory": {"enabled": True}}, items=_source_items())
     public = dn.event_to_item(picked[0], _source_items(), "pick")
 
+    # 新事件的 context 是 enrich 抽取的起因，照常发布；只有可信延续才读作来龙。
+    assert picked[0]["context"] == "Generic product background."
+    assert public["context"] == "Generic product background."
+    assert "trusted_continuation" not in public
+
+
+def test_trajectory_failure_never_falls_back_to_base_enrich_cause():
+    """ADR 0002：可信延续的来龙必须来自轨迹生成，不得回退到 enrich 起因。"""
+    picked = [{**_picked_event(), "context": "Generic product background."}]
+    llm = TrustChainLLM([{
+        "candidate": 0,
+        "matches_mainline": True,
+        "matches_latest": True,
+        "history": [{"row": 0, "relevant": True}],
+    }])
+
+    dn.prepare_registry_transaction(
+        llm, _legacy_registry(), picked, "2026-07-21",
+        {"events": {}, "trajectory": {"enabled": True}}, items=_source_items())
+
     assert "context" not in picked[0]
-    assert "context" not in public
 
 
 def test_malformed_validation_fails_closed_only_for_affected_candidate():

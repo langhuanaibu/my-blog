@@ -2588,7 +2588,9 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - title: 精炼中文标题（建议≤30字，信息完整，不标题党；不得为满足长度截断语义）
 - summary: 一句话事实增量（≤70字，只说发生了什么和新在哪里；不写影响、背景或行动建议）
 - why: 公共影响及利害关系（≤80字，说明影响谁、为何重要；不复述事件经过，不写个人学习建议）
-- context: 理解事件所需的最短背景或既有机制（≤60字；不重讲当日事实和影响，没有可写就留空）
+- context: 事件为何此时发生（≤60字）。只写原始报道中明确陈述或明确归因的直接诱因、触发点或既有机制；
+  来源没有说明原因就留空，禁止用常识、行业背景或你已知的信息补写，禁止写名词解释。不重讲当日事实和影响。
+  留空是正常输出，不要为填满字段而推断动机或因果
 - significance: 个人学习或行动参考（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），具体到该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势；与读者学习参考系无可操作关联就留空，禁止"值得关注""可以了解一下"类空话
 - watch: 走向（≤{watch_limit}字）：说明接下来取决于哪 1-2 个关键变量，并给出至少一个可观察路标。
   仅在当前来源明确提供既有趋势或可比历史时使用类比；禁止具体概率数字、无条件断言和来源外类比
@@ -4076,12 +4078,15 @@ def _build_trajectory_review_cases(picked, items, cfg):
             trajectory_enabled=_trajectory_enabled(cfg))
         if public.get("trusted_continuation") is not True and not public.get("watch"):
             continue
+        # Judge 只审轨迹：continuity/history_support 仅适用于可信延续，对新事件的
+        # 起因没有判据。把起因投影进去会让整体 decision 因它失败，拖垮轨迹门。
+        trajectory_context = public.get("trusted_continuation") is True
         public_projection = {
             field: copy.deepcopy(public[field])
             for field in (
                 "id", "title", "summary", "context", "watch", "claims",
                 "trusted_continuation", "day_count", "history")
-            if field in public
+            if field in public and (field != "context" or trajectory_context)
         }
         sources = []
         for source_index in _serialized_source_ids(
@@ -4189,13 +4194,13 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             audit_llm=trajectory_audit_llm,
             source_limit=4 if _rollout_output_enabled(cfg) else 5,
             health=health)
-    for today_index, event in enumerate(picked):
-        if today_index not in trajectory_successes:
-            event.pop("context", None)
+    # context 承载两种前情：可信延续是轨迹生成的来龙，新事件是 enrich 抽取的起因。
+    # 进过轨迹批次的事件已在 run_trajectory_stage 里丢掉 enrich 起因，生成失败就没有
+    # 前情可展示；连续性门拒绝的事件按新事件处理，保留它的起因。
     failed_projection_today = {today_index for today_index, _ in pairs} - \
         trajectory_successes
     for today_index in failed_projection_today:
-        for field in ("context", "watch_recap", "recap", "trusted_continuation"):
+        for field in ("watch_recap", "recap", "trusted_continuation"):
             picked[today_index].pop(field, None)
     projected_history = {
         today_index: history
@@ -5117,8 +5122,7 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         **({"why": ev["why"]} if ev.get("why") else {}),
         **({"watch": ev["watch"]} if trajectory_enabled and ev.get("watch") else {}),
         **({"context": ev["context"]}
-           if (trajectory_enabled and ev.get("trusted_continuation") is True
-               and ev.get("context")) else {}),
+           if trajectory_enabled and ev.get("context") else {}),
         **({"significance": ev["significance"]} if ev.get("significance") else {}),
         **({"detail": ev["detail"]} if ev.get("detail") else {}),
         **({"claims": ev["claims"]} if ev.get("claims") else {}),

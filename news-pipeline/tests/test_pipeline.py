@@ -2020,8 +2020,12 @@ dn.enrich(_prompt_llm, _prompt_event, _qa_items, {
 check("enrich 输入显式携带事件类目", "类目：ai" in _prompt_llm.user)
 check("enrich prompt 划清七字段职责",
       all(token in _prompt_llm.system for token in (
-          "事实增量", "公共影响", "最短背景", "个人学习或行动参考",
+          "事实增量", "公共影响", "为何此时发生", "个人学习或行动参考",
           "关键变量", "可观察路标", "不复述其他字段", "分析或不确定判断")))
+check("enrich prompt 要求起因只抽取不推断",
+      all(token in _prompt_llm.system for token in (
+          "只写原始报道中明确陈述或明确归因", "来源没有说明原因就留空",
+          "禁止写名词解释")))
 check("enrich prompt 允许 claims 为空",
       "允许空数组" in _prompt_llm.system and _prompt_event[0]["claims"] == [])
 check("enrich 深度受摘要证据约束",
