@@ -266,7 +266,8 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   if (type === "news") {
     const recapData = item.trusted_continuation === true ? trajectoryRecap(item.context) : null;
     const contextText = recapData ? recapData.context : item.context;
-    const context = item.trusted_continuation === true && contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">来龙</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
+    const contextLabel = item.trusted_continuation === true ? "来龙" : "起因";
+    const context = contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">${contextLabel}</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
     const summaryPart = item.summary ? `<section data-trajectory="current"><h2 class="detail-sec-t">AI 摘要</h2><p class="detail-lede">${escapeHtml(item.summary)}</p></section>` : "";
     const whyPart = item.why ? `<section data-trajectory="why"><h2 class="detail-sec-t">为什么重要</h2><div class="kv why">${escapeHtml(item.why)}</div></section>` : "";
     const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">正文</h2><div class="detail-body"><p>${escapeHtml(item.detail)}</p></div></section>` : "";
