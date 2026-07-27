@@ -119,12 +119,25 @@
       "material_updates": 0,
       "update_judge_failures": 0,
       "degraded": true
+    },
+    {
+      "date": "2026-07-27",
+      "audited_events": 16,
+      "split_events": 4,
+      "removed_fields": 67,
+      "duplicate_audited_events": 160,
+      "same_day_duplicates_merged": 17,
+      "duplicate_audit_failures": 1,
+      "cross_day_duplicates": 95,
+      "material_updates": 3,
+      "update_judge_failures": 0,
+      "degraded": true
     }
   ],
   "summary": {
-    "days": 11,
-    "audited_events": 423,
-    "split_events": 227,
-    "split_rate": 0.5366
+    "days": 12,
+    "audited_events": 439,
+    "split_events": 231,
+    "split_rate": 0.5262
   }
 }

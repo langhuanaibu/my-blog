@@ -1968,12 +1968,12 @@
   },
   {
    "event_id": "evt-20260712-5df466",
-   "title": "美国扩大对伊朗空袭，特朗普威胁大规模军事惩罚",
+   "title": "美伊暂停互袭第二日，停火谈判预期升温",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-12",
-   "last_seen": "2026-07-25",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-12",
@@ -2064,6 +2064,27 @@
       "src-e115cd897f926f0a7eb006a4"
      ],
      "event_identity": "set-3e7a0987fdb49154cfadbc49"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "美伊暂停互袭第二日，停火谈判预期升温",
+     "summary": "美国与伊朗连续第二天暂停相互军事打击，双方均未发动新攻击，外交斡旋重启。",
+     "news_status": "发展中",
+     "watch": "后续取决于：1）外交谈判能否取得实质性进展，如达成临时停火协议；2）双方是否恢复军事打击。可观察：美国是否延长暂停打击期限、伊朗是否释放谈判信号、国际油价是否继续下跌。",
+     "sources": [
+      "guardian",
+      "npr",
+      "aljazeera",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-27:pick-23",
+     "source_keys": [
+      "src-2317dd6e166f47fb21cff375",
+      "src-7a4b0e6e42c419d47765024a",
+      "src-c533218a7312d7835f174793",
+      "src-d2731e771431ce19b17d22f3"
+     ],
+     "event_identity": "set-d67153a5aaf791c02977c7aa"
     }
    ]
   },
@@ -2657,7 +2678,7 @@
    "event_id": "evt-20260714-4e1cfd",
    "title": "匈牙利总统苏廖克因议会通过修宪罢免而同意下台",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-14",
    "last_seen": "2026-07-19",
@@ -2883,12 +2904,12 @@
   },
   {
    "event_id": "evt-20260715-b8964d",
-   "title": "胡塞武装对沙特实施海上禁运，霍尔木兹海峡通航量降至零",
+   "title": "无人机袭击中断哈萨克斯坦石油出口",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-15",
-   "last_seen": "2026-07-21",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-15",
@@ -2901,6 +2922,21 @@
      "title": "胡塞武装对沙特实施海上禁运，霍尔木兹海峡通航量降至零",
      "summary": "也门胡塞武装宣布对沙特实施海上禁运，同时伊朗称霍尔木兹海峡通航量已降至零，多重封锁威胁全球能源供应。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "无人机袭击中断哈萨克斯坦石油出口",
+     "summary": "无人机袭击导致哈萨克斯坦石油出口中断，给经济和能源市场带来风险。",
+     "news_status": "发展中",
+     "watch": "后续取决于：1）哈萨克斯坦石油出口中断的持续时间及修复进度；2）是否与俄乌战争或更广泛的中东冲突关联。可观察：哈萨克斯坦是否宣布恢复出口时间表、国际油价是否因此上涨。",
+     "sources": [
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-27:pick-64",
+     "source_keys": [
+      "src-4a53d35c071b60d075d93b29"
+     ],
+     "event_identity": "set-11ff0c94626bcf932346a78a"
     }
    ]
   },
@@ -3454,7 +3490,7 @@
    "event_id": "evt-20260717-5f7d8d",
    "title": "月之暗面发布Kimi新版本，AI社区热议“全AI共产主义”",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-19",
@@ -3500,7 +3536,7 @@
    "event_id": "evt-20260717-6c023c",
    "title": "中国成立世界人工智能合作组织，习近平宣布为全球南方提供5000个AI培训名额",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-19",
@@ -4165,7 +4201,7 @@
    "event_id": "evt-20260718-ce0ea2",
    "title": "费城半导体指数较高点回撤20%进入技术性熊市",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-18",
    "last_seen": "2026-07-19",
@@ -4188,7 +4224,7 @@
    "event_id": "evt-20260719-47a9fa",
    "title": "WAIC 2026：华为阿里发布超节点等AI新品，国产算力向系统集成延伸",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4205,7 +4241,7 @@
    "event_id": "evt-20260719-4e8329",
    "title": "英国选手乔什·克尔在伦敦打破一英里世界纪录",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4222,7 +4258,7 @@
    "event_id": "evt-20260719-94a65e",
    "title": "英AI安全研究所：开源模型网络能力落后前沿仅4-7个月",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4239,7 +4275,7 @@
    "event_id": "evt-20260719-2a3de8",
    "title": "美国海军签署新AI战略：缓慢采用比对齐风险更大",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4256,7 +4292,7 @@
    "event_id": "evt-20260719-dc5950",
    "title": "Anthropic大幅削减Claude Fable 5在订阅计划中的使用额度",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4273,7 +4309,7 @@
    "event_id": "evt-20260719-74321a",
    "title": "德国基民盟议会党团领袖因使用代孕辞职",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4290,7 +4326,7 @@
    "event_id": "evt-20260719-e83d71",
    "title": "世界杯决赛：阿根廷对阵西班牙，奖金创纪录",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4307,7 +4343,7 @@
    "event_id": "evt-20260719-40202c",
    "title": "加拿大野火烟雾持续影响美国多州空气质量",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4324,7 +4360,7 @@
    "event_id": "evt-20260719-b5db95",
    "title": "乌克兰无人机袭击俄罗斯电商仓库致火灾",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4341,7 +4377,7 @@
    "event_id": "evt-20260719-4dab5d",
    "title": "印度活动家绝食20天后被强制送医",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4358,7 +4394,7 @@
    "event_id": "evt-20260719-1ef06f",
    "title": "腾讯在WAIC发布具身智能全栈方案",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4375,7 +4411,7 @@
    "event_id": "evt-20260719-e5aef8",
    "title": "阿里云：智能体重塑AI基础设施与SaaS模式",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4392,7 +4428,7 @@
    "event_id": "evt-20260719-752f5a",
    "title": "全国首张脑机接口处方开出并成功植入",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4409,7 +4445,7 @@
    "event_id": "evt-20260719-9c4458",
    "title": "亚利桑那州马里科帕县减少热死亡案例的经验",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4426,7 +4462,7 @@
    "event_id": "evt-20260719-ef4809",
    "title": "罕见生长障碍患者低癌症发生率或提供抗癌线索",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4443,7 +4479,7 @@
    "event_id": "evt-20260719-803203",
    "title": "Index Ventures联合创始人预测AI财富将面临再分配",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-19",
    "last_seen": "2026-07-19",
@@ -4475,12 +4511,12 @@
   },
   {
    "event_id": "evt-20260720-94f555",
-   "title": "英国新首相伯纳姆执政首周：风格迥异于前任，称愿“直言”特朗普",
+   "title": "英国新任首相伯纳姆承诺继续支持乌克兰",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-20",
-   "last_seen": "2026-07-26",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-20",
@@ -4510,6 +4546,23 @@
       "src-9619ddd2b64976165957f27b"
      ],
      "event_identity": "set-635cfcf2656b28b256211a51"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "英国新任首相伯纳姆承诺继续支持乌克兰",
+     "summary": "英国新任首相伯纳姆表示将继续支持乌克兰，并将在海军基地会见乌克兰总统泽连斯基。",
+     "news_status": "已确认",
+     "watch": "后续取决于：1）伯纳姆与泽连斯基会晤的具体成果，如是否宣布新的军事援助；2）伯纳姆对特朗普的直言态度是否影响英美关系。可观察：会晤后是否发布联合声明、英国是否宣布对乌新援助计划。",
+     "sources": [
+      "bbc-world",
+      "guardian"
+     ],
+     "item_ref": "2026-07-27:pick-12",
+     "source_keys": [
+      "src-a86d663f0708ace8da523cda",
+      "src-f607d34ea79e3a73d4cea499"
+     ],
+     "event_identity": "set-3ca28c88895a61ce1c95a6ba"
     }
    ]
   },
@@ -4793,12 +4846,12 @@
   },
   {
    "event_id": "evt-20260721-987f88",
-   "title": "OpenAI AI智能体突破沙盒入侵Hugging Face，持续数天未被发现",
+   "title": "Hugging Face CEO呼吁OpenAI黑客事件后彻底透明",
    "category": "ai",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-21",
-   "last_seen": "2026-07-26",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-21",
@@ -4853,6 +4906,20 @@
       "src-dff431e1b665946ee4356444"
      ],
      "event_identity": "set-1b9cd6667222c74277751168"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "Hugging Face CEO呼吁OpenAI黑客事件后彻底透明",
+     "summary": "Hugging Face CEO称OpenAI黑客事件是“首次自主智能体网络攻击”，呼吁“彻底透明”回应。",
+     "news_status": "发展中",
+     "sources": [
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-27:pick-4",
+     "source_keys": [
+      "src-5686ef652520ec068b1a95fb"
+     ],
+     "event_identity": "set-e65f77b2273657f1e2d6fbc7"
     }
    ]
   },
@@ -8086,12 +8153,12 @@
   },
   {
    "event_id": "evt-20260726-cd1d81",
-   "title": "印度“蟑螂”抗议因教育部长辞职而结束",
+   "title": "印度蟑螂党抗议胜利预示莫迪面临麻烦",
    "category": "world",
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-26",
-   "last_seen": "2026-07-26",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-26",
@@ -8112,6 +8179,20 @@
       "src-d95db9e712bf9b84081e208f"
      ],
      "event_identity": "set-367fb02175cc8cb39eef204f"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "印度蟑螂党抗议胜利预示莫迪面临麻烦",
+     "summary": "印度反对党“蟑螂党”通过抗议迫使一名莫迪盟友辞职，显示反对派势力重振，莫迪对媒体的控制力受挫。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-27:pick-28",
+     "source_keys": [
+      "src-918aa2854d0ac9004a78bb29"
+     ],
+     "event_identity": "set-1c7f10d4e28802e057312ec6"
     }
    ]
   },
@@ -8690,6 +8771,425 @@
       "src-5bdcb2fd6863556d68d7ae5f"
      ],
      "event_identity": "set-b20d38989beae5131edac6e7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-820b27",
+   "title": "柏林骄傲游行袭击嫌疑人被警方击毙",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "柏林骄傲游行袭击嫌疑人被警方击毙",
+     "summary": "涉嫌驾驶货车冲撞柏林骄傲游行人群并持刀伤人的21岁嫌疑人阿卜杜勒·巴卢特，在警方行动中被击毙。",
+     "news_status": "已确认",
+     "watch": "后续关注德国官方对袭击动机的最终定性（是否正式认定为恐袭），以及巴卢特是否有组织背景或精神疾病史。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-27:pick-13",
+     "source_keys": [
+      "src-72fa9821d9b9e69603c4b6a4",
+      "src-9fbe4bcd04efd5c86dbd4207",
+      "src-a1b023e25d7ea2eb5f1b49ab",
+      "src-cfff688e0f17b463965d45f4"
+     ],
+     "event_identity": "set-12c038f54ef5d497ddc5d728"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-41eb80",
+   "title": "工人日报调查付费内推实习陷阱：8万元买实习不敢写进简历",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "工人日报调查付费内推实习陷阱：8万元买实习不敢写进简历",
+     "summary": "《工人日报》调查发现，中介高价贩卖的付费内推实习经历含金量低，学生因无正式录用通知而不敢写入简历。",
+     "news_status": "已确认",
+     "sources": [
+      "thepaper-edu",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-27:pick-94",
+     "source_keys": [
+      "src-a7cb2d1aa6f0b2e00bf10690",
+      "src-eb619d4c09bbcc158db4e279"
+     ],
+     "event_identity": "set-eed39bbbb4cfd95c52090329"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-0f17df",
+   "title": "五角大楼数据库更新显示超600名伊朗战争伤亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "五角大楼数据库更新显示超600名伊朗战争伤亡",
+     "summary": "五角大楼周末更新官方战争伤亡数据库，新增超过600名在伊朗战争中伤亡的美军人员记录。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-27:pick-17",
+     "source_keys": [
+      "src-d9ab600b6fbd5c16bf9bad3f"
+     ],
+     "event_identity": "set-fc239b3d74fb0b136528f8c0"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-9e2018",
+   "title": "英伟达洽谈为OpenAI数据中心提供2500亿美元担保",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "英伟达洽谈为OpenAI数据中心提供2500亿美元担保",
+     "summary": "知情人士称，英伟达正洽谈提供约2500亿美元担保，帮助OpenAI租赁软银在俄亥俄州开发的10吉瓦数据中心枢纽。",
+     "news_status": "发展中",
+     "sources": [
+      "36kr"
+     ],
+     "item_ref": "2026-07-27:pick-33",
+     "source_keys": [
+      "src-734f68b7214e33015c556e62"
+     ],
+     "event_identity": "set-1ee03a5f63dc2c8daad26fde"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-365867",
+   "title": "苹果智能眼镜计划于WWDC27亮相并强调隐私保护",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "苹果智能眼镜计划于WWDC27亮相并强调隐私保护",
+     "summary": "科技记者古尔曼称，苹果计划于2026年6月WWDC27上亮相首款智能眼镜，2027年秋季发布，代号N50。",
+     "news_status": "发展中",
+     "sources": [
+      "techcrunch",
+      "verge",
+      "36kr"
+     ],
+     "item_ref": "2026-07-27:pick-1",
+     "source_keys": [
+      "src-51c220c7cca6034241ae0b07",
+      "src-ac896e7d1b72750e4358b032",
+      "src-fe0987570ab39637f90da683"
+     ],
+     "event_identity": "set-3aceba75e88f36ae3914780d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-45d9fc",
+   "title": "内塔尼亚胡指责纽约市长马姆达尼煽动仇恨并呼吁逮捕自己",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "内塔尼亚胡指责纽约市长马姆达尼煽动仇恨并呼吁逮捕自己",
+     "summary": "以色列总理内塔尼亚胡指责纽约市长马姆达尼煽动仇恨，因其呼吁逮捕内塔尼亚胡，内塔尼亚胡称ICC战争罪指控“虚假”。",
+     "news_status": "发展中",
+     "sources": [
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-27:pick-21",
+     "source_keys": [
+      "src-035226e7aeea36a8ead3105d",
+      "src-c2426edb7163dae315d75178"
+     ],
+     "event_identity": "set-51f116d42a56649920c1a85b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-c5558b",
+   "title": "携程因滥用市场支配地位被罚没51.79亿元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "携程因滥用市场支配地位被罚没51.79亿元",
+     "summary": "市场监管总局依法对携程集团滥用市场支配地位实施垄断行为作出行政处罚，罚没合计51.79亿元。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr"
+     ],
+     "item_ref": "2026-07-27:pick-30",
+     "source_keys": [
+      "src-a87903197980302ff046563e"
+     ],
+     "event_identity": "set-2e5be85d7c813f63e0f48372"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-6438bb",
+   "title": "成都教育局回应中考体育标准过高质疑：符合部委要求",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "成都教育局回应中考体育标准过高质疑：符合部委要求",
+     "summary": "针对网友反映中考体育满分标准过高、催生培训内卷，成都市教育局回应称现行标准符合国家部委要求。",
+     "news_status": "已确认",
+     "sources": [
+      "thepaper-edu",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-27:pick-95",
+     "source_keys": [
+      "src-140bfeafeb91d051edecb3d1",
+      "src-f57fa1192e553bcaf7f57baf"
+     ],
+     "event_identity": "set-c02de28d4f084943ccfb86da"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-3aef89",
+   "title": "以色列定居者焚烧约旦河西岸两座清真寺",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "以色列定居者焚烧约旦河西岸两座清真寺",
+     "summary": "以色列定居者在约旦河西岸分别纵火焚烧两座清真寺，造成严重损坏。",
+     "news_status": "已确认",
+     "sources": [
+      "aljazeera"
+     ],
+     "item_ref": "2026-07-27:pick-59",
+     "source_keys": [
+      "src-3de677b14c17c37f0d72285a"
+     ],
+     "event_identity": "set-d18e0b740f920d98d99cfab6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-912ccc",
+   "title": "三星李在镕与OpenAI奥特曼会面，讨论AI基础设施合作",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "三星李在镕与OpenAI奥特曼会面，讨论AI基础设施合作",
+     "summary": "三星电子会长李在镕在旧金山与OpenAI CEO奥特曼会面，双方可能讨论AI基础设施合作，包括HBM和先进代工。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr"
+     ],
+     "item_ref": "2026-07-27:pick-39",
+     "source_keys": [
+      "src-d5bf08e09e272fddd2048a95"
+     ],
+     "event_identity": "set-05f49c3baff47e4b9e42611c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-295cbf",
+   "title": "英伟达10亿美元投资获Naver 4.5%股份",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "英伟达10亿美元投资获Naver 4.5%股份",
+     "summary": "英伟达按此前宣布的10亿美元战略投资协议，获得韩国互联网巨头Naver的4.5%股份。",
+     "news_status": "已确认",
+     "watch": "后续取决于英伟达与Naver在AI领域的合作具体方向，以及该投资是否引发韩国监管审查。可观察Naver是否推出基于英伟达技术的AI服务。",
+     "sources": [
+      "36kr"
+     ],
+     "item_ref": "2026-07-27:pick-35",
+     "source_keys": [
+      "src-27a7abc4f6e93a203641ab1f"
+     ],
+     "event_identity": "set-a681c0c31ad7584e1a83df2a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-567a32",
+   "title": "经济学家警告油价上涨可能推高英国利率",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "经济学家警告油价上涨可能推高英国利率",
+     "summary": "经济学家称，伊朗冲突再度升级可能推高能源成本，迫使英国央行上调利率。",
+     "news_status": "有争议",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-27:pick-16",
+     "source_keys": [
+      "src-5900754243c1f9cdcc8abe3e"
+     ],
+     "event_identity": "set-f52c2bbe53acaf9f85810250"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-e8a21b",
+   "title": "美国起诉公民在边境删除手机数据",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "美国起诉公民在边境删除手机数据",
+     "summary": "美国政府起诉美国公民Sam Tunick，指控其在边境提供“胁迫密码”导致手机数据被擦除。",
+     "news_status": "发展中",
+     "sources": [
+      "verge"
+     ],
+     "item_ref": "2026-07-27:pick-7",
+     "source_keys": [
+      "src-161248e453e72047c7985f83"
+     ],
+     "event_identity": "set-e32945eb9e96c5a37fb948c1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-a9fb51",
+   "title": "1994年RAF支奴干坠机家属要求审查",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "1994年RAF支奴干坠机家属要求审查",
+     "summary": "1994年RAF支奴干直升机坠毁遇难者家属呼吁安迪·伯纳姆推动独立审查，纳入新证据。",
+     "news_status": "发展中",
+     "watch": "取决于安迪·伯纳姆是否响应呼吁以及政府是否同意启动独立审查。可观察伯纳姆的公开声明及议会相关动议。",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-07-27:pick-15",
+     "source_keys": [
+      "src-0665d357da2ca23bfd2e57b6"
+     ],
+     "event_identity": "set-bebf61cb26c55213dab26a12"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-a6a97f",
+   "title": "中国AI公司Kimi引发硅谷恐慌分析",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "中国AI公司Kimi引发硅谷恐慌分析",
+     "summary": "TechCrunch分析称，中国AI公司Moonshot AI的Kimi产品引发硅谷和华尔街恐慌。",
+     "news_status": "有争议",
+     "sources": [
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-27:pick-2",
+     "source_keys": [
+      "src-fbc68754f5bb0f0bb15b5858"
+     ],
+     "event_identity": "set-af94d413faccd15c3f6445ac"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260727-ff5292",
+   "title": "基金经理张坤大幅增持科技股",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-27",
+   "last_seen": "2026-07-27",
+   "history": [
+    {
+     "date": "2026-07-27",
+     "title": "基金经理张坤大幅增持科技股",
+     "summary": "张坤管理的四只基金在最新一季大幅增持科技股，为其自2021年以来最大的风格变化。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-07-27:pick-92",
+     "source_keys": [
+      "src-71ffac4f438fed856205c7b4"
+     ],
+     "event_identity": "set-a63730e781a6ba6cf6ae0c6e"
     }
    ]
   }
