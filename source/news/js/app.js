@@ -1,5 +1,5 @@
 import { announce, installMobileSearch, installThemeToggles, updateNavigation } from "./accessibility.js";
-import { createAllState, renderAllDynamics } from "./all-view.js";
+import { createAllState, renderAllDynamics, decoratePickedEntries } from "./all-view.js";
 import { createApiClient } from "./api-client.js";
 import { browserDataApi } from "./data-loader.js";
 import { renderFavorites } from "./favorites-view.js";
@@ -102,7 +102,7 @@ export function createNewsApp(options) {
         app.innerHTML = renderDetail(item, route.type, route.date, { personal, ...personalState() }); announce(item ? `已打开 ${item.title_zh || item.title}` : "找不到这条内容", doc); return;
       }
       if (route.view === "timeline") { const tag = new URLSearchParams(win.location.search).get("tag"); if (tag) timelineState.tag = tag; const html = await renderTimeline({ dates: dailyManifest, dataApi, hidden: storage.get(STORAGE_KEYS.hidden), personal, state: timelineState, onData: (data, date) => { if (isCurrent(requestId)) indexData(data, date); }, timelineApi, now: options.now, ...personalState() }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreTimelineFocus) { const input = doc.getElementById("timelineSearch"); input?.focus(); input?.setSelectionRange(timelineCaret, timelineCaret); restoreTimelineFocus = false; } }
-      else if (route.view === "all") { const html = await renderAllDynamics({ dataApi, state: allState }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreAllFocus) { const input = app.querySelector('[data-all-action="search"]'); input?.focus(); input?.setSelectionRange(allCaret, allCaret); restoreAllFocus = false; } }
+      else if (route.view === "all") { const html = await renderAllDynamics({ dataApi, state: allState }); if (!isCurrent(requestId)) return; app.innerHTML = html; if (restoreAllFocus) { const input = app.querySelector('[data-all-action="search"]'); input?.focus(); input?.setSelectionRange(allCaret, allCaret); restoreAllFocus = false; } const latest = app.querySelector(".all-day[data-date]")?.dataset.date; if (latest) decoratePickedEntries({ dataApi, root: app, date: latest, stillCurrent: () => isCurrent(requestId) }); }
       else if (route.view === "topics") { const html = await renderTopics({ dataApi, personal, tracked: storage.get(STORAGE_KEYS.tracked) }); if (!isCurrent(requestId)) return; app.innerHTML = html; }
       else if (route.view === "favs") {
         if (!personal) { app.innerHTML = '<section><h1>收藏</h1><div class="empty" role="status">登录后可查看收藏</div></section>'; }

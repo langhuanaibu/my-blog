@@ -126,6 +126,9 @@ def new_quality_stats():
         "duplicate_audited_events": 0,
         "same_day_duplicates_merged": 0,
         "duplicate_audit_failures": 0,
+        "event_lines_audited": 0,
+        "event_lines_merged": 0,
+        "event_line_audit_failures": 0,
         "cross_day_duplicates": 0,
         "material_updates": 0,
         "update_judge_failures": 0,
@@ -1787,6 +1790,238 @@ def reconcile_same_day_events(llm, events, items, quality=None):
     if len(result) < before:
         log(f"  同日事件归并了 {before - len(result)} 个重复事件")
     return result
+
+
+CROSS_DAY_LINE_RECONCILE_SYSTEM = """你是日报的跨天事件线归并审计员。
+输入是一批事件线，每条带事件线名、分类、日期区间和逐日进展摘要。
+同一条事件线 = 同一件持续发展的具体事情。判据是"是不是同一件事"，不是"是不是同一个主体"。
+同一主体的不同事情（例如同一国家的军事冲突与贸易谈判、同一公司的模型发布与人事变动）必须留成不同事件线。
+只有当两条线记录的是同一件事在不同日子的进展、彼此重复或交错时才归并。
+把握不准就不要合并：漏并只是留下两条线，误并会毁掉事件身份。
+必须把每个输入编号恰好放入一个组，包括无需合并的单元素组。
+只输出 JSON 对象：{"groups":[[0,3],[1],[2,4]]}。不要输出其他文字。"""
+
+CROSS_DAY_LINE_BATCH_SIZE = 20
+# 实测标定：真正的碎片线共享 28-46 个低频键，而符合「同类目+区间重叠」的噪声对
+# 绝大多数只共享 0-3 个。取 8 兼顾两侧余量；共享一个键就配对会把整张登记表连成
+# 一个巨型连通分量，"特朗普""美国"这类词会当桥。
+CROSS_DAY_LINE_MIN_SHARED_KEYS = 8
+_LINE_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def _event_line_span(event):
+    """Return the (earliest, latest) dates this line covers, or ("", "")."""
+    dates = [str(row.get("date") or "")
+             for row in event.get("history") or [] if isinstance(row, dict)]
+    dates.extend(str(event.get(key) or "") for key in ("first_seen", "last_seen"))
+    dates = sorted(date for date in dates if _LINE_DATE.fullmatch(date))
+    return (dates[0], dates[-1]) if dates else ("", "")
+
+
+def _event_lines_may_merge(left, right):
+    """Same category and overlapping spans — necessary, nowhere near sufficient."""
+    if (left.get("category") or "") != (right.get("category") or ""):
+        return False
+    left_span, right_span = _event_line_span(left), _event_line_span(right)
+    if not all([*left_span, *right_span]):
+        return False
+    return left_span[0] <= right_span[1] and right_span[0] <= left_span[1]
+
+
+def _event_line_keys(event, progress_limit=6):
+    """Recall keys used only to pick which lines are worth a model comparison."""
+    texts = [str(event.get("title") or "")]
+    for row in (event.get("history") or [])[-progress_limit:]:
+        if isinstance(row, dict):
+            texts.extend((str(row.get("title") or ""), str(row.get("summary") or "")))
+    text = unicodedata.normalize("NFKC", " ".join(texts)).casefold()
+    keys = set(re.findall(r"[a-z][a-z0-9._-]{2,}", text))
+    for run in re.findall(r"[一-鿿]{2,}", text):
+        keys.update(run[index:index + 2] for index in range(len(run) - 1))
+    return keys
+
+
+def _cross_day_line_batches(events, batch_size=CROSS_DAY_LINE_BATCH_SIZE):
+    """Pair only lines that share low-frequency vocabulary.
+
+    Same category with an overlapping span describes almost every pair in a
+    registry that spans a few weeks across five categories, so using that alone
+    ships the whole registry to the auditor every single day. Mirror the
+    same-day path: low-frequency title/summary keys choose the candidates, and
+    the model still makes the actual call."""
+    batch_size = max(2, int(batch_size))
+    keys_by_index = {index: _event_line_keys(event)
+                     for index, event in enumerate(events)}
+    key_owners = {}
+    for index, keys in keys_by_index.items():
+        for key in keys:
+            key_owners.setdefault(key, set()).add(index)
+
+    shared_counts = {}
+    for owners in key_owners.values():
+        if not 2 <= len(owners) <= SAME_DAY_BLOCK_MAX_FREQUENCY:
+            continue
+        ordered = sorted(owners)
+        for position, left in enumerate(ordered):
+            for right in ordered[position + 1:]:
+                shared_counts[(left, right)] = shared_counts.get((left, right), 0) + 1
+    pairs = {pair for pair, count in shared_counts.items()
+             if count >= CROSS_DAY_LINE_MIN_SHARED_KEYS
+             and _event_lines_may_merge(events[pair[0]], events[pair[1]])}
+
+    # 把配对连成连通分量，再按批次上限切分，避免同一组重复被拆到两批里。
+    adjacency = {}
+    for left, right in pairs:
+        adjacency.setdefault(left, set()).add(right)
+        adjacency.setdefault(right, set()).add(left)
+    batches, seen = [], set()
+    for start in sorted(adjacency):
+        if start in seen:
+            continue
+        component, queue = [], [start]
+        seen.add(start)
+        while queue:
+            current = queue.pop()
+            component.append(current)
+            for neighbour in sorted(adjacency[current]):
+                if neighbour not in seen:
+                    seen.add(neighbour)
+                    queue.append(neighbour)
+        component.sort()
+        for offset in range(0, len(component), batch_size):
+            batch = component[offset:offset + batch_size]
+            if len(batch) >= 2:
+                batches.append(batch)
+    return batches
+
+
+def _cross_day_line_payload(events, batch, progress_limit=6):
+    payload = []
+    for position, index in enumerate(batch):
+        event = events[index]
+        span = _event_line_span(event)
+        history = [row for row in event.get("history") or [] if isinstance(row, dict)]
+        payload.append({
+            "index": position,
+            "name": str(event.get("title") or "")[:180],
+            "category": str(event.get("category") or ""),
+            "span": {"from": span[0], "to": span[1]},
+            "progress": [{
+                "date": str(row.get("date") or ""),
+                "title": str(row.get("title") or "")[:180],
+                "summary": str(row.get("summary") or "")[:240],
+            } for row in history[-progress_limit:]],
+        })
+    return payload
+
+
+def _merge_event_lines(events, group):
+    """Fold a group of lines into the one that started earliest; return its index."""
+    ordered = sorted(group,
+                     key=lambda index: (_event_line_span(events[index])[0], index))
+    keeper = ordered[0]
+    primary = events[keeper]
+    rows_by_date = {}
+    # 倒序遍历让 keeper 最后写入：同一天有两行时保留身份线自己的那行。
+    for index in reversed(ordered):
+        for row in events[index].get("history") or []:
+            if isinstance(row, dict) and row.get("date"):
+                rows_by_date[str(row["date"])] = row
+    primary["history"] = [rows_by_date[date] for date in sorted(rows_by_date)]
+    spans = [_event_line_span(events[index]) for index in ordered]
+    starts = [span[0] for span in spans if span[0]]
+    ends = [span[1] for span in spans if span[1]]
+    if starts:
+        primary["first_seen"] = min(starts)
+    if ends:
+        primary["last_seen"] = max(ends)
+    if any(events[index].get("status") == "active" for index in ordered):
+        primary["status"] = "active"
+    if any(events[index].get("pinned") for index in ordered):
+        primary["pinned"] = True
+    primary["line_reconciled"] = True
+    return keeper
+
+
+def reconcile_registry_events(llm, events, quality=None):
+    """Merge registry lines that track the same continuing thing across days.
+
+    Audit failure never merges: a missed merge leaves two lines, a wrong merge
+    destroys event identity."""
+    quality = quality if quality is not None else new_quality_stats()
+    if len(events) < 2:
+        return events
+    parents = list(range(len(events)))
+
+    def find(value):
+        while parents[value] != value:
+            parents[value] = parents[parents[value]]
+            value = parents[value]
+        return value
+
+    def union(left, right):
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[right_root] = left_root
+
+    for batch in _cross_day_line_batches(events):
+        quality["event_lines_audited"] += len(batch)
+        payload = _cross_day_line_payload(events, batch)
+        try:
+            groups = _validated_same_day_groups(
+                llm.json_call(CROSS_DAY_LINE_RECONCILE_SYSTEM,
+                              json.dumps(payload, ensure_ascii=False)),
+                len(batch))
+        except Exception as exc:
+            log(f"  跨天事件线归并审计批次失败，本批不合并: {exc}")
+            groups = None
+        if groups is None:
+            quality["event_line_audit_failures"] += 1
+            quality["degraded"] = True
+            continue
+        for group in groups:
+            global_group = [batch[position] for position in group]
+            for index in global_group[1:]:
+                union(global_group[0], index)
+
+    grouped = {}
+    for index in range(len(events)):
+        grouped.setdefault(find(index), []).append(index)
+    merged_away = set()
+    for group in sorted(grouped.values(), key=lambda group: group[0]):
+        if len(group) < 2:
+            continue
+        keeper = _merge_event_lines(events, group)
+        merged_away.update(index for index in group if index != keeper)
+        quality["event_lines_merged"] += len(group) - 1
+    if merged_away:
+        log(f"  跨天事件线归并了 {len(merged_away)} 条重复事件线")
+    return [event for index, event in enumerate(events) if index not in merged_away]
+
+
+def reconcile_stale_event_lines(llm, events, date_str, quality=None):
+    """Reconcile only lines today did not write.
+
+    Today's lines carry the event_id back-filled into the daily items and the
+    continuity verdict from the continuity gate (ADR 0002). Merging them here
+    would silently re-decide a verdict that was independently verified, so this
+    pass is housekeeping over the historical registry only. A fragment created
+    today merges on a later day, once it stops receiving picks."""
+    touched, stale = [], []
+    for event in events:
+        rows = event.get("history") or []
+        if any(isinstance(row, dict) and row.get("date") == date_str
+               for row in rows):
+            touched.append(event)
+        else:
+            stale.append(event)
+    if len(stale) < 2:
+        return events
+    reconciled = reconcile_registry_events(llm, stale, quality)
+    if len(reconciled) == len(stale):
+        return events
+    kept = {id(event) for event in reconciled} | {id(event) for event in touched}
+    return [event for event in events if id(event) in kept]
 
 
 def review_reader_facing_duplicates(llm, events, picked, secondary, items, quality=None):
@@ -4127,7 +4362,9 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
             _inherit_same_day_identity(entry, prior_today)
             tgt["history"].append(entry)
             tgt["last_seen"] = date_str
-            tgt["title"] = ev.get("title", tgt.get("title", ""))
+            # 事件线名是身份标识，取首次出现那天的展示标题；当天的标题只进 history 行。
+            if not tgt.get("title"):
+                tgt["title"] = ev.get("title", "")
         ev["event_id"] = tgt["event_id"]
         if verified_history_by_today is not None and idx in matched:
             verified = verified_history_by_today.get(idx, [])
@@ -4203,9 +4440,10 @@ def _build_trajectory_review_cases(picked, items, cfg):
 def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                                  secondary=None, feedback=None, items=None,
                                  trajectory_audit_llm=None, trajectory_health=None,
-                                 trajectory_review_cases=None):
+                                 trajectory_review_cases=None, quality=None):
     """Prepare the complete registry update in memory without persisting it."""
     registry = copy.deepcopy(registry)
+    quality = quality if quality is not None else new_quality_stats()
     health = trajectory_health if trajectory_health is not None else new_trajectory_health()
     pinned_changed = apply_pins(registry, feedback or [])
     if pinned_changed:
@@ -4352,12 +4590,14 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             if sec_pairs:
                 log(f"  钉选补匹配：{len(sec_pairs)} 个钉选事件从'更多资讯'续上进展")
 
+    registry["events"] = reconcile_stale_event_lines(
+        llm, registry["events"], date_str, quality)
     return registry
 
 
 def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None,
                  trajectory_audit_llm=None, trajectory_health=None,
-                 trajectory_review_cases=None, persist=True):
+                 trajectory_review_cases=None, persist=True, quality=None):
     """Load and prepare one registry transaction, optionally persisting it."""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -4366,7 +4606,7 @@ def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, item
         llm, load_registry(data_dir), picked, date_str, cfg,
         secondary=secondary, feedback=feedback, items=items,
         trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health,
-        trajectory_review_cases=trajectory_review_cases)
+        trajectory_review_cases=trajectory_review_cases, quality=quality)
     if persist:
         persist_registry(registry, data_dir)
     n_cont = sum(1 for ev in picked if ev.get("trusted_continuation"))
@@ -6903,7 +7143,7 @@ def _run_pipeline(started_at, args, cfg, policy):
                             trajectory_audit_llm=audit_llm,
                             trajectory_health=trajectory_health,
                             trajectory_review_cases=trajectory_review_cases,
-                            persist=False)
+                            persist=False, quality=quality)
     brief, themes = write_brief(
         llm, picked, secondary,
         audit_llm=audit_llm if policy["full_objectivity"] else None)

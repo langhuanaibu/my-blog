@@ -130,6 +130,7 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .topic-card:hover{border-color:var(--accent);background:var(--card-h)}
 .topic-card b{font-family:var(--serif);color:var(--ink);font-size:14px}
 .tc-go{font-size:12px;color:var(--text3)}
+.tc-fresh{font-size:11.5px;color:var(--text3);letter-spacing:.04em}
 .topic-card:hover .tc-go{color:var(--accent2)}
 .brief-delta{margin-top:8px;font-size:12.5px;color:var(--text3)}
 .brief-delta b{color:var(--accent2);font-weight:700}
@@ -323,6 +324,11 @@ header{border-bottom:1px solid var(--border);background:var(--bg2);position:stic
 .trk-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;cursor:pointer}
 .trk-top b{font-size:13.5px}
 .trk-upd{font-size:12px;color:var(--text3);margin-left:auto}
+.trk-span{font-size:12px;color:var(--text3);margin-left:auto;white-space:nowrap}
+.trk-flag{font-size:11px;color:var(--text3);border:1px solid var(--rule);padding:1px 6px;letter-spacing:.04em}
+.trk-latest{margin:6px 0 0;font-size:12.5px;color:var(--text2);line-height:1.6}
+.trk-latest a{color:var(--text3)}
+.trk-acts{display:flex;gap:8px;margin-top:8px}
 .trk-hist{display:none;margin-top:8px;font-size:12.5px;color:var(--text2);border-left:2px solid var(--rule);padding-left:10px}
 .trk.open .trk-hist{display:block}
 /* ---------- 搜索 ---------- */
@@ -495,6 +501,9 @@ footer{color:var(--text3);font-size:12px;text-align:center;margin-top:50px;line-
 .all-tools{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
 .all-tools input,.all-tools select{min-height:38px;padding:7px 10px;border:1px solid var(--rule);border-radius:0;background:var(--card);color:var(--text)}
 .all-list{display:flex;flex-direction:column}.all-entry{display:grid;gap:5px}.all-entry-meta{display:flex;align-items:center;gap:8px}
+.all-entry.picked{opacity:.55}
+.all-entry.picked:hover{opacity:1}
+.picked-flag{font-size:11px;color:var(--accent2);border:1px solid var(--rule);padding:1px 6px;letter-spacing:.04em;white-space:nowrap}
 .weekly-reading{display:flex;flex-direction:column;gap:20px}.weekly-section{margin:0}.weekly-threads .wk-thread{padding-block:12px;border-bottom:1px solid var(--border)}
 .supplemental-load{margin:28px 2px -12px;color:var(--text3);font-size:12px;text-align:right;font-variant-numeric:tabular-nums}
 .topic-event-group{margin-bottom:24px}.topic-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:7px}.topic-card{padding:9px 11px;box-shadow:none}

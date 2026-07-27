@@ -347,6 +347,19 @@ def test_first_day_same_day_rerun_keeps_event_id_when_title_changes():
         "Corrected launch title"
 
 
+def test_event_line_name_stays_at_the_first_day_title_across_continuations():
+    """事件线名是身份标识，取首次出现那天的展示标题，不随最新进展改变。"""
+    follow_up = _picked_event()
+
+    prepared = dn.prepare_registry_transaction(
+        MatchLLM(), _legacy_registry(), [follow_up], "2026-07-21",
+        {"events": {}}, items=_source_items())
+
+    assert prepared["events"][0]["title"] == "Model launch"
+    assert prepared["events"][0]["history"][-1]["title"] == \
+        "Model launch follow-up"
+
+
 def test_same_day_identity_survives_global_index_and_event_id_reordering():
     primary = _source_items()[0]
     corroborating = {
