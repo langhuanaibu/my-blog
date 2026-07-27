@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1776182215026"
 twikooPath: "article_1776182215026"
 ---
-<h2>Git常用命令总结笔记</h2>
 # Git 命令教学笔记
 
 这份笔记偏向 Git 命令的教学和日常查阅，重点解决三个问题：
@@ -1242,10 +1241,3 @@ git --no-pager diff --cached
 git commit
 git push
 ```
-
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1776182215026" data-twikoo-path="article_1776182215026"></div>
-</section>

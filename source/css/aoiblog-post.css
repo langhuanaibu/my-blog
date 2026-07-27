@@ -1,0 +1,228 @@
+/*
+ * 文章阅读页正文排版。
+ *
+ * 作用域：所有选择器都以 .post-content 打头。该类只出现在 Fluid 的 layout/post.ejs，
+ * 因此这份样式不会波及 about / friends / guestbook 等同样使用 .markdown-body 的页面，
+ * 也不会影响 /news/ 日报页。
+ *
+ * 配色一律取 aoiblog-home.css 里的 --aoi-* 变量，跟随亮/暗两套主题；
+ * 正文中不再有内联样式（已由 tools/clean-post-inline-styles.mjs 清洗）。
+ */
+
+.post-content .markdown-body {
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--aoi-text);
+  letter-spacing: 0.01em;
+  word-break: break-word;
+}
+
+/* ---------- 段落与行内元素 ---------- */
+
+.post-content .markdown-body p {
+  margin: 0 0 1.15em;
+}
+
+.post-content .markdown-body a {
+  color: var(--aoi-accent-strong);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition: color 0.2s ease;
+}
+
+.post-content .markdown-body a:hover {
+  color: var(--aoi-accent);
+}
+
+.post-content .markdown-body strong {
+  color: var(--aoi-heading);
+  font-weight: 600;
+}
+
+.post-content .markdown-body code {
+  background: var(--aoi-bg-soft);
+  color: var(--aoi-accent-strong);
+  border: 1px solid var(--aoi-line);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.92em;
+}
+
+/* ---------- 标题 ---------- */
+
+.post-content .markdown-body h1,
+.post-content .markdown-body h2,
+.post-content .markdown-body h3,
+.post-content .markdown-body h4,
+.post-content .markdown-body h5,
+.post-content .markdown-body h6 {
+  color: var(--aoi-heading);
+  line-height: 1.45;
+  font-weight: 600;
+  margin: 2.2em 0 0.9em;
+}
+
+.post-content .markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.post-content .markdown-body h1 { font-size: 1.7em; }
+.post-content .markdown-body h2 { font-size: 1.42em; }
+.post-content .markdown-body h3 { font-size: 1.2em; }
+.post-content .markdown-body h4 { font-size: 1.06em; }
+
+.post-content .markdown-body h2 {
+  border-bottom: 1px solid var(--aoi-line);
+  padding-bottom: 0.35em;
+}
+
+/* ---------- 列表 ---------- */
+
+.post-content .markdown-body ul,
+.post-content .markdown-body ol {
+  margin: 0 0 1.15em;
+  padding-left: 1.6em;
+}
+
+.post-content .markdown-body li {
+  margin-bottom: 0.4em;
+}
+
+.post-content .markdown-body li > ul,
+.post-content .markdown-body li > ol {
+  margin: 0.4em 0 0;
+}
+
+/* ---------- 引用 ---------- */
+
+.post-content .markdown-body blockquote {
+  margin: 1.4em 0;
+  padding: 0.8em 1.2em;
+  color: var(--aoi-muted);
+  background: var(--aoi-bg-soft);
+  border-left: 3px solid var(--aoi-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.post-content .markdown-body blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- 代码块 ---------- */
+
+.post-content .markdown-body pre,
+.post-content .markdown-body figure.highlight {
+  margin: 1.4em 0;
+  border-radius: 8px;
+  border: 1px solid var(--aoi-line);
+  overflow: hidden;
+}
+
+/* 代码块内的 code 沿用高亮主题配色，不套用行内 code 的胶囊样式 */
+.post-content .markdown-body pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: 0.9em;
+}
+
+/* ---------- 表格 ---------- */
+
+.post-content .markdown-body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.4em 0;
+  border-collapse: collapse;
+  font-size: 0.96em;
+}
+
+.post-content .markdown-body th,
+.post-content .markdown-body td {
+  padding: 0.6em 0.9em;
+  border: 1px solid var(--aoi-line);
+  text-align: left;
+}
+
+.post-content .markdown-body th {
+  background: var(--aoi-bg-soft);
+  color: var(--aoi-heading);
+  font-weight: 600;
+}
+
+/* ---------- 图片与分隔线 ---------- */
+
+.post-content .markdown-body img {
+  display: block;
+  max-width: 100%;
+  margin: 1.6em auto;
+  border-radius: 8px;
+  box-shadow: var(--aoi-shadow);
+}
+
+.post-content .markdown-body hr {
+  margin: 2.4em 0;
+  border: 0;
+  border-top: 1px solid var(--aoi-line);
+}
+
+/* ---------- 折叠块（写作时直接用 <details><summary>标题</summary> …</details>） ---------- */
+
+.post-content .markdown-body details {
+  margin: 1.4em 0;
+  padding: 0 1.1em;
+  background: var(--aoi-bg-soft);
+  border: 1px solid var(--aoi-line);
+  border-left: 3px solid var(--aoi-accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.post-content .markdown-body summary {
+  margin: 0 -1.1em;
+  padding: 0.75em 1.1em;
+  color: var(--aoi-heading);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.post-content .markdown-body summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 展开标记用字符切换而非 rotate：伪元素上的 transform 过渡在部分浏览器不稳定 */
+.post-content .markdown-body summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1em;
+  margin-right: 0.35em;
+  color: var(--aoi-accent);
+}
+
+.post-content .markdown-body details[open] > summary::before {
+  content: "▾";
+}
+
+.post-content .markdown-body details[open] > summary {
+  border-bottom: 1px solid var(--aoi-line);
+  margin-bottom: 0.9em;
+}
+
+.post-content .markdown-body details > :last-child {
+  margin-bottom: 1.1em;
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 767px) {
+  .post-content .markdown-body {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .post-content .markdown-body h1 { font-size: 1.5em; }
+  .post-content .markdown-body h2 { font-size: 1.3em; }
+  .post-content .markdown-body h3 { font-size: 1.14em; }
+}

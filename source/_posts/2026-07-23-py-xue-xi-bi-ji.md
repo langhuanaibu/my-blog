@@ -49,7 +49,6 @@ finally:
 |KeyError|	键错误	|{}['key']|
 |FileNotFoundError|	文件不存在|	open('nofile.txt')|
 
-
 ```py
 BaseException
 ├── SystemExit
@@ -306,7 +305,6 @@ print(grid)
 
 最常见的场景是：同时遍历两个或多个列表。可以把它理解成把两个列表“拉上拉链”。
 
-
 ```py
 ["小明", "小红", "小刚"]
    ↓       ↓       ↓
@@ -319,8 +317,6 @@ print(grid)
 **注：**
 - `zip()`返回的是一个**迭代器对象**
 - 可以组合不同类型的可迭代对象
-
-
 
 #### 配合for循环使用
 

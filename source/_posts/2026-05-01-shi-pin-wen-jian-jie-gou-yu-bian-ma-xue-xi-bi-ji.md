@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1777641068079"
 twikooPath: "article_1777641068079"
 ---
-<h2>视频文件结构与编码学习笔记</h2>
 > 本笔记基于 ChatGPT 分享对话《视频文件结构与编码》的内容整理，并补充了视频容器、编码、播放链路、色彩、码率控制和常见排查思路。
 
 ## 1. 先建立整体认识
@@ -785,9 +784,3 @@ H.264/H.265 很适合发布，但不一定适合后期剪辑。剪辑中间格�
 ## 20. 一句话总结
 
 视频文件的核心不是“一个后缀名”，而是容器、编码、码率、时间戳、色彩信息和播放设备共同作用的结果。学习视频文件时，先分清“容器负责装什么”“编码负责怎么压缩”“播放器负责怎么拆、解码和同步”，很多问题就能定位到正确层面。
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1777641068079" data-twikoo-path="article_1777641068079"></div>
-</section>

@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1778150721669"
 twikooPath: "article_1778150721669"
 ---
-<h2>TypeScript 语法</h2>
 > 适合读者：已经学过 HTML、CSS、JavaScript，想系统掌握 TypeScript 常用语法，并能把它用到前端开发里。
 >
 > 学习目标：不是重新学习 JavaScript，而是掌握 TypeScript 如何通过“类型”帮你提前发现错误、写清楚数据结构、提升代码提示和维护性。
@@ -2737,9 +2736,3 @@ class Demo {}
 6. 输入为空时不允许添加。
 
 可以先不写复杂样式，重点是把类型写清楚。
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1778150721669" data-twikoo-path="article_1778150721669"></div>
-</section>

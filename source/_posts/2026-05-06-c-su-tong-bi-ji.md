@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/data-structures-algorithms.webp"
 old_id: "article_1778042546856"
 twikooPath: "article_1778042546856"
 ---
-<h2>C++ 速通笔记</h2>
 # C++ 速通学习笔记：从 C 到 C++ 语法迁移
 
 > 适合读者：已经学完 C 语言，想快速掌握 C++ 常用语法，并能看懂、写出算法题里的 C++ 代码。
@@ -2254,9 +2253,3 @@ add_one(num);
 1. 对比 `new/delete` 和局部对象自动释放的区别。
 2. 用 `unique_ptr<int>` 保存一个整数并输出。
 3. 写一个函数，说明为什么返回局部对象通常是安全的。
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1778042546856" data-twikoo-path="article_1778042546856"></div>
-</section>

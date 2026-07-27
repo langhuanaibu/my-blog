@@ -8,12 +8,11 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1775182229767"
 twikooPath: "article_1775182229767"
 ---
-<h2>命令行学习指南</h2>
 ## 1. 先建立正确认识
 
 ### 1.1 什么是命令行
 
-命令行就是通过输入文本命令来操作电脑、项目和开发工具的方式。  
+命令行就是通过输入文本命令来操作电脑、项目和开发工具的方式。
 在这次对话里，主要涉及了 4 类命令行环境：
 
 - CMD
@@ -69,7 +68,7 @@ yarn start  启动前端项目服务，终端会被占用
 yarn dev  启动开发环境服务，终端同样被占用
 ```
 
-那同一个窗口里一般就不能同时前台再跑另一个项目。  
+那同一个窗口里一般就不能同时前台再跑另一个项目。
 如果你要同时启动多个项目，通常需要多个终端窗口或多个终端标签页。
 
 ---
@@ -470,7 +469,7 @@ ls -la node_modules/<package-name>  查看该模块是否是一个指向其他�
 
 ### 7.1 为什么学 NVM
 
-NVM 用来管理多个 Node.js 版本。  
+NVM 用来管理多个 Node.js 版本。
 典型场景：
 
 - 这个项目要 Node 16
@@ -601,7 +600,7 @@ $env:NODE_OPTIONS  打印该变量验证是否已清空
 
 ### 8.3 为什么 `yarn start --no-experimental-fetch` 会报错
 
-因为这个参数是给 `node` 的，不是给 `yarn` 的。  
+因为这个参数是给 `node` 的，不是给 `yarn` 的。
 正确思路是先设置环境变量，再执行启动命令。
 
 ```powershell
@@ -1042,9 +1041,3 @@ pause  暂停看结果
 | 强制结束指定 ID 进程 | `kill -Id 1234` 或 `Stop-Process -Id 1234 -Force` |
 | 强制结束名为 node 进程 | `kill -Name node` |
 | 测试网络能否连通 | `Test-Connection google.com` |
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1775182229767" data-twikoo-path="article_1775182229767"></div>
-</section>

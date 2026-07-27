@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/product.webp"
 old_id: "article_1775210699454"
 twikooPath: "article_1775210699454"
 ---
-<h2>业务与产品</h2>
 2026年4月3日18:09:58
 先把我和ai讨论的内容总结放上来，之后我会结合我实习的经历详细谈谈我自己对业务和产品的理解
 
@@ -486,9 +485,3 @@ AI 能帮助写标准代码，但很难替代这些能力：
 - 懂业务，不是会描述现状，而是能解释变化、判断问题、推动决策。
 - 技术、产品、运营最终都要回到业务价值。
 - 只看功能容易忙，理解业务才能真正做成事。
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1775210699454" data-twikoo-path="article_1775210699454"></div>
-</section>

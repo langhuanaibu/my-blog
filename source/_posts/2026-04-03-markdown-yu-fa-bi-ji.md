@@ -8,7 +8,6 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1775191607175"
 twikooPath: "article_1775191607175"
 ---
-<h2>Markdown 语法笔记</h2>
 ## 1. Markdown 是什么
 
 Markdown 是一种**轻量级标记语言**，用简洁的纯文本语法来表示标题、列表、引用、代码、表格等结构，常用于：
@@ -81,7 +80,8 @@ Markdown 中直接回车通常**不会立即换行**。常见换行方式有：
 第二行
 ```
 
-#### 方法二：使用 HTML 的 `<br>`
+#### 方法二：使用 HTML 的 `
+`
 
 ```markdown
 第一行<br>
@@ -320,7 +320,7 @@ ___粗斜体___
 
 效果：
 
-<https://www.baidu.com>  
+<https://www.baidu.com>
 <test@example.com>
 
 ---
@@ -509,8 +509,8 @@ ___
 
 效果：
 
-\*这不是斜体\*  
-\# 这不是标题  
+\*这不是斜体\*
+\# 这不是标题
 \`这不是代码\`
 
 常见可转义字符：
@@ -902,9 +902,3 @@ Markdown 的本质不是“花哨排版”，而是用**尽可能简单的语法
 - 对照语法手打一遍
 - 自己写一份 README
 - 把课堂笔记改写成 Markdown
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1775191607175" data-twikoo-path="article_1775191607175"></div>
-</section>

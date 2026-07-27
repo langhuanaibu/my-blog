@@ -13,7 +13,7 @@ navbar:
     - { key: "news", name: "日报", link: "/news/" }
 
 search:
-  enable: false
+  enable: true
 
 index:
   banner_img: /images/img_1774022028502.png
@@ -32,6 +32,14 @@ post:
   toc:
     # 关闭 tocbot 高亮项变化时的自动滚动，避免手动翻看目录后被拽回当前标题
     disableTocScrollSync: true
+  copyright:
+    update_date:
+      enable: true
+  category_bar:
+    # 主题默认 specific: true，要求文章 front-matter 声明 category_bar: true 才显示，
+    # 本站文章都没有该字段，等于侧边栏从未渲染，这里改为对所有文章开启
+    specific: false
+    post_order_by: "date"
   meta:
     author:
       enable: true
@@ -75,7 +83,8 @@ page:
 
 twikoo:
   envId: https://twikoo.aoiblog.top
-  path: window.location.pathname
+  # 不要在这里配置 path：Fluid 模板会把它当字面量字符串输出。
+  # 评论 path 由 scripts/twikoo-path.js 按文章 front-matter 的 twikooPath 决定。
 
 custom_js:
   - /js/twikoo-legacy-path.js
@@ -83,6 +92,7 @@ custom_js:
 
 custom_css:
   - /css/aoiblog-home.css
+  - /css/aoiblog-post.css
 
 footer:
   content: "<span>Aoitsuki</span>"

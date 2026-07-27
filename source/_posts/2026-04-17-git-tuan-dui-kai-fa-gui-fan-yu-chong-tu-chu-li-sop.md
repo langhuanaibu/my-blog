@@ -8,10 +8,11 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1776429194802"
 twikooPath: "article_1776429194802"
 ---
-<h2>Git 团队开发规范与冲突处理 SOP</h2>
-2026年4月17日20:37:25<br>
-好不容易提前把今天的工作弄完了，遂拷打ai根据这几天拷打ai的经验生成了两篇如何使用git的笔记<br>
-上班好累……<br>
+2026年4月17日20:37:25
+
+好不容易提前把今天的工作弄完了，遂拷打ai根据这几天拷打ai的经验生成了两篇如何使用git的笔记
+
+上班好累……
 
 这份文档偏向真实项目协作，重点说明团队中的开发规范、提交规范、分支管理、开发流程、上线流程、合并冲突处理和常见问题。
 
@@ -1244,10 +1245,3 @@ git stash pop
 | `git push --force` | 覆盖远端历史，可能影响他人 | 公共分支禁止随意使用，必须先沟通 |
 | `git branch -D` | 强制删除本地分支 | 确认分支已合并或已不需要 |
 | `git commit --no-verify` | 跳过 hook，可能绕过质量检查 | 只在确认阻塞问题非本次引入时谨慎使用 |
-
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1776429194802" data-twikoo-path="article_1776429194802"></div>
-</section>

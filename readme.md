@@ -8,7 +8,7 @@
 - 主题：Fluid
 - 内容源：`source/_posts/*.md`
 - 静态资源：`source/images/`
-- 自定义脚本：`source/js/`
+- 自定义脚本：`source/js/`（前端）、`scripts/`（Hexo 构建期扩展）
 - Vercel API：`api/`（在线后台，以及日报反馈、收藏、稍后读与漏读写回；停用的单词本接口仍保留）
 - 在线后台：`/admin/`
 - 构建输出：`dist/`
@@ -32,6 +32,7 @@ source/friends/         友情链接页面
 source/guestbook/       留言板页面
 source/news/            每日新闻日报页（静态，数据由 news-pipeline 生成）
 news-pipeline/          新闻日报生成管线（GitHub Actions 每日运行）
+scripts/                Hexo 构建期扩展（主题注入点覆盖等）
 tools/                  迁移和维护工具
 docs/                   维护规范与必要的历史记录
 docs/archive/           历史架构与迁移记录（非当前运行说明）
@@ -120,9 +121,37 @@ GITHUB_BRANCH=main
 ## 评论（Twikoo）
 
 - 后端为自托管 Twikoo 云函数，`envId: https://twikoo.aoiblog.top`（1.7.x），文章页与留言板共用同一后端。
-- 文章页评论走 Fluid 内置评论区，由 `_config.fluid.yml` 三处开关控制：`post.comments.enable: true`、`post.comments.type: twikoo`、顶层 `twikoo.envId`。三者缺一不显示（`type` 默认是 `disqus`，只开 `enable` 不改 `type` 会加载错插件）。
-- 留言板页（`/guestbook/`）不走内置评论区，用 `source/guestbook/index.md` 里手写的 `<div data-twikoo-path>` + `source/js/twikoo-legacy-path.js` 单独挂载，与文章页互不影响。
+- 文章页与留言板都走 Fluid 的评论注入点，由 `_config.fluid.yml` 三处开关控制：`post.comments.enable: true`、`post.comments.type: twikoo`、顶层 `twikoo.envId`。三者缺一不显示（`type` 默认是 `disqus`，只开 `enable` 不改 `type` 会加载错插件）。
+- **评论 path 由 `scripts/twikoo-path.js` 决定**：它注册 `theme_inject` 过滤器，以同名 `default` 覆盖 Fluid 的 `postComments` / `pageComments` 注入点，path 取 `page.twikooPath || url_for(page.path)`。迁移来的旧文章用 front-matter 里的 `twikooPath`（即旧 `article_id`）读到历史评论，新文章没有该字段就自动回落到真实 URL 路径。
+- 留言板（`/guestbook/`）front-matter 写 `comment: true` 和 `twikooPath: "/"`。**注意是单数 `comment`**：Fluid 的 `scripts/filters/post-filter.js` 会在 `before_generate` 阶段用单数 `comment` 重写每个页面的 `page.comments`，写复数 `comments: true` 会被它覆盖成 `false`，评论区直接不渲染。
+- 踩坑（2026-07-28 修复）：`_config.fluid.yml` 里曾配置 `twikoo.path: window.location.pathname`，但 Fluid 模板写的是 `path: '<%= theme.twikoo.path %>'`——带引号且转义，线上输出的是**字面量字符串** `'window.location.pathname'`。结果所有文章的文末评论区共用同一个 path 桶，任何人在这里发的评论都会出现在全部文章下。因此 **`twikoo` 段不要再配置 `path`**，交给上面的注入脚本处理。
+- 踩坑（2026-07-28 修复）：迁移工具曾给每篇文章正文尾部注入 `<section class="legacy-comments">` 挂载块，与 Fluid 自己的评论区同页并存，导致每篇文章渲染**两个评论区**、两个元素抢用 `id="twikoo"`、两个 Twikoo 版本（CDN 1.6.32 与主题内置 1.6.8）竞争。这些块已随正文清洗一并删除；`source/js/twikoo-legacy-path.js` 只在页面存在 `[data-twikoo-path]` 时才动作，正文清空后它在文章页自然不再生效。
 - 踩坑：Hexo Fluid 迁移时 `post.comments.enable` 被置为 `false`，文章页评论一度整体消失；后端始终在线，恢复只需开上述三处配置，无需重建后端。
+
+## 文章阅读页
+
+- 正文排版在 `source/css/aoiblog-post.css`，**所有选择器以 `.post-content` 打头**。该类只出现在 Fluid 的 `layout/post.ejs`，因此样式精确限定在文章页，不会波及同样使用 `.markdown-body` 的关于页/友链页/留言板，也不影响 `/news/` 日报页（日报页根本不加载这份样式）。配色一律取 `aoiblog-home.css` 里的 `--aoi-*` 变量，跟随亮暗两套主题。
+- 写作时可直接用原生折叠块，无需插件也无需 JS：
+
+  ```html
+  <details>
+  <summary>折叠标题</summary>
+
+  折叠内容，中间要留空行，Markdown 才会正常渲染。
+
+  </details>
+  ```
+
+  注意 `/admin/` 的预览是自制极简渲染器（先 `escapeHtml` 再只认标题/图片/链接/粗体/代码块），折叠块在后台预览里会显示为原文，发布后线上正常。
+- 左侧同分类文章列表由 `post.category_bar` 提供。主题默认 `specific: true`，要求每篇文章 front-matter 声明 `category_bar: true` 才显示；本站文章都没有该字段，等于侧栏从未渲染过，因此改成 `specific: false` 对所有文章开启，并用 `post_order_by: "date"` 按时间正序排列以贴合系列阅读顺序。
+- 文末版权区展示最后更新时间（`post.copyright.update_date.enable: true`）。该行只在 `updated` 晚于 `date` 时出现，两者相同的文章不显示，属模板的正常行为。
+- 旧文正文清洗（2026-07-28，经用户授权的一次性迁移）：迁移自旧 Astro 站的文章正文原本是带内联样式的裸 HTML（`text-indent: 2em`、写死的链接色与图片阴影），会绕过主题变量和暗色模式；同时正文里重复出现与标题同名的 `<h2>` 和 `# 标题`，连同模板的 `<h1>` 构成三重标题并污染右侧目录。已由 `tools/clean-post-inline-styles.mjs` 批量还原为干净 Markdown。该脚本幂等，改写前会把代码与正文分开做逐字比对，任一不一致就拒绝写入并报告。
+- 顺带修复：旧文里 `<pre><code class="language-x">` 形式的代码块得不到语法高亮（Hexo 只处理围栏代码块，裸 HTML 的 `<pre>` 原样透传），清洗时已转成围栏代码块。
+
+## 站内搜索
+
+- `_config.fluid.yml` 的 `search.enable: true`，索引在构建时生成到 `dist/local-search.xml`，含全文，无后端依赖。
+- **不要安装 `hexo-generator-search`**：Fluid 1.9.9 自带索引生成器（`scripts/generators/local-search.js`，注册名 `_hexo_generator_search`），装第三方插件只会多产出一个用不到的 `dist/search.xml`。主题 `_config.yml` 里那句"基于 hexo-generator-search 插件"的注释已经过时。
 
 ## 文章目录（TOC）
 
@@ -163,9 +192,9 @@ GITHUB_BRANCH=main
 - 线上公开 API 返回的 19 篇文章已迁移为 Markdown。
 - 后台草稿未迁移。
 - 旧 `/articles.html#article_id` 链接由 `source/articles.html` 兼容跳转到新文章地址。
-- Twikoo 评论使用每篇文章的旧 `article_id` 作为 path，尽量保留旧评论关联。
+- Twikoo 评论使用每篇文章的旧 `article_id` 作为 path 保留旧评论关联，现由 `scripts/twikoo-path.js` 读取 front-matter 的 `twikooPath` 实现（见「评论（Twikoo）」一节）。**改动或删除文章的 `twikooPath` / `old_id` 会直接断开历史评论。**
 - 旧 Astro 前台、旧 MongoDB API 和静态后台不再作为运行入口保留；当前 `api/` 是后来建设的在线后台与日报状态接口。
-- 历史迁移工具 `tools/export-articles-to-hexo.mjs` 会先完整下载远端文章，再在同级暂存目录生成并替换 `source/_posts/`；远端为空、下载失败或暂存写入失败时保留现有文章不动。
+- 历史迁移工具 `tools/export-articles-to-hexo.mjs` 已于 2026-07-28 删除。它会从早已不是内容真源的旧 API 整体重建并替换 `source/_posts/`，同时重新注入带内联样式的 HTML 和 legacy 评论块，留在仓库里只会把正文清洗成果一次性抹掉。内容真源现在是 `source/_posts/` 加经 `/admin/` 写入 GitHub 的提交；需要查阅该脚本请翻 git 历史。
 
 详细决策见 `docs/archive/2026-06-18-hexo-fluid-migration.md`。
 

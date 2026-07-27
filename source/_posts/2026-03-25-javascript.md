@@ -8,9 +8,6 @@ index_img: "/images/covers/defaults/technology-learning.webp"
 old_id: "article_1774454087284"
 twikooPath: "article_1774454087284"
 ---
-<h2>Javascript</h2>
-# Javascript
-
 2026年3月25日23:55:50
 发这篇文章的时候发现让哈基米修博客的时候越修越错，前前后后在MongoDB和vercel里掰扯了半个小时，又跟哈基米掰扯了半个多小时，真的心累……
 不知道是不是哈基米能力太差了，但我现在也没有很多米，也不想订claude和gpt来用他们的api
@@ -1500,9 +1497,3 @@ async function handleLogin(username, password) {
 // 调用
 handleLogin('alice', 'wrong'); // 显示 "Invalid password"
 ```
-
-
-<section class="legacy-comments">
-  <h2>评论区</h2>
-  <div id="twikoo-article_1774454087284" data-twikoo-path="article_1774454087284"></div>
-</section>
