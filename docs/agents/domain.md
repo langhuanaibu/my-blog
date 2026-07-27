@@ -21,8 +21,8 @@ Single-context repo (this repo):
 ├── CONTEXT.md
 ├── docs/adr/
 │   ├── 0001-daily-item-trajectory-model.md
-│   ├── 0002-verified-continuation-trust-chain.md
-│   └── 0003-lightweight-superforecasting-no-scoreboard.md
+│   ├── …
+│   └── 0007-event-lines-merge-across-days.md
 ├── news-pipeline/
 └── source/
 ```
@@ -52,4 +52,4 @@ If the concept you need isn't in the glossary yet, that's a signal — either yo
 
 If your output contradicts an existing ADR, surface it explicitly rather than silently overriding:
 
-> _Contradicts ADR-0007 (event-sourced orders) — but worth reopening because…_
+> _Contradicts ADR-0002 (verified continuation trust chain) — but worth reopening because…_
