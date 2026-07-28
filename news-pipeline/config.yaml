@@ -6,8 +6,8 @@
 # ============================================================
 
 llm:
-  # 人工回退只改这一项；不做自动回退，避免静默产生 DeepSeek 费用。
-  active_provider: stepfun
+  # 生产默认使用 DeepSeek；StepFun 只保留作人工实验，不做自动切换。
+  active_provider: deepseek
   providers:
     stepfun:
       protocol: anthropic

@@ -16,6 +16,9 @@
   validate 模式失败会阻断验收，publish/cron 模式允许失败。它不 commit/push，也不改变已提交的 interim 公开数据。CLI 会先把当前
   `DATA_DIR` 递归复制到可清理的临时目录，feedback/profile/registry/weekly 等读取与后续
   写入都在快照中进行；正常返回、提前返回、异常和校验失败均会清理快照并恢复环境。
+- 生产活动 provider 已恢复为 DeepSeek。StepFun 适配仍保留供人工实验，但
+  Run #30346999214 在正常新闻阶段 A 第 2 批返回 HTTP 451 `censorship_blocked`；
+  该错误按协议立即失败，StepFun 不作为生产回退。
 - 手动 `Objectivity Acceptance` workflow 只允许从 `main` 触发，按 `llm.active_provider`
   从 `STEPFUN_API_KEY` / `DEEPSEEK_API_KEY` 选择凭据并连跑三轮固定夹具，只上传
   聚合报告，不提交数据。批次结构稳定性修复（非法批次递归拆小、单条重试一次，每轮最多

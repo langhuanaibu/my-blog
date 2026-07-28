@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 import requests
+import yaml
 
 
 PIPELINE_DIR = Path(__file__).resolve().parents[1]
@@ -13,6 +14,18 @@ spec = importlib.util.spec_from_file_location(
 dn = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = dn
 spec.loader.exec_module(dn)
+
+
+def test_repository_defaults_to_deepseek_and_keeps_stepfun_available():
+    config = yaml.safe_load(
+        (PIPELINE_DIR / "config.yaml").read_text(encoding="utf-8"))
+
+    assert config["llm"]["active_provider"] == "deepseek"
+    assert config["llm"]["providers"]["deepseek"]["protocol"] == "openai"
+    assert config["llm"]["providers"]["deepseek"]["extra_body"] == {
+        "thinking": {"type": "disabled"},
+    }
+    assert config["llm"]["providers"]["stepfun"]["protocol"] == "anthropic"
 
 
 def provider_config(active="stepfun"):
