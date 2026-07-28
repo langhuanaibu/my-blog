@@ -619,6 +619,60 @@ def test_closed_issue_is_clean_no_op_before_comment_access():
     assert client.calls == [("get_issue", 15)]
 
 
+def test_shadow_status_stops_only_after_objectivity_and_source_gates_are_met():
+    il = ledger()
+    comments = []
+    for day in range(1, 15):
+        daily = state(
+            f"2026-07-{day:02d}",
+            [attempt(day, 1, runtime="a", trajectory_ui="b")],
+        )
+        comments.append(bot_comment(day, daily))
+    client = FakeClient(comments=comments)
+
+    result = il.shadow_status(client, issue_number=15)
+
+    assert result["needed"] is False
+    assert result["accepted"] is True
+    assert result["streaks"]["objectivity_shadow"] == 14
+    assert result["streaks"]["source_metrics"] == 14
+
+
+def test_shadow_status_keeps_running_until_source_gate_reaches_fourteen_days():
+    il = ledger()
+    comments = []
+    for day in range(1, 14):
+        daily = state(
+            f"2026-07-{day:02d}",
+            [attempt(day, 1, runtime="a", trajectory_ui="b")],
+        )
+        comments.append(bot_comment(day, daily))
+    client = FakeClient(comments=comments)
+
+    result = il.shadow_status(client, issue_number=15)
+
+    assert result["needed"] is True
+    assert result["accepted"] is False
+    assert result["streaks"]["objectivity_shadow"] == 13
+    assert result["streaks"]["source_metrics"] == 13
+
+
+def test_accepted_shadow_outcome_freezes_shadow_and_source_gates():
+    il = ledger()
+
+    assert il.evaluate_objectivity_shadow(
+        None, shadow_outcome="accepted") == {
+            "status": "neutral",
+            "reasons": ["shadow acceptance already complete"],
+        }
+    assert il.evaluate_source_metrics(
+        None, None, date="2026-07-28",
+        shadow_outcome="accepted") == {
+            "status": "neutral",
+            "reasons": ["shadow acceptance already complete"],
+        }
+
+
 def test_sync_updates_same_daily_comment_idempotently():
     il = ledger()
     existing = state("2026-07-22", [attempt(10, 1, selection="needs_review")])
@@ -1087,7 +1141,7 @@ def test_review_checks_open_issue_before_dependencies_or_judge():
     install_index = names.index("Install review dependencies")
     judge_index = names.index("Evaluate rollout")
 
-    assert review["needs"] == ["generate", "shadow"]
+    assert review["needs"] == ["generate", "shadow-policy", "shadow"]
     assert review["if"] == (
         "${{ always() && github.ref == 'refs/heads/main' && "
         "(github.event_name == 'schedule' || inputs.mode == 'publish') }}")

@@ -444,6 +444,9 @@ def evaluate_enrich(quality_health, *, date, window_start):
 
 def evaluate_objectivity_shadow(shadow_summary, *, shadow_outcome):
     """Judge the daily objectivity shadow observation."""
+    if shadow_outcome == "accepted":
+        return {"status": "neutral",
+                "reasons": ["shadow acceptance already complete"]}
     if shadow_outcome != "success":
         return {"status": "fail", "reasons": ["objectivity shadow run did not succeed"]}
     if not isinstance(shadow_summary, dict):
@@ -459,8 +462,12 @@ def evaluate_objectivity_shadow(shadow_summary, *, shadow_outcome):
                                      "demoted_from_selected")}}
 
 
-def evaluate_source_metrics(source_health, shadow_summary, *, date):
+def evaluate_source_metrics(
+        source_health, shadow_summary, *, date, shadow_outcome="success"):
     """Judge whether one day contributes a complete source-metric observation."""
+    if shadow_outcome == "accepted":
+        return {"status": "neutral",
+                "reasons": ["shadow acceptance already complete"]}
     days = (source_health or {}).get("days")
     rows = days.get(str(date)) if isinstance(days, dict) else None
     if not isinstance(rows, dict) or not rows:
@@ -729,6 +736,30 @@ def _finalize(states_by_date, date, updated):
                           content_counts=(passed, total))
 
 
+def shadow_status(client, *, issue_number):
+    """Return whether full shadow still has unfinished dependent gates."""
+    issue = client.get_issue(issue_number)
+    if str(issue.get("state") or "").lower() != "open":
+        return {
+            "status": "closed",
+            "needed": False,
+            "accepted": True,
+            "streaks": {gate: GATE_TARGETS[gate] for gate in GATES},
+        }
+    states = list(_states_by_date(client.list_comments(issue_number)).values())
+    current = compute_streaks(states)
+    accepted = (
+        current["objectivity_shadow"] >= GATE_TARGETS["objectivity_shadow"]
+        and current["source_metrics"] >= GATE_TARGETS["source_metrics"]
+    )
+    return {
+        "status": "accepted" if accepted else "pending",
+        "needed": not accepted,
+        "accepted": accepted,
+        "streaks": current,
+    }
+
+
 def sync_issue(client, *, issue_number, date, incoming=None, attempt_builder=None):
     """Idempotently create or update the trusted comment for one date."""
     issue = client.get_issue(issue_number)
@@ -903,6 +934,8 @@ def parse_cli_args(argv=None):
     subparsers = parser.add_subparsers(dest="command", required=True)
     check = subparsers.add_parser("check-open")
     check.add_argument("--issue", type=int, default=15)
+    shadow = subparsers.add_parser("shadow-status")
+    shadow.add_argument("--issue", type=int, default=15)
     heartbeat = subparsers.add_parser("heartbeat")
     heartbeat.add_argument("--issue", type=int, default=15)
     heartbeat.add_argument("--date", required=True, type=beijing_date)
@@ -914,7 +947,7 @@ def parse_cli_args(argv=None):
     sync.add_argument("--report", default="")
     sync.add_argument("--shadow-summary", default="")
     sync.add_argument("--shadow-outcome", default="failure",
-                      choices=("success", "failure"))
+                      choices=("success", "failure", "accepted"))
     sync.add_argument("--quality-health", default="")
     sync.add_argument("--source-health", default="")
     sync.add_argument("--run-id", required=True)
@@ -963,6 +996,16 @@ def main(argv=None, *, environ=None, client_factory=GitHubClient):
         is_open = str(issue.get("state") or "").lower() == "open"
         _write_output(environ, "open", str(is_open).lower())
         result = {"status": "open" if is_open else "closed", "open": is_open}
+    elif args.command == "shadow-status":
+        result = shadow_status(client, issue_number=args.issue)
+        _write_output(environ, "needed", str(result["needed"]).lower())
+        _write_output(environ, "accepted", str(result["accepted"]).lower())
+        _write_output(
+            environ, "objectivity_shadow",
+            result["streaks"]["objectivity_shadow"])
+        _write_output(
+            environ, "source_metrics",
+            result["streaks"]["source_metrics"])
     elif args.command == "heartbeat":
         result = heartbeat_issue(
             client, issue_number=args.issue, date=args.date)
@@ -986,7 +1029,8 @@ def main(argv=None, *, environ=None, client_factory=GitHubClient):
                 objectivity_shadow=evaluate_objectivity_shadow(
                     shadow_summary, shadow_outcome=args.shadow_outcome),
                 source_metrics=evaluate_source_metrics(
-                    source_health, shadow_summary, date=args.date),
+                    source_health, shadow_summary, date=args.date,
+                    shadow_outcome=args.shadow_outcome),
                 enrich_sample=enrich_sample)
 
         result = sync_issue(

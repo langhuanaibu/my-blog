@@ -293,6 +293,12 @@ def test_public_serialization_strips_rollout_fields_in_interim_and_keeps_active(
 def test_config_declares_interim_default():
     config = yaml.safe_load((PIPELINE_DIR / "config.yaml").read_text(encoding="utf-8"))
     assert config["objectivity"]["mode"] == "interim"
+    assert config["cost_guard"] == {
+        "same_day_reconcile_max_calls": 20,
+        "same_day_min_shared_keys": 4,
+        "generate_warn_usd": 0.06,
+        "shadow_warn_usd": 0.09,
+    }
 
 
 def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
@@ -335,8 +341,17 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
         "high_risk_demoted": 1,
     }
 
+    usage = {
+        "llm_calls": 20,
+        "llm_input_tokens": 1000,
+        "llm_cached_input_tokens": 100,
+        "llm_output_tokens": 200,
+        "llm_cost_usd": 0.08,
+        "llm_cost_known": True,
+    }
     summary = dn.build_shadow_summary(
-        selected_before, selected_after, items, quality, runtime_seconds=12.3456)
+        selected_before, selected_after, items, quality,
+        runtime_seconds=12.3456, usage=usage)
 
     assert set(summary) == {
         "mode", "runtime_seconds", "selected_before_audit",
@@ -345,7 +360,7 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
         "single_source_selected_before_audit", "high_risk_single_source_count",
         "high_risk_single_source_rate", "evidence_basis", "fetch",
         "objectivity", "independent_chain_distribution",
-        "source_reference_concentration",
+        "source_reference_concentration", "llm_usage",
     }
     assert summary["runtime_seconds"] == 12.346
     assert summary["selected_before_audit"] == 2
@@ -360,6 +375,7 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
         "repaired": 1, "degraded": 1,
     }
     assert summary["independent_chain_distribution"] == {"0": 1, "1": 1}
+    assert summary["llm_usage"] == usage
     encoded = json.dumps(summary, ensure_ascii=False)
     assert "ARTICLE_SENTINEL" not in encoded
     assert "SECRET_SENTINEL" not in encoded
@@ -1571,6 +1587,9 @@ def test_workflow_supports_non_publishing_validation_and_explicit_publish():
     mode = dispatch["inputs"]["mode"]
     assert mode["default"] == "validate"
     assert mode["options"] == ["validate", "publish"]
+    shadow_mode = dispatch["inputs"]["shadow_mode"]
+    assert shadow_mode["default"] == "auto"
+    assert shadow_mode["options"] == ["auto", "force", "skip"]
 
     generate = workflow["jobs"]["generate"]
     assert generate["timeout-minutes"] == "60"
@@ -1596,9 +1615,19 @@ def test_workflow_supports_non_publishing_validation_and_explicit_publish():
     assert upload["with"]["path"] == "${{ steps.run_data.outputs.data_dir }}"
     assert upload["with"]["retention-days"] == "1"
 
+    policy = workflow["jobs"]["shadow-policy"]
+    assert policy["permissions"]["issues"] == "read"
+    decision = next(step for step in policy["steps"]
+                    if step.get("name") == "Decide shadow policy")
+    assert "inputs.shadow_mode" in decision["env"]["SHADOW_MODE"]
+    assert "validate" in decision["run"]
+    assert "force" in decision["run"]
+    assert "skip" in decision["run"]
+
     shadow = workflow["jobs"]["shadow"]
     assert shadow["timeout-minutes"] == "60"
-    assert shadow["needs"] == "generate"
+    assert set(shadow["needs"]) == {"generate", "shadow-policy"}
+    assert "needs.shadow-policy.outputs.run_shadow == 'true'" in shadow["if"]
     assert shadow["continue-on-error"] == (
         "${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}")
     download = next(step for step in shadow["steps"]

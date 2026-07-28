@@ -274,6 +274,8 @@ def _runtime_config_projection(config):
             enabled=True,
         ),
         "objectivity": _selected_mapping(config.get("objectivity"), ("mode",)),
+        "cost_guard": _selected_mapping(config.get("cost_guard"), (
+            "same_day_reconcile_max_calls", "same_day_min_shared_keys")),
         "selection": {
             **_selected_mapping(config, (
                 "pick_threshold", "pick_min", "pick_max",
@@ -852,10 +854,17 @@ def evaluate_rollout(evidence, *, shadow_success, judge_llm):
     }
 
 
+def shadow_satisfies_selection(outcome):
+    """A completed shadow gate keeps satisfying the selection dependency."""
+    return str(outcome or "") in {"success", "accepted"}
+
+
 def parse_cli_args(argv=None):
     parser = argparse.ArgumentParser(description="Evaluate rollout evidence")
     parser.add_argument("--evidence", required=True, help="rollout-evidence-v1 JSON")
-    parser.add_argument("--shadow-outcome", required=True, choices=("success", "failure"))
+    parser.add_argument(
+        "--shadow-outcome", required=True,
+        choices=("success", "failure", "accepted"))
     parser.add_argument("--config", default=str(Path(__file__).with_name("config.yaml")))
     parser.add_argument("--output", default="", help="optional rollout-report-v1 JSON path")
     return parser.parse_args(argv)
@@ -864,7 +873,7 @@ def parse_cli_args(argv=None):
 def main(argv=None):
     args = parse_cli_args(argv)
     evidence = json.loads(Path(args.evidence).read_text(encoding="utf-8"))
-    shadow_success = args.shadow_outcome == "success"
+    shadow_success = shadow_satisfies_selection(args.shadow_outcome)
     report = evaluate_rollout(
         evidence, shadow_success=shadow_success, judge_llm=None)
     if (report["trajectory"]["status"] == "needs_review"

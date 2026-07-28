@@ -60,6 +60,15 @@ prefilter:
   api_key: ""
   model: ""
 
+# ---------- LLM 成本护栏 ----------
+# 同日事件归并在整次运行（初筛后全量 + 发布前复核）共享调用预算。
+# 达到上限后只做共享原始条目的确定性合并，其余候选保守保留并告警。
+cost_guard:
+  same_day_reconcile_max_calls: 20
+  same_day_min_shared_keys: 4
+  generate_warn_usd: 0.06
+  shadow_warn_usd: 0.09
+
 # ---------- 自建 RSSHub 实例 ----------
 # 中文网源（科学网/澎湃/热榜等无官方 RSS）经自建 RSSHub 转 RSS。
 # sources.yaml 里写占位符 {rsshub}/路由，运行时由这两个环境变量拼真 URL：

@@ -142,6 +142,11 @@ def new_quality_stats():
         "duplicate_audited_events": 0,
         "same_day_duplicates_merged": 0,
         "duplicate_audit_failures": 0,
+        "same_day_candidate_pairs": 0,
+        "same_day_bridge_batches": 0,
+        "same_day_reconcile_calls": 0,
+        "same_day_deferred_batches": 0,
+        "same_day_budget_exhausted": False,
         "event_lines_audited": 0,
         "event_lines_merged": 0,
         "event_line_audit_failures": 0,
@@ -270,7 +275,9 @@ def _strip_rollout_item_fields(rows):
     return rows
 
 
-def build_shadow_summary(selected_before, selected_after, items, quality, runtime_seconds):
+def build_shadow_summary(
+        selected_before, selected_after, items, quality, runtime_seconds,
+        usage=None):
     """Build an allow-listed aggregate; article text and configuration never enter it."""
     basis_counts = {"fulltext": 0, "mixed": 0, "snippet": 0}
     chain_counts = {}
@@ -304,6 +311,12 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
         for source, count in sorted(source_counts.items(), key=lambda row: (-row[1], row[0]))[:10]
     ]
     selected_after_ids = {id(event) for event in selected_after}
+    safe_usage = {}
+    for key in (
+            "llm_calls", "llm_input_tokens", "llm_cached_input_tokens",
+            "llm_output_tokens", "llm_cost_usd", "llm_cost_known"):
+        if key in (usage or {}):
+            safe_usage[key] = usage[key]
     return {
         "mode": "shadow",
         "runtime_seconds": round(float(runtime_seconds), 3),
@@ -329,6 +342,7 @@ def build_shadow_summary(selected_before, selected_after, items, quality, runtim
         },
         "independent_chain_distribution": dict(sorted(chain_counts.items(), key=lambda row: int(row[0]))),
         "source_reference_concentration": concentration,
+        "llm_usage": safe_usage,
     }
 
 
@@ -1599,7 +1613,11 @@ class LLM:
     def _call(self, system, user, parser, temperature=None):
         last_err = None
         stage = stage_of_prompt(system)
-        for attempt in range(self.max_retries):
+        # Same-day reconciliation already has a conservative deterministic
+        # fallback and a whole-run request budget. Retrying one logical batch
+        # would silently spend multiple slots, so this stage gets one request.
+        max_attempts = 1 if stage == "SAME_DAY_RECONCILE_SYSTEM" else self.max_retries
+        for attempt in range(max_attempts):
             try:
                 text, usage = self._complete(
                     system, user, temperature=temperature)
@@ -1612,7 +1630,7 @@ class LLM:
                     self.record_usage(stage, usage)
                 retryable = self._is_retryable_error(exc)
                 log(f"  LLM 调用失败（第{attempt + 1}次）: {exc}")
-                if not retryable or attempt + 1 >= self.max_retries:
+                if not retryable or attempt + 1 >= max_attempts:
                     break
                 delay = getattr(exc, "retry_after", None)
                 time.sleep(delay if delay is not None else 2 ** attempt)
@@ -1717,6 +1735,29 @@ def log_usage_report(llms):
         f"出 {totals['llm_output_tokens'] / 1000:.1f}k｜"
         f"{total_cost}")
     return totals
+
+
+def warn_if_cost_exceeds(usage, cfg, policy):
+    """Emit a non-blocking warning when a run crosses its configured soft cap."""
+    if not usage.get("llm_cost_known"):
+        return False
+    guard = (cfg or {}).get("cost_guard") or {}
+    is_shadow = str((policy or {}).get("mode") or "") == "shadow"
+    key = "shadow_warn_usd" if is_shadow else "generate_warn_usd"
+    try:
+        limit = float(guard.get(key))
+        cost = float(usage.get("llm_cost_usd"))
+    except (TypeError, ValueError):
+        return False
+    if limit < 0 or cost <= limit:
+        return False
+    mode = "shadow" if is_shadow else "generate"
+    print(
+        f"::warning::LLM {mode} cost ${cost:.4f} exceeded "
+        f"the configured ${limit:.4f} warning threshold.",
+        flush=True,
+    )
+    return True
 
 
 # ----------------------------------------------------------------
@@ -1867,6 +1908,32 @@ def merge_events(llm, events, items):
 
 SAME_DAY_RECONCILE_BATCH_SIZE = 40
 SAME_DAY_BLOCK_MAX_FREQUENCY = 12
+SAME_DAY_RECONCILE_MAX_CALLS = 20
+SAME_DAY_MIN_SHARED_KEYS = 4
+
+
+def configure_same_day_cost_guard(llm, cfg):
+    """Install one run-scoped reconciliation budget on the primary LLM."""
+    guard = (cfg or {}).get("cost_guard") or {}
+    state = {
+        "max_calls": max(
+            0, int(guard.get(
+                "same_day_reconcile_max_calls",
+                SAME_DAY_RECONCILE_MAX_CALLS))),
+        "min_shared_keys": max(
+            1, int(guard.get(
+                "same_day_min_shared_keys",
+                SAME_DAY_MIN_SHARED_KEYS))),
+        "calls": 0,
+    }
+    setattr(llm, "_same_day_cost_guard", state)
+    return state
+
+
+def _same_day_cost_guard(llm):
+    state = getattr(llm, "_same_day_cost_guard", None)
+    return state if isinstance(state, dict) else configure_same_day_cost_guard(
+        llm, {})
 
 
 SAME_DAY_RECONCILE_SYSTEM = """你是日报的同日事件归并审计员。
@@ -1977,9 +2044,12 @@ def _same_day_block_keys(event, items):
     return keys | urls
 
 
-def _same_day_reconcile_batches(events, items, batch_size=SAME_DAY_RECONCILE_BATCH_SIZE):
-    """Cover all events plus cross-batch evidence candidates with bounded batches."""
+def _same_day_reconcile_plan(
+        events, items, batch_size=SAME_DAY_RECONCILE_BATCH_SIZE,
+        min_shared_keys=SAME_DAY_MIN_SHARED_KEYS):
+    """Build bounded base batches plus ranked, evidence-backed bridge batches."""
     batch_size = max(2, int(batch_size))
+    min_shared_keys = max(1, int(min_shared_keys))
     base_batches = [
         list(range(start, min(start + batch_size, len(events))))
         for start in range(0, len(events), batch_size)
@@ -1989,39 +2059,84 @@ def _same_day_reconcile_batches(events, items, batch_size=SAME_DAY_RECONCILE_BAT
         for key in _same_day_block_keys(event, items):
             key_owners.setdefault(key, set()).add(event_index)
 
-    cross_pairs = set()
-    for owners in key_owners.values():
-        if not 2 <= len(owners) <= SAME_DAY_BLOCK_MAX_FREQUENCY:
-            continue
+    forced_pairs = set()
+    lexical_counts = {}
+
+    def add_pairs(owners, *, forced=False):
         ordered = sorted(owners)
         for left_pos, left in enumerate(ordered):
             for right in ordered[left_pos + 1:]:
-                if left // batch_size != right // batch_size:
-                    cross_pairs.add((left, right))
+                if left // batch_size == right // batch_size:
+                    continue
+                pair = (left, right)
+                if forced:
+                    forced_pairs.add(pair)
+                else:
+                    lexical_counts[pair] = lexical_counts.get(pair, 0) + 1
+
+    for key, owners in key_owners.items():
+        if key.startswith("url:"):
+            if len(owners) >= 2:
+                add_pairs(owners, forced=True)
+            continue
+        if not 2 <= len(owners) <= SAME_DAY_BLOCK_MAX_FREQUENCY:
+            continue
+        add_pairs(owners)
+
+    item_owners = {}
+    for event_index, event in enumerate(events):
+        for item_id in event.get("ids") or []:
+            if isinstance(item_id, int) and not isinstance(item_id, bool):
+                item_owners.setdefault(item_id, set()).add(event_index)
+    for owners in item_owners.values():
+        if len(owners) >= 2:
+            add_pairs(owners, forced=True)
+
+    candidate_pairs = forced_pairs | {
+        pair for pair, count in lexical_counts.items()
+        if count >= min_shared_keys
+    }
+    ordered_pairs = sorted(
+        candidate_pairs,
+        key=lambda pair: (
+            0 if pair in forced_pairs else 1,
+            -lexical_counts.get(pair, 0),
+            pair[0], pair[1],
+        ))
 
     bridge_batches = []
-    current = []
     current_set = set()
-    for left, right in sorted(cross_pairs):
+    for left, right in ordered_pairs:
         additions = {left, right} - current_set
-        if current and len(current_set) + len(additions) > batch_size:
+        if current_set and len(current_set) + len(additions) > batch_size:
             bridge_batches.append(sorted(current_set))
-            current, current_set = [], set()
+            current_set = set()
         for value in (left, right):
-            if value not in current_set:
-                current.append(value)
-                current_set.add(value)
-    if current:
+            current_set.add(value)
+    if current_set:
         bridge_batches.append(sorted(current_set))
 
     seen = set()
-    batches = []
-    for batch in [*base_batches, *bridge_batches]:
+    unique_bridges = []
+    for batch in bridge_batches:
         marker = tuple(batch)
         if marker and marker not in seen:
             seen.add(marker)
-            batches.append(batch)
-    return batches
+            unique_bridges.append(batch)
+    return {
+        "base_batches": base_batches,
+        "bridge_batches": unique_bridges,
+        "candidate_pairs": len(candidate_pairs),
+    }
+
+
+def _same_day_reconcile_batches(
+        events, items, batch_size=SAME_DAY_RECONCILE_BATCH_SIZE,
+        min_shared_keys=SAME_DAY_MIN_SHARED_KEYS):
+    plan = _same_day_reconcile_plan(
+        events, items, batch_size=batch_size,
+        min_shared_keys=min_shared_keys)
+    return [*plan["base_batches"], *plan["bridge_batches"]]
 
 
 def _merge_same_day_groups(events, groups, items, quality=None):
@@ -2051,6 +2166,12 @@ def reconcile_same_day_events(llm, events, items, quality=None):
     if len(events) < 2:
         return events
     quality["duplicate_audited_events"] += len(events)
+    guard = _same_day_cost_guard(llm)
+    plan = _same_day_reconcile_plan(
+        events, items,
+        min_shared_keys=guard["min_shared_keys"])
+    quality["same_day_candidate_pairs"] += plan["candidate_pairs"]
+    quality["same_day_bridge_batches"] += len(plan["bridge_batches"])
     parents = list(range(len(events)))
 
     def find(value):
@@ -2064,9 +2185,25 @@ def reconcile_same_day_events(llm, events, items, quality=None):
         if left_root != right_root:
             parents[right_root] = left_root
 
-    for batch in _same_day_reconcile_batches(events, items):
+    budget_warning_logged = False
+    for batch in [*plan["base_batches"], *plan["bridge_batches"]]:
         batch_events = [events[index] for index in batch]
         payload = _same_day_reconcile_payload(batch_events, items)
+        if guard["calls"] >= guard["max_calls"]:
+            quality["same_day_budget_exhausted"] = True
+            quality["same_day_deferred_batches"] += 1
+            quality["degraded"] = True
+            if not budget_warning_logged:
+                log("  同日事件归并达到调用预算，剩余批次使用确定性降级")
+                budget_warning_logged = True
+            groups = _deterministic_same_day_groups(batch_events, items)
+            for group in groups:
+                global_group = [batch[index] for index in group]
+                for event_index in global_group[1:]:
+                    union(global_group[0], event_index)
+            continue
+        guard["calls"] += 1
+        quality["same_day_reconcile_calls"] += 1
         try:
             groups = _validated_same_day_groups(
                 llm.json_call(
@@ -6150,11 +6287,16 @@ def validate_daily_payload(payload):
                 "quality.enrichment_audited_events must be a non-negative integer")
         for field in (
                 "duplicate_audited_events", "same_day_duplicates_merged",
-                "duplicate_audit_failures"):
+                "duplicate_audit_failures", "same_day_candidate_pairs",
+                "same_day_bridge_batches", "same_day_reconcile_calls",
+                "same_day_deferred_batches"):
             value = quality.get(field)
             if value is not None and (
                     not isinstance(value, int) or isinstance(value, bool) or value < 0):
                 errors.append(f"quality.{field} must be a non-negative integer")
+        exhausted = quality.get("same_day_budget_exhausted")
+        if exhausted is not None and not isinstance(exhausted, bool):
+            errors.append("quality.same_day_budget_exhausted must be a boolean")
         for field in ("cross_day_duplicates", "material_updates", "update_judge_failures"):
             value = quality.get(field)
             if value is not None and (not isinstance(value, int)
@@ -7371,6 +7513,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         sys.exit(1)
 
     llm = LLM(primary_llm_cfg)
+    configure_same_day_cost_guard(llm, cfg)
     audit_llm = LLM(resolve_llm_config(cfg, "audit_llm"))
     prefilter_llm = None
 
@@ -7545,6 +7688,7 @@ def _run_pipeline(started_at, args, cfg, policy):
     # update_quality_health 早于周综述等阶段，此处按同一日期整条覆盖）。
     run_usage = log_usage_report(
         [client for client in (llm, audit_llm, prefilter_llm) if client is not None])
+    warn_if_cost_exceeds(run_usage, cfg, policy)
     if policy["writes_public_data"]:
         try:
             update_quality_health(
@@ -7556,7 +7700,8 @@ def _run_pipeline(started_at, args, cfg, policy):
     if not policy["writes_public_data"]:
         summary = build_shadow_summary(
             shadow_selected or [], picked, items, quality,
-            runtime_seconds=time.perf_counter() - started_at)
+            runtime_seconds=time.perf_counter() - started_at,
+            usage=run_usage)
         print(json.dumps(summary, ensure_ascii=False, sort_keys=True), flush=True)
         append_github_shadow_summary(summary)
         write_shadow_summary(summary)

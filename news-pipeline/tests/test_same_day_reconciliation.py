@@ -85,6 +85,80 @@ def test_evidence_reconciliation_is_bounded_and_bridges_base_batches():
     assert set(reconciled[0]["ids"]) == {0, 44}
 
 
+def test_bridge_candidates_require_strong_overlap_but_keep_exact_url_candidates():
+    items = [
+        _item(index, title=f"OpenAI unrelated product update {index}")
+        for index in range(80)
+    ]
+    shared_url = "https://example.test/daily-roundup"
+    items[0].update({
+        "title": "Alpha regulator decision",
+        "desc": "A regulator issued an unrelated Alpha decision.",
+        "url": shared_url,
+    })
+    items[79].update({
+        "title": "Beta product launch",
+        "desc": "A company launched an unrelated Beta product.",
+        "url": shared_url,
+    })
+    events = [_event(index, title=f"OpenAI event {index}") for index in range(80)]
+    events[0]["title"] = "Alpha decision"
+    events[79]["title"] = "Beta launch"
+
+    plan = dn._same_day_reconcile_plan(
+        events, items, batch_size=40, min_shared_keys=4)
+
+    assert len(plan["base_batches"]) == 2
+    assert plan["candidate_pairs"] == 1
+    assert any(0 in batch and 79 in batch for batch in plan["bridge_batches"])
+
+
+def test_reconciliation_budget_is_shared_and_skips_remaining_batches():
+    items = [_item(index) for index in range(90)]
+    events = [_event(index) for index in range(90)]
+    llm = BoundedPartitionLLM()
+    quality = dn.new_quality_stats()
+    dn.configure_same_day_cost_guard(llm, {
+        "cost_guard": {
+            "same_day_reconcile_max_calls": 2,
+            "same_day_min_shared_keys": 4,
+        },
+    })
+
+    reconciled = dn.reconcile_same_day_events(llm, events, items, quality)
+
+    assert len(reconciled) == 90
+    assert len(llm.calls) == 2
+    assert quality["same_day_reconcile_calls"] == 2
+    assert quality["same_day_budget_exhausted"] is True
+    assert quality["same_day_deferred_batches"] >= 1
+    assert quality["degraded"] is True
+
+
+def test_budget_exhaustion_still_merges_shared_original_items():
+    items = [_item(0), _item(1)]
+    events = [
+        _event(0, title="First rendering"),
+        _event(1, title="Independent event"),
+        _event(0, title="Second rendering"),
+    ]
+    llm = BoundedPartitionLLM()
+    quality = dn.new_quality_stats()
+    dn.configure_same_day_cost_guard(llm, {
+        "cost_guard": {
+            "same_day_reconcile_max_calls": 0,
+            "same_day_min_shared_keys": 4,
+        },
+    })
+
+    reconciled = dn.reconcile_same_day_events(llm, events, items, quality)
+
+    assert len(llm.calls) == 0
+    assert len(reconciled) == 2
+    assert quality["same_day_duplicates_merged"] == 1
+    assert quality["same_day_budget_exhausted"] is True
+
+
 def test_reconciliation_payload_keeps_more_than_three_relevant_reports():
     items = [_item(index, source_id=f"publisher-{index}") for index in range(5)]
     event = _event(0)

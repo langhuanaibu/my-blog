@@ -287,6 +287,26 @@ def test_unexpected_internal_error_is_not_retried(monkeypatch):
     assert sleeps == []
 
 
+def test_same_day_reconciliation_does_not_retry_a_paid_request(monkeypatch):
+    calls = []
+    sleeps = []
+    llm = dn.LLM(dn.resolve_llm_config(
+        provider_config(), environ={"STEPFUN_API_KEY": "secret"}))
+
+    def fail(*args, **kwargs):
+        calls.append(1)
+        raise dn.LLMCallError("temporary", retryable=True)
+
+    monkeypatch.setattr(llm, "_complete", fail)
+    monkeypatch.setattr(dn.time, "sleep", sleeps.append)
+
+    with pytest.raises(RuntimeError, match="temporary"):
+        llm.json_call(dn.SAME_DAY_RECONCILE_SYSTEM, "[]")
+
+    assert len(calls) == 1
+    assert sleeps == []
+
+
 def test_text_call_uses_shared_transport_and_openai_keeps_request_options(monkeypatch):
     seen = []
 
@@ -355,3 +375,21 @@ def test_usage_report_keeps_model_identity_and_marks_unknown_cost():
     assert totals["llm_calls"] == 2
     assert totals["llm_cost_usd"] is None
     assert totals["llm_cost_known"] is False
+
+
+def test_cost_guard_warns_without_blocking_when_mode_limit_is_exceeded(capsys):
+    cfg = {
+        "cost_guard": {
+            "generate_warn_usd": 0.06,
+            "shadow_warn_usd": 0.09,
+        },
+    }
+    usage = {"llm_cost_usd": 0.08, "llm_cost_known": True}
+
+    warned = dn.warn_if_cost_exceeds(
+        usage, cfg, {"mode": "interim", "writes_public_data": True})
+
+    assert warned is True
+    assert "::warning::" in capsys.readouterr().out
+    assert dn.warn_if_cost_exceeds(
+        usage, cfg, {"mode": "shadow", "writes_public_data": False}) is False

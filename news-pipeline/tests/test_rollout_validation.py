@@ -363,6 +363,12 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
         "interest_weights": {"ai": 1.0},
         "min_per_category": 3, "max_per_category": {},
         "opinion": {"enabled": True, "cooccur_bonus": 1.08},
+        "cost_guard": {
+            "same_day_reconcile_max_calls": 20,
+            "same_day_min_shared_keys": 4,
+            "generate_warn_usd": 0.06,
+            "shadow_warn_usd": 0.09,
+        },
         "events": {"match_window_days": 14, "archive_days": 7,
                    "prune_archived_days": 60},
         "trajectory": {"enabled": True},
@@ -389,6 +395,14 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
     endpoint_path_change = copy.deepcopy(config)
     endpoint_path_change["llm"]["base_url"] = "https://llm.example/v2"
     assert fingerprints(endpoint_path_change)["runtime"] != baseline["runtime"]
+
+    same_day_guard_change = copy.deepcopy(config)
+    same_day_guard_change["cost_guard"]["same_day_reconcile_max_calls"] = 12
+    assert fingerprints(same_day_guard_change)["runtime"] != baseline["runtime"]
+
+    cost_warning_change = copy.deepcopy(config)
+    cost_warning_change["cost_guard"]["generate_warn_usd"] = 0.04
+    assert fingerprints(cost_warning_change) == baseline
 
     trajectory_change = copy.deepcopy(config)
     trajectory_change["trajectory"]["enabled"] = False
@@ -983,6 +997,18 @@ def test_selection_gate_accepts_new_capacity_boundary():
     report = rv.evaluate_rollout(
         evidence, shadow_success=True, judge_llm=Judge())
     assert report["selection"]["status"] == "pass"
+
+
+def test_cli_accepts_completed_shadow_gate_as_selection_evidence(tmp_path):
+    rv = rollout()
+
+    args = rv.parse_cli_args([
+        "--evidence", str(tmp_path / "evidence.json"),
+        "--shadow-outcome", "accepted",
+    ])
+
+    assert args.shadow_outcome == "accepted"
+    assert rv.shadow_satisfies_selection(args.shadow_outcome) is True
 
 
 def test_watch_ratio_and_continuation_link_are_deterministic_trajectory_gates():

@@ -21,6 +21,15 @@ on:
         options:
           - validate
           - publish
+      shadow_mode:
+        description: auto 按验收门运行；force 强制运行；skip 显式跳过
+        required: true
+        type: choice
+        default: auto
+        options:
+          - auto
+          - force
+          - skip
 
 permissions:
   contents: read
@@ -106,9 +115,60 @@ jobs:
           git pull --rebase origin main
           git push
 
+  shadow-policy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    outputs:
+      run_shadow: ${{ steps.decide.outputs.run_shadow }}
+      skipped_outcome: ${{ steps.decide.outputs.skipped_outcome }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Read shadow gate status
+        id: gate
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python news-pipeline/issue_ledger.py shadow-status --issue 15
+
+      - name: Decide shadow policy
+        id: decide
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode }}
+          SHADOW_MODE: ${{ inputs.shadow_mode }}
+          GATE_OUTCOME: ${{ steps.gate.outcome }}
+          GATE_ACCEPTED: ${{ steps.gate.outputs.accepted }}
+        run: |
+          run_shadow=false
+          skipped_outcome=failure
+          shadow_mode="${SHADOW_MODE:-auto}"
+
+          if [[ "$shadow_mode" == "force" ]]; then
+            run_shadow=true
+          elif [[ "$shadow_mode" == "skip" ]]; then
+            run_shadow=false
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_MODE" == "validate" ]]; then
+            run_shadow=false
+          elif [[ "$GATE_OUTCOME" != "success" ]]; then
+            echo "::warning::Shadow gate status lookup failed; running bounded shadow."
+            run_shadow=true
+          elif [[ "$GATE_ACCEPTED" == "true" ]]; then
+            run_shadow=false
+            skipped_outcome=accepted
+          else
+            run_shadow=true
+          fi
+
+          echo "run_shadow=$run_shadow" >> "$GITHUB_OUTPUT"
+          echo "skipped_outcome=$skipped_outcome" >> "$GITHUB_OUTPUT"
+
   shadow:
-    needs: generate
-    if: ${{ needs.generate.result == 'success' }}
+    needs: [generate, shadow-policy]
+    if: ${{ always() && needs.generate.result == 'success' && needs.shadow-policy.outputs.run_shadow == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     continue-on-error: ${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}
@@ -186,7 +246,7 @@ jobs:
           retention-days: 3
 
   rollout-review:
-    needs: [generate, shadow]
+    needs: [generate, shadow-policy, shadow]
     if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.mode == 'publish') }}
     continue-on-error: true
     concurrency:
@@ -243,6 +303,7 @@ jobs:
           GENERATE_RESULT: ${{ needs.generate.result }}
           EVIDENCE_PATH: ${{ env.REVIEW_DIR }}/rollout-evidence/rollout-evidence.json
           SHADOW_STATUS_PATH: ${{ env.REVIEW_DIR }}/shadow-status/daily-news-shadow-status.json
+          SKIPPED_SHADOW_OUTCOME: ${{ needs.shadow-policy.outputs.skipped_outcome }}
         run: |
           python - <<'PY'
           import json
@@ -263,7 +324,11 @@ jobs:
               publication = "failure"
               reason = "rollout evidence artifact missing"
 
-          shadow_outcome = "failure"
+          shadow_outcome = (
+              "accepted"
+              if os.environ.get("SKIPPED_SHADOW_OUTCOME") == "accepted"
+              else "failure"
+          )
           try:
               status = json.loads(Path(os.environ["SHADOW_STATUS_PATH"]).read_text(
                   encoding="utf-8"))
