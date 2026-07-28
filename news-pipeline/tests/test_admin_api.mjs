@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
 const adminArticles = require("../../api/adminArticles.js");
+const adminSession = require("../../api/adminSession.js");
 const adminSettings = require("../../api/adminSettings.js");
 const adminUpload = require("../../api/adminUpload.js");
 const newsState = require("../../api/newsState.js");
@@ -59,6 +60,45 @@ test("personal-session authentication accepts a signed cookie without granting b
     const req = { headers: { cookie: `aoiblog_admin_session=${session}` } };
     assert.doesNotThrow(() => github.requireAdminSession(req, now));
     assert.throws(() => github.requireAdmin(req), (error) => error.status === 401);
+  });
+});
+
+test("malformed personal-session cookies are rejected as unauthorized", async () => {
+  await withRepoEnv(async () => {
+    const req = {
+      method: "GET",
+      headers: { cookie: "aoiblog_admin_session=%E0%A4%A" },
+      query: { type: "misses" },
+    };
+    const res = mockResponse();
+    await newsState(req, res);
+    assert.equal(res.statusCode, 401);
+    assert.equal(res.body.error, "Unauthorized");
+  });
+});
+
+test("admin session rate limits repeated failed logins from one client", async () => {
+  await withRepoEnv(async () => {
+    adminSession._test.resetLoginAttempts();
+    const request = () => ({
+      method: "POST",
+      headers: { "x-vercel-forwarded-for": "203.0.113.10" },
+      body: { token: "wrong-secret" },
+    });
+    try {
+      for (let attempt = 0; attempt < adminSession._test.MAX_FAILED_ATTEMPTS; attempt += 1) {
+        const res = mockResponse();
+        await adminSession(request(), res);
+        assert.equal(res.statusCode, 401);
+      }
+      const blocked = mockResponse();
+      await adminSession(request(), blocked);
+      assert.equal(blocked.statusCode, 429);
+      assert.match(blocked.body.error, /too many login attempts/i);
+      assert.ok(Number(blocked.headers["retry-after"]) > 0);
+    } finally {
+      adminSession._test.resetLoginAttempts();
+    }
   });
 });
 
@@ -168,6 +208,35 @@ test("misses date validation rejects impossible calendar dates", () => {
     title: "Leap-day event",
     reason: "important_event",
   }));
+});
+
+test("all personal state types reject impossible calendar dates", () => {
+  for (const type of ["feedback", "read_later", "favorites"]) {
+    assert.throws(
+      () => newsState._test.validateEntry(type, {
+        date: "2026-99-99",
+        item_id: "pick-1",
+        action: "not_interested",
+        op: "add",
+        url: "https://example.com/a",
+      }),
+      /real calendar date/i,
+    );
+  }
+});
+
+test("read-later rejects HTTP prefixes without a valid URL", () => {
+  for (const url of ["http://", "https://not a url", "javascript:alert(1)"]) {
+    assert.throws(
+      () => newsState._test.validateEntry("read_later", {
+        date: "2026-07-15",
+        item_id: "pick-1",
+        op: "add",
+        url,
+      }),
+      /http\(s\)/i,
+    );
+  }
 });
 
 test("state type allowlist rejects inherited object keys", () => {

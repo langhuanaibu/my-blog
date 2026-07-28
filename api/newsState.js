@@ -105,8 +105,8 @@ function validateEntry(type, payload) {
     };
   }
 
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(payload.date || ''))) {
-    throw createHttpError(400, 'payload.date must be YYYY-MM-DD');
+  if (!isRealIsoDate(payload.date)) {
+    throw createHttpError(400, 'payload.date must be a real calendar date in YYYY-MM-DD format');
   }
   if (!String(payload.item_id || '').trim()) {
     throw createHttpError(400, 'payload.item_id is required');
@@ -139,7 +139,7 @@ function validateEntry(type, payload) {
     entry.op = READ_LATER_OPS.includes(payload.op) ? payload.op : 'add';
     if (entry.op === 'add') {
       const url = String(payload.url || '');
-      if (!/^https?:\/\//i.test(url)) {
+      if (!isHttpUrl(url)) {
         throw createHttpError(400, 'payload.url must be an http(s) URL');
       }
       entry.url = clip(url, 500);

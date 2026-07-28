@@ -101,8 +101,8 @@ GITHUB_BRANCH=main
 
 ### API 鉴权与并发保护
 
-- `POST /api/adminSession` 校验后台口令并建立个人会话；`GET` 用于探测会话，`DELETE` 用于退出。会话 Cookie 仅作用于 `/api`，接口不开放跨域凭据读取。
-- `api/newsState.js` 只接受个人会话，用于日报反馈、收藏、稍后读和漏读；读取使用 `GET /api/newsState?type=feedback|read_later|favorites|misses`，写入使用 `POST /api/newsState` 与 `{ "type": "...", "payload": { ... } }`。漏读新增 payload 为 `date/title?/url?/reason`，撤销为 `op: "remove"` 加记录 `id`；`date` 必须是真实的 `YYYY-MM-DD` 日历日期，标题或有效 HTTP(S) URL 至少一个，`reason` 只允许 `important_event`（重要事件）、`deep_read`（值得深读）、`missing_perspective`（缺少视角）。`adminArticles.js`、`adminSettings.js`、`adminUpload.js` 等高权限接口仍要求 `Authorization: Bearer <ADMIN_TOKEN>`。
+- `POST /api/adminSession` 校验后台口令并建立个人会话；同一客户端在 15 分钟内连续失败 5 次后，该 Serverless 实例会返回 `429`，成功登录会清除失败记录。该有界内存限流用于应用层兜底，不替代 Vercel Firewall 等跨实例限流。`GET` 用于探测会话，`DELETE` 用于退出。会话 Cookie 仅作用于 `/api`，接口不开放跨域凭据读取；畸形 Cookie 按未登录处理，不产生 500。
+- `api/newsState.js` 只接受个人会话，用于日报反馈、收藏、稍后读和漏读；读取使用 `GET /api/newsState?type=feedback|read_later|favorites|misses`，写入使用 `POST /api/newsState` 与 `{ "type": "...", "payload": { ... } }`。所有状态的 `date` 都必须是真实的 `YYYY-MM-DD` 日历日期，稍后读链接必须是带主机名的有效 HTTP(S) URL。漏读新增 payload 为 `date/title?/url?/reason`，撤销为 `op: "remove"` 加记录 `id`；标题或有效 HTTP(S) URL 至少一个，`reason` 只允许 `important_event`（重要事件）、`deep_read`（值得深读）、`missing_perspective`（缺少视角）。`adminArticles.js`、`adminSettings.js`、`adminUpload.js` 等高权限接口仍要求 `Authorization: Bearer <ADMIN_TOKEN>`。
 - 踩坑：用查表取值判真做白名单（`if (!STATE_FILES[type])`）挡不住 `__proto__`、`constructor`、`toString`、`hasOwnProperty`、`valueOf`——这些原型键取出来都是真值，会绕过校验并把 `Object.prototype` 当成写入路径送进 GitHub 文件接口。**接口里凡是用对象做白名单，一律用 `Object.hasOwn(map, key)` 判断**（2026-07-26 修复）。
 - 编辑或删除文章时必须提交打开文章时返回的 GitHub blob SHA；文件已被其他操作修改时接口返回 `409`，应刷新后重新编辑，不能覆盖较新的内容。
 - 站点设置涉及 `_config.yml` 与 `_config.fluid.yml` 时通过单个 Git commit 原子更新；任一源文件版本过期都会拒绝整次更新，不留下半套配置。

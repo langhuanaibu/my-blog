@@ -753,6 +753,19 @@ def test_sync_cli_scores_all_five_gates_against_the_repo_health_files(tmp_path):
     assert "待人工最终确认" not in body
 
 
+@pytest.mark.parametrize("record", [
+    {"enrichment_audited_events": "bad", "removed_fields": 1},
+    {"enrichment_audited_events": 2, "removed_fields": "bad"},
+    {"enrichment_audited_events": True, "removed_fields": 1},
+    {"enrichment_audited_events": -1, "removed_fields": 1},
+    {"enrichment_audited_events": 2, "removed_fields": -1},
+])
+def test_enrich_quality_ratio_treats_invalid_persisted_fields_as_unknown(record):
+    il = ledger()
+
+    assert il._quality_ratio(record) is None
+
+
 @pytest.mark.parametrize("command", ["sync", "manual-review", "heartbeat"])
 def test_cli_rejects_dates_that_could_forge_a_trusted_ledger_comment(command):
     """The date lands inside the HTML comment marker of a bot-authored entry.

@@ -383,10 +383,13 @@ def _median(values):
 
 
 def _quality_ratio(record):
-    audited = int(record.get("enrichment_audited_events") or 0)
-    if audited <= 0:
+    audited = record.get("enrichment_audited_events")
+    removed = record.get("removed_fields")
+    if (not isinstance(audited, int) or isinstance(audited, bool)
+            or not isinstance(removed, int) or isinstance(removed, bool)
+            or audited <= 0 or removed < 0):
         return None
-    return int(record.get("removed_fields") or 0) / audited
+    return removed / audited
 
 
 def enrich_baseline(quality_health, before_date):
