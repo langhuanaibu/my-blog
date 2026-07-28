@@ -1016,7 +1016,10 @@ def test_shadow_failure_is_observed_without_failing_the_job():
     status_step = step_named(shadow, "Record shadow status")
 
     assert run_step["id"] == "shadow_run"
-    assert run_step["continue-on-error"] is True
+    conditional_non_blocking = (
+        "${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}")
+    assert run_step["continue-on-error"] == conditional_non_blocking
+    assert shadow["continue-on-error"] == conditional_non_blocking
     assert status_step["if"] == "${{ always() }}"
     assert status_step["env"]["SHADOW_OUTCOME"] == (
         "${{ steps.shadow_run.outcome }}")
@@ -1033,7 +1036,8 @@ def test_review_checks_open_issue_before_dependencies_or_judge():
 
     assert review["needs"] == ["generate", "shadow"]
     assert review["if"] == (
-        "${{ always() && github.ref == 'refs/heads/main' }}")
+        "${{ always() && github.ref == 'refs/heads/main' && "
+        "(github.event_name == 'schedule' || inputs.mode == 'publish') }}")
     assert issue_index < install_index < judge_index
     assert step_named(review, "Check rollout issue")["id"] == "issue"
     assert "steps.issue.outputs.open == 'true'" in step_named(
@@ -1125,7 +1129,8 @@ def test_daily_and_manual_ledger_writes_share_one_concurrency_group():
     daily_review = workflow()["jobs"]["rollout-review"]
 
     assert daily_review["if"] == (
-        "${{ always() && github.ref == 'refs/heads/main' }}")
+        "${{ always() && github.ref == 'refs/heads/main' && "
+        "(github.event_name == 'schedule' || inputs.mode == 'publish') }}")
     assert daily_review["concurrency"] == {
         "group": "daily-news-rollout-ledger",
         "cancel-in-progress": False,

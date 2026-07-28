@@ -208,7 +208,9 @@ def _model_projection(raw, *, enabled=False):
     projection = {}
     if enabled:
         projection["enabled"] = raw.get("enabled") is True
-    for key in ("model", "temperature", "max_retries"):
+    for key in (
+            "provider", "protocol", "model", "temperature", "max_tokens",
+            "max_retries", "request_timeout"):
         if key in raw:
             projection[key] = copy.deepcopy(raw[key])
     endpoint = _endpoint_identity(raw.get("base_url"))
@@ -225,6 +227,32 @@ def _model_projection(raw, *, enabled=False):
     return projection
 
 
+def _resolved_role_config(config, section):
+    config = config if isinstance(config, dict) else {}
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    providers = llm.get("providers")
+    override = {} if section == "llm" else (
+        config.get(section) if isinstance(config.get(section), dict) else {})
+    if isinstance(providers, dict):
+        provider = str(
+            override.get("provider") or llm.get("active_provider") or "").strip()
+        base = providers.get(provider)
+        if not isinstance(base, dict):
+            return {"provider": provider}
+        resolved = dict(base)
+        resolved["provider"] = provider
+    else:
+        resolved = dict(llm)
+    if section != "llm":
+        for key, value in override.items():
+            if key in {"provider", "base_url", "api_key", "model"} and not str(
+                    value or "").strip():
+                continue
+            if key != "enabled" and value is not None:
+                resolved[key] = copy.deepcopy(value)
+    return resolved
+
+
 def _selected_mapping(raw, keys):
     raw = raw if isinstance(raw, dict) else {}
     return {key: copy.deepcopy(raw[key]) for key in keys if key in raw}
@@ -233,9 +261,18 @@ def _selected_mapping(raw, keys):
 def _runtime_config_projection(config):
     config = config if isinstance(config, dict) else {}
     return {
-        "llm": _model_projection(config.get("llm")),
-        "audit_llm": _model_projection(config.get("audit_llm")),
-        "prefilter": _model_projection(config.get("prefilter"), enabled=True),
+        "llm": _model_projection(_resolved_role_config(config, "llm")),
+        "audit_llm": _model_projection(
+            _resolved_role_config(config, "audit_llm")),
+        "prefilter": _model_projection(
+            {
+                **_resolved_role_config(config, "prefilter"),
+                "enabled": (
+                    config.get("prefilter", {}).get("enabled") is True
+                    if isinstance(config.get("prefilter"), dict) else False),
+            },
+            enabled=True,
+        ),
         "objectivity": _selected_mapping(config.get("objectivity"), ("mode",)),
         "selection": {
             **_selected_mapping(config, (
@@ -443,16 +480,13 @@ def write_rollout_evidence(evidence, *, data_dir, environ=None):
     return True
 
 
-def resolve_judge_llm_config(cfg):
+def resolve_judge_llm_config(cfg, environ=None):
     """Reuse audit LLM identity/settings while forcing deterministic sampling."""
-    primary = dict(cfg.get("llm") or {})
-    override = cfg.get("audit_llm") or {}
-    merged = dict(primary)
-    for key, value in override.items():
-        if key in {"base_url", "api_key", "model"} and not str(value or "").strip():
-            continue
-        if value is not None:
-            merged[key] = value
+    environ = os.environ if environ is None else environ
+    merged = _resolved_role_config(cfg, "audit_llm")
+    env_name = str(merged.get("api_key_env") or "").strip()
+    if env_name and str(environ.get(env_name) or "").strip():
+        merged["api_key"] = str(environ[env_name]).strip()
     merged["temperature"] = 0.0
     return merged
 
@@ -841,8 +875,6 @@ def main(argv=None):
             import daily_news
 
             cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-            if os.environ.get("LLM_API_KEY", "").strip():
-                cfg.setdefault("llm", {})["api_key"] = os.environ["LLM_API_KEY"].strip()
             judge = daily_news.LLM(resolve_judge_llm_config(cfg))
         except Exception:
             judge = None

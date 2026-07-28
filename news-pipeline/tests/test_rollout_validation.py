@@ -408,6 +408,71 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
     assert css_change["trajectory_ui"] != baseline["trajectory_ui"]
 
 
+def test_runtime_fingerprint_tracks_active_provider_protocol_and_limits_not_secrets(
+        tmp_path):
+    rv = rollout()
+    runtime_file = tmp_path / "runtime.py"
+    ui_file = tmp_path / "ui.js"
+    runtime_file.write_text("runtime", encoding="utf-8")
+    ui_file.write_text("ui", encoding="utf-8")
+    config = {
+        "llm": {
+            "active_provider": "stepfun",
+            "providers": {
+                "stepfun": {
+                    "protocol": "anthropic",
+                    "base_url": "https://api.stepfun.com/v1",
+                    "api_key_env": "STEPFUN_API_KEY",
+                    "api_key": "secret-a",
+                    "model": "step-explore",
+                    "max_tokens": 16384,
+                    "max_retries": 3,
+                    "request_timeout": [10, 180],
+                },
+                "deepseek": {
+                    "protocol": "openai",
+                    "base_url": "https://api.deepseek.com/v1",
+                    "api_key_env": "DEEPSEEK_API_KEY",
+                    "api_key": "secret-b",
+                    "model": "deepseek-v4-flash",
+                    "temperature": 0.3,
+                    "max_retries": 3,
+                    "extra_body": {"thinking": {"type": "disabled"}},
+                },
+            },
+        },
+        "audit_llm": {},
+        "prefilter": {"enabled": True},
+        "objectivity": {"mode": "interim"},
+    }
+
+    def runtime(candidate):
+        return rv.build_stage_fingerprints(
+            config=candidate,
+            runtime_paths=[runtime_file],
+            trajectory_ui_paths=[ui_file],
+        )["runtime"]
+
+    baseline = runtime(config)
+    secret_change = copy.deepcopy(config)
+    secret_change["llm"]["providers"]["stepfun"]["api_key"] = "rotated"
+    assert runtime(secret_change) == baseline
+
+    for key, value in (
+        ("protocol", "openai"),
+        ("max_tokens", 8192),
+        ("max_retries", 4),
+        ("request_timeout", [10, 240]),
+    ):
+        changed = copy.deepcopy(config)
+        changed["llm"]["providers"]["stepfun"][key] = value
+        assert runtime(changed) != baseline
+
+    fallback = copy.deepcopy(config)
+    fallback["llm"]["active_provider"] = "deepseek"
+    assert runtime(fallback) != baseline
+
+
 def test_daily_pipeline_evidence_emitter_is_opt_in_and_import_context_safe(tmp_path):
     data_dir = tmp_path / "data"
     data_dir.mkdir()

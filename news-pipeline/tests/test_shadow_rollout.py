@@ -39,9 +39,15 @@ def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_repor
     evaluate = workflow["jobs"]["evaluate"]
     assert evaluate["if"] == "github.ref == 'refs/heads/main'"
     assert evaluate["permissions"] == {"contents": "read"}
-    assert evaluate["env"]["LLM_API_KEY"] == "${{ secrets.LLM_API_KEY }}"
 
     steps = evaluate["steps"]
+    acceptance = next(
+        step for step in steps
+        if step.get("name") == "Evaluate fixed objectivity corpus"
+    )
+    assert acceptance["env"]["STEPFUN_API_KEY"] == "${{ secrets.STEPFUN_API_KEY }}"
+    assert acceptance["env"]["DEEPSEEK_API_KEY"] == "${{ secrets.DEEPSEEK_API_KEY }}"
+    assert "LLM_API_KEY" not in acceptance["env"]
     assert steps[0]["with"]["ref"] == "main"
     run_scripts = "\n".join(step.get("run", "") for step in steps)
     assert "python news-pipeline/objectivity_eval.py" in run_scripts
@@ -1557,26 +1563,58 @@ def test_fulltext_sentinel_never_survives_repair_fallback_or_persistent_consumer
                 encoding="utf-8")
 
 
-def test_workflow_shadow_job_is_non_blocking_read_only_and_untracked():
-    workflow = (ROOT / ".github" / "workflows" / "daily-news.yml").read_text(encoding="utf-8")
-    assert "shadow:" in workflow
-    generate = workflow.split("  generate:", 1)[1].split("  shadow:", 1)[0]
-    assert "python news-pipeline/daily_news.py\n" in generate
-    assert "git commit" in generate
-    assert "git push" in generate
-    assert "--objectivity-shadow" not in generate
-    shadow = workflow.split("  shadow:", 1)[1]
-    assert "continue-on-error: true" in shadow
-    assert "timeout-minutes: 24" in shadow
-    assert "needs: generate" in shadow
-    assert "needs.generate.result == 'success'" in shadow
-    assert "contents: read" in shadow
-    assert "ref: main" in shadow
-    assert "python news-pipeline/daily_news.py --objectivity-shadow" in shadow
-    assert "${{ github.workspace }}/source/news/data" in shadow
-    assert "${{ runner.temp }}" not in shadow
-    assert "git commit" not in shadow
-    assert "git push" not in shadow
+def test_workflow_supports_non_publishing_validation_and_explicit_publish():
+    path = ROOT / ".github" / "workflows" / "daily-news.yml"
+    text = path.read_text(encoding="utf-8")
+    workflow = yaml.load(text, Loader=yaml.BaseLoader)
+    dispatch = workflow["on"]["workflow_dispatch"]
+    mode = dispatch["inputs"]["mode"]
+    assert mode["default"] == "validate"
+    assert mode["options"] == ["validate", "publish"]
+
+    generate = workflow["jobs"]["generate"]
+    assert generate["timeout-minutes"] == "60"
+    assert generate["env"]["RUN_MODE"] == (
+        "${{ github.event_name == 'schedule' && 'publish' || inputs.mode }}")
+    assert "LLM_API_KEY" not in generate["env"]
+    generate_run = next(step for step in generate["steps"]
+                        if step.get("name") == "Generate daily briefing")
+    assert generate_run["env"]["STEPFUN_API_KEY"] == (
+        "${{ secrets.STEPFUN_API_KEY }}")
+    assert generate_run["env"]["DEEPSEEK_API_KEY"] == (
+        "${{ secrets.DEEPSEEK_API_KEY }}")
+    prepare = next(step for step in generate["steps"]
+                   if step.get("name") == "Prepare run data")
+    assert "runner.temp" in prepare["env"]["VALIDATION_DATA_DIR"]
+    assert 'cp -a source/news/data/. "$VALIDATION_DATA_DIR/"' in prepare["run"]
+    commit = next(step for step in generate["steps"]
+                  if step.get("name") == "Commit and push")
+    assert commit["if"] == "env.RUN_MODE == 'publish'"
+
+    upload = next(step for step in generate["steps"]
+                  if step.get("name") == "Upload generated data")
+    assert upload["with"]["path"] == "${{ steps.run_data.outputs.data_dir }}"
+    assert upload["with"]["retention-days"] == "1"
+
+    shadow = workflow["jobs"]["shadow"]
+    assert shadow["timeout-minutes"] == "60"
+    assert shadow["needs"] == "generate"
+    assert shadow["continue-on-error"] == (
+        "${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}")
+    download = next(step for step in shadow["steps"]
+                    if step.get("name") == "Download generated data")
+    assert download["with"]["name"] == "generated-news-data"
+    run = next(step for step in shadow["steps"]
+               if step.get("name") == "Run objectivity shadow")
+    assert run["env"]["STEPFUN_API_KEY"] == "${{ secrets.STEPFUN_API_KEY }}"
+    assert run["env"]["DEEPSEEK_API_KEY"] == "${{ secrets.DEEPSEEK_API_KEY }}"
+    assert run["env"]["DATA_DIR"] == "${{ runner.temp }}/generated-news-data"
+    assert run["continue-on-error"] == (
+        "${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}")
+
+    review = workflow["jobs"]["rollout-review"]
+    assert "inputs.mode == 'publish'" in review["if"]
+    assert "github.event_name == 'schedule'" in review["if"]
 
 
 def test_weekly_repair_prompt_names_actual_scoped_evidence_keys():

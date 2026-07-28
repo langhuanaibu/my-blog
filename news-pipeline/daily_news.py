@@ -108,6 +108,21 @@ ARTICLE_ATTEMPT_TIMEOUT = 10.0
 ARTICLE_ATTEMPT_WORKERS = 6
 _ARTICLE_ATTEMPT_SLOTS = threading.BoundedSemaphore(ARTICLE_ATTEMPT_WORKERS)
 _ARTICLE_CLEANUP_SLOTS = threading.BoundedSemaphore(ARTICLE_ATTEMPT_WORKERS)
+# 单价（美元 / 百万 token），按模型名索引。step-explore 的 0 来自当前账号免费授权，
+# 不是公开长期定价；未知模型必须保持 unknown，不能静默伪装成免费。
+LLM_PRICE_USD_PER_MTOK = {
+    "deepseek-v4-flash": {
+        "input_miss": 0.14,
+        "input_hit": 0.0028,
+        "output": 0.28,
+    },
+    "step-explore": {
+        "input_miss": 0.0,
+        "input_hit": 0.0,
+        "output": 0.0,
+    },
+}
+
 ROLLOUT_QUALITY_FIELDS = {
     "article_fetch_attempts", "article_fetch_successes", "article_fetch_retries",
     "article_http_requests", "evidence_fulltext_sources", "evidence_snippet_sources",
@@ -1358,61 +1373,349 @@ def save_news_seen(data_dir, date_str, items, seen, keep_days=90):
 # 2. LLM 客户端
 # ----------------------------------------------------------------
 
-def resolve_llm_config(cfg, section="llm"):
-    """Resolve an OpenAI-compatible role config against the primary LLM.
+def resolve_llm_config(cfg, section="llm", environ=None):
+    """Resolve one role against the active named provider.
 
-    Empty connection identity fields inherit from ``llm``. ``extra_body`` is
-    special: omission inherits it, while an explicitly supplied mapping (even
-    an empty one) replaces it as a complete provider-specific request body.
+    The legacy flat ``llm`` shape remains readable for tests and local overrides.
+    In the named shape, credentials come only from each provider's
+    ``api_key_env``. Empty role identity fields inherit the active provider.
     """
-    primary = dict(cfg.get("llm") or {})
+    environ = os.environ if environ is None else environ
+    llm_cfg = cfg.get("llm") or {}
+    providers = llm_cfg.get("providers")
+    override = {} if section == "llm" else (cfg.get(section) or {})
+
+    if isinstance(providers, dict):
+        active = str(override.get("provider") or llm_cfg.get("active_provider") or "").strip()
+        if not active:
+            raise ValueError("llm.active_provider is required")
+        raw_provider = providers.get(active)
+        if not isinstance(raw_provider, dict):
+            raise ValueError(f"unknown LLM provider: {active}")
+        primary = dict(raw_provider)
+        primary["provider"] = active
+        env_name = str(primary.get("api_key_env") or "").strip()
+        if env_name and str(environ.get(env_name) or "").strip():
+            primary["api_key"] = str(environ[env_name]).strip()
+    else:
+        primary = dict(llm_cfg)
+
     if section == "llm":
         return primary
-    override = cfg.get(section) or {}
     merged = dict(primary)
     for key, value in override.items():
-        if key in ("base_url", "api_key", "model") and not str(value or "").strip():
+        if key in ("provider", "base_url", "api_key", "model") and not str(value or "").strip():
+            continue
+        if key == "enabled":
             continue
         if value is not None:
             merged[key] = value
     return merged
 
+_STAGE_PROMPT_INDEX = None
+
+
+def stage_of_prompt(system):
+    """Map a system prompt back to its module-level constant name.
+
+    Stage labels stay zero-maintenance this way: adding a new ``*_SYSTEM``
+    constant automatically gets its own accounting row, with no call-site edits.
+    Templates are matched by their leading text because callers pass a
+    ``.format()``-ed copy; no two prompts share those leading characters.
+    """
+    global _STAGE_PROMPT_INDEX
+    if _STAGE_PROMPT_INDEX is None:
+        _STAGE_PROMPT_INDEX = {
+            value[:40]: name for name, value in list(globals().items())
+            if name.endswith("_SYSTEM") and isinstance(value, str) and value
+        }
+    return _STAGE_PROMPT_INDEX.get(str(system or "")[:40], "OTHER")
+
+
+def new_usage_stats():
+    return {"calls": 0, "input": 0, "input_cached": 0, "output": 0}
+
+
+def usage_cost_usd(usage, price=None):
+    """Convert a usage row to dollars. Cached input is billed at its own rate."""
+    price = price if price is not None else usage.get("price_usd_per_mtok")
+    if not isinstance(price, dict):
+        return None
+    miss = max(0, int(usage.get("input", 0)) - int(usage.get("input_cached", 0)))
+    return (miss * price["input_miss"]
+            + int(usage.get("input_cached", 0)) * price["input_hit"]
+            + int(usage.get("output", 0)) * price["output"]) / 1e6
+
+
+class LLMCallError(RuntimeError):
+    def __init__(self, message, *, retryable=False, retry_after=None, usage=None):
+        super().__init__(message)
+        self.retryable = retryable
+        self.retry_after = retry_after
+        self.usage = usage
+
+
 class LLM:
     def __init__(self, cfg):
-        from openai import OpenAI
-        self.client = OpenAI(base_url=cfg["base_url"], api_key=cfg["api_key"])
+        self.provider = str(cfg.get("provider") or cfg.get("protocol") or "openai")
+        self.protocol = str(cfg.get("protocol") or "openai").lower()
+        if self.protocol not in {"openai", "anthropic"}:
+            raise ValueError(f"unsupported LLM protocol: {self.protocol}")
+        self.base_url = str(cfg["base_url"]).rstrip("/")
+        self.api_key = str(cfg.get("api_key") or "")
         self.model = cfg["model"]
         self.temperature = cfg.get("temperature", 0.3)
-        self.max_retries = cfg.get("max_retries", 3)
+        self.max_retries = max(1, int(cfg.get("max_retries", 3)))
+        self.max_tokens = int(cfg.get("max_tokens", 16384))
+        raw_timeout = cfg.get("request_timeout", (10, 180))
+        if not isinstance(raw_timeout, (list, tuple)) or len(raw_timeout) != 2:
+            raise ValueError("request_timeout must contain connect and read seconds")
+        self.request_timeout = (float(raw_timeout[0]), float(raw_timeout[1]))
         # 供应商专有请求体字段（如 DeepSeek V4 的 thinking 开关），原样透传。
         # 不配置则完全不发，保持对任意 OpenAI 兼容接口的通用性。
         self.extra_body = cfg.get("extra_body") or None
+        self.price_usd_per_mtok = (
+            cfg.get("price_usd_per_mtok")
+            if isinstance(cfg.get("price_usd_per_mtok"), dict)
+            else LLM_PRICE_USD_PER_MTOK.get(self.model)
+        )
+        if self.protocol == "openai":
+            from openai import OpenAI
+            self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+        else:
+            self.client = None
+        # 按阶段累计的 token 消耗。计量只读响应里的 usage，不参与任何管线决策。
+        self.stage_usage = {}
+
+    def record_usage(self, stage, usage):
+        """Accumulate one billed response. Retries count too—they are billed."""
+        row = self.stage_usage.setdefault(stage, new_usage_stats())
+        row["calls"] += 1
+        if usage is None:
+            return
+        row["input"] += int(usage.get("input", 0) or 0)
+        row["input_cached"] += int(usage.get("input_cached", 0) or 0)
+        row["output"] += int(usage.get("output", 0) or 0)
+
+    @staticmethod
+    def _openai_usage(usage):
+        if usage is None:
+            return None
+        return {
+            "input": int(getattr(usage, "prompt_tokens", 0) or 0),
+            "input_cached": int(
+                getattr(usage, "prompt_cache_hit_tokens", 0) or 0),
+            "output": int(getattr(usage, "completion_tokens", 0) or 0),
+        }
+
+    @staticmethod
+    def _anthropic_usage(usage):
+        if not isinstance(usage, dict):
+            return None
+        cache_read = int(usage.get("cache_read_input_tokens", 0) or 0)
+        cache_create = int(usage.get("cache_creation_input_tokens", 0) or 0)
+        return {
+            "input": int(usage.get("input_tokens", 0) or 0) + cache_read + cache_create,
+            "input_cached": cache_read,
+            "output": int(usage.get("output_tokens", 0) or 0),
+        }
+
+    @staticmethod
+    def _retry_after(response):
+        try:
+            value = float((response.headers or {}).get("retry-after", ""))
+            return min(30.0, max(0.0, value))
+        except (TypeError, ValueError):
+            return None
+
+    def _complete(self, system, user, temperature=None):
+        if self.protocol == "openai":
+            resp = self.client.chat.completions.create(
+                model=self.model,
+                temperature=self.temperature if temperature is None else temperature,
+                messages=[{"role": "system", "content": system},
+                          {"role": "user", "content": user}],
+                extra_body=self.extra_body,
+            )
+            usage = self._openai_usage(getattr(resp, "usage", None))
+            choice = resp.choices[0]
+            if getattr(choice, "finish_reason", None) == "length":
+                raise LLMCallError(
+                    "OpenAI response truncated", retryable=True, usage=usage)
+            return choice.message.content.strip(), usage
+
+        payload = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+        headers = {
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        try:
+            response = requests.post(
+                f"{self.base_url}/messages",
+                json=payload,
+                headers=headers,
+                timeout=self.request_timeout,
+            )
+        except requests.RequestException as exc:
+            raise LLMCallError(
+                f"Anthropic transport error: {exc}", retryable=True) from exc
+        if response.status_code != 200:
+            retryable = response.status_code in {408, 429, 500, 503, 504}
+            raise LLMCallError(
+                f"Anthropic HTTP {response.status_code}: {str(response.text)[:300]}",
+                retryable=retryable,
+                retry_after=self._retry_after(response) if retryable else None,
+            )
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise LLMCallError("Anthropic response is not JSON") from exc
+        usage = self._anthropic_usage(body.get("usage"))
+        if body.get("stop_reason") == "max_tokens":
+            raise LLMCallError(
+                "Anthropic response truncated at max_tokens",
+                retryable=True,
+                usage=usage,
+            )
+        blocks = body.get("content")
+        if not isinstance(blocks, list):
+            raise LLMCallError("Anthropic response missing content blocks")
+        text = "".join(
+            str(block.get("text") or "")
+            for block in blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        ).strip()
+        if not text:
+            raise LLMCallError("Anthropic response contains no text")
+        return text, usage
+
+    def _call(self, system, user, parser, temperature=None):
+        last_err = None
+        stage = stage_of_prompt(system)
+        for attempt in range(self.max_retries):
+            try:
+                text, usage = self._complete(
+                    system, user, temperature=temperature)
+                self.record_usage(stage, usage)
+                return parser(text)
+            except Exception as exc:
+                last_err = exc
+                usage = getattr(exc, "usage", None)
+                if usage is not None:
+                    self.record_usage(stage, usage)
+                retryable = self._is_retryable_error(exc)
+                log(f"  LLM 调用失败（第{attempt + 1}次）: {exc}")
+                if not retryable or attempt + 1 >= self.max_retries:
+                    break
+                delay = getattr(exc, "retry_after", None)
+                time.sleep(delay if delay is not None else 2 ** attempt)
+        raise RuntimeError(f"LLM 调用重试均失败: {last_err}")
+
+    @staticmethod
+    def _is_retryable_error(exc):
+        if isinstance(exc, LLMCallError):
+            return exc.retryable
+        if isinstance(exc, requests.RequestException):
+            return True
+        status_code = getattr(exc, "status_code", None)
+        if status_code is not None:
+            return status_code in {408, 429, 500, 503, 504}
+        return exc.__class__.__name__ in {"APIConnectionError", "APITimeoutError"}
+
+    @staticmethod
+    def _parse_json(text):
+        # 提取 JSON（容忍 ```json 包裹）
+        m = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
+        if m:
+            text = m.group(1).strip()
+        positions = [i for i in (text.find("["), text.find("{")) if i >= 0]
+        if not positions:
+            raise LLMCallError("LLM response contains no JSON object or array")
+        try:
+            return json.loads(text[min(positions):])
+        except ValueError as exc:
+            raise LLMCallError(
+                f"LLM response JSON parse failed: {exc}",
+            ) from exc
 
     def json_call(self, system, user):
         """调用并解析 JSON，自动重试"""
-        last_err = None
-        for attempt in range(self.max_retries):
-            try:
-                resp = self.client.chat.completions.create(
-                    model=self.model,
-                    temperature=self.temperature,
-                    messages=[{"role": "system", "content": system},
-                              {"role": "user", "content": user}],
-                    extra_body=self.extra_body,
-                )
-                text = resp.choices[0].message.content.strip()
-                # 提取 JSON（容忍 ```json 包裹）
-                m = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
-                if m:
-                    text = m.group(1).strip()
-                start = min([i for i in (text.find("["), text.find("{")) if i >= 0])
-                text = text[start:]
-                return json.loads(text)
-            except Exception as e:
-                last_err = e
-                log(f"  LLM 调用失败（第{attempt + 1}次）: {e}")
-                time.sleep(2 * (attempt + 1))
-        raise RuntimeError(f"LLM 调用重试均失败: {last_err}")
+        return self._call(system, user, self._parse_json)
+
+    def text_call(self, system, user, temperature=None):
+        """调用并返回纯文本，复用协议、重试与计量。"""
+        return self._call(system, user, lambda text: text, temperature=temperature)
+
+
+def merge_usage(llms):
+    """Merge usage without losing provider/model identity."""
+    merged = {}
+    for llm in llms:
+        for stage, row in getattr(llm, "stage_usage", {}).items():
+            identity = (
+                str(getattr(llm, "provider", "unknown")),
+                str(getattr(llm, "model", "unknown")),
+                stage,
+            )
+            target = merged.setdefault(identity, {
+                **new_usage_stats(),
+                "price_usd_per_mtok": getattr(llm, "price_usd_per_mtok", None),
+            })
+            for key in new_usage_stats():
+                target[key] += int(row.get(key, 0))
+    return merged
+
+
+def usage_totals(merged):
+    total = new_usage_stats()
+    for row in merged.values():
+        for key in total:
+            total[key] += int(row.get(key, 0))
+    costs = [usage_cost_usd(row) for row in merged.values()]
+    cost_known = all(cost is not None for cost in costs)
+    return {
+        "llm_calls": total["calls"],
+        "llm_input_tokens": total["input"],
+        "llm_cached_input_tokens": total["input_cached"],
+        "llm_output_tokens": total["output"],
+        "llm_cost_usd": (
+            round(sum(costs), 4) if cost_known else None),
+        "llm_cost_known": cost_known,
+    }
+
+
+def log_usage_report(llms):
+    """Print the run's token bill, most expensive stage first."""
+    merged = merge_usage(llms)
+    totals = usage_totals(merged)
+    if not totals["llm_calls"]:
+        return totals
+    log("LLM 用量结算（按阶段，成本降序）：")
+    def sort_cost(item):
+        cost = usage_cost_usd(item[1])
+        return -(cost if cost is not None else -1)
+
+    for (provider, model, stage), row in sorted(merged.items(), key=sort_cost):
+        cost = usage_cost_usd(row)
+        cost_text = f"${cost:.4f}" if cost is not None else "单价未知"
+        log(f"  {provider}/{model} {stage:<34} {row['calls']:>4} 次  "
+            f"入 {row['input'] / 1000:>8.1f}k（缓存 {row['input_cached'] / 1000:.1f}k）  "
+            f"出 {row['output'] / 1000:>6.1f}k  {cost_text}")
+    total_cost = (
+        f"${totals['llm_cost_usd']:.4f}"
+        if totals["llm_cost_known"] else "单价未知")
+    log(f"  合计 {totals['llm_calls']} 次调用｜"
+        f"入 {totals['llm_input_tokens'] / 1000:.1f}k（缓存 "
+        f"{totals['llm_cached_input_tokens'] / 1000:.1f}k）｜"
+        f"出 {totals['llm_output_tokens'] / 1000:.1f}k｜"
+        f"{total_cost}")
+    return totals
 
 
 # ----------------------------------------------------------------
@@ -2793,12 +3096,15 @@ def select_review_and_record(reconcile_llm, cohesion_llm, events, items, cfg,
     quality = quality if quality is not None else new_quality_stats()
     threshold_info = resolve_pick_threshold(cfg, data_dir, date_str)
     max_passes = max(1, len(events))
-    for _ in range(max_passes):
+    for pass_index in range(max_passes):
         preliminary_picked, preliminary_secondary = score_and_select(
             events, items, cfg, effective_threshold=threshold_info["threshold"])
         events, merged = review_reader_facing_duplicates(
             reconcile_llm, events, preliminary_picked, preliminary_secondary,
             items, quality)
+        # 每轮都要 log：这个循环上限是事件数（可达上百），失控时此前只能事后
+        # 从 quality.duplicate_audited_events 反推，日志里完全静默。
+        log(f"  发布前复核第 {pass_index + 1}/{max_passes} 轮：归并 {merged} 个")
         if not merged:
             break
         events = _reaudit_reconciled_same_day_events(
@@ -4802,11 +5108,7 @@ def update_profile(llm, data_dir, feedback, read_later):
     new_marker = max([str(e.get("ts", "")) for e in fb_new] +
                      [str(it.get("ts", "")) for it in rl_new])
     try:
-        resp = llm.client.chat.completions.create(
-            model=llm.model, temperature=0.2,
-            messages=[{"role": "system", "content": PROFILE_SYSTEM},
-                      {"role": "user", "content": user}])
-        out = resp.choices[0].message.content.strip()
+        out = llm.text_call(PROFILE_SYSTEM, user, temperature=0.2)
         out = re.sub(r"^```(?:markdown)?\s*|\s*```$", "", out).strip()
         if "## 更关注" not in out or "## 不关注" not in out:
             raise ValueError("画像输出缺少必需小节")
@@ -5957,8 +6259,14 @@ def validate_daily_payload(payload):
     return errors
 
 
-def update_quality_health(data_dir, date_str, quality, keep_days=90, include_rollout=True):
-    """Upsert a rolling, non-daily-file quality health record."""
+def update_quality_health(data_dir, date_str, quality, keep_days=90,
+                          include_rollout=True, usage=None):
+    """Upsert a rolling, non-daily-file quality health record.
+
+    ``usage`` carries the run's token bill. It is merged here rather than into
+    ``quality`` on purpose: the daily file is reader-facing public data and has
+    no business carrying operational cost fields.
+    """
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
     path = data_dir / "quality-health.json"
@@ -5969,7 +6277,8 @@ def update_quality_health(data_dir, date_str, quality, keep_days=90, include_rol
     records = [row for row in (current.get("records") or [])
                if isinstance(row, dict) and row.get("date") != date_str]
     records.append({"date": date_str,
-                    **_quality_for_output(quality, include_rollout)})
+                    **_quality_for_output(quality, include_rollout),
+                    **(usage or {})})
     records.sort(key=lambda row: row.get("date", ""))
     records = records[-max(1, int(keep_days)):]
     audited = sum(int(row.get("audited_events", 0)) for row in records)
@@ -6991,8 +7300,6 @@ def main():
 def _run_pipeline(started_at, args, cfg, policy):
 
     # ---- 环境变量覆盖（供云端 CI 使用，本地运行无感知） ----
-    if os.environ.get("LLM_API_KEY", "").strip():
-        cfg["llm"]["api_key"] = os.environ["LLM_API_KEY"].strip()
     if os.environ.get("PREFILTER_API_KEY", "").strip():
         cfg.setdefault("prefilter", {})["api_key"] = os.environ["PREFILTER_API_KEY"].strip()
     if os.environ.get("BLOG_DIR"):
@@ -7026,12 +7333,15 @@ def _run_pipeline(started_at, args, cfg, policy):
                 print(f"    [热榜] {s.get('name', s['type'])}: {n} 条词条")
         return
 
-    if "在这里填" in cfg["llm"]["api_key"]:
-        log("错误：请先在 config.yaml 里填写 llm.api_key")
+    primary_llm_cfg = resolve_llm_config(cfg, "llm")
+    if not str(primary_llm_cfg.get("api_key") or "").strip():
+        env_name = str(primary_llm_cfg.get("api_key_env") or "provider API key")
+        log(f"错误：请先设置 {env_name}")
         sys.exit(1)
 
-    llm = LLM(resolve_llm_config(cfg, "llm"))
+    llm = LLM(primary_llm_cfg)
     audit_llm = LLM(resolve_llm_config(cfg, "audit_llm"))
+    prefilter_llm = None
 
     # ---- 偏好学习输入：反馈与稍后读（缺失/损坏一律安全忽略） ----
     _data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
@@ -7069,13 +7379,13 @@ def _run_pipeline(started_at, args, cfg, policy):
     # 预筛：便宜模型先丢垃圾（未配置独立模型则复用主模型）
     pf_cfg = cfg.get("prefilter", {})
     if pf_cfg.get("enabled", False):
-        merged = dict(cfg["llm"])
-        for k in ("base_url", "api_key", "model"):
-            if pf_cfg.get(k):
-                merged[k] = pf_cfg[k]
+        merged = resolve_llm_config(cfg, "prefilter")
+        if os.environ.get("PREFILTER_API_KEY", "").strip():
+            merged["api_key"] = os.environ["PREFILTER_API_KEY"].strip()
         pf_model = merged["model"]
         log(f"预筛（{pf_model}）：过滤垃圾与无关条目 ...")
-        items = prefilter(LLM(merged), items)
+        prefilter_llm = LLM(merged)
+        items = prefilter(prefilter_llm, items)
 
     log("阶段A：去重聚类 + 分类 + 五维打分 ...")
     events = triage(llm, items, quality)
@@ -7198,6 +7508,19 @@ def _run_pipeline(started_at, args, cfg, policy):
             _data_dir, cfg, enrich_sample=build_enrich_sample(picked, date_str))
     except Exception as exc:
         log(f"  rollout evidence 写入失败（不影响当日日报）: {exc}")
+
+    # 用量结算放在所有 LLM 阶段之后，shadow 运行同样打印——一天两次运行各花多少
+    # 当天就能在 Actions 日志里对上。公开运行再把总额补写进健康记录（前面那次
+    # update_quality_health 早于周综述等阶段，此处按同一日期整条覆盖）。
+    run_usage = log_usage_report(
+        [client for client in (llm, audit_llm, prefilter_llm) if client is not None])
+    if policy["writes_public_data"]:
+        try:
+            update_quality_health(
+                _data_dir, date_str, quality,
+                include_rollout=policy["full_objectivity"], usage=run_usage)
+        except Exception as e:
+            log(f"  用量记录写入失败（不影响当日日报）: {e}")
 
     if not policy["writes_public_data"]:
         summary = build_shadow_summary(

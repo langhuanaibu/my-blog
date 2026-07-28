@@ -8,7 +8,6 @@ the final candidate, never fixture expectations or acceptance thresholds.
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 
 import yaml
@@ -550,8 +549,6 @@ def main(argv=None):
     import daily_news as pipeline
 
     config = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    if os.environ.get("LLM_API_KEY", "").strip():
-        config.setdefault("llm", {})["api_key"] = os.environ["LLM_API_KEY"].strip()
     candidate_config = resolve_llm_config(config, "llm")
     audit_config = resolve_llm_config(config, "audit_llm")
     if (not str(candidate_config.get("api_key") or "").strip()

@@ -1,7 +1,7 @@
 # 每日新闻日报：定时生成数据并推送上线
 #
 # - cron 为 UTC 时间，23:00 UTC = 北京 07:00（GitHub 高峰期可能延迟 15-60 分钟）
-# - 需要仓库 Secret: LLM_API_KEY（Settings -> Secrets and variables -> Actions）
+# - 需要仓库 Secret: STEPFUN_API_KEY、DEEPSEEK_API_KEY
 #   自建 RSSHub 源需再加两个 Secret: RSSHUB_BASE（实例地址）、RSSHUB_KEY（ACCESS_KEY）
 # - 手动补跑：Actions 页面选本 workflow -> Run workflow
 # - 本 workflow 是 CLAUDE.md「严禁自动 push」规则的唯一例外，
@@ -12,6 +12,15 @@ on:
   schedule:
     - cron: "0 23 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: validate 只验收不发布；publish 显式发布
+        required: true
+        type: choice
+        default: validate
+        options:
+          - validate
+          - publish
 
 permissions:
   contents: read
@@ -23,13 +32,29 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     permissions:
       contents: write
     env:
       TZ: Asia/Shanghai
+      RUN_MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Prepare run data
+        id: run_data
+        shell: bash
+        env:
+          VALIDATION_DATA_DIR: ${{ runner.temp }}/daily-news-validation-data
+          PUBLISH_DATA_DIR: ${{ github.workspace }}/source/news/data
+        run: |
+          if [[ "$RUN_MODE" == "validate" ]]; then
+            mkdir -p "$VALIDATION_DATA_DIR"
+            cp -a source/news/data/. "$VALIDATION_DATA_DIR/"
+            echo "data_dir=$VALIDATION_DATA_DIR" >> "$GITHUB_OUTPUT"
+          else
+            echo "data_dir=$PUBLISH_DATA_DIR" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -42,12 +67,21 @@ jobs:
 
       - name: Generate daily briefing
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          STEPFUN_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           RSSHUB_BASE: ${{ secrets.RSSHUB_BASE }}
           RSSHUB_KEY: ${{ secrets.RSSHUB_KEY }}
-          DATA_DIR: ${{ github.workspace }}/source/news/data
+          DATA_DIR: ${{ steps.run_data.outputs.data_dir }}
           ROLLOUT_EVIDENCE_PATH: ${{ runner.temp }}/rollout-evidence.json
         run: python news-pipeline/daily_news.py
+
+      - name: Upload generated data
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: generated-news-data
+          path: ${{ steps.run_data.outputs.data_dir }}
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload rollout evidence
         if: ${{ always() }}
@@ -59,6 +93,7 @@ jobs:
           retention-days: 3
 
       - name: Commit and push
+        if: env.RUN_MODE == 'publish'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -75,8 +110,8 @@ jobs:
     needs: generate
     if: ${{ needs.generate.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 24
-    continue-on-error: true
+    timeout-minutes: 60
+    continue-on-error: ${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}
     permissions:
       contents: read
     env:
@@ -86,7 +121,13 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
+
+      - name: Download generated data
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: generated-news-data
+          path: ${{ runner.temp }}/generated-news-data
 
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
@@ -99,12 +140,13 @@ jobs:
 
       - name: Run objectivity shadow
         id: shadow_run
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name == 'schedule' || inputs.mode == 'publish' }}
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          STEPFUN_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           RSSHUB_BASE: ${{ secrets.RSSHUB_BASE }}
           RSSHUB_KEY: ${{ secrets.RSSHUB_KEY }}
-          DATA_DIR: ${{ github.workspace }}/source/news/data
+          DATA_DIR: ${{ runner.temp }}/generated-news-data
         run: python news-pipeline/daily_news.py --objectivity-shadow
 
       - name: Record shadow status
@@ -145,7 +187,7 @@ jobs:
 
   rollout-review:
     needs: [generate, shadow]
-    if: ${{ always() && github.ref == 'refs/heads/main' }}
+    if: ${{ always() && github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.mode == 'publish') }}
     continue-on-error: true
     concurrency:
       group: daily-news-rollout-ledger
@@ -262,7 +304,8 @@ jobs:
         if: ${{ steps.issue.outputs.open == 'true' && steps.prepare.outputs.judge_ready == 'true' && steps.setup.outcome == 'success' && steps.install.outcome == 'success' }}
         continue-on-error: true
         env:
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          STEPFUN_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           SHADOW_OUTCOME: ${{ steps.prepare.outputs.shadow_outcome }}
           EVIDENCE_PATH: ${{ env.REVIEW_DIR }}/rollout-evidence/rollout-evidence.json
           REPORT_PATH: ${{ env.REVIEW_DIR }}/rollout-report.json

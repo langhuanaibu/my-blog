@@ -12,11 +12,12 @@
   `--objectivity-shadow` 或未来 `objectivity.mode: active` 运行。**active mode is not enabled**；
   **live acceptance has not occurred**，也没有完成 7 天线上验收。
 - shadow 命令为 `python news-pipeline/daily_news.py --objectivity-shadow`。GitHub Actions
-  的 `shadow` job 在 `generate` 成功后 checkout 最新 `main`，限时 24 分钟、只读仓库、
-  允许失败；它不 commit/push，也不改变已提交的 interim 公开数据。CLI 会先把当前
+  的 `shadow` job 使用 generate 上传的同一份数据 artifact，限时 60 分钟、只读仓库；
+  validate 模式失败会阻断验收，publish/cron 模式允许失败。它不 commit/push，也不改变已提交的 interim 公开数据。CLI 会先把当前
   `DATA_DIR` 递归复制到可清理的临时目录，feedback/profile/registry/weekly 等读取与后续
   写入都在快照中进行；正常返回、提前返回、异常和校验失败均会清理快照并恢复环境。
-- 手动 `Objectivity Acceptance` workflow 只允许从 `main` 触发，复用 `LLM_API_KEY` 连跑三轮固定夹具，只上传
+- 手动 `Objectivity Acceptance` workflow 只允许从 `main` 触发，按 `llm.active_provider`
+  从 `STEPFUN_API_KEY` / `DEEPSEEK_API_KEY` 选择凭据并连跑三轮固定夹具，只上传
   聚合报告，不提交数据。批次结构稳定性修复（非法批次递归拆小、单条重试一次，每轮最多
   调用 Judge 60 次，预算耗尽保守记为结构失败）已随 PR #36 落地并生效：结构合法率从
   22.22% 升到 91%–98%，归因从 29.03% 升到 96.77%–100%。

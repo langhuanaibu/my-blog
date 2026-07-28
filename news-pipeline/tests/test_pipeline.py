@@ -837,23 +837,25 @@ try:
     # 蒸馏成功：marker 推进到最新反馈 ts、内容更新
     class ProfileStub:
         model = "stub"
+        # 画像蒸馏走 text_call；测试替身保留同一计量契约。
+        record_usage = dn.LLM.record_usage
 
-        class client:
-            class chat:
-                class completions:
-                    @staticmethod
-                    def create(**kw):
-                        class R:
-                            pass
-                        r = R()
-                        msg = type("M", (), {"content": "# 兴趣画像\n\n## 更关注\n- 旧偏好\n- AI新话题\n\n## 不关注\n（暂无）\n\n## 来源印象\n（暂无）"})
-                        r.choices = [type("C", (), {"message": msg})]
-                        return r
+        def __init__(self):
+            self.stage_usage = {}
 
-    text = dn.update_profile(ProfileStub(), tmp, new_fb, [])
+        def text_call(self, system, user, temperature=None):
+            self.record_usage(dn.stage_of_prompt(system), None)
+            return ("# 兴趣画像\n\n## 更关注\n- 旧偏好\n- AI新话题\n\n"
+                    "## 不关注\n（暂无）\n\n## 来源印象\n（暂无）")
+
+    stub = ProfileStub()
+    text = dn.update_profile(stub, tmp, new_fb, [])
     saved = (tmp / "interest_profile.md").read_text(encoding="utf-8")
     check("蒸馏成功更新画像", "- AI新话题" in saved)
     check("marker推进", "2026-07-04T08:00:00Z" in saved)
+    # 供应商不返回 usage 时仍要记下调用次数，只是 token 计 0。
+    check("画像蒸馏计入用量",
+          stub.stage_usage.get("PROFILE_SYSTEM", {}).get("calls") == 1)
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
 
@@ -1690,10 +1692,16 @@ try:
         def create(self, **kw):
             return type("R", (), {"choices": [_Msg(self._o)]})()
     class _ProfLLM:
+        record_usage = dn.LLM.record_usage
+
         def __init__(self, o):
             self.model = "x"
-            self.client = type("C", (), {
-                "chat": type("H", (), {"completions": _Comp(o)})()})()
+            self.stage_usage = {}
+            self._output = o
+
+        def text_call(self, system, user, temperature=None):
+            self.record_usage(dn.stage_of_prompt(system), None)
+            return self._output
 
     ptmp = tmp / "prof"
     ptmp.mkdir(parents=True, exist_ok=True)

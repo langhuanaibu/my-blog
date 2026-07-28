@@ -13,8 +13,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-    env:
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -31,6 +29,9 @@ jobs:
 
       - name: Evaluate fixed objectivity corpus
         shell: bash
+        env:
+          STEPFUN_API_KEY: ${{ secrets.STEPFUN_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set -o pipefail
           python news-pipeline/objectivity_eval.py \
