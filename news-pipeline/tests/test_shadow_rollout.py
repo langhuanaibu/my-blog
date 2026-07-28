@@ -1624,10 +1624,13 @@ def test_weekly_repair_prompt_names_actual_scoped_evidence_keys():
 
 
 def test_rollout_docs_state_interim_and_unmet_acceptance_contract():
-    objectivity = (ROOT / "docs" / "news_objectivity_plan.md").read_text(encoding="utf-8")
     roadmap = (ROOT / "docs" / "news_source_roadmap.md").read_text(encoding="utf-8")
     readme = (ROOT / "readme.md").read_text(encoding="utf-8")
-    combined = "\n".join((objectivity, roadmap, readme))
+    label_adr = (ROOT / "docs" / "adr" /
+                 "0005-objectivity-label-accepted-sets.md").read_text(encoding="utf-8")
+    cause_adr = (ROOT / "docs" / "adr" /
+                 "0006-cause-is-extracted-not-inferred.md").read_text(encoding="utf-8")
+    combined = "\n".join((roadmap, readme, label_adr, cause_adr))
 
     for phrase in (
         "interim wording hotfix",
@@ -1641,17 +1644,17 @@ def test_rollout_docs_state_interim_and_unmet_acceptance_contract():
         "publisher_count",
         "independent_chain_count",
         "degraded",
-        "paywall",
+        "付费墙",
     ):
         assert phrase in combined
 
     for stale_count in ("40+", "至少 40", "at least 40"):
         assert stale_count not in combined
     assert "45 条" in combined
-    assert "9 类各 5 条" in combined
+    assert "九个风险标签" in combined
     assert "14-day" in roadmap
     assert "before adding sources" in roadmap
-    assert "full text is not persisted" in combined
+    assert "正文只是当次运行内存" in combined
     assert "live acceptance has not occurred" in combined
     for metric_name in (
         "selected_before_audit",

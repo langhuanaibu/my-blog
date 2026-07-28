@@ -138,6 +138,7 @@ def new_quality_stats():
         "audited_events": 0,
         "split_events": 0,
         "removed_fields": 0,
+        "enrichment_audited_events": 0,
         "duplicate_audited_events": 0,
         "same_day_duplicates_merged": 0,
         "duplicate_audit_failures": 0,
@@ -3542,6 +3543,7 @@ def _validated_support_result(raw, event):
 def audit_enrichment_support_interim(llm, picked, items, quality=None):
     """Retain the pre-rollout support-only audit for interim public runs."""
     quality = quality if quality is not None else new_quality_stats()
+    quality["enrichment_audited_events"] += len(picked)
     for event in picked:
         ids = event.get("ids") or []
         reports = [{
@@ -3704,6 +3706,7 @@ def audit_enrichment_support(llm, picked, items, quality=None, secondary=None):
     if secondary is not None:
         candidates.extend(event for event in secondary
                           if not any(event is existing for existing in candidates))
+    quality["enrichment_audited_events"] += len(candidates)
     for event in candidates:
         _materialize_reader_projection(event, items)
         sanitize_objectivity_event(event, items, quality)
@@ -6140,6 +6143,11 @@ def validate_daily_payload(payload):
             value = quality.get(field)
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 errors.append(f"quality.{field} must be a non-negative integer")
+        value = quality.get("enrichment_audited_events")
+        if value is not None and (
+                not isinstance(value, int) or isinstance(value, bool) or value < 0):
+            errors.append(
+                "quality.enrichment_audited_events must be a non-negative integer")
         for field in (
                 "duplicate_audited_events", "same_day_duplicates_merged",
                 "duplicate_audit_failures"):
@@ -6259,6 +6267,23 @@ def validate_daily_payload(payload):
     return errors
 
 
+def _daily_pick_count(data_dir, date_str):
+    path = Path(data_dir) / "daily" / f"{date_str}.js"
+    if not path.exists():
+        return None
+    try:
+        raw = path.read_text(encoding="utf-8")
+        match = re.search(
+            r"window\.NEWS_DATA\[[^\]]+\] = (\{.*\});\s*$", raw, re.S)
+        payload = json.loads(match.group(1)) if match else {}
+        value = (payload.get("stats") or {}).get("pick_count")
+    except (OSError, ValueError):
+        return None
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        return None
+    return value
+
+
 def update_quality_health(data_dir, date_str, quality, keep_days=90,
                           include_rollout=True, usage=None):
     """Upsert a rolling, non-daily-file quality health record.
@@ -6276,6 +6301,12 @@ def update_quality_health(data_dir, date_str, quality, keep_days=90,
         current = {}
     records = [row for row in (current.get("records") or [])
                if isinstance(row, dict) and row.get("date") != date_str]
+    for row in records:
+        if "enrichment_audited_events" in row:
+            continue
+        pick_count = _daily_pick_count(data_dir, row.get("date"))
+        if pick_count is not None:
+            row["enrichment_audited_events"] = pick_count
     records.append({"date": date_str,
                     **_quality_for_output(quality, include_rollout),
                     **(usage or {})})

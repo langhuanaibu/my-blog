@@ -398,6 +398,7 @@ def test_normal_event_uses_one_audit_call_and_updates_counter():
     dn.audit_enrichment_support(audit, [event], items, quality, secondary=[])
 
     assert len(audit.calls) == 1
+    assert quality["enrichment_audited_events"] == 1
     assert quality["objectivity_audited"] == 1
     assert quality["objectivity_repaired"] == 0
     assert quality["objectivity_degraded"] == 0
@@ -1041,12 +1042,31 @@ def test_interim_support_audit_keeps_legacy_reply_compatibility():
         "supported_claim_indexes": [0],
     }])
 
-    dn.audit_enrichment_support_interim(
-        audit, [event], items, dn.new_quality_stats())
+    quality = dn.new_quality_stats()
+    dn.audit_enrichment_support_interim(audit, [event], items, quality)
 
     assert len(audit.calls) == 1
+    assert quality["enrichment_audited_events"] == 1
     assert event["claims"] == [{
         "text": "OpenAI 公布评测", "kind": "fact", "sources": ["OpenAI"]}]
+
+
+def test_full_audit_counts_selected_and_secondary_reader_events():
+    items = [
+        source_item(),
+        source_item("Meta 发布工具", "Meta 发布一款工具。", "Meta", "meta"),
+    ]
+    picked = [enriched_event()]
+    secondary = [enriched_event(1, "Meta 发布工具")]
+    secondary[0]["summary"] = "Meta 发布一款工具。"
+    secondary[0]["claims"] = []
+    audit = QueueLLM([all_pass(picked[0]), all_pass(secondary[0])])
+    quality = dn.new_quality_stats()
+
+    dn.audit_enrichment_support(
+        audit, picked, items, quality, secondary=secondary)
+
+    assert quality["enrichment_audited_events"] == 2
 
 
 def test_daily_brief_scopes_synthesis_to_whole_day_and_theme_to_member_ids_only():

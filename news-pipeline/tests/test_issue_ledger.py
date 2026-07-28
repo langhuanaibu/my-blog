@@ -402,30 +402,44 @@ def test_migration_is_idempotent_and_leaves_current_states_untouched():
 def test_enrich_baseline_uses_the_median_of_pre_window_output_days():
     il = ledger()
     health = {"records": [
-        {"date": "2026-07-20", "audited_events": 10, "removed_fields": 30},
-        {"date": "2026-07-21", "audited_events": 10, "removed_fields": 10},
-        {"date": "2026-07-22", "audited_events": 10, "removed_fields": 20},
-        {"date": "2026-07-23", "audited_events": 10, "removed_fields": 99},
+        {"date": "2026-07-20", "enrichment_audited_events": 10, "removed_fields": 30},
+        {"date": "2026-07-21", "enrichment_audited_events": 10, "removed_fields": 10},
+        {"date": "2026-07-22", "enrichment_audited_events": 10, "removed_fields": 20},
+        {"date": "2026-07-23", "enrichment_audited_events": 10, "removed_fields": 99},
     ]}
 
     assert il.enrich_baseline(health, "2026-07-23") == 2.0
 
 
+def test_enrich_baseline_requires_three_valid_new_denominators():
+    il = ledger()
+    health = {"records": [
+        {"date": "2026-07-19", "enrichment_audited_events": 10, "removed_fields": 10},
+        {"date": "2026-07-20", "audited_events": 1000, "removed_fields": 1},
+        {"date": "2026-07-21", "enrichment_audited_events": 10, "removed_fields": 20},
+    ]}
+
+    assert il.enrich_baseline(health, "2026-07-22") is None
+    assert il._quality_ratio(health["records"][1]) is None
+
+
 def test_enrich_fails_only_when_the_safety_ratio_exceeds_the_limit():
     il = ledger()
     records = [
-        {"date": "2026-07-20", "audited_events": 10, "removed_fields": 20},
-        {"date": "2026-07-21", "audited_events": 10, "removed_fields": 20},
-        {"date": "2026-07-22", "audited_events": 10, "removed_fields": 20},
+        {"date": "2026-07-20", "enrichment_audited_events": 10, "removed_fields": 20},
+        {"date": "2026-07-21", "enrichment_audited_events": 10, "removed_fields": 20},
+        {"date": "2026-07-22", "enrichment_audited_events": 10, "removed_fields": 20},
     ]
 
     within = il.evaluate_enrich(
         {"records": records + [
-            {"date": "2026-07-23", "audited_events": 10, "removed_fields": 24}]},
+            {"date": "2026-07-23", "enrichment_audited_events": 10,
+             "removed_fields": 24}]},
         date="2026-07-23", window_start="2026-07-23")
     breached = il.evaluate_enrich(
         {"records": records + [
-            {"date": "2026-07-23", "audited_events": 10, "removed_fields": 25}]},
+            {"date": "2026-07-23", "enrichment_audited_events": 10,
+             "removed_fields": 25}]},
         date="2026-07-23", window_start="2026-07-23")
     absent = il.evaluate_enrich(
         {"records": records}, date="2026-07-23", window_start="2026-07-23")
@@ -435,6 +449,27 @@ def test_enrich_fails_only_when_the_safety_ratio_exceeds_the_limit():
     assert within["metrics"] == {"ratio": 2.4, "baseline": 2.0, "limit": 2.4}
     assert breached["status"] == "fail"
     assert absent["status"] == "needs_review"
+
+
+def test_enrich_replay_uses_selected_content_audits_not_cohesion_audits():
+    il = ledger()
+    health = {"records": [
+        {"date": "2026-07-24", "audited_events": 42,
+         "enrichment_audited_events": 36, "removed_fields": 69},
+        {"date": "2026-07-25", "audited_events": 178,
+         "enrichment_audited_events": 34, "removed_fields": 79},
+        {"date": "2026-07-26", "audited_events": 24,
+         "enrichment_audited_events": 28, "removed_fields": 87},
+        {"date": "2026-07-28", "audited_events": 33,
+         "enrichment_audited_events": 36, "removed_fields": 98},
+    ]}
+
+    result = il.evaluate_enrich(
+        health, date="2026-07-28", window_start="2026-07-27")
+
+    assert result["status"] == "needs_review"
+    assert result["metrics"] == {
+        "ratio": 2.7222, "baseline": 2.3235, "limit": 2.7882}
 
 
 def test_objectivity_shadow_never_infers_a_pass_from_missing_metrics():
@@ -704,11 +739,16 @@ def test_sync_cli_scores_all_five_gates_against_the_repo_health_files(tmp_path):
     assert aggregate["selection"] == "pass"
     assert aggregate["objectivity_shadow"] == "pass"
     assert aggregate["source_metrics"] == "pass"
-    # The enrich safety metric is measurable and may legitimately breach its
-    # limit on committed data; what must never happen is an automatic pass,
-    # because the three per-item content checks are human-only.
+    # Legacy committed health data has not passed through the next generate
+    # migration yet, so it must remain unknown rather than reuse audited_events.
+    # After migration the metric may be measurable, but it still cannot pass
+    # automatically because the three per-item checks are human-only.
     assert aggregate["enrich"] in {"needs_review", "fail"}
-    assert parsed["attempts"][0]["enrich"]["metrics"]["baseline"] > 0
+    metrics = parsed["attempts"][0]["enrich"].get("metrics")
+    if metrics:
+        assert metrics["baseline"] > 0
+    else:
+        assert aggregate["enrich"] == "needs_review"
     assert parsed["enrich_sample"] == {"ai": ["top-1"], "world": ["more-2"]}
     assert "待人工最终确认" not in body
 

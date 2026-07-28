@@ -383,7 +383,7 @@ def _median(values):
 
 
 def _quality_ratio(record):
-    audited = int(record.get("audited_events") or 0)
+    audited = int(record.get("enrichment_audited_events") or 0)
     if audited <= 0:
         return None
     return int(record.get("removed_fields") or 0) / audited
@@ -397,9 +397,12 @@ def enrich_baseline(quality_health, before_date):
              if isinstance(row, dict) and str(row.get("date") or "") < str(before_date)]
     prior.sort(key=lambda row: str(row.get("date") or ""))
     ratios = [ratio for ratio in
-              (_quality_ratio(row) for row in prior[-ENRICH_BASELINE_DAYS:])
+              (_quality_ratio(row) for row in prior)
               if ratio is not None]
-    return _median(ratios)
+    recent = ratios[-ENRICH_BASELINE_DAYS:]
+    if len(recent) != ENRICH_BASELINE_DAYS:
+        return None
+    return _median(recent)
 
 
 def evaluate_enrich(quality_health, *, date, window_start):

@@ -52,6 +52,38 @@ def test_legacy_quality_accepts_missing_same_day_duplicate_fields():
     }
 
     assert dn.validate_daily_payload(payload) == []
+    payload["quality"]["enrichment_audited_events"] = -1
+    assert any(
+        "enrichment_audited_events" in error
+        for error in dn.validate_daily_payload(payload))
+
+
+def test_quality_health_backfills_enrichment_audits_from_daily_pick_count(tmp_path):
+    daily_dir = tmp_path / "daily"
+    daily_dir.mkdir()
+    (daily_dir / "2026-07-23.js").write_text(
+        'window.NEWS_DATA["2026-07-23"] = not-json;\n',
+        encoding="utf-8")
+    (daily_dir / "2026-07-24.js").write_text(
+        'window.NEWS_DATA["2026-07-24"] = '
+        '{"date":"2026-07-24","stats":{"pick_count":36}};\n',
+        encoding="utf-8")
+    (tmp_path / "quality-health.json").write_text(json.dumps({
+        "version": 1,
+        "records": [
+            {"date": "2026-07-23", "audited_events": 40, "removed_fields": 50},
+            {"date": "2026-07-24", "audited_events": 42, "removed_fields": 69},
+        ],
+    }), encoding="utf-8")
+
+    health = dn.update_quality_health(
+        tmp_path, "2026-07-25",
+        {**dn.new_quality_stats(), "enrichment_audited_events": 34})
+    records = {row["date"]: row for row in health["records"]}
+
+    assert "enrichment_audited_events" not in records["2026-07-23"]
+    assert records["2026-07-24"]["enrichment_audited_events"] == 36
+    assert records["2026-07-25"]["enrichment_audited_events"] == 34
 
 
 def test_all_daily_claims_and_themes_reference_published_rows():
