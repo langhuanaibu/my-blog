@@ -36,5 +36,9 @@
   },
   "devDependencies": {
     "jsdom": "^29.1.1"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.8",
+    "jake": "12.10.1"
   }
 }

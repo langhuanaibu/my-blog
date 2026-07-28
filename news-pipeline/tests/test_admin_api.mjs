@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
 const adminArticles = require("../../api/adminArticles.js");
 const adminSettings = require("../../api/adminSettings.js");
+const adminUpload = require("../../api/adminUpload.js");
 const newsState = require("../../api/newsState.js");
 
 function jsonResponse(data, status = 200) {
@@ -227,6 +228,66 @@ test("footer settings escape active HTML while preserving the editor value", () 
   assert.equal(
     adminSettings._test.extractSettings(next.siteConfig, next.fluidConfig).footerText,
     footerText,
+  );
+});
+
+test("admin upload rejects bytes that do not match the claimed image type", async () => {
+  await withRepoEnv(async () => {
+    const originalFetch = globalThis.fetch;
+    let writes = 0;
+    globalThis.fetch = async () => {
+      writes += 1;
+      return jsonResponse({ content: { sha: "unexpected" } });
+    };
+    const req = {
+      method: "POST",
+      headers: { authorization: "Bearer admin-secret" },
+      body: {
+        fileName: "not-an-image.png",
+        contentBase64: Buffer.from("<script>alert(1)</script>", "utf8").toString("base64"),
+      },
+    };
+    const res = mockResponse();
+    try {
+      await adminUpload(req, res);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body.error, /content does not match/i);
+    assert.equal(writes, 0);
+  });
+});
+
+test("production dependency lock excludes known vulnerable build-chain versions", async () => {
+  const lock = JSON.parse(
+    await readFile(new URL("../../package-lock.json", import.meta.url), "utf8"),
+  );
+  const packages = Object.entries(lock.packages || {});
+  const versions = (name) => packages
+    .filter(([path]) => path === `node_modules/${name}` || path.endsWith(`/node_modules/${name}`))
+    .map(([, metadata]) => metadata.version);
+  const parts = (version) => String(version).split(".").map(Number);
+  const compare = (version, target) => {
+    const left = parts(version);
+    const right = parts(target);
+    for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+      if ((left[index] || 0) !== (right[index] || 0)) {
+        return (left[index] || 0) < (right[index] || 0) ? -1 : 1;
+      }
+    }
+    return 0;
+  };
+
+  assert.ok(
+    versions("brace-expansion").every((version) => compare(version, "5.0.7") > 0),
+    "brace-expansion <= 5.0.7 is vulnerable to unbounded expansion",
+  );
+  assert.ok(
+    versions("jake").every((version) => (
+      compare(version, "10.6.1") < 0 || compare(version, "10.9.4") > 0
+    )),
+    "jake 10.6.1 through 10.9.4 pulls a vulnerable filelist chain",
   );
 });
 

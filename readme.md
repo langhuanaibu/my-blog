@@ -79,7 +79,7 @@ npm run test:news
 - 在线后台地址是 `/admin/`。登录后可以发布、编辑、删除文章，也可以上传文章封面和正文图片。
 - 后台“站点设置”可以修改常用展示文本，包括站点标题、副标题、首页标语、页脚文本、关于页昵称/简介和现有导航显示名；页脚按纯文本保存并进行 HTML 转义。
 - 新文章最终会写入 `source/_posts/`。
-- 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`。
+- 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`；后台上传会校验 PNG、JPEG、GIF、WebP 的文件签名，扩展名与内容不一致时拒绝写入。
 - 默认分类封面配置在 `source/_data/category-covers.json`。
 - 文章 front matter 中的 `index_img` 是首页卡片封面；如果后台没有上传单篇封面，会自动使用分类默认封面。
 - 文章 URL 使用 `/:year/:month/:day/:title/`。
