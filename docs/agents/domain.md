@@ -22,7 +22,7 @@ Single-context repo (this repo):
 ├── docs/adr/
 │   ├── 0001-daily-item-trajectory-model.md
 │   ├── …
-│   └── 0007-event-lines-merge-across-days.md
+│   └── 0008-comment-path-from-front-matter.md
 ├── news-pipeline/
 └── source/
 ```
