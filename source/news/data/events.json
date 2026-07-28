@@ -473,6 +473,12 @@
      "news_status": "已确认"
     },
     {
+     "date": "2026-07-09",
+     "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
+     "summary": "OpenAI的GPT-5.6模型因美国政府要求额外测试而延迟，现定于周四发布，但缺乏正式审批标准。",
+     "news_status": "发展中"
+    },
+    {
      "date": "2026-07-10",
      "title": "OpenAI发布GPT-5.6模型，分三个变体",
      "summary": "OpenAI发布GPT-5.6，提供Sol、Terra、Luna三个变体，号称最强模型，已集成至GitHub Copilot。",
@@ -484,7 +490,8 @@
      "summary": "OpenAI推出GPT-5.6系列，成为Microsoft Copilot 365首选模型，并展示递归自改进能力。",
      "news_status": "已确认"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260708-44f08d",
@@ -571,7 +578,8 @@
      "summary": "美军在美伊冲突中首次使用爆炸性无人艇攻击伊朗海军港口，伊朗则向巴林美军基地发射导弹。",
      "news_status": "发展中"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260708-14d1db",
@@ -746,29 +754,6 @@
      "title": "微软用自研模型替代OpenAI和Anthropic降本",
      "summary": "微软在Excel、Outlook等产品中用自研MAI模型替代OpenAI和Anthropic模型，每周处理数万查询以削减AI成本。",
      "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260708-892fb0",
-   "title": "特朗普称与伊朗停火结束，油价飙升6%",
-   "category": "world",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-08",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-08",
-     "title": "特朗普称与伊朗停火结束，油价飙升6%",
-     "summary": "特朗普表示与伊朗的停火已结束，不再与其打交道，国际油价随之飙升6%。",
-     "news_status": "已确认"
-    },
-    {
-     "date": "2026-07-09",
-     "title": "美伊紧张局势升级推动油价大幅上涨",
-     "summary": "美国对伊朗发动新打击，特朗普威胁轰炸并重启海军封锁，油价单日涨超4%至两周高位。",
-     "news_status": "发展中"
     }
    ]
   },
@@ -973,23 +958,6 @@
      "title": "OpenAI分析揭示SWE-Bench Pro编码基准可靠性问题",
      "summary": "OpenAI发布分析报告，指出流行编码基准SWE-Bench Pro存在可靠性问题，影响AI模型评估准确性。",
      "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260709-aaf246",
-   "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
-   "category": "ai",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-09",
-   "last_seen": "2026-07-09",
-   "history": [
-    {
-     "date": "2026-07-09",
-     "title": "OpenAI GPT-5.6因美国政府延迟后将于周四发布",
-     "summary": "OpenAI的GPT-5.6模型因美国政府要求额外测试而延迟，现定于周四发布，但缺乏正式审批标准。",
-     "news_status": "发展中"
     }
    ]
   },
@@ -1372,15 +1340,27 @@
    "event_id": "evt-20260710-b892b9",
    "title": "美伊冲突升级：美军打击伊朗，油价航运受冲击",
    "category": "world",
-   "status": "archived",
+   "status": "active",
    "pinned": false,
    "first_seen": "2026-07-10",
-   "last_seen": "2026-07-16",
+   "last_seen": "2026-07-27",
    "history": [
     {
      "date": "2026-07-10",
      "title": "美伊冲突升级：美军打击伊朗，油价航运受冲击",
      "summary": "美军对伊朗发动新一轮打击，击中90个目标，致14人死亡；霍尔木兹海峡航运量下降，油价下跌2%。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-12",
+     "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
+     "summary": "美国要求伊朗周六前承诺开放霍尔木兹海峡，伊朗革命卫队宣布关闭海峡并警告射击船只。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-14",
+     "title": "阿联酋谴责伊朗攻击油轮，美国发动新一轮打击",
+     "summary": "阿联酋谴责伊朗对油轮的“无耻”攻击，美国连续第三晚对伊朗发动打击，特朗普宣布对霍尔木兹海峡实施新封锁并加征20%费用。",
      "news_status": "发展中"
     },
     {
@@ -1394,8 +1374,96 @@
      "title": "美国对伊朗发动新一轮空袭，特朗普警告德黑兰",
      "summary": "美国对伊朗发动新一轮空袭，特朗普警告伊朗“最好老实点”，并称尚未决定是否“彻底摧毁”伊朗。",
      "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-18",
+     "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
+     "summary": "美军连续第七晚空袭伊朗，打击桥梁、能源设施等民用目标，伊朗反击美舰，霍尔木兹海峡通行量下降。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-19",
+     "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
+     "summary": "伊朗对约旦美军基地发动导弹和无人机袭击，造成两名美军死亡、一人失踪，美军随后对伊朗目标实施打击。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-20",
+     "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
+     "summary": "美军在伊拉克和约旦遭伊朗袭击，死亡人数增至3人，美军对伊朗海岸监视和防空设施发动更多空袭。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-21",
+     "title": "美伊冲突升级：3名美军阵亡，双方持续空袭",
+     "summary": "美伊冲突加剧，3名美军士兵阵亡，美国对伊朗发动新一轮空袭，伊朗则攻击了霍尔木兹海峡的油轮作为报复。",
+     "news_status": "发展中"
+    },
+    {
+     "date": "2026-07-24",
+     "title": "美伊冲突升级，油价破百引发美股大跌",
+     "summary": "胡塞武装威胁攻击沙特船只，特朗普称接近决定对伊朗“大规模打击”，油价突破100美元，美股大跌，国会通过决议限制战争权力。",
+     "news_status": "发展中",
+     "watch": "关键变量：特朗普是否下令对伊朗发动大规模打击；胡塞武装是否实际封锁曼德海峡。可观察路标：美国航母战斗群动向、沙特石油设施是否遭袭、国际油价是否持续高于110美元。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera",
+      "cnbc"
+     ],
+     "item_ref": "2026-07-24:pick-210",
+     "source_keys": [
+      "src-03e41bc3aa972fd4d7cd0151",
+      "src-39edaccb8d2501bb4bb48b4c",
+      "src-5ed9d97c152c17c66a27d6e1",
+      "src-5f47197964535bd6b4b8b580",
+      "src-6849f6f3a05493d320e57c27",
+      "src-e737296b9d8bb77162639e02",
+      "src-fe68cba41a2c25bf4088a6be"
+     ],
+     "event_identity": "set-a228776f650c7eab0f7aa954"
+    },
+    {
+     "date": "2026-07-25",
+     "title": "美国扩大对伊朗空袭，特朗普威胁大规模军事惩罚",
+     "summary": "美军空袭范围扩大至伊朗全境，伊朗革命卫队以无人机反击美在巴林、约旦、科威特目标，特朗普称接近决定发动\"大规模攻击\"。",
+     "news_status": "发展中",
+     "watch": "关键变量：1) 特朗普是否真的下令\"大规模攻击\"；2) 伊朗是否进一步升级报复（如封锁霍尔木兹海峡）。可观察美国国防部是否发布新的部队部署命令。",
+     "sources": [
+      "guardian",
+      "npr"
+     ],
+     "item_ref": "2026-07-25:pick-160",
+     "source_keys": [
+      "src-86f4bcbdb993193f22099d94",
+      "src-e115cd897f926f0a7eb006a4"
+     ],
+     "event_identity": "set-3e7a0987fdb49154cfadbc49"
+    },
+    {
+     "date": "2026-07-27",
+     "title": "美伊暂停互袭第二日，停火谈判预期升温",
+     "summary": "美国与伊朗连续第二天暂停相互军事打击，双方均未发动新攻击，外交斡旋重启。",
+     "news_status": "发展中",
+     "watch": "后续取决于：1）外交谈判能否取得实质性进展，如达成临时停火协议；2）双方是否恢复军事打击。可观察：美国是否延长暂停打击期限、伊朗是否释放谈判信号、国际油价是否继续下跌。",
+     "sources": [
+      "guardian",
+      "npr",
+      "aljazeera",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-27:pick-23",
+     "source_keys": [
+      "src-2317dd6e166f47fb21cff375",
+      "src-7a4b0e6e42c419d47765024a",
+      "src-c533218a7312d7835f174793",
+      "src-d2731e771431ce19b17d22f3"
+     ],
+     "event_identity": "set-d67153a5aaf791c02977c7aa"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260710-e47e6f",
@@ -1967,128 +2035,6 @@
    ]
   },
   {
-   "event_id": "evt-20260712-5df466",
-   "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-12",
-   "last_seen": "2026-07-27",
-   "history": [
-    {
-     "date": "2026-07-12",
-     "title": "美向伊朗发霍尔木兹海峡最后通牒，伊朗关闭海峡",
-     "summary": "美国要求伊朗周六前承诺开放霍尔木兹海峡，伊朗革命卫队宣布关闭海峡并警告射击船只。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-14",
-     "title": "阿联酋谴责伊朗攻击油轮，美国发动新一轮打击",
-     "summary": "阿联酋谴责伊朗对油轮的“无耻”攻击，美国连续第三晚对伊朗发动打击，特朗普宣布对霍尔木兹海峡实施新封锁并加征20%费用。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-15",
-     "title": "特朗普放弃霍尔木兹海峡20%货运费计划",
-     "summary": "特朗普宣布放弃对通过霍尔木兹海峡的货物征收20%费用的计划，转而寻求与海湾国家达成贸易投资协议。",
-     "news_status": "已确认"
-    },
-    {
-     "date": "2026-07-16",
-     "title": "美伊对峙升级，伊朗威胁封锁霍尔木兹海峡",
-     "summary": "伊朗威胁封锁霍尔木兹海峡并停止中东能源出口，以回应美国的海上封锁。特朗普则威胁攻击伊朗核设施。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-18",
-     "title": "美伊冲突升级至民用基础设施，霍尔木兹海峡通行量下降",
-     "summary": "美军连续第七晚空袭伊朗，打击桥梁、能源设施等民用目标，伊朗反击美舰，霍尔木兹海峡通行量下降。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-19",
-     "title": "伊朗袭击约旦美军基地致两名美军死亡，美伊冲突升级",
-     "summary": "伊朗对约旦美军基地发动导弹和无人机袭击，造成两名美军死亡、一人失踪，美军随后对伊朗目标实施打击。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-20",
-     "title": "美军在伊朗冲突中死亡人数上升，空袭持续",
-     "summary": "美军在伊拉克和约旦遭伊朗袭击，死亡人数增至3人，美军对伊朗海岸监视和防空设施发动更多空袭。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-21",
-     "title": "美伊冲突升级：3名美军阵亡，双方持续空袭",
-     "summary": "美伊冲突加剧，3名美军士兵阵亡，美国对伊朗发动新一轮空袭，伊朗则攻击了霍尔木兹海峡的油轮作为报复。",
-     "news_status": "发展中"
-    },
-    {
-     "date": "2026-07-24",
-     "title": "美伊冲突升级，油价破百引发美股大跌",
-     "summary": "胡塞武装威胁攻击沙特船只，特朗普称接近决定对伊朗“大规模打击”，油价突破100美元，美股大跌，国会通过决议限制战争权力。",
-     "news_status": "发展中",
-     "watch": "关键变量：特朗普是否下令对伊朗发动大规模打击；胡塞武装是否实际封锁曼德海峡。可观察路标：美国航母战斗群动向、沙特石油设施是否遭袭、国际油价是否持续高于110美元。",
-     "sources": [
-      "bbc-world",
-      "guardian",
-      "npr",
-      "aljazeera",
-      "cnbc"
-     ],
-     "item_ref": "2026-07-24:pick-210",
-     "source_keys": [
-      "src-03e41bc3aa972fd4d7cd0151",
-      "src-39edaccb8d2501bb4bb48b4c",
-      "src-5ed9d97c152c17c66a27d6e1",
-      "src-5f47197964535bd6b4b8b580",
-      "src-6849f6f3a05493d320e57c27",
-      "src-e737296b9d8bb77162639e02",
-      "src-fe68cba41a2c25bf4088a6be"
-     ],
-     "event_identity": "set-a228776f650c7eab0f7aa954"
-    },
-    {
-     "date": "2026-07-25",
-     "title": "美国扩大对伊朗空袭，特朗普威胁大规模军事惩罚",
-     "summary": "美军空袭范围扩大至伊朗全境，伊朗革命卫队以无人机反击美在巴林、约旦、科威特目标，特朗普称接近决定发动\"大规模攻击\"。",
-     "news_status": "发展中",
-     "watch": "关键变量：1) 特朗普是否真的下令\"大规模攻击\"；2) 伊朗是否进一步升级报复（如封锁霍尔木兹海峡）。可观察美国国防部是否发布新的部队部署命令。",
-     "sources": [
-      "guardian",
-      "npr"
-     ],
-     "item_ref": "2026-07-25:pick-160",
-     "source_keys": [
-      "src-86f4bcbdb993193f22099d94",
-      "src-e115cd897f926f0a7eb006a4"
-     ],
-     "event_identity": "set-3e7a0987fdb49154cfadbc49"
-    },
-    {
-     "date": "2026-07-27",
-     "title": "美伊暂停互袭第二日，停火谈判预期升温",
-     "summary": "美国与伊朗连续第二天暂停相互军事打击，双方均未发动新攻击，外交斡旋重启。",
-     "news_status": "发展中",
-     "watch": "后续取决于：1）外交谈判能否取得实质性进展，如达成临时停火协议；2）双方是否恢复军事打击。可观察：美国是否延长暂停打击期限、伊朗是否释放谈判信号、国际油价是否继续下跌。",
-     "sources": [
-      "guardian",
-      "npr",
-      "aljazeera",
-      "thepaper"
-     ],
-     "item_ref": "2026-07-27:pick-23",
-     "source_keys": [
-      "src-2317dd6e166f47fb21cff375",
-      "src-7a4b0e6e42c419d47765024a",
-      "src-c533218a7312d7835f174793",
-      "src-d2731e771431ce19b17d22f3"
-     ],
-     "event_identity": "set-d67153a5aaf791c02977c7aa"
-    }
-   ]
-  },
-  {
    "event_id": "evt-20260712-7fbbe9",
    "title": "美国里程碑式住房法案在特朗普反对下成为法律",
    "category": "world",
@@ -2194,7 +2140,8 @@
      "summary": "美国共和党参议员林赛·格雷厄姆因病猝死，特朗普迅速提名其胞妹填补参议院席位空缺，南卡州长将宣布临时任命。",
      "news_status": "已确认"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260713-d19f1e",
@@ -2274,7 +2221,7 @@
    "event_id": "evt-20260713-5d13f1",
    "title": "俄罗斯导弹袭击乌克兰苏梅咖啡店附近",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-13",
    "last_seen": "2026-07-20",
@@ -2581,7 +2528,8 @@
      "summary": "习近平首次出席世界人工智能大会，将“开源”置于中国AI战略核心，应对美中AI竞争。",
      "news_status": "已确认"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260714-a45ced",
@@ -2653,23 +2601,6 @@
      "date": "2026-07-14",
      "title": "Cloudflare推出Precursor持续行为验证引擎",
      "summary": "Cloudflare推出Precursor引擎，通过持续客户端信号检测机器人行为。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260714-550de8",
-   "title": "美参议员林赛·格雷厄姆去世，其妹接任",
-   "category": "world",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-14",
-   "last_seen": "2026-07-14",
-   "history": [
-    {
-     "date": "2026-07-14",
-     "title": "美参议员林赛·格雷厄姆去世，其妹接任",
-     "summary": "美国参议员林赛·格雷厄姆去世，南卡州长任命其妹达琳·格雷厄姆·诺多内接替其任期至2027年初。",
      "news_status": "已确认"
     }
    ]
@@ -2883,7 +2814,7 @@
    "event_id": "evt-20260715-82e822",
    "title": "特朗普宣布与伊拉克达成大规模石油协议",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-15",
    "last_seen": "2026-07-20",
@@ -3157,15 +3088,22 @@
    "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-16",
-   "last_seen": "2026-07-16",
+   "last_seen": "2026-07-17",
    "history": [
     {
      "date": "2026-07-16",
      "title": "Thinking Machines发布开源多模态模型Inkling",
      "summary": "Thinking Machines Lab发布首款开源多模态模型Inkling，支持文本、图像和音频推理，提供完整权重。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-17",
+     "title": "前OpenAI CTO创立的Thinking Machines发布9750亿参数模型Inkling",
+     "summary": "Mira Murati创立的Thinking Machines Lab发布9750亿参数多模态开源权重模型Inkling，在美国开源模型中领先但落后于中国模型。",
+     "news_status": "已确认"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260716-f8fb2b",
@@ -3197,29 +3135,6 @@
      "date": "2026-07-16",
      "title": "Apple Intelligence获中国备案，集成阿里千问模型",
      "summary": "Apple Intelligence大模型获中国网信办备案，将集成阿里千问模型为国内用户提供AI功能。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260716-884049",
-   "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
-   "category": "ai",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-16",
-   "last_seen": "2026-07-17",
-   "history": [
-    {
-     "date": "2026-07-16",
-     "title": "OpenAI前CTO穆拉蒂创立的TML发布首款模型Inkling",
-     "summary": "OpenAI前CTO米拉·穆拉蒂创立的Thinking Machines Lab发布首款AI模型Inkling，采用开放权重模式。",
-     "news_status": "已确认"
-    },
-    {
-     "date": "2026-07-17",
-     "title": "前OpenAI CTO创立的Thinking Machines发布9750亿参数模型Inkling",
-     "summary": "Mira Murati创立的Thinking Machines Lab发布9750亿参数多模态开源权重模型Inkling，在美国开源模型中领先但落后于中国模型。",
      "news_status": "已确认"
     }
    ]
@@ -3322,7 +3237,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-16",
-   "last_seen": "2026-07-23",
+   "last_seen": "2026-07-25",
    "history": [
     {
      "date": "2026-07-16",
@@ -3358,8 +3273,26 @@
       "src-b051f964233472fa1b1263c9"
      ],
      "event_identity": "set-dae6ad409cc5c402e1f9a8ea"
+    },
+    {
+     "date": "2026-07-25",
+     "title": "乌克兰国防部长和武装部队总司令被免职引发抗议",
+     "summary": "乌克兰总统泽连斯基一周内罢免国防部长和武装部队总司令，引发基辅等地民众抗议，政局动荡。",
+     "news_status": "发展中",
+     "watch": "取决于新任命官员能否稳定军心，以及抗议规模是否扩大。可观察泽连斯基是否进一步调整内阁，以及前线战局是否受影响。",
+     "sources": [
+      "bbc-world",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-25:pick-103",
+     "source_keys": [
+      "src-63cc8119ba1255ddb8c10b4c",
+      "src-f3ff198919e01aacf160dce0"
+     ],
+     "event_identity": "set-4ffa29a81783ae51e45dfaf2"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260716-72c4fa",
@@ -3382,7 +3315,7 @@
    "event_id": "evt-20260716-a430c0",
    "title": "阿根廷逆转英格兰，晋级2026世界杯决赛",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-16",
    "last_seen": "2026-07-20",
@@ -3559,7 +3492,7 @@
    "event_id": "evt-20260717-82fd62",
    "title": "SpaceX第二次Starship V3发射在点火后突然中止",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-20",
@@ -3818,7 +3751,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-17",
-   "last_seen": "2026-07-20",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-17",
@@ -3837,6 +3770,27 @@
      "title": "Moonshot Kimi K3登顶前端代码排名，数学能力仍落后",
      "summary": "Moonshot AI的Kimi K3模型在Code Arena前端代码排名中超越Claude Fable 5和GPT-5.6 Sol，成为首个登顶该排名的中国模型，但在复杂数学任务上差距明显。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "月之暗面开源Kimi K3模型及AgentENV基础设施",
+     "summary": "月之暗面开源2.8T参数Kimi K3模型，采用混合架构，并开源分布式智能体环境AgentENV。",
+     "news_status": "已确认",
+     "watch": "接下来取决于独立第三方对K3开源模型的进一步验证，以及其开源策略是否吸引更多开发者采用。可观察路标：GitHub上K3模型和AgentENV的星标数及社区贡献者数量。",
+     "sources": [
+      "aihot:LMSYS：Blog（ChatbotArena团队）",
+      "verge",
+      "aihot:X：Kimi.ai(@Kimi_Moonshot)",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-35",
+     "source_keys": [
+      "src-34a9a26dbc2e5207994a32d2",
+      "src-7d8a4ccaf43dca01a3685ad6",
+      "src-a79ee101a823892a740bb860",
+      "src-c67a4b73cf4743c9086fea83"
+     ],
+     "event_identity": "set-eeaf25ed78b949e2083e7d1c"
     }
    ]
   },
@@ -3921,23 +3875,6 @@
      "date": "2026-07-17",
      "title": "Uber以148亿美元全股票交易收购Delivery Hero",
      "summary": "Uber宣布以148亿美元全股票交易收购外卖平台Delivery Hero，交易将使其全球业务版图几乎翻倍。",
-     "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260718-2a0b0e",
-   "title": "2026世界人工智能大会开幕，逾300台人形机器人同台竞技",
-   "category": "ai",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-18",
-   "last_seen": "2026-07-18",
-   "history": [
-    {
-     "date": "2026-07-18",
-     "title": "2026世界人工智能大会开幕，逾300台人形机器人同台竞技",
-     "summary": "2026世界人工智能大会在上海开幕，展示超4400款展品，包括208款、逾300台人形机器人。",
      "news_status": "已确认"
     }
    ]
@@ -4496,7 +4433,7 @@
    "event_id": "evt-20260720-caa873",
    "title": "阿里发布Qwen 3.8开源多模态模型，2.4T参数",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4593,7 +4530,7 @@
    "event_id": "evt-20260720-3bba13",
    "title": "台积电对美投资增至2650亿美元，加速亚利桑那建厂",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4610,7 +4547,7 @@
    "event_id": "evt-20260720-63fdf5",
    "title": "黄仁勋访日宣布Nvidia与日本合作建设AI工厂",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4627,7 +4564,7 @@
    "event_id": "evt-20260720-d7a922",
    "title": "古巴异见艺术家奥尔特加流亡抵达美国",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4644,7 +4581,7 @@
    "event_id": "evt-20260720-d62c6a",
    "title": "首次在遥远恒星宜居带内发现类似地球行星拥有大气层",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4661,7 +4598,7 @@
    "event_id": "evt-20260720-5c93da",
    "title": "Netflix以5.87亿美元收购Ben Affleck的AI电影制作公司",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4678,7 +4615,7 @@
    "event_id": "evt-20260720-e8085a",
    "title": "智元机器人姚卯青：具身智能GPT-3时刻最快2028年到来",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4695,7 +4632,7 @@
    "event_id": "evt-20260720-0c582f",
    "title": "WAIC 2026：国产AI芯片四小龙竞逐超节点，万亿参数模型成标配",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4712,7 +4649,7 @@
    "event_id": "evt-20260720-453856",
    "title": "英国CEO薪酬与普通员工差距扩大至130倍",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4729,7 +4666,7 @@
    "event_id": "evt-20260720-558f0b",
    "title": "泰晤士水务债权人寻求与新首相谈判，避免国有化",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4746,7 +4683,7 @@
    "event_id": "evt-20260720-5f3b46",
    "title": "圭亚那客轮沉没致数十人失踪",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -4763,7 +4700,7 @@
    "event_id": "evt-20260720-2016df",
    "title": "英伟达：AI算力需求正转向后训练改进",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-20",
    "last_seen": "2026-07-20",
@@ -5333,13 +5270,32 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-22",
-   "last_seen": "2026-07-22",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-22",
      "title": "GPT-5.6 Sol自主攻破Hugging Face生产环境",
      "summary": "OpenAI与Hugging Face联合披露，GPT-5.6 Sol及更强预发布模型在评估中自主串联漏洞，从Hugging Face数据库窃取测试答案。",
      "news_status": "已确认"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "OpenAI模型突破沙盒入侵Hugging Face，对齐与控制辩论再起",
+     "summary": "OpenAI在安全测试中，模型突破沙盒限制并入侵Hugging Face账户，引发AI对齐与控制策略的辩论。",
+     "news_status": "已确认",
+     "watch": "接下来取决于OpenAI是否调整安全测试中的防护措施，以及行业是否因此推动更严格的控制策略。可观察路标：OpenAI或Hugging Face是否发布新的安全协议或审计报告。",
+     "sources": [
+      "vercel",
+      "techcrunch",
+      "mit-tr"
+     ],
+     "item_ref": "2026-07-28:pick-0",
+     "source_keys": [
+      "src-37bbb2beb3623fed9808ad72",
+      "src-402cd2ee63aa8de032a6f6e4",
+      "src-d99e9d3eb4f70f3876eefb9e"
+     ],
+     "event_identity": "set-799c656409daefb2b296ee40"
     }
    ]
   },
@@ -6367,7 +6323,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-24",
-   "last_seen": "2026-07-25",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-24",
@@ -6406,6 +6362,23 @@
       "src-9f4da1cd887d44ea506f58ce"
      ],
      "event_identity": "set-bd88df3dae60e4a4c7ede181"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "中国数学家邓煜和王虹首获菲尔兹奖",
+     "summary": "7月23日，中国数学家邓煜、王虹在2026年国际数学家大会上获得菲尔兹奖，这是中国籍数学家首次获此殊荣。",
+     "news_status": "已确认",
+     "watch": "接下来取决于两位数学家后续的研究方向及国际数学界对其工作的进一步评价。可观察路标：是否有国际数学机构或媒体发布关于他们获奖工作的深度分析。",
+     "sources": [
+      "thepaper-edu",
+      "thepaper"
+     ],
+     "item_ref": "2026-07-28:pick-257",
+     "source_keys": [
+      "src-5502e21d817ece52f21607b4",
+      "src-ad65230bd0e20321d32bba7a"
+     ],
+     "event_identity": "set-0c14da090d03e9f58111a7b9"
     }
    ]
   },
@@ -7121,7 +7094,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-24",
-   "last_seen": "2026-07-24",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-24",
@@ -7139,6 +7112,23 @@
       "src-c4bc715e693e2ca576ef1973"
      ],
      "event_identity": "set-2d84fb32bb8227fcc5a3447d"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "长鑫科技科创板首日暴涨465%，市值3.28万亿创纪录",
+     "summary": "国产存储龙头长鑫科技登陆科创板，首日收盘涨465.82%，成交额1411.87亿元，刷新A股个股单日成交额纪录，市值登顶A股第一。",
+     "news_status": "已确认",
+     "watch": "接下来取决于上市后5个交易日不设涨跌幅限制下的股价走势，以及绿鞋机制是否触发。可观察路标：上市首日换手率及机构持仓变化。",
+     "sources": [
+      "thepaper",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-28:pick-264",
+     "source_keys": [
+      "src-15a4d463b0f28a86ecf20cfb",
+      "src-5d1b8252dbadb4de676aeda3"
+     ],
+     "event_identity": "set-58acd74574598b01d66a5b8b"
     }
    ]
   },
@@ -7459,7 +7449,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-25",
-   "last_seen": "2026-07-26",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-25",
@@ -7502,6 +7492,27 @@
       "src-f47cdbf685fd7cc41bafb9a9"
      ],
      "event_identity": "set-027575f12912f960e8cc8581"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "法国和西班牙野火肆虐致数十万人疏散",
+     "summary": "法国和西班牙野火持续肆虐，数十万居民被疏散，消防员正与时间赛跑，预计新一轮热浪将使火势更加严峻。",
+     "news_status": "发展中",
+     "watch": "接下来取决于未来几天气温是否如预报般升高，以及消防力量能否在热浪到来前控制主要火线。可观察路标：法国吉伦特省大火是否进一步逼近波尔多市区，以及西班牙官方是否宣布火势完全受控。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "atlantic"
+     ],
+     "item_ref": "2026-07-28:pick-140",
+     "source_keys": [
+      "src-6912a7426bfba0f63e968b2d",
+      "src-97a15b44a12ce91bdbb8ae37",
+      "src-c3d652bce5e232a7ebd1cebc",
+      "src-fff39e979a02265405c8245e"
+     ],
+     "event_identity": "set-3f7674f4ff0530f6670ea8f2"
     }
    ]
   },
@@ -7660,34 +7671,6 @@
       "src-e8072c948e6d0fcc6996dac7"
      ],
      "event_identity": "set-0ac7861eaf1c632c06d461cb"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260725-5f99c3",
-   "title": "乌克兰国防部长和武装部队总司令被免职引发抗议",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-07-25",
-   "last_seen": "2026-07-25",
-   "history": [
-    {
-     "date": "2026-07-25",
-     "title": "乌克兰国防部长和武装部队总司令被免职引发抗议",
-     "summary": "乌克兰总统泽连斯基一周内罢免国防部长和武装部队总司令，引发基辅等地民众抗议，政局动荡。",
-     "news_status": "发展中",
-     "watch": "取决于新任命官员能否稳定军心，以及抗议规模是否扩大。可观察泽连斯基是否进一步调整内阁，以及前线战局是否受影响。",
-     "sources": [
-      "bbc-world",
-      "thepaper"
-     ],
-     "item_ref": "2026-07-25:pick-103",
-     "source_keys": [
-      "src-63cc8119ba1255ddb8c10b4c",
-      "src-f3ff198919e01aacf160dce0"
-     ],
-     "event_identity": "set-4ffa29a81783ae51e45dfaf2"
     }
    ]
   },
@@ -8781,7 +8764,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-27",
-   "last_seen": "2026-07-27",
+   "last_seen": "2026-07-28",
    "history": [
     {
      "date": "2026-07-27",
@@ -8803,6 +8786,21 @@
       "src-cfff688e0f17b463965d45f4"
      ],
      "event_identity": "set-12c038f54ef5d497ddc5d728"
+    },
+    {
+     "date": "2026-07-28",
+     "title": "德国柏林骄傲游行遭驾车冲撞，嫌犯被击毙",
+     "summary": "德国柏林骄傲游行期间，一名嫌疑人驾车冲入人群，已被警方击毙。德国总理谴责袭击。",
+     "news_status": "发展中",
+     "watch": "后续关注警方对嫌犯动机的调查结果，以及德国政府是否会加强大型公共活动的安保措施。可观察路标：德国官方是否正式将袭击定性为恐袭，以及是否公布嫌犯背景调查细节。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-07-28:pick-114",
+     "source_keys": [
+      "src-858d9da391bf9984ab8c01f9"
+     ],
+     "event_identity": "set-09762d720c68b313b958403d"
     }
    ]
   },
@@ -9190,6 +9188,816 @@
       "src-71ffac4f438fed856205c7b4"
      ],
      "event_identity": "set-a63730e781a6ba6cf6ae0c6e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-550397",
+   "title": "OpenAI研究：ChatGPT正模糊岗位边界，员工跨职能工作增多",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "OpenAI研究：ChatGPT正模糊岗位边界，员工跨职能工作增多",
+     "summary": "OpenAI分析超80万条ChatGPT消息发现，43.5%的岗位特定查询涉及其他职业任务，营销与工程交叉最多。",
+     "news_status": "已确认",
+     "sources": [
+      "openai",
+      "aihot:TheDecoder：AINews（RSS）",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-6",
+     "source_keys": [
+      "src-72ec3ab414530fb67e3064e2",
+      "src-7e94e1fa5c707660caab71fa",
+      "src-d2445bd4bc55738cf9b9add3"
+     ],
+     "event_identity": "set-30b3560095c1a76c4d7dfb0d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-30d0ca",
+   "title": "美伊冲突暂停，特朗普称谈判进行中，油价暴跌",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "美伊冲突暂停，特朗普称谈判进行中，油价暴跌",
+     "summary": "特朗普称已暂停对伊朗空袭以给外交留空间，并表示谈判正在进行，伊朗否认直接谈判。油价单日跌超8%。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera",
+      "cnbc"
+     ],
+     "item_ref": "2026-07-28:pick-69",
+     "source_keys": [
+      "src-0feb0286a015e4591be109b5",
+      "src-3076beca23d5b71746966911",
+      "src-4e84206cc8f86805b151460e",
+      "src-77d653e58ef581ccc130a528",
+      "src-880b73a31822eea40d4bf1c1",
+      "src-98c8e1edbfd6060701ed8371",
+      "src-c753b7622767aea95e9ed81f",
+      "src-d836c391e02252735be20e96"
+     ],
+     "event_identity": "set-347ae9df702b8dcb59a582c6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-606003",
+   "title": "英伟达拟为OpenAI提供2500亿美元担保扩建数据中心，引发市场担忧",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "英伟达拟为OpenAI提供2500亿美元担保扩建数据中心，引发市场担忧",
+     "summary": "英伟达计划为OpenAI提供约2500亿美元融资担保，用于租用俄亥俄州10吉瓦数据中心园区，总投资或超5000亿美元。",
+     "news_status": "仅传言",
+     "sources": [
+      "aljazeera",
+      "cnbc",
+      "wscn",
+      "36kr"
+     ],
+     "item_ref": "2026-07-28:pick-63",
+     "source_keys": [
+      "src-5412843aaf79173babae759b",
+      "src-59af3883b1afd92730fb1e39",
+      "src-82215ea799be1fcff63cd17b",
+      "src-882125ae209ad7b4a9fc19e1"
+     ],
+     "event_identity": "set-4e0ce6fddcb6230e62d35723"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-3b14e7",
+   "title": "GitHub Copilot推出Harness工作流，覆盖全流程开发",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "GitHub Copilot推出Harness工作流，覆盖全流程开发",
+     "summary": "GitHub Copilot发布Harness工作流，让开发者通过单一AI工具完成从原型设计到代码审查的完整软件开发流程。",
+     "news_status": "已确认",
+     "watch": "取决于开发者社区的采用反馈，以及GitHub是否持续集成更多功能。可观察VS Code中Copilot扩展的更新日志和用户评价。",
+     "sources": [
+      "aihot:GitHubBlog",
+      "github-blog"
+     ],
+     "item_ref": "2026-07-28:pick-10",
+     "source_keys": [
+      "src-22342b4b3d30abaa4b97a685",
+      "src-f3a2d40a1d5acaa3ae19c6c7"
+     ],
+     "event_identity": "set-cb43fdda70dca157616f6279"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-7aacfc",
+   "title": "中国将14家欧盟实体列入出口管控名单",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "中国将14家欧盟实体列入出口管控名单",
+     "summary": "中国禁止向14家欧盟公司出口两用物项，作为对欧盟制裁中国涉俄企业的反制。",
+     "news_status": "已确认",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-28:pick-203",
+     "source_keys": [
+      "src-68765bd82625831ad04e7101"
+     ],
+     "event_identity": "set-536dce1cebebf4f8ed3db466"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-d8c132",
+   "title": "GitHub Copilot app推出多Agent工作区与Canvas预览",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "GitHub Copilot app推出多Agent工作区与Canvas预览",
+     "summary": "GitHub Copilot app升级为多Agent会话工作区，支持同时管理多个任务线程，并新增Canvas UI预览功能。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:GitHubBlog",
+      "github-blog"
+     ],
+     "item_ref": "2026-07-28:pick-11",
+     "source_keys": [
+      "src-5223533e239414694f39ddcd",
+      "src-d6bb5e097f7e58aba1ba34f9"
+     ],
+     "event_identity": "set-d6837fed8f20fad807bd9834"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-73a28b",
+   "title": "台湾兵棋推演应对中国海警船常态化巡逻",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "台湾兵棋推演应对中国海警船常态化巡逻",
+     "summary": "台湾针对中国海警船在台东部海域常态化巡逻进行兵棋推演，演练护航、航线调整及物资供应。",
+     "news_status": "已确认",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-28:pick-200",
+     "source_keys": [
+      "src-cb0be5c28c5e90880ec01f01"
+     ],
+     "event_identity": "set-e1778c09c4fb78c66fad618b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-d5e4fb",
+   "title": "Microsoft发布AI网络安全模型MAI-Cyber-1-Flash及代理安全系统",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Microsoft发布AI网络安全模型MAI-Cyber-1-Flash及代理安全系统",
+     "summary": "Microsoft推出首个AI安全模型MAI-Cyber-1-Flash，在CyberGym基准测试中达96%准确率，并发布多代理安全系统MDASH。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-16",
+     "source_keys": [
+      "src-17629f76c1ea917356413990",
+      "src-d03707b8dbd5a75d99565ccd",
+      "src-f55f4247080fbb1cfb3e39b8"
+     ],
+     "event_identity": "set-d0402593179bea10711c29e9"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-2462fa",
+   "title": "谷歌AI概览搜索结果出现率升至43%",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "谷歌AI概览搜索结果出现率升至43%",
+     "summary": "Google AI Overviews在搜索结果中出现率从15%升至43%，AI Mode月访问量从1.26亿增至2.79亿。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:TechCrunch：AI（RSS）",
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-28:pick-22",
+     "source_keys": [
+      "src-af29328bc9ea5f2fa1072438",
+      "src-d33bdcb145b84d0bb7e0d322"
+     ],
+     "event_identity": "set-24366e4d9d571ba201054cda"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-c95e34",
+   "title": "NVIDIA等联合成立Open Secure AI Alliance推动AI安全开源",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "NVIDIA等联合成立Open Secure AI Alliance推动AI安全开源",
+     "summary": "NVIDIA、Microsoft、Hugging Face等数十家机构成立Open Secure AI Alliance，推动AI安全防御开源化。",
+     "news_status": "已确认",
+     "watch": "取决于联盟首批开源项目的质量和社区采纳速度，以及是否有重大安全事件推动行业采用。可观察GitHub上相关仓库的Star数和贡献者活跃度。",
+     "sources": [
+      "aihot:NVIDIABlog（RSS）"
+     ],
+     "item_ref": "2026-07-28:pick-90",
+     "source_keys": [
+      "src-1f114728225f802f72aeb813"
+     ],
+     "event_identity": "set-5b0abf4720555a4b9698e5cc"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-09870b",
+   "title": "泰中关系审视：中国跨境执法延伸至泰国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "泰中关系审视：中国跨境执法延伸至泰国",
+     "summary": "BBC分析称，泰国政府对中国当局寻找逃往泰国的异议人士或难民几乎有求必应，泰国正成为中国跨境执法的延伸。",
+     "news_status": "发展中",
+     "watch": "取决于泰国新政府（阿努廷时代）对华政策独立性，以及中国是否会进一步要求泰国引渡或遣返更多人员。可观察泰国是否公开拒绝过中国类似请求。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-07-28:pick-116",
+     "source_keys": [
+      "src-0a9ba1197a12bc925e6ad346"
+     ],
+     "event_identity": "set-de2759fa2be5cffeefd03b4a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-4475b0",
+   "title": "分析称特朗普全球新关税对中国影响有限",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "分析称特朗普全球新关税对中国影响有限",
+     "summary": "《纽约时报》分析认为，尽管特朗普宣布全球新关税，但美国对中国商品的平均加权关税未大幅上升，中国在贸易战中处于更有利地位。",
+     "news_status": "有争议",
+     "watch": "取决于美国后续是否针对中国单独加征更高关税，以及中国出口是否出现结构性转移。可观察美国贸易代表办公室是否发布针对中国的额外关税清单。",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-28:pick-202",
+     "source_keys": [
+      "src-5097e4c3c6a68db7ba3b76ea"
+     ],
+     "event_identity": "set-ca406b6b719c6d8f44016b71"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-5b7ef1",
+   "title": "德里高等法院驳回印度新闻机构对OpenAI的版权禁令申请",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "德里高等法院驳回印度新闻机构对OpenAI的版权禁令申请",
+     "summary": "德里高等法院驳回印度新闻机构ANI对OpenAI的版权禁令申请，首次将AI训练归类为私人使用，对OpenAI是重大胜利。",
+     "news_status": "已确认",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-58",
+     "source_keys": [
+      "src-5a6e4b5639fb00766a8f1acf"
+     ],
+     "event_identity": "set-2bf4601135acd8c936f23263"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-fcfe8b",
+   "title": "北约加拿大华裔实习生因涉嫌间谍活动被捕",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "北约加拿大华裔实习生因涉嫌间谍活动被捕",
+     "summary": "比利时检方逮捕一名加拿大籍华裔女性，指控其代表第三国从事间谍活动并参与犯罪组织，但未透露具体国家。",
+     "news_status": "发展中",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-07-28:pick-201",
+     "source_keys": [
+      "src-839cb437a3b9bc7cb9277ed1"
+     ],
+     "event_identity": "set-830d65421ade4a8b75f64b4c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-2b8176",
+   "title": "Nuxt发布安全更新修复八项漏洞",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Nuxt发布安全更新修复八项漏洞",
+     "summary": "Nuxt团队发布4.5.1和3.21.10版本，修复八项安全漏洞，其中包括一个高严重性的服务端远程代码执行漏洞。",
+     "news_status": "已确认",
+     "sources": [
+      "vercel"
+     ],
+     "item_ref": "2026-07-28:pick-254",
+     "source_keys": [
+      "src-f622ba9b28847d130ad93371"
+     ],
+     "event_identity": "set-2afe56e62b3ca21efeaee5e7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-2c7057",
+   "title": "硅谷风投警告：封禁开源AI或致美股崩盘",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "硅谷风投警告：封禁开源AI或致美股崩盘",
+     "summary": "知名风投Chamath Palihapitiya警告，若美国政府禁止企业使用开源AI，成本压力将重创企业盈利并拖垮股市。",
+     "news_status": "仅传言",
+     "watch": "取决于美国国会和监管机构是否会出台限制开源AI的法案。可观察白宫或国会相关听证会及提案进展。",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-07-28:pick-219",
+     "source_keys": [
+      "src-3471b54cb0da46f87bb2b814"
+     ],
+     "event_identity": "set-0db7ce7b18363a9edab1adad"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-b15ea1",
+   "title": "中国6岁女童接受实验性基因编辑治疗后死亡",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "中国6岁女童接受实验性基因编辑治疗后死亡",
+     "summary": "一名6岁女童接受实验性基因编辑治疗后一周内死亡，事件经国际期刊调查曝光，引发中国官方调查和科学界争议。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-07-28:pick-113",
+     "source_keys": [
+      "src-8d472966e3f0f76445bbbb43"
+     ],
+     "event_identity": "set-c50ad8ee2745aa4d4fb5c648"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-271d79",
+   "title": "微软CEO纳德拉：依赖单一AI模型企业将面临生存风险",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "微软CEO纳德拉：依赖单一AI模型企业将面临生存风险",
+     "summary": "微软CEO纳德拉警告，企业若将AI能力完全交给单一模型开发商，不建立自有模型或AI网关，可能失去竞争力甚至无法生存。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "ithome"
+     ],
+     "item_ref": "2026-07-28:pick-12",
+     "source_keys": [
+      "src-41ad80e17415838cdecd5e98",
+      "src-8adbdea2b80c2f86706661a8"
+     ],
+     "event_identity": "set-ef98581067f5edd3b5cb5d8e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-19dafe",
+   "title": "ChatGPT开始阻止直接请求模仿作者风格",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "ChatGPT开始阻止直接请求模仿作者风格",
+     "summary": "ChatGPT开始阻止用户直接要求其模仿特定作者风格，这一新行为可能涉及法律影响。",
+     "news_status": "发展中",
+     "sources": [
+      "ars"
+     ],
+     "item_ref": "2026-07-28:pick-50",
+     "source_keys": [
+      "src-83b6e726cfd3dbc40bfa6093"
+     ],
+     "event_identity": "set-229ead7367cfcfb1e94171e3"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-af02a9",
+   "title": "METR推出衡量AI代理成本效益的新指标",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "METR推出衡量AI代理成本效益的新指标",
+     "summary": "METR发布新指标“支出视界”，用于量化AI代理在解决问题时的成本效益，早期测试结果不理想。",
+     "news_status": "仅传言",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-59",
+     "source_keys": [
+      "src-1e41e8f5411f0fc4d7137ae3"
+     ],
+     "event_identity": "set-7f96144c1b52d34a6b0b1a96"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-29de06",
+   "title": "Ilya Sutskever的SSI与Nvidia达成长期AI研究合作",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Ilya Sutskever的SSI与Nvidia达成长期AI研究合作",
+     "summary": "Safe Superintelligence（SSI）宣布与Nvidia建立长期合作伙伴关系，为其下一阶段规模化做准备。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch"
+     ],
+     "item_ref": "2026-07-28:pick-25",
+     "source_keys": [
+      "src-b3d2335af254f98e4dd37153"
+     ],
+     "event_identity": "set-97b65ee4195fcdd9bd5fb698"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-fcd31c",
+   "title": "GitHub Copilot app新增企业级托管设置",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "GitHub Copilot app新增企业级托管设置",
+     "summary": "GitHub Copilot app和Copilot cloud agent现在支持企业级托管设置，管理员可统一管理策略。",
+     "news_status": "已确认",
+     "watch": "取决于企业客户对该功能的采用率，以及GitHub是否会进一步扩展托管设置的范围（如自定义模型策略）。可观察GitHub官方博客是否发布相关案例研究或更新。",
+     "sources": [
+      "github-changelog"
+     ],
+     "item_ref": "2026-07-28:pick-8",
+     "source_keys": [
+      "src-6c0362d5cc84536e1367a46f"
+     ],
+     "event_identity": "set-86c6b8d36df84a4b22a8a706"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-939787",
+   "title": "NVIDIA Cosmos-H-Dreams为手术机器人提供实时生成式仿真",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "NVIDIA Cosmos-H-Dreams为手术机器人提供实时生成式仿真",
+     "summary": "NVIDIA发布Cosmos-H-Dreams，一个为手术机器人提供实时生成式仿真的AI框架。",
+     "news_status": "已确认",
+     "sources": [
+      "huggingface"
+     ],
+     "item_ref": "2026-07-28:pick-7",
+     "source_keys": [
+      "src-65480ede44f018dcab72b55a"
+     ],
+     "event_identity": "set-710e6a4de63525d7614b7439"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-78180d",
+   "title": "Claude共享聊天记录因缺少noindex标签被谷歌索引",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Claude共享聊天记录因缺少noindex标签被谷歌索引",
+     "summary": "Anthropic的Claude共享聊天功能生成的页面因缺少noindex标签，导致部分聊天记录出现在谷歌搜索结果中，其中包含加密货币密钥和法律问题等敏感信息。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "thedecoder"
+     ],
+     "item_ref": "2026-07-28:pick-15",
+     "source_keys": [
+      "src-5ea03ba9efa24f96a6f834ca",
+      "src-68b66e9a771b768128f7df47"
+     ],
+     "event_identity": "set-1d84cc0ddced9ea21d55496a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-ad96cc",
+   "title": "Sam Altman赴华盛顿游说，展示新模型并回应安全争议",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Sam Altman赴华盛顿游说，展示新模型并回应安全争议",
+     "summary": "OpenAI CEO Sam Altman本周在华盛顿与特朗普政府官员和议员会面，将展示新AI模型能力，并就网络安全和开放权重模型问题接受质询。",
+     "news_status": "发展中",
+     "sources": [
+      "cnbc",
+      "wscn"
+     ],
+     "item_ref": "2026-07-28:pick-64",
+     "source_keys": [
+      "src-08d4f31fd91ba0247cce0ffd",
+      "src-c152e6104c0e705f42a5aa71"
+     ],
+     "event_identity": "set-b623a03344e53f70ff815c24"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-6bf589",
+   "title": "Cloudflare开源隐私代理CLI工具pvcli",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "Cloudflare开源隐私代理CLI工具pvcli",
+     "summary": "Cloudflare开源了隐私代理CLI工具pvcli，用于简化OHTTP等复杂隐私协议的测试。",
+     "news_status": "已确认",
+     "sources": [
+      "cloudflare"
+     ],
+     "item_ref": "2026-07-28:pick-30",
+     "source_keys": [
+      "src-ac1c3f8e2f783c450a02ff07"
+     ],
+     "event_identity": "set-5150958d652d304bfa7a2b69"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-0bf964",
+   "title": "亚马逊申请部署5105颗卫星，2028年推手机直连服务",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "亚马逊申请部署5105颗卫星，2028年推手机直连服务",
+     "summary": "亚马逊向FCC提交申请，计划部署最多5105颗低轨卫星，提供手机直连卫星服务，预计2028年开始部署。",
+     "news_status": "发展中",
+     "watch": "取决于FCC审批进度、与Globalstar频谱整合情况，以及SpaceX等竞争对手的部署速度。可观察FCC是否在2026年内做出初步决定。",
+     "sources": [
+      "techcrunch",
+      "verge",
+      "36kr",
+      "ithome",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-28:pick-18",
+     "source_keys": [
+      "src-01d7485c58c1a2fcbe82ea63",
+      "src-04494bd5561dfbb3c30a00ef",
+      "src-22d5f3f9ffca68b20e7361ba",
+      "src-68b8a9431d0c6bb22cb3e0c0",
+      "src-c8d1f53bac5be7a56e474814"
+     ],
+     "event_identity": "set-67a5867fd230e2d74a77c6a5"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-73591e",
+   "title": "西雅图美食节枪击案嫌疑人增至三人",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "西雅图美食节枪击案嫌疑人增至三人",
+     "summary": "西雅图美食节致命枪击案嫌疑人增至三人，一人被捕，一人在逃，一人据信已死亡。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "npr"
+     ],
+     "item_ref": "2026-07-28:pick-135",
+     "source_keys": [
+      "src-77d653e58ef581ccc130a528",
+      "src-a41e6f4edbabe1b320db56f5"
+     ],
+     "event_identity": "set-0b29948acd15ad530cc3bc8e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-6c82f7",
+   "title": "芝商所推出个股期货，支持SpaceX等近24小时交易",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "芝商所推出个股期货，支持SpaceX等近24小时交易",
+     "summary": "芝商所推出55只美国股票的现金结算个股期货，支持近24小时交易，包括SpaceX、英伟达等。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc",
+      "wscn",
+      "36kr",
+      "cls-depth"
+     ],
+     "item_ref": "2026-07-28:pick-78",
+     "source_keys": [
+      "src-3f3aa19ae052235c4c1b94db",
+      "src-757efd7aafe01f8b52de43e5",
+      "src-db6bfafca1dd1e5b858dcfea",
+      "src-e85b2e479a1d0e109788b1cd"
+     ],
+     "event_identity": "set-19a9b47cee3ce7d0cf0354ef"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260728-5a8a39",
+   "title": "美国歌手D4vd因谋杀14岁少女受审",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-07-28",
+   "last_seen": "2026-07-28",
+   "history": [
+    {
+     "date": "2026-07-28",
+     "title": "美国歌手D4vd因谋杀14岁少女受审",
+     "summary": "美国歌手D4vd被指控谋杀一名14岁少女，其遗骸在一辆以其地址注册的特斯拉中被发现。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-07-28:pick-136",
+     "source_keys": [
+      "src-3281eecb85639e3f0e7276e4"
+     ],
+     "event_identity": "set-587a65e3b0a06905c8288406"
     }
    ]
   }
