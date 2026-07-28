@@ -241,7 +241,7 @@ GITHUB_BRANCH=main
 #### 选材与可信轨迹并行上线门
 
 - 每次登记表阶段输出一行「轨迹健康」，稳定记录候选匹配、连续性通过/拒绝、被排除的历史行、整条生成回退、审计字段/claim 回退，以及最终公开走向数/精选数和覆盖率。连续性响应缺失或非法时按拒绝计数，其历史全部计入过滤；生成回退按条目计，审计回退按未采用的字段或 claim 计。
-- 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `python news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `python news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
+- 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `py -3.12 news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `py -3.12 news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
 - 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但线上验收尚未通过。本次 36 条/4 席与深读扩充会改变公开样本；活动 provider 切回 DeepSeek 后，2026-07-28 的首次有效 publish（Run #30353163162）产生了新的共享运行时指纹。成本护栏改变同日事件候选样本，首次有效 publish 也会按既有规则再次重置全部五门；不得混用变更前证据。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。当前逐门状态以 GitHub Issue #15 的幂等台账为准。
 - GitHub Issue #15 是**五个门的唯一自动每日台账**（台账 state 版本 `issue-ledger-v2`）。同一北京日期的重跑只幂等更新当日记录，不多算一天；当日任一次发布失败，即使后续重跑成功，当日所有门仍都按失败处理。非发布失败时，`pass` 让对应门 +1，`neutral` / `needs_review` 冻结该门当前计数；`fail` 只清零**连续型**门（选材、轨迹、客观性 shadow），**累计型**门（enrich、信源指标）不清零已攒的有效日，因为缺一天数据不等于观察结果变坏。
 - 云端 `rollout-review` 现在一次性给出五门判定，数据来源分别是：选材/轨迹取临时 rollout artifact；客观性 shadow 取 `shadow` job 新落盘的 `shadow-summary` artifact；enrich 安全指标取已提交的 `source/news/data/quality-health.json`；信源指标取已提交的 `source/news/data/source_health.json`。缺任一输入时只记 `needs_review` / `neutral`，绝不推断通过。
@@ -260,9 +260,9 @@ GITHUB_BRANCH=main
 
 `source/news/data/` 是线上数据目录，大多数文件由管线或后台 API 创建，不应手工改写，除非下方明确允许。
 
-- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数、同日事件复核数（`duplicate_audited_events`）、合并数（`same_day_duplicates_merged`）、失败数（`duplicate_audit_failures`）和是否发生降级；旧数据缺少这三个同日去重字段时继续兼容。`trajectory_enabled` 是当日轨迹展示开关；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，并可带 `content_type: reporting|analysis|opinion`；非法值或历史数据缺失时前端省略标签。论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
+- `daily/YYYY-MM-DD.js`：每日页面数据。顶层 `quality` 记录审计事件数、拆分数、删除字段数、跨日重复数、重大更新数、更新判定失败数、同日事件复核数（`duplicate_audited_events`）、合并数（`same_day_duplicates_merged`）、失败数（`duplicate_audit_failures`）和是否发生降级；同日归并成本护栏另记录候选对数、桥接批次数、实际模型调用数、延后批次数和预算耗尽状态（`same_day_candidate_pairs` / `same_day_bridge_batches` / `same_day_reconcile_calls` / `same_day_deferred_batches` / `same_day_budget_exhausted`）。旧数据缺少这些同日归并字段时继续兼容。`trajectory_enabled` 是当日轨迹展示开关；`themes` 为"今日主线"（2-3 条，每条含 `member_ids` 引用当日 `pick-N`/`more-N` 条目，可跨精选与更多资讯）。每条精选还可带 `context`（来龙）、`watch`（走向）、`significance`（对我的意义，结合兴趣画像生成）、`detail`（中文长叙述，约 300-600 字，由 `config.yaml` 的 `detail` 段控制）和 `claims`（0-4 条需归因的分析或不确定判断，形如 `{text, kind: analysis|uncertain, sources: [来源名]}`，可缺省或为空；读取端继续兼容旧数据的 `kind: fact`）；同 URL 出现实质信息增量时还会带 `is_update: true` 与 `first_seen`，页面明确标注“重大更新”。这些扩展字段只有通过事实支撑审计才会保留。深读条目带 `key_points`（≤3 条）/`audience`/`takeaway`，并可带 `content_type: reporting|analysis|opinion`；非法值或历史数据缺失时前端省略标签。论文条目带 `contribution`/`evidence`/`limitations`/`takeaway`，供详情页渲染。旧数据缺少新字段时前端静默降级。
 - `manifest.js`：日报日期清单。
-- `quality-health.json`：滚动保留最近 90 天的日报可信度审计统计，并汇总审计事件数、拆分数与拆分率，用于观察错误聚类趋势；`enrichment_audited_events` 单独记录 enrich 内容审计分母，不能用凝聚度审计的 `audited_events` 代替。每日记录另带当次公开运行的 LLM 用量与折算成本（`llm_*` 字段，不含 shadow 运行）。同日重跑会覆盖当日记录。
+- `quality-health.json`：滚动保留最近 90 天的日报可信度审计统计，并汇总审计事件数、拆分数与拆分率，用于观察错误聚类趋势；`enrichment_audited_events` 单独记录 enrich 内容审计分母，不能用凝聚度审计的 `audited_events` 代替。每日记录同时保留上述同日归并预算指标，以及当次公开运行的 LLM 用量与折算成本（`llm_*` 字段，不含 shadow 运行）。同日重跑会覆盖当日记录。
 - `source_health.json`：信源健康度，滚动保留 14 天；保留 `count/error` 区分抓取失败与窗口内无新文章，并记录逐源 `scored_events/selected_events`。某源连续 3 天抓取失败时在 Actions 输出 warning。
 - `score_history.json`：动态精选线内部账本（v1），按日期保存非纯舆论事件的最终分，同日重跑覆盖并保留最近 30 个产出日。阈值只读取当天之前的数据；账本损坏或写入失败会 warning 并回退静态线，原子写入不会遗留临时文件。
 - `events.json`：跨天事件登记表（v2，兼容读取 v1）。管线先把今日精选与近 14 天活跃事件做候选匹配，再用独立连续性门同时核对具体事件主线、最近可信进展，并逐行验证最近 7 条历史；同类目本身不构成延续，模型声称匹配最近进展时最新历史行也必须验证通过。只有验证通过的旧行参与公开 `day_count/history`，并进入独立批量轨迹生成和轨迹审计；审计只检查新写的 `context/watch/claims`，字段拒绝时退回当天已经审计的精加工内容，不改变精选层级；整条生成或审计失败时则按一次性事件展示，不输出来龙或延续入口。旧 `watch` 与证据足够时，来龙可用 `兑现/部分兑现/未兑现/反转` 回对上一期走向；证据不足不输出结论。历史行保存轨迹审计后的最终 `watch`、来源标识和 `日期:item_id` 引用，旧行缺少这些字段时仍可读取。同日重跑优先按稳定条目引用替换当日行，即使首日标题修正也保留 `event_id`。整次登记更新先在内存完成；`daily/YYYY-MM-DD.js`、`manifest.js` 和 `events.json` 作为同一可回滚事务替换，任一文件替换失败都会恢复三者旧版本，RSS、搜索索引和质量记录只在事务成功后更新。7 天无新进展自动归档，归档超 60 天删除，文件缺失或损坏时冷启动重建。
@@ -311,8 +311,8 @@ GITHUB_BRANCH=main
 
 ### 验证与移除
 
-- 管线快速回归：`python news-pipeline/tests/test_pipeline.py`。完整 Python 回归：`python -m pytest news-pipeline/tests -q`，其中包含跨批同日归并、发布事务和全部历史日报引用完整性检查。测试不调 LLM、不联网；改评分、聚类、可信度审计、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑完整回归。
-- 客观性回归：`python news-pipeline/tests/test_objectivity_audit.py`（证据合同、审计/修复/降级、夹具完整性）与 `python news-pipeline/tests/test_shadow_rollout.py`（shadow 快照隔离与环境还原）。两者同样不调 LLM、不联网，静默通过、失败非零退出；改客观性审计、证据结构或 shadow 流程后必跑。
+- 管线快速回归：`py -3.12 news-pipeline/tests/test_pipeline.py`。完整 Python 回归：`py -3.12 -m pytest news-pipeline/tests -q`，其中包含跨批同日归并、发布事务和全部历史日报引用完整性检查。测试不调 LLM、不联网；改评分、聚类、可信度审计、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑完整回归。
+- 客观性回归：`py -3.12 news-pipeline/tests/test_objectivity_audit.py`（证据合同、审计/修复/降级、夹具完整性）与 `py -3.12 news-pipeline/tests/test_shadow_rollout.py`（shadow 快照隔离与环境还原）。两者同样不调 LLM、不联网，静默通过、失败非零退出；改客观性审计、证据结构或 shadow 流程后必跑。
 - 新闻页回归：`npm run test:news`。测试使用 Node 内置测试器与 jsdom，覆盖新旧路由、DOM 渲染、个人操作 API 合同、无障碍状态和空数据降级；修改 `source/news/index.html`、`source/news/news.css` 或 `source/news/js/` 后必跑。
 - 完整交付前运行 `npm run build`，确认 Hexo 能把新闻页 ES Modules、样式、字体和静态数据原样输出到 `_config.yml` 指定的 `dist/news/`，并确认 `dist/admin/` 仍存在。
 - 移除方式：删除 `source/news/`、`news-pipeline/`、`.github/workflows/daily-news.yml`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。
