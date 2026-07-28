@@ -135,25 +135,31 @@
     },
     {
       "date": "2026-07-28",
-      "audited_events": 31,
+      "audited_events": 33,
       "split_events": 12,
-      "removed_fields": 103,
-      "duplicate_audited_events": 343,
-      "same_day_duplicates_merged": 84,
+      "removed_fields": 98,
+      "duplicate_audited_events": 281,
+      "same_day_duplicates_merged": 57,
       "duplicate_audit_failures": 2,
-      "event_lines_audited": 32,
-      "event_lines_merged": 7,
+      "event_lines_audited": 22,
+      "event_lines_merged": 2,
       "event_line_audit_failures": 0,
-      "cross_day_duplicates": 3,
+      "cross_day_duplicates": 1,
       "material_updates": 0,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "llm_calls": 238,
+      "llm_input_tokens": 1171437,
+      "llm_cached_input_tokens": 46720,
+      "llm_output_tokens": 62061,
+      "llm_cost_usd": 0.175,
+      "llm_cost_known": true
     }
   ],
   "summary": {
     "days": 13,
-    "audited_events": 470,
+    "audited_events": 472,
     "split_events": 243,
-    "split_rate": 0.517
+    "split_rate": 0.5148
   }
 }

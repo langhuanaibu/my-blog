@@ -1906,7 +1906,7 @@
     "simonwillison": {
      "fetch_ok": true,
      "fetch_error": "",
-     "fetched": 5,
+     "fetched": 4,
      "candidates": 2,
      "scored": 2,
      "topic_matched": 2,
@@ -1921,7 +1921,7 @@
      "scored": 1,
      "topic_matched": 1,
      "above_threshold": 1,
-     "picked": 1
+     "picked": 0
     },
     "interconnects": {
      "fetch_ok": true,
@@ -1946,16 +1946,16 @@
     "latentspace": {
      "fetch_ok": true,
      "fetch_error": "",
-     "fetched": 1,
-     "candidates": 1,
-     "scored": 1,
-     "topic_matched": 1,
+     "fetched": 2,
+     "candidates": 2,
+     "scored": 2,
+     "topic_matched": 2,
      "above_threshold": 0,
      "picked": 0
     },
     "anthropic-eng": {
-     "fetch_ok": true,
-     "fetch_error": "",
+     "fetch_ok": false,
+     "fetch_error": "fetch_failed",
      "fetched": 0,
      "candidates": 0,
      "scored": 0,
@@ -2007,10 +2007,10 @@
      "fetch_ok": true,
      "fetch_error": "",
      "fetched": 5,
-     "candidates": 4,
-     "scored": 4,
-     "topic_matched": 4,
-     "above_threshold": 0,
+     "candidates": 5,
+     "scored": 5,
+     "topic_matched": 5,
+     "above_threshold": 1,
      "picked": 0
     },
     "jiqizhixin": {
@@ -2046,21 +2046,21 @@
     "noahpinion": {
      "fetch_ok": true,
      "fetch_error": "",
-     "fetched": 1,
-     "candidates": 0,
-     "scored": 0,
-     "topic_matched": 0,
-     "above_threshold": 0,
-     "picked": 0
+     "fetched": 2,
+     "candidates": 1,
+     "scored": 1,
+     "topic_matched": 1,
+     "above_threshold": 1,
+     "picked": 1
     }
    },
    "channels": {
     "ai_engineering": {
-     "candidates": 4,
-     "scored": 4,
-     "topic_matched": 4,
+     "candidates": 5,
+     "scored": 5,
+     "topic_matched": 5,
      "above_threshold": 3,
-     "picked": 3
+     "picked": 2
     },
     "tech_business": {
      "candidates": 1,
@@ -2070,11 +2070,11 @@
      "picked": 0
     },
     "society_finance": {
-     "candidates": 9,
-     "scored": 9,
-     "topic_matched": 9,
-     "above_threshold": 1,
-     "picked": 1
+     "candidates": 11,
+     "scored": 11,
+     "topic_matched": 11,
+     "above_threshold": 3,
+     "picked": 2
     }
    }
   }
