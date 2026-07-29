@@ -73,13 +73,17 @@ export function actionButtons(item, options = {}) {
   const { personal = false, date = "", type = "news" } = options;
   if (!personal) return "";
   const ref = escapeHtml(item.id); const event = item.event_id;
+  // 渲染层的不变式：进入 HTML 的插值一律过 escapeHtml，没有例外。
+  // date/type 目前由管线与路由产生，但「因为上游可信所以这里可以不转义」是一条
+  // 只要上游变一次就会破的规则，不如让它扫一眼就能确认。
+  const safeDate = escapeHtml(date); const safeType = escapeHtml(type);
   const key = `${date}:${item.id}`; const state = options;
   const readLater = Boolean(state.readLater?.[key]); const favorite = Boolean(state.favorites?.[key]); const liked = Boolean(state.liked?.[key]); const tracked = Boolean(event && state.tracked?.[event]);
-  const readLaterButton = `<button type="button" class="act ${readLater ? "done" : ""}" data-action="read-later" data-ref="${ref}" data-date="${date}" data-type="${type}">${readLater ? "✓ 已收" : "⏳ 稍后读"}</button>`;
-  const favoriteButton = `<button type="button" class="act ${favorite ? "done" : ""}" data-action="favorite" data-ref="${ref}" data-date="${date}" data-type="${type}">${favorite ? "★ 已藏" : "⭐ 收藏"}</button>`;
-  const newsMenu = type === "news" ? `<button type="button" class="act ${liked ? "done" : ""}" data-action="like" data-ref="${ref}" data-date="${date}">${liked ? "👍 已记录" : "👍 更多类似"}</button>${event ? `<button type="button" class="act ${tracked ? "done" : ""}" data-action="track" data-ref="${ref}" data-event="${escapeHtml(event)}" data-date="${date}">${tracked ? "📌 追踪中" : "📌 追踪"}</button>` : ""}<button type="button" class="act" data-action="source" data-ref="${ref}" data-date="${date}">🚫 来源</button>` : "";
+  const readLaterButton = `<button type="button" class="act ${readLater ? "done" : ""}" data-action="read-later" data-ref="${ref}" data-date="${safeDate}" data-type="${safeType}">${readLater ? "✓ 已收" : "⏳ 稍后读"}</button>`;
+  const favoriteButton = `<button type="button" class="act ${favorite ? "done" : ""}" data-action="favorite" data-ref="${ref}" data-date="${safeDate}" data-type="${safeType}">${favorite ? "★ 已藏" : "⭐ 收藏"}</button>`;
+  const newsMenu = type === "news" ? `<button type="button" class="act ${liked ? "done" : ""}" data-action="like" data-ref="${ref}" data-date="${safeDate}">${liked ? "👍 已记录" : "👍 更多类似"}</button>${event ? `<button type="button" class="act ${tracked ? "done" : ""}" data-action="track" data-ref="${ref}" data-event="${escapeHtml(event)}" data-date="${safeDate}">${tracked ? "📌 追踪中" : "📌 追踪"}</button>` : ""}<button type="button" class="act" data-action="source" data-ref="${ref}" data-date="${safeDate}">🚫 来源</button>` : "";
   return `<div class="acts" aria-label="个人操作">
-    ${type === "news" ? `<button type="button" class="act" data-action="not-interested" data-ref="${ref}" data-date="${date}">✕ 不感兴趣</button>` : ""}
+    ${type === "news" ? `<button type="button" class="act" data-action="not-interested" data-ref="${ref}" data-date="${safeDate}">✕ 不感兴趣</button>` : ""}
     ${favoriteButton}
     <details class="action-overflow"><summary class="act" aria-label="更多操作">⋯</summary><div class="action-menu">${readLaterButton}${newsMenu}</div></details>
   </div><div class="fb-panel" aria-live="polite"></div>`;
@@ -156,7 +160,7 @@ export function collectionCard(item, type, date, options = {}) {
 }
 
 function trackingCard(item, date, options) {
-  return `<article class="trk"><div class="trk-top"><h3>${escapeHtml(item.title)}</h3>${options.personal ? `<button type="button" class="act" data-action="untrack" data-event="${escapeHtml(item.event_id)}" data-date="${date}">取消追踪</button>` : ""}</div><div class="trk-hist">${(item.history || []).map((row) => `<p><a href="${routeUrl({ view: "reports", period: "day", date: row.date })}" data-route>${escapeHtml(row.date)}</a> ${escapeHtml(row.summary)}</p>`).join("") || "暂无进展"}</div></article>`;
+  return `<article class="trk"><div class="trk-top"><h3>${escapeHtml(item.title)}</h3>${options.personal ? `<button type="button" class="act" data-action="untrack" data-event="${escapeHtml(item.event_id)}" data-date="${escapeHtml(date)}">取消追踪</button>` : ""}</div><div class="trk-hist">${(item.history || []).map((row) => `<p><a href="${routeUrl({ view: "reports", period: "day", date: row.date })}" data-route>${escapeHtml(row.date)}</a> ${escapeHtml(row.summary)}</p>`).join("") || "暂无进展"}</div></article>`;
 }
 
 function moreCard(item, date) {
@@ -221,7 +225,7 @@ export function renderDailyReport(data, options = {}) {
   const supplementalLoad = supplementary ? `<div class="supplemental-load">附栏导读约 ${supplementalReadMinutes(data)} 分钟</div>` : "";
   const dateLabel = displayDate(data.date); const issue = annualIssue(data.date);
   const missesTool = options.personal ? renderMissesTool(data.date, options.misses, options.missesError) : "";
-  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>核心日报约 ${coreReadMinutes(data, picks)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${missesTool}${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${jumpLinks ? `<nav class="report-jump" aria-label="日报类目跳转">${jumpLinks}</nav>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${data.date}">全部恢复</button></div>` : ""}${sections}${supplementalLoad}${supplementary}</article>`;
+  return `<article class="daily-report"><header class="masthead"><div class="mast-plate"><span class="date-seal" aria-hidden="true"><b>${dateLabel.replace("月", "月<br>")}</b></span><span class="mast-name">每日驾驶舱</span>${issue ? `<span class="mast-issue">${issue}</span>` : ""}</div><div class="mast-meta"><time datetime="${escapeHtml(data.date || "")}">${escapeHtml(dateLabel)}</time><span>核心日报约 ${coreReadMinutes(data, picks)} 分钟</span><span>今日新事件 <b>${picks.length - continued}</b></span><span>延续事件 <b>${continued}</b></span></div><h1 class="mast-lead">${escapeHtml(data.lead || data.brief || "今日日报")}</h1></header>${missesTool}${themes.length ? `<section class="mainlines"><h2 class="ml-h">今日主线</h2>${themes.map((theme) => `<article class="ml-item"><h3 class="ml-t">${escapeHtml(theme.title)}</h3><p class="ml-o">${escapeHtml(theme.overview || theme.one_liner || "")}</p></article>`).join("")}</section>` : ""}${jumpLinks ? `<nav class="report-jump" aria-label="日报类目跳转">${jumpLinks}</nav>` : ""}${hiddenCount ? `<div class="hidden-bar">已隐藏 ${hiddenCount} 条 <button type="button" class="act" data-action="restore-hidden" data-date="${escapeHtml(data.date)}">全部恢复</button></div>` : ""}${sections}${supplementalLoad}${supplementary}</article>`;
 }
 
 function trajectoryRecap(context) {

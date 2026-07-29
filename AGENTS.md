@@ -73,4 +73,4 @@
 - 使用简短的英文提交信息。
 - 除非用户明确要求，否则不要执行 `git push`。
 - 除非用户明确要求，否则不要回退用户自己的改动。
-- 唯一例外：`.github/workflows/daily-news.yml` 可以每日自动 commit + push `source/news/data/`，不得扩大到其他路径。
+- 唯一例外：`.github/workflows/daily-news.yml` 可以每日自动 commit + push `main` 分支上的 `source/news/data/`，不得扩大到其他分支或路径。

@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const github = require("../../api/_github.js");
+const loginGuard = require("../../api/_loginGuard.js");
 const adminArticles = require("../../api/adminArticles.js");
 const adminSession = require("../../api/adminSession.js");
 const adminSettings = require("../../api/adminSettings.js");
@@ -53,13 +54,88 @@ test("admin session is signed, expires, and never contains the admin token", () 
   assert.equal(github.verifyAdminSession(value, "admin-secret", now + 9 * 60 * 60_000), false);
 });
 
-test("personal-session authentication accepts a signed cookie without granting bearer admin access", async () => {
+test("session scope is signed, so a personal cookie cannot reach admin writes", async () => {
   await withRepoEnv(() => {
     const now = Date.now();
-    const session = github.createAdminSession("admin-secret", now);
-    const req = { headers: { cookie: `aoiblog_admin_session=${session}` } };
-    assert.doesNotThrow(() => github.requireAdminSession(req, now));
-    assert.throws(() => github.requireAdmin(req), (error) => error.status === 401);
+    const personal = github.createAdminSession("admin-secret", now, "personal");
+    const admin = github.createAdminSession("admin-secret", now, "admin");
+    const withCookie = (value) => ({ headers: { cookie: `aoiblog_admin_session=${value}` } });
+
+    // 两种 scope 都算「已登录的个人会话」，日报状态接口都放行。
+    assert.doesNotThrow(() => github.requireAdminSession(withCookie(personal), now));
+    assert.doesNotThrow(() => github.requireAdminSession(withCookie(admin), now));
+
+    // 写接口只认 admin scope。
+    assert.throws(
+      () => github.requireAdminScope(withCookie(personal), now),
+      (error) => error.status === 401,
+    );
+    assert.doesNotThrow(() => github.requireAdminScope(withCookie(admin), now));
+    assert.doesNotThrow(() => github.requireAdminWrite(withCookie(admin), now));
+    assert.throws(
+      () => github.requireAdminWrite(withCookie(personal), now),
+      (error) => error.status === 401,
+    );
+
+    // scope 参与签名：把 personal 改写成 admin 必然签名失配。
+    const forged = admin.replace(/\.admin\./, ".personal.");
+    assert.equal(github.verifyAdminSession(forged, "admin-secret", now), false);
+    // 升级前的两段格式（expires.signature）一律作废，不得沉默地当成 admin。
+    const legacy = `${now + 60_000}.whatever`;
+    assert.equal(github.verifyAdminSession(legacy, "admin-secret", now), false);
+  });
+});
+
+test("bearer admin auth is rate limited exactly like the cookie login", async () => {
+  await withRepoEnv(async () => {
+    loginGuard.resetLoginAttempts();
+    try {
+      const request = () => ({
+        method: "GET",
+        headers: {
+          "x-vercel-forwarded-for": "203.0.113.77",
+          authorization: "Bearer wrong-secret",
+        },
+        query: {},
+      });
+      for (let attempt = 0; attempt < loginGuard.MAX_FAILED_ATTEMPTS; attempt += 1) {
+        const res = mockResponse();
+        await adminArticles(request(), res);
+        assert.equal(res.statusCode, 401);
+      }
+      const blocked = mockResponse();
+      await adminArticles(request(), blocked);
+      assert.equal(blocked.statusCode, 429);
+      assert.ok(Number(blocked.headers["retry-after"]) > 0);
+
+      // 换成 cookie 登录也应当被同一份计数拦住——两条路共用一个锁。
+      const shared = mockResponse();
+      await adminSession({
+        method: "POST",
+        headers: { "x-vercel-forwarded-for": "203.0.113.77" },
+        body: { token: "admin-secret" },
+      }, shared);
+      assert.equal(shared.statusCode, 429);
+    } finally {
+      loginGuard.resetLoginAttempts();
+    }
+  });
+});
+
+test("missing credentials never burn the lockout budget", async () => {
+  await withRepoEnv(async () => {
+    loginGuard.resetLoginAttempts();
+    try {
+      const req = { method: "GET", headers: { "x-vercel-forwarded-for": "203.0.113.78" }, query: {} };
+      for (let attempt = 0; attempt < loginGuard.MAX_FAILED_ATTEMPTS + 3; attempt += 1) {
+        const res = mockResponse();
+        await adminArticles(req, res);
+        assert.equal(res.statusCode, 401);
+      }
+      assert.equal(loginGuard.retryAfterSeconds(req), 0);
+    } finally {
+      loginGuard.resetLoginAttempts();
+    }
   });
 });
 
@@ -380,6 +456,73 @@ test("footer settings escape active HTML while preserving the editor value", () 
     adminSettings._test.extractSettings(next.siteConfig, next.fluidConfig).footerText,
     footerText,
   );
+});
+
+test("nav labels that would break the YAML round trip are rejected", () => {
+  const fluidConfig = [
+    "navbar:",
+    "  menu:",
+    '    - { key: "home", name: "首页", link: "/" }',
+    "",
+  ].join("\n");
+
+  // 引号在第一次保存时还合法，第二次保存会让 "([^"]*)" 在反斜杠处截断，
+  // 替换出 name: "新值"旧尾" —— YAML 解析失败，站点构建不出来。
+  assert.throws(
+    () => adminSettings._test.applySettings("", fluidConfig, { nav: { home: 'a"b' } }),
+    (error) => error.status === 400 && /quotes/i.test(error.message),
+  );
+  assert.throws(
+    () => adminSettings._test.applySettings("", fluidConfig, { nav: { home: "a\nb" } }),
+    (error) => error.status === 400 && /line breaks/i.test(error.message),
+  );
+  assert.throws(
+    () => adminSettings._test.applySettings("", fluidConfig, {
+      nav: { home: "x".repeat(adminSettings._test.NAV_VALUE_MAX + 1) },
+    }),
+    (error) => error.status === 400 && /characters/i.test(error.message),
+  );
+
+  const ok = adminSettings._test.applySettings("", fluidConfig, { nav: { home: "主页" } });
+  assert.match(ok.fluidConfig, /- \{ key: "home", name: "主页", link: "\/" \}/);
+  assert.equal(adminSettings._test.extractSettings("", ok.fluidConfig).nav.home, "主页");
+});
+
+test("settings writes stay inside their own YAML block", () => {
+  // about.name 和 footer.content 在别的块里各有一个同缩进的同名 key：
+  // 未锚定的正则会改中第一个，把不相干的配置写坏。
+  const fluidConfig = [
+    "post:",
+    '  name: "文章作者"',
+    '  content: "文章底部"',
+    "about:",
+    '  name: "Aoitsuki"',
+    '  intro: "工科生"',
+    "footer:",
+    '  content: "<span>Aoitsuki</span>"',
+    "",
+  ].join("\n");
+
+  const next = adminSettings._test.applySettings("", fluidConfig, {
+    aboutName: "新名字",
+    footerText: "新页脚",
+  });
+
+  assert.match(next.fluidConfig, /post:\n {2}name: "文章作者"\n {2}content: "文章底部"/);
+  assert.match(next.fluidConfig, /about:\n {2}name: "新名字"/);
+  assert.match(next.fluidConfig, /footer:\n {2}content: "<span>新页脚<\/span>"/);
+  const read = adminSettings._test.extractSettings("", next.fluidConfig);
+  assert.equal(read.aboutName, "新名字");
+  assert.equal(read.footerText, "新页脚");
+});
+
+test("admin frontend authenticates by cookie, never by an in-page bearer token", async () => {
+  const source = await readFile(new URL("../../source/admin/index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /Authorization/);
+  assert.doesNotMatch(source, /state\.token/);
+  assert.match(source, /credentials:\s*['"]same-origin['"]/);
+  // 代码块回填必须用函数形式，否则代码里的 $& / $` / $' 会被当成替换模式展开。
+  assert.match(source, /html\.replace\(`@@CODE_BLOCK_\$\{index\}@@`, \(\) => block\)/);
 });
 
 test("admin upload rejects bytes that do not match the claimed image type", async () => {

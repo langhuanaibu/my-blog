@@ -47,7 +47,7 @@ export function installPersonalActions(root, context) {
 
     if (action === "not-interested") {
       const panel = button.closest("article")?.querySelector(".fb-panel");
-      if (panel) panel.innerHTML = `<p class="fb-tip">为什么不感兴趣？</p><div class="chips">${NI_REASONS.map((reason) => `<button type="button" class="chip" data-action="toggle-reason">${reason}</button>`).join("")}</div><label class="sr-only" for="ni-note-${escapeHtml(item.id)}">补充原因</label><textarea id="ni-note-${escapeHtml(item.id)}" class="fb-note" placeholder="补充原因（可选）"></textarea><div class="fb-btns"><button type="button" class="fb-go" data-action="submit-not-interested" data-ref="${escapeHtml(item.id)}" data-date="${date}">隐藏并提交</button><button type="button" class="fb-cancel" data-action="cancel-panel">取消</button></div>`;
+      if (panel) panel.innerHTML = `<p class="fb-tip">为什么不感兴趣？</p><div class="chips">${NI_REASONS.map((reason) => `<button type="button" class="chip" data-action="toggle-reason">${reason}</button>`).join("")}</div><label class="sr-only" for="ni-note-${escapeHtml(item.id)}">补充原因</label><textarea id="ni-note-${escapeHtml(item.id)}" class="fb-note" placeholder="补充原因（可选）"></textarea><div class="fb-btns"><button type="button" class="fb-go" data-action="submit-not-interested" data-ref="${escapeHtml(item.id)}" data-date="${escapeHtml(date)}">隐藏并提交</button><button type="button" class="fb-cancel" data-action="cancel-panel">取消</button></div>`;
       return;
     }
     if (action === "toggle-reason") { button.classList.toggle("on"); return; }
@@ -59,7 +59,7 @@ export function installPersonalActions(root, context) {
     }
     if (action === "source") {
       const panel = button.closest("article")?.querySelector(".fb-panel");
-      if (panel) panel.innerHTML = `<p class="fb-tip">减少哪个来源？</p><div class="chips">${(item.sources || []).map((source, index) => `<button type="button" class="chip" data-action="down-source" data-index="${index}" data-ref="${escapeHtml(item.id)}" data-date="${date}">${escapeHtml(source.name)}</button>`).join("") || "暂无来源"}</div>`;
+      if (panel) panel.innerHTML = `<p class="fb-tip">减少哪个来源？</p><div class="chips">${(item.sources || []).map((source, index) => `<button type="button" class="chip" data-action="down-source" data-index="${index}" data-ref="${escapeHtml(item.id)}" data-date="${escapeHtml(date)}">${escapeHtml(source.name)}</button>`).join("") || "暂无来源"}</div>`;
       return;
     }
     if (action === "down-source") { const source = (item.sources || [])[Number(button.dataset.index)]; if (source) run(api.postFeedback({ ...base(item, date), action: "low_quality_source", source: source.name }).then(() => button.classList.add("on"))); return; }

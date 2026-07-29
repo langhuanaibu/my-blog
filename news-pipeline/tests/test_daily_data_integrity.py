@@ -58,6 +58,57 @@ def test_legacy_quality_accepts_missing_same_day_duplicate_fields():
         for error in dn.validate_daily_payload(payload))
 
 
+def test_fetch_failure_logs_never_carry_the_rsshub_secret(monkeypatch):
+    """resolve_rsshub_sources 把 ACCESS_KEY 拼进 query，抓取失败时异常会带上整条 URL。
+
+    公开仓库的 Actions 日志里，唯一的防线是 GitHub 的 secret 自动打码——一旦值被
+    转义或截断就失效。日志脱敏必须在我们自己这一侧。
+    """
+    monkeypatch.setenv("RSSHUB_BASE", "https://rsshub.example.internal")
+    monkeypatch.setenv("RSSHUB_KEY", "s3cr3t-key-value")
+
+    samples = [
+        "HTTPSConnectionPool(host='rsshub.example.internal', port=443): "
+        "Max retries exceeded with url: /twitter/user/x?key=s3cr3t-key-value",
+        "HTTPError for https://rsshub.example.internal/x?limit=5&key=s3cr3t-key-value",
+    ]
+    for sample in samples:
+        redacted = dn.redact(sample)
+        assert "s3cr3t-key-value" not in redacted, sample
+        assert "rsshub.example.internal" not in redacted, sample
+        assert "[redacted]" in redacted
+
+
+def test_publication_gate_rejects_non_http_source_urls():
+    """前端 safeUrl 挡住了页面，但 feed.xml 的 <item><link> 是原样输出的。
+
+    协议校验必须在发布闸门上 fail-closed，而不是靠每个消费端各自兜底。
+    """
+    def payload_with(url):
+        return {
+            "date": "2026-07-22",
+            "quality": {
+                "audited_events": 1,
+                "split_events": 0,
+                "removed_fields": 0,
+                "degraded": False,
+            },
+            "items": [{
+                "id": "pick-1",
+                "title": "标题",
+                "sources": [{"name": "来源", "url": url}],
+            }],
+        }
+
+    for url in ("javascript:alert(1)", "data:text/html,x", "//example.com", "ftp://x/y", ""):
+        assert any(
+            "source URL must be http(s)" in error
+            for error in dn.validate_daily_payload(payload_with(url))
+        ), url
+
+    assert dn.validate_daily_payload(payload_with("https://example.com/a")) == []
+
+
 def test_quality_health_backfills_enrichment_audits_from_daily_pick_count(tmp_path):
     daily_dir = tmp_path / "daily"
     daily_dir.mkdir()

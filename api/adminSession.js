@@ -4,54 +4,19 @@ const {
   createHttpError,
   readJsonBody,
   requireAdminSession,
+  sendError,
   sendJson,
   setCors
 } = require('./_github');
+const {
+  MAX_FAILED_ATTEMPTS,
+  clearLoginAttempts,
+  recordFailedLogin,
+  resetLoginAttempts,
+  retryAfterSeconds
+} = require('./_loginGuard');
 
 const COOKIE_BASE = `${ADMIN_SESSION_COOKIE}=`;
-const MAX_FAILED_ATTEMPTS = 5;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const MAX_TRACKED_CLIENTS = 1000;
-const loginAttempts = new Map();
-
-function clientAddress(req) {
-  const forwarded = req.headers?.['x-vercel-forwarded-for']
-    || req.headers?.['x-forwarded-for'];
-  const raw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-  return String(raw || req.socket?.remoteAddress || 'unknown')
-    .split(',')[0].trim().slice(0, 128) || 'unknown';
-}
-
-function pruneLoginAttempts(now) {
-  for (const [key, row] of loginAttempts) {
-    if (now - row.startedAt >= LOGIN_WINDOW_MS) loginAttempts.delete(key);
-  }
-  while (loginAttempts.size >= MAX_TRACKED_CLIENTS) {
-    loginAttempts.delete(loginAttempts.keys().next().value);
-  }
-}
-
-function retryAfterSeconds(req, now = Date.now()) {
-  pruneLoginAttempts(now);
-  const row = loginAttempts.get(clientAddress(req));
-  if (!row || row.failures < MAX_FAILED_ATTEMPTS) return 0;
-  return Math.max(1, Math.ceil((LOGIN_WINDOW_MS - (now - row.startedAt)) / 1000));
-}
-
-function recordFailedLogin(req, now = Date.now()) {
-  pruneLoginAttempts(now);
-  const key = clientAddress(req);
-  const row = loginAttempts.get(key);
-  if (row) {
-    row.failures += 1;
-  } else {
-    loginAttempts.set(key, { failures: 1, startedAt: now });
-  }
-}
-
-function clearLoginAttempts(req) {
-  loginAttempts.delete(clientAddress(req));
-}
 
 async function handler(req, res) {
   setCors(res);
@@ -78,7 +43,8 @@ async function handler(req, res) {
         throw createHttpError(401, 'Unauthorized');
       }
       clearLoginAttempts(req);
-      const session = createAdminSession(expected);
+      // 验过明文主口令，签发的会话才配得上 admin scope（可发文章/改设置/传图）。
+      const session = createAdminSession(expected, Date.now(), 'admin');
       res.setHeader('Set-Cookie', `${COOKIE_BASE}${session}; Path=/api; HttpOnly; Secure; SameSite=Strict; Max-Age=28800`);
       return sendJson(res, 200, { success: true, data: { authenticated: true } });
     }
@@ -92,13 +58,13 @@ async function handler(req, res) {
     }
     return sendJson(res, 405, { success: false, error: 'Method not allowed' });
   } catch (error) {
-    return sendJson(res, error.status || 500, { success: false, error: error.message || 'Request failed' });
+    return sendError(res, error);
   }
 }
 
 handler._test = {
   MAX_FAILED_ATTEMPTS,
-  resetLoginAttempts: () => loginAttempts.clear()
+  resetLoginAttempts
 };
 
 module.exports = handler;

@@ -171,6 +171,7 @@ def new_quality_stats():
         "high_risk_demoted": 0,
         "cause_evidence_rejected": 0,
         "cause_speculation_rejected": 0,
+        "enrich_out_of_batch_idx": 0,
         # removed_fields 的两维分项：按字段名、按删除原因。总数仍以 removed_fields
         # 为准，两个分项之和必须与它相等——诊断用，不参与任何判定或验收门。
         "removed_field_counts": {field: 0 for field in QUALITY_EXTENSION_FIELDS},
@@ -197,6 +198,33 @@ def count_removed_field(quality, field, reason):
 
 def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
+
+
+PUBLIC_URL_RE = re.compile(r"^https?://", re.I)
+_RSSHUB_KEY_RE = re.compile(r"(?i)([?&]key=)[^&\s]+")
+
+
+def redact(text):
+    """Strip the RSSHub access key (and instance host) out of anything logged.
+
+    ``resolve_rsshub_sources`` puts RSSHUB_KEY in the query string, and requests
+    exceptions embed the full URL. On a public repository the only thing standing
+    between that and the Actions log is GitHub's secret masking — which stops
+    working the moment the value is escaped or truncated. Redact at the source.
+    """
+    out = _RSSHUB_KEY_RE.sub(r"\1[redacted]", str(text))
+    base = os.environ.get("RSSHUB_BASE", "").strip().rstrip("/")
+    if base:
+        # requests 的异常里出现的往往是裸主机名（HTTPSConnectionPool(host='...')），
+        # 不是配置里那个带 scheme 的完整地址，两种形态都要盖掉。
+        host = urlsplit(base if "//" in base else f"//{base}").hostname or ""
+        for needle in sorted({base, host}, key=len, reverse=True):
+            if needle:
+                out = out.replace(needle, "[rsshub]")
+    key = os.environ.get("RSSHUB_KEY", "").strip()
+    if key:
+        out = out.replace(key, "[redacted]")
+    return out
 
 
 def parse_iso_date(value):
@@ -868,7 +896,7 @@ def fetch_rss(src, window_start, max_items):
         resp = http_get(src["url"])
         feed = feedparser.parse(resp.content)
     except Exception as e:
-        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        log(f"  ✗ {src['name']}: 抓取失败 ({redact(e)})")
         return [], True
     items = []
     for e in feed.entries:
@@ -926,7 +954,7 @@ def fetch_aihot(src, window_start, max_items):
         resp = http_get(url)
         data = resp.json()
     except Exception as e:
-        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        log(f"  ✗ {src['name']}: 抓取失败 ({redact(e)})")
         return [], True
     items = []
     for it in data.get("items", []):
@@ -966,7 +994,7 @@ def fetch_thepaper_list(src, window_start, max_items):
                       resp.text, re.S)
         rows = json.loads(m.group(1))["props"]["pageProps"]["data"]["list"] if m else []
     except Exception as e:
-        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        log(f"  ✗ {src['name']}: 抓取失败 ({redact(e)})")
         return [], True
     items = []
     for it in rows:
@@ -1074,7 +1102,7 @@ def fetch_latepost(src, window_start, max_items, now=None):
         payload = resp.json()
         rows = payload.get("data", []) if payload.get("code") == 1 else []
     except Exception as e:
-        log(f"  ✗ {src['name']}: 抓取失败 ({e})")
+        log(f"  ✗ {src['name']}: 抓取失败 ({redact(e)})")
         return [], True
 
     pending = []
@@ -3669,12 +3697,20 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
         invalid_rows = sum(not isinstance(row, dict) for row in result)
         if invalid_rows:
             log(f"  阶段B 忽略 {invalid_rows} 条非法返回，本批其余条目继续")
+        out_of_batch = 0
         for r in result:
             if not isinstance(r, dict):
                 continue
             k = r.get("idx")
-            if (not isinstance(k, int) or isinstance(k, bool)
-                    or not (0 <= k < len(picked))):
+            if not isinstance(k, int) or isinstance(k, bool):
+                continue
+            # 提示词里只展示了本批的全局下标，所以合法回填只可能落在本批窗口内。
+            # 放行窗口外的 idx 意味着一条新闻的返回可以覆盖另一条已经算好的全部
+            # 读者字段——模型写错下标是这样，抓来的正文用提示注入诱导它写错下标也是
+            # 这样。下游 support 审计按事件自己的来源复核，覆盖的后果只会表现为
+            # removed_fields 无故上涨，查不到源头，所以必须在这里挡住。
+            if not (bi <= k < bi + len(batch)):
+                out_of_batch += 1
                 continue
             ev = picked[k]
             source_ids = _serialized_source_ids(ev, items, limit=1)
@@ -3711,6 +3747,11 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
             ev["tags"] = tags[:2]
             if full_objectivity:
                 sanitize_objectivity_event(ev, items)
+        if out_of_batch:
+            log(f"  阶段B 丢弃 {out_of_batch} 条越批次 idx（本批 [{bi}, {bi + len(batch)})）")
+            if quality is not None:
+                quality["enrich_out_of_batch_idx"] = int(
+                    quality.get("enrich_out_of_batch_idx", 0)) + out_of_batch
     return picked
 
 
@@ -6459,6 +6500,15 @@ def validate_daily_payload(payload):
                 f"item {row.get('id')} title exceeds {SOURCE_TITLE_MAX_CHARS} characters")
         source_names = {source.get("name") for source in (row.get("sources") or [])
                         if isinstance(source, dict) and source.get("name")}
+        # 前端 safeUrl 只放行 http(s)，但 feed.xml 的 <item><link> 是原样输出的。
+        # 在发布闸门上 fail-closed，比让每个消费端各自兜底可靠。
+        for source in (row.get("sources") or []):
+            if not isinstance(source, dict):
+                continue
+            url = source.get("url")
+            if url is not None and not PUBLIC_URL_RE.match(str(url)):
+                errors.append(
+                    f"item {row.get('id')} source URL must be http(s): {source.get('name')}")
         evidence = row.get("evidence")
         if evidence is not None:
             sources = row.get("sources")

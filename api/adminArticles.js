@@ -3,7 +3,8 @@ const {
   setCors,
   sendJson,
   createHttpError,
-  requireAdmin,
+  requireAdminWrite,
+  sendError,
   readJsonBody,
   listDirectory,
   readTextFile,
@@ -72,7 +73,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    requireAdmin(req);
+    requireAdminWrite(req);
 
     if (req.method === 'GET') {
       const coverMap = await readCoverMap();
@@ -143,9 +144,6 @@ module.exports = async (req, res) => {
 
     return sendJson(res, 405, { success: false, error: 'Method not allowed' });
   } catch (error) {
-    return sendJson(res, error.status || 500, {
-      success: false,
-      error: error.message || 'Request failed'
-    });
+    return sendError(res, error);
   }
 };

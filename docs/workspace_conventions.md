@@ -22,7 +22,7 @@
 | **`/tools`** | 迁移和维护工具 | 存放如 `clean-post-inline-styles.mjs`、字体字符清单与生成脚本等一次性或维护工具；字体源 OTF 和工具中间产物不得入库。 |
 | **`/scripts`** | Hexo 构建期扩展 | Hexo 启动时自动加载的脚本，如 `twikoo-path.js` 覆盖主题注入点。只放构建期逻辑，前端资源仍归 `/source/js` 与 `/source/css`。 |
 | **`/news-pipeline`** | 每日日报生成管线 | Python 管线、新闻源、评分配置和测试。改日报生成逻辑只在这里动手。 |
-| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流：每日生成与云端五门验收台账 `daily-news.yml`、手动只读夹具验收 `objectivity-acceptance.yml`、人工复核回填 `rollout-manual-review.yml`、台账缺口检测 `rollout-heartbeat.yml`。只有 `daily-news.yml` 允许自动 push，且仅限 `source/news/data/`。 |
+| **`/.github/workflows`** | GitHub Actions | 仅存放仓库自动化工作流：每日生成与云端五门验收台账 `daily-news.yml`、手动只读夹具验收 `objectivity-acceptance.yml`、人工复核回填 `rollout-manual-review.yml`、台账缺口检测 `rollout-heartbeat.yml`。只有 `daily-news.yml` 允许自动 push，且仅限 `main` 分支上的 `source/news/data/`（commit 步骤同时判 `github.ref`，并显式 `git push origin HEAD:main`）。 |
 | **`/docs`** | 项目维护文档 | 根层存现行维护规范；`adr/` 存架构决策记录（顺序编号，只增不改）；`agents/` 存工程 Skill 的仓库级读写约定；`archive/` 只存仍有兼容、迁移或排障价值的历史记录；`visual-baselines/` 存页面回归基准图。完成的实施计划和一次性分析报告在结论并入 `readme.md` 后删除。 |
 
 ---

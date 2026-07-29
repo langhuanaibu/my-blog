@@ -516,8 +516,9 @@
 
   <script>
     try { localStorage.removeItem('aoiblog_admin_token'); } catch (_) {}
+    // 登录后只保留 HttpOnly 的 admin 会话 cookie（JS 读不到、8 小时过期），
+    // 明文主口令不进 state：页面上任何一处 XSS 都不该能把永久凭据带走。
     const state = {
-      token: '',
       articles: [],
       categories: [],
       coverMap: {},
@@ -545,9 +546,9 @@
     async function api(path, options = {}) {
       const response = await fetch(path, {
         ...options,
+        credentials: 'same-origin',
         headers: {
           'Content-Type': 'application/json',
-          ...(state.token ? { Authorization: `Bearer ${state.token}` } : {}),
           ...(options.headers || {})
         }
       });
@@ -779,7 +780,8 @@
 
       html = `<p>${html}</p>`.replace(/<p>\s*<\/p>/g, '');
       codeBlocks.forEach((block, index) => {
-        html = html.replace(`@@CODE_BLOCK_${index}@@`, block);
+        // 用函数形式回填：字符串形式会让代码块里的 $&、$`、$' 被当成替换模式展开。
+        html = html.replace(`@@CODE_BLOCK_${index}@@`, () => block);
       });
       return html;
     }
@@ -960,7 +962,8 @@
 
     $('loginForm').addEventListener('submit', async (event) => {
       event.preventDefault();
-      state.token = $('adminToken').value.trim();
+      const field = $('adminToken');
+      const token = field.value.trim();
       setStatus('正在登录...', $('loginStatus'));
 
       try {
@@ -968,15 +971,15 @@
           method: 'POST',
           credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: state.token })
+          body: JSON.stringify({ token })
         });
+        if (sessionResponse.status === 429) throw new Error('尝试过多，请稍后再试');
         if (!sessionResponse.ok) throw new Error('后台口令错误');
-        $('adminToken').value = '';
+        field.value = '';
         showAdmin();
         await loadAll();
         setStatus('', $('loginStatus'));
       } catch (error) {
-        state.token = '';
         showLogin();
         setStatus(error.message, $('loginStatus'));
       }
@@ -984,7 +987,6 @@
 
     $('logoutBtn').addEventListener('click', async () => {
       await fetch('/api/adminSession', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
-      state.token = '';
       showLogin();
     });
 
@@ -1069,7 +1071,18 @@
       event.target.value = '';
     });
 
-    showLogin();
+    // 会话在 cookie 里，刷新页面不该被踢回登录框。
+    (async () => {
+      showLogin();
+      try {
+        const response = await fetch('/api/adminSession', { credentials: 'same-origin' });
+        if (!response.ok) return;
+        showAdmin();
+        await loadAll();
+      } catch (_) {
+        showLogin();
+      }
+    })();
   </script>
 </body>
 </html>

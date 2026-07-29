@@ -101,8 +101,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
 
+      # CLAUDE.md 把这一步列为「严禁自动 push」的唯一例外，例外的边界在代码里画死：
+      # 只在 main 上跑、只提交 source/news/data、只推 main。
       - name: Commit and push
-        if: env.RUN_MODE == 'publish'
+        if: ${{ env.RUN_MODE == 'publish' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -113,7 +115,7 @@ jobs:
           fi
           git commit -m "Update daily briefing data ($(date +%F))"
           git pull --rebase origin main
-          git push
+          git push origin HEAD:main
 
   shadow-policy:
     runs-on: ubuntu-latest

@@ -1,7 +1,8 @@
 const {
   setCors,
   sendJson,
-  requireAdmin,
+  sendError,
+  requireAdminWrite,
   readJsonBody,
   putBase64File,
   slugify,
@@ -95,7 +96,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    requireAdmin(req);
+    requireAdminWrite(req);
     // 8 MiB 二进制编码成 data URL 后约 10.7 MiB；请求体仍需有明确上限。
     const body = await readJsonBody(req, 12 * 1024 * 1024);
     const upload = parseUpload(body);
@@ -110,9 +111,6 @@ module.exports = async (req, res) => {
       }
     });
   } catch (error) {
-    return sendJson(res, error.status || 400, {
-      success: false,
-      error: error.message || 'Upload failed'
-    });
+    return sendError(res, error, 400);
   }
 };

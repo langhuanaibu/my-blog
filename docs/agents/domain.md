@@ -22,7 +22,7 @@ Single-context repo (this repo):
 ├── docs/adr/
 │   ├── 0001-daily-item-trajectory-model.md
 │   ├── …
-│   └── 0009-secondary-items-carry-no-written-summary.md
+│   └── 0010-admin-writes-accept-scoped-session.md
 ├── news-pipeline/
 └── source/
 ```

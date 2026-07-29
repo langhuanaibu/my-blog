@@ -1608,7 +1608,13 @@ def test_workflow_supports_non_publishing_validation_and_explicit_publish():
     assert 'cp -a source/news/data/. "$VALIDATION_DATA_DIR/"' in prepare["run"]
     commit = next(step for step in generate["steps"]
                   if step.get("name") == "Commit and push")
-    assert commit["if"] == "env.RUN_MODE == 'publish'"
+    # 自动 push 是 CLAUDE.md「严禁自动 push」的唯一例外，例外的边界要在代码里画死：
+    # 只在 main 上跑、只提交 source/news/data、只推 main。少任何一条，从别的分支
+    # 手动 dispatch 一次 publish 就会把数据推到那条分支上。
+    assert commit["if"] == (
+        "${{ env.RUN_MODE == 'publish' && github.ref == 'refs/heads/main' }}")
+    assert "git add source/news/data" in commit["run"]
+    assert "git push origin HEAD:main" in commit["run"]
 
     upload = next(step for step in generate["steps"]
                   if step.get("name") == "Upload generated data")

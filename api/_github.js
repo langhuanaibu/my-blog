@@ -1,11 +1,20 @@
 const crypto = require('crypto');
 const { pinyin } = require('pinyin-pro');
+const {
+  clearLoginAttempts,
+  recordFailedLogin,
+  retryAfterSeconds
+} = require('./_loginGuard');
 
 const POSTS_DIR = 'source/_posts';
 const COVER_MAP_PATH = 'source/_data/category-covers.json';
 const FALLBACK_COVER = '/images/covers/defaults/fallback.webp';
 const ADMIN_SESSION_COOKIE = 'aoiblog_admin_session';
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+// personal：只读写日报个人状态；admin：还可发文章、改设置、传图。
+// 目前只有 /admin/ 的登录会签发会话，因此签发的都是 admin；personal 留给
+// 将来可能出现的「只登日报」入口，也让权限判定在代码里是显式的。
+const ADMIN_SESSION_SCOPES = new Set(['personal', 'admin']);
 const DEFAULT_JSON_BODY_BYTES = 1024 * 1024;
 
 function setCors(res) {
@@ -24,26 +33,57 @@ function createHttpError(status, message) {
   return error;
 }
 
+// 统一的错误出口：把 429 附带的 Retry-After 真正写进响应头，
+// 否则限流对客户端只是一个没有退避提示的 429。
+function sendError(res, error, fallbackStatus = 500) {
+  if (error?.retryAfter) res.setHeader('Retry-After', String(error.retryAfter));
+  return sendJson(res, error?.status || fallbackStatus, {
+    success: false,
+    error: error?.message || 'Request failed'
+  });
+}
+
 function timingSafeEqual(a, b) {
   const bufA = Buffer.from(String(a));
   const bufB = Buffer.from(String(b));
   return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
 
+function tooManyAttempts(retryAfter) {
+  const error = createHttpError(429, 'Too many failed attempts');
+  error.retryAfter = retryAfter;
+  return error;
+}
+
+// 缺失凭证不是猜测，不计入锁定——否则未认证的探测就能把管理员自己锁在门外。
+// 只有「带了 Authorization 但值不对」才记账。
 function requireAdmin(req) {
   const expected = process.env.ADMIN_TOKEN;
   if (!expected) {
     throw createHttpError(500, 'ADMIN_TOKEN is not configured');
   }
 
-  if (!timingSafeEqual(req.headers.authorization || '', `Bearer ${expected}`)) {
+  const supplied = req.headers?.authorization || '';
+  if (!supplied) {
     throw createHttpError(401, 'Unauthorized');
   }
+
+  const retryAfter = retryAfterSeconds(req);
+  if (retryAfter) throw tooManyAttempts(retryAfter);
+
+  if (!timingSafeEqual(supplied, `Bearer ${expected}`)) {
+    recordFailedLogin(req);
+    throw createHttpError(401, 'Unauthorized');
+  }
+  clearLoginAttempts(req);
 }
 
-function createAdminSession(secret, now = Date.now()) {
+function createAdminSession(secret, now = Date.now(), scope = 'admin') {
+  if (!ADMIN_SESSION_SCOPES.has(scope)) {
+    throw new TypeError(`unknown admin session scope: ${scope}`);
+  }
   const expires = now + ADMIN_SESSION_TTL_MS;
-  const payload = String(expires);
+  const payload = `${expires}.${scope}`;
   const signature = crypto
     .createHmac('sha256', secret)
     .update(`admin-session:${payload}`)
@@ -51,17 +91,30 @@ function createAdminSession(secret, now = Date.now()) {
   return `${payload}.${signature}`;
 }
 
-function verifyAdminSession(value, secret, now = Date.now()) {
-  const [expiresText, signature, ...rest] = String(value || '').split('.');
+// 返回会话内容或 null。scope 参与签名，所以改 scope 必然签名失配；
+// 旧的两段格式（expires.signature）解出的 scope 不在白名单里，一律作废——
+// 会话本来就只有 8 小时寿命，重登一次即可。
+function readAdminSession(value, secret, now = Date.now()) {
+  const [expiresText, scope, signature, ...rest] = String(value || '').split('.');
   const expires = Number(expiresText);
-  if (rest.length || !Number.isSafeInteger(expires) || expires <= now || expires > now + ADMIN_SESSION_TTL_MS) {
-    return false;
+  if (rest.length
+    || !ADMIN_SESSION_SCOPES.has(scope)
+    || !Number.isSafeInteger(expires)
+    || expires <= now
+    || expires > now + ADMIN_SESSION_TTL_MS) {
+    return null;
   }
   const expected = crypto
     .createHmac('sha256', secret)
-    .update(`admin-session:${expiresText}`)
+    .update(`admin-session:${expiresText}.${scope}`)
     .digest('base64url');
-  return timingSafeEqual(signature, expected);
+  return timingSafeEqual(signature, expected) ? { expires, scope } : null;
+}
+
+function verifyAdminSession(value, secret, now = Date.now(), requiredScope = null) {
+  const session = readAdminSession(value, secret, now);
+  if (!session) return false;
+  return requiredScope ? session.scope === requiredScope : true;
 }
 
 function readCookie(req, name) {
@@ -79,12 +132,24 @@ function readCookie(req, name) {
   return '';
 }
 
-function requireAdminSession(req, now = Date.now()) {
+function requireAdminSession(req, now = Date.now(), requiredScope = null) {
   const expected = process.env.ADMIN_TOKEN;
   if (!expected) throw createHttpError(500, 'ADMIN_TOKEN is not configured');
-  if (!verifyAdminSession(readCookie(req, ADMIN_SESSION_COOKIE), expected, now)) {
+  if (!verifyAdminSession(readCookie(req, ADMIN_SESSION_COOKIE), expected, now, requiredScope)) {
     throw createHttpError(401, 'Unauthorized');
   }
+}
+
+function requireAdminScope(req, now = Date.now()) {
+  return requireAdminSession(req, now, 'admin');
+}
+
+// 写接口的统一入口：带了 Authorization 就走受限流的 Bearer（留给脚本/CLI），
+// 否则走 HttpOnly 的 admin 会话 cookie（浏览器后台用，JS 读不到、8 小时过期）。
+// 后台页因此不再需要把明文主口令留在内存里。
+function requireAdminWrite(req, now = Date.now()) {
+  if (req.headers?.authorization) return requireAdmin(req);
+  return requireAdminScope(req, now);
 }
 
 function repoConfig() {
@@ -502,11 +567,15 @@ module.exports = {
   POSTS_DIR,
   setCors,
   sendJson,
+  sendError,
   createHttpError,
   requireAdmin,
   requireAdminSession,
+  requireAdminScope,
+  requireAdminWrite,
   createAdminSession,
   verifyAdminSession,
+  readAdminSession,
   ADMIN_SESSION_COOKIE,
   readJsonBody,
   listDirectory,

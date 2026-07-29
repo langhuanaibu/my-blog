@@ -2055,6 +2055,43 @@ check("enrich 深度受摘要证据约束",
 check("enrich 按类目区分解释层次",
       "非 AI 类" in _prompt_llm.system and "AI 类" in _prompt_llm.system)
 
+
+class CrossBatchIdxStub:
+    """第一批返回落在第二批窗口里的 idx，模拟模型写错下标或被正文注入诱导。"""
+
+    def __init__(self):
+        self.calls = 0
+
+    def json_call(self, _system, _user):
+        self.calls += 1
+        if self.calls == 1:
+            return [
+                {"idx": 0, "title": "本批合法", "summary": "本批摘要。", "why": "",
+                 "context": "", "significance": "", "watch": "", "detail": "",
+                 "claims": [], "status": "已确认", "tags": []},
+                {"idx": 6, "title": "越批次覆盖", "summary": "不该写进去。", "why": "",
+                 "context": "", "significance": "", "watch": "", "detail": "",
+                 "claims": [], "status": "已确认", "tags": []},
+            ]
+        return []
+
+
+_batch_llm = CrossBatchIdxStub()
+_batch_events = [
+    {"ids": [0], "category": "ai", "title": f"事件 {i}"} for i in range(7)
+]
+_batch_quality = dn.new_quality_stats()
+dn.enrich(_batch_llm, _batch_events, _qa_items, {
+    "topic_tags": [], "detail": {"enabled": True, "max_chars": 600},
+    "objectivity": {"mode": "interim"},
+}, quality=_batch_quality)
+check("enrich 跑满两个批次", _batch_llm.calls == 2)
+check("enrich 接受本批次内的 idx", _batch_events[0]["title"] == "本批合法")
+check("enrich 丢弃越批次 idx，不覆盖别的事件",
+      _batch_events[6]["title"] == "事件 6" and "summary" not in _batch_events[6])
+check("enrich 把越批次 idx 记进质量埋点",
+      _batch_quality["enrich_out_of_batch_idx"] == 1)
+
 _qa_reply = [
     {"groups": [
         {"ids": [0], "category": "ai", "dims": dict(_qa_dims), "title": "OpenAI 发布新模型"},

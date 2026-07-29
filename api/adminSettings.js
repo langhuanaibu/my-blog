@@ -1,8 +1,9 @@
 const {
   setCors,
   sendJson,
+  sendError,
   createHttpError,
-  requireAdmin,
+  requireAdminWrite,
   readJsonBody,
   readTextFile,
   putTextFilesAtomic
@@ -11,6 +12,12 @@ const {
 const SITE_CONFIG = '_config.yml';
 const FLUID_CONFIG = '_config.fluid.yml';
 const NAV_KEYS = ['home', 'archive', 'category', 'about', 'links', 'guestbook'];
+// 导航项写在 YAML 流式映射里（`- { key: "home", name: "首页" }`），读回来靠的是
+// `"([^"]*)"`。值里出现引号时第一次保存写成 \" 仍然合法，第二次保存正则会在
+// 反斜杠处截断，替换出 `name: "新值"旧尾"` —— YAML 解析失败，站点直接构建不出来。
+// 所以在入口就挡掉引号和反斜杠，而不是去写一个能处理转义的正则。
+const NAV_VALUE_MAX = 40;
+const TEXT_VALUE_MAX = 200;
 
 function yamlString(value) {
   return JSON.stringify(String(value ?? ''));
@@ -50,14 +57,47 @@ function unquote(value) {
   return text.replace(/^['"]|['"]$/g, '');
 }
 
-function readTopLevelBlock(source, blockName) {
+// 返回块体在原文里的绝对区间，读写共用同一份定位：
+// 只有这样 setFooter / setAboutScalar 才能保证改的是 footer: / about: 底下那一个
+// key，而不是碰巧第一个同缩进的同名 key。
+function topLevelBlockRange(source, blockName) {
   const startMatch = new RegExp(`^${blockName}:\\n`, 'm').exec(source);
-  if (!startMatch) return '';
+  if (!startMatch) return null;
 
   const start = startMatch.index + startMatch[0].length;
   const rest = source.slice(start);
   const nextBlock = rest.search(/^\S/m);
-  return nextBlock === -1 ? rest : rest.slice(0, nextBlock);
+  return { start, end: nextBlock === -1 ? source.length : start + nextBlock };
+}
+
+function readTopLevelBlock(source, blockName) {
+  const range = topLevelBlockRange(source, blockName);
+  return range ? source.slice(range.start, range.end) : '';
+}
+
+function replaceInBlock(source, blockName, pattern, replacer, missingMessage) {
+  const range = topLevelBlockRange(source, blockName);
+  const block = range ? source.slice(range.start, range.end) : '';
+  if (!range || !pattern.test(block)) {
+    throw createHttpError(400, missingMessage);
+  }
+  return source.slice(0, range.start)
+    + block.replace(pattern, replacer)
+    + source.slice(range.end);
+}
+
+function assertPlainValue(label, value, maxLength, { allowQuotes = true } = {}) {
+  const text = String(value ?? '');
+  if (/[\r\n]/.test(text)) {
+    throw createHttpError(400, `${label} must not contain line breaks`);
+  }
+  if (!allowQuotes && /["\\]/.test(text)) {
+    throw createHttpError(400, `${label} must not contain quotes or backslashes`);
+  }
+  if (text.length > maxLength) {
+    throw createHttpError(400, `${label} must be at most ${maxLength} characters`);
+  }
+  return text;
 }
 
 function readScalar(source, key) {
@@ -101,11 +141,13 @@ function setRootScalar(source, key, value) {
 }
 
 function setAboutScalar(source, key, value) {
-  const pattern = new RegExp(`^(\\s{2}${key}:\\s*).*$`, 'm');
-  if (!pattern.test(source)) {
-    throw createHttpError(400, `Missing about key: ${key}`);
-  }
-  return source.replace(pattern, (_, prefix) => prefix + yamlString(value));
+  return replaceInBlock(
+    source,
+    'about',
+    new RegExp(`^(\\s{2}${key}:\\s*).*$`, 'm'),
+    (_, prefix) => prefix + yamlString(value),
+    `Missing about key: ${key}`
+  );
 }
 
 function setSlogan(source, value) {
@@ -117,11 +159,13 @@ function setSlogan(source, value) {
 }
 
 function setFooter(source, value) {
-  const pattern = /^(\s{2}content:\s*).*$/m;
-  if (!pattern.test(source)) {
-    throw createHttpError(400, 'Missing footer content');
-  }
-  return source.replace(pattern, (_, prefix) => prefix + yamlInlineHtml(value));
+  return replaceInBlock(
+    source,
+    'footer',
+    /^(\s{2}content:\s*).*$/m,
+    (_, prefix) => prefix + yamlInlineHtml(value),
+    'Missing footer content'
+  );
 }
 
 function setNav(source, nav) {
@@ -149,8 +193,39 @@ function extractSettings(siteConfig, fluidConfig) {
   };
 }
 
-function applySettings(siteConfig, fluidConfig, settings) {
+// 整行替换 + JSON.parse 反解的字段 round-trip 安全，只需挡换行与超长；
+// nav 走的是流式映射里的 "…" 片段，必须连引号和反斜杠一起挡。
+const TEXT_FIELDS = [
+  ['title', '站点标题'],
+  ['subtitle', '站点副标题'],
+  ['slogan', '首页标语'],
+  ['footerText', '页脚文字'],
+  ['aboutName', '关于页名字'],
+  ['aboutIntro', '关于页简介']
+];
+
+function validateSettings(settings) {
   const safe = settings || {};
+  for (const [key, label] of TEXT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(safe, key)) {
+      assertPlainValue(label, safe[key], TEXT_VALUE_MAX);
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(safe, 'nav')) {
+    const nav = safe.nav;
+    if (!nav || typeof nav !== 'object' || Array.isArray(nav)) {
+      throw createHttpError(400, 'nav must be an object');
+    }
+    for (const key of NAV_KEYS) {
+      if (!Object.prototype.hasOwnProperty.call(nav, key)) continue;
+      assertPlainValue(`导航项 ${key}`, nav[key], NAV_VALUE_MAX, { allowQuotes: false });
+    }
+  }
+  return safe;
+}
+
+function applySettings(siteConfig, fluidConfig, settings) {
+  const safe = validateSettings(settings);
   let nextSite = siteConfig;
   let nextFluid = fluidConfig;
 
@@ -187,7 +262,7 @@ async function handler(req, res) {
   }
 
   try {
-    requireAdmin(req);
+    requireAdminWrite(req);
 
     const siteFile = await readTextFile(SITE_CONFIG);
     const fluidFile = await readTextFile(FLUID_CONFIG);
@@ -221,17 +296,17 @@ async function handler(req, res) {
 
     return sendJson(res, 405, { success: false, error: 'Method not allowed' });
   } catch (error) {
-    return sendJson(res, error.status || 500, {
-      success: false,
-      error: error.message || 'Request failed'
-    });
+    return sendError(res, error);
   }
 }
 
 handler._test = {
   extractSettings,
   applySettings,
-  NAV_KEYS
+  validateSettings,
+  NAV_KEYS,
+  NAV_VALUE_MAX,
+  TEXT_VALUE_MAX
 };
 
 module.exports = handler;

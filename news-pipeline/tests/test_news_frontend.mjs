@@ -32,6 +32,33 @@ test("漏读加载失败时明确提示并允许重试", () => {
   assert.doesNotMatch(html, /network <down>/);
 });
 
+test("渲染层没有裸插值：日期也走转义", () => {
+  // date 目前由管线生成，但「上游可信所以这里可以不转义」是一条只要上游变一次
+  // 就会破的规则。这条用例把不变式钉死：进入 HTML 的插值一律过 escapeHtml。
+  const hostile = '2026-07-15" onclick="alert(1)';
+  const state = { personal: true, favorites: {}, readLater: {}, liked: {}, tracked: {} };
+
+  // 判据是解析后的 DOM，不是原始字符串：转义正确时 onclick= 仍以字面量留在
+  // 属性值内部，它是否惰性只有解析器说了算。
+  const cardDoc = new JSDOM(
+    `<main>${dailyCard({ ...daily.items[0], event_id: "evt-1" }, hostile, state)}</main>`,
+  ).window.document;
+  const dated = [...cardDoc.querySelectorAll("button[data-date]")];
+  assert.ok(dated.length >= 4, "个人操作按钮应当带 data-date");
+  for (const node of dated) {
+    assert.equal(node.dataset.date, hostile);
+    assert.equal(node.getAttribute("onclick"), null);
+  }
+
+  const reportDoc = new JSDOM(`<main>${renderDailyReport(
+    { ...daily, date: hostile },
+    { ...state, hidden: { [`${hostile}:pick-ai`]: true } },
+  )}</main>`).window.document;
+  const restore = reportDoc.querySelector('[data-action="restore-hidden"]');
+  assert.equal(restore.dataset.date, hostile);
+  assert.equal(restore.getAttribute("onclick"), null);
+});
+
 test("新旧路由统一为 canonical reports/timeline routes", () => {
   assert.deepEqual(parseRoute(""), { view: "reports", period: "day" });
   assert.deepEqual(parseRoute("?view=unknown"), { view: "reports", period: "day" });

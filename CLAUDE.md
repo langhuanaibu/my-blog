@@ -35,7 +35,7 @@
 - **文档同步**：架构变动、运行方式变动或有复用价值的踩坑经验，必须更新至 `readme.md`。
 - **文档收口**：功能落地后把现行事实并入 `readme.md`，删除已完成计划和一次性报告。
 - **Git操作**：Commit message 用简明英文。**严禁自动 `git push`**（仅用于跨设备同步，需等待用户明确指令）。
-  - **唯一例外**：GitHub Actions 的 `daily-news.yml` 每日自动 commit + push，且仅限 `source/news/data/` 路径。管线脚本内置数据校验（精选非空、文件完整），校验失败即中止、不提交。此例外经用户明确批准（2026-07-04），不得扩大到其他路径。
+  - **唯一例外**：GitHub Actions 的 `daily-news.yml` 每日自动 commit + push，且仅限 `main` 分支上的 `source/news/data/` 路径。管线脚本内置数据校验（精选非空、文件完整），校验失败即中止、不提交。此例外经用户明确批准（2026-07-04），不得扩大到其他分支或路径。
 
 ## Agent skills
 
@@ -51,4 +51,4 @@ Issue 使用五个标准流转标签：`needs-triage`、`needs-info`、`ready-fo
 
 ### Domain docs
 
-单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0009）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。
+单上下文布局：根目录 `CONTEXT.md`（日报术语表）+ `docs/adr/`（已有 0001-0010）。新术语与新决策按需惰性追加。详见 `docs/agents/domain.md`。

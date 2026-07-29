@@ -1,8 +1,9 @@
 const {
   setCors,
   sendJson,
+  sendError,
   createHttpError,
-  requireAdmin,
+  requireAdminWrite,
   readJsonBody,
   readTextFile,
   putTextFile
@@ -167,7 +168,7 @@ async function handler(req, res) {
   }
 
   try {
-    requireAdmin(req);
+    requireAdminWrite(req);
 
     if (req.method === 'GET') {
       const { book } = await readBook();
@@ -188,10 +189,7 @@ async function handler(req, res) {
 
     return sendJson(res, 405, { success: false, error: 'Method not allowed' });
   } catch (error) {
-    return sendJson(res, error.status || 500, {
-      success: false,
-      error: error.message || 'Request failed'
-    });
+    return sendError(res, error);
   }
 }
 
