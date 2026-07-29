@@ -532,6 +532,7 @@ def test_evaluator_batches_every_case_once_and_emits_versioned_pass_report():
     assert report["trajectory"]["watch_ratio"] == 1.0
     assert [row["idx"] for row in report["trajectory"]["verdicts"]] == [0, 1]
     assert report["fingerprints"] == evidence["fingerprints"]
+    assert report["enrich_sample"] == evidence["enrich_sample"]
 
 
 def test_evaluator_rejects_nested_forbidden_or_malformed_evidence_before_judge():

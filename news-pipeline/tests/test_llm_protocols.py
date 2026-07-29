@@ -309,6 +309,7 @@ def test_same_day_reconciliation_does_not_retry_a_paid_request(monkeypatch):
 
 def test_text_call_uses_shared_transport_and_openai_keeps_request_options(monkeypatch):
     seen = []
+    client_options = []
 
     class Completions:
         @staticmethod
@@ -322,9 +323,13 @@ def test_text_call_uses_shared_transport_and_openai_keeps_request_options(monkey
 
     class OpenAI:
         def __init__(self, **kwargs):
+            client_options.append(kwargs)
             self.chat = types.SimpleNamespace(completions=Completions())
 
-    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=OpenAI))
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(
+        OpenAI=OpenAI,
+        Timeout=lambda timeout, *, connect: (timeout, connect),
+    ))
     cfg = dn.resolve_llm_config(
         provider_config("deepseek"),
         environ={"DEEPSEEK_API_KEY": "deep-secret"},
@@ -333,9 +338,16 @@ def test_text_call_uses_shared_transport_and_openai_keeps_request_options(monkey
 
     assert llm.text_call("profile system", "profile user", temperature=0.2) == (
         "profile markdown")
+    assert client_options == [{
+        "base_url": "https://api.deepseek.com/v1",
+        "api_key": "deep-secret",
+        "max_retries": 0,
+        "timeout": (180.0, 10.0),
+    }]
     assert seen == [{
         "model": "deepseek-v4-flash",
         "temperature": 0.2,
+        "max_tokens": 16384,
         "messages": [
             {"role": "system", "content": "profile system"},
             {"role": "user", "content": "profile user"},

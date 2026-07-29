@@ -489,6 +489,12 @@ def test_objectivity_shadow_never_infers_a_pass_from_missing_metrics():
     assert il.evaluate_objectivity_shadow(
         {k: v for k, v in complete.items() if k != "demoted_from_selected"},
         shadow_outcome="success")["status"] == "needs_review"
+    assert il.evaluate_objectivity_shadow(
+        {**complete, "selected_before_audit": "36"},
+        shadow_outcome="success")["status"] == "needs_review"
+    assert il.evaluate_objectivity_shadow(
+        {**complete, "selected_after_audit": 37},
+        shadow_outcome="success")["status"] == "needs_review"
 
 
 def test_source_metrics_day_is_neutral_until_both_inputs_are_complete():
@@ -513,6 +519,12 @@ def test_source_metrics_day_is_neutral_until_both_inputs_are_complete():
     assert complete["metrics"] == {"sources": 2, "errored": 1, "zero_update": 1}
     assert no_shadow["status"] == "neutral"
     assert no_health["status"] == "neutral"
+    assert il.evaluate_source_metrics(
+        {"days": {"2026-07-26": {"broken": {"count": "many", "error": False}}}},
+        shadow, date="2026-07-26")["status"] == "neutral"
+    assert il.evaluate_source_metrics(
+        health, {**shadow, "high_risk_single_source_rate": float("nan")},
+        date="2026-07-26")["status"] == "neutral"
 
 
 def test_manual_review_records_enrich_sample_counts_only_for_enrich():
@@ -568,6 +580,28 @@ def test_gate_projection_keeps_metrics_numeric_and_drops_free_text():
     assert projected["enrich"]["metrics"] == {"ratio": 1.5}
     assert "secret article body" not in body
     assert projected["enrich"]["sample"]["ai"] == ["evt-1"]
+
+
+def test_gate_projection_drops_nonfinite_numeric_metrics():
+    il = ledger()
+    projected = il.build_attempt(
+        report={"selection": {"status": "pass", "reasons": []},
+                "trajectory": {"status": "pass", "reasons": []}},
+        publication="success", publication_reason="", run_id="10",
+        run_attempt=1, sha="0123456789abcdef0123456789abcdef01234567",
+        enrich={"status": "needs_review", "reasons": ["ok"],
+                "metrics": {
+                    "finite": 1.25,
+                    "nan": float("nan"),
+                    "positive_infinity": float("inf"),
+                    "negative_infinity": float("-inf"),
+                }},
+        objectivity_shadow={"status": "pass", "reasons": []},
+        source_metrics={"status": "pass", "reasons": []})
+
+    assert projected["enrich"]["metrics"] == {"finite": 1.25}
+    assert "NaN" not in json.dumps(projected)
+    assert "Infinity" not in json.dumps(projected)
 
 
 def test_publication_failure_marks_every_gate_failed_in_the_attempt():

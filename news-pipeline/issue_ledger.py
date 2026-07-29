@@ -6,6 +6,7 @@ import argparse
 import copy
 import datetime
 import json
+import math
 import os
 import re
 import urllib.request
@@ -301,7 +302,10 @@ def _project_metrics(value):
     for name, metric in list(value.items())[:8]:
         if isinstance(metric, bool) or not isinstance(metric, (int, float)):
             continue
-        projected[_sanitize_text(name, limit=40)] = round(float(metric), 4)
+        numeric = float(metric)
+        if not math.isfinite(numeric):
+            continue
+        projected[_sanitize_text(name, limit=40)] = round(numeric, 4)
     return projected
 
 
@@ -392,6 +396,36 @@ def _quality_ratio(record):
     return removed / audited
 
 
+def _is_nonnegative_int(value):
+    return type(value) is int and value >= 0
+
+
+def _valid_source_concentration(value):
+    if not isinstance(value, list):
+        return False
+    for row in value:
+        if not isinstance(row, dict):
+            return False
+        source = row.get("source")
+        count = row.get("reference_count")
+        share = row.get("reference_share")
+        if (not isinstance(source, str) or not source.strip()
+                or not _is_nonnegative_int(count)
+                or isinstance(share, bool) or not isinstance(share, (int, float))
+                or not math.isfinite(float(share)) or not 0 <= float(share) <= 1):
+            return False
+    return True
+
+
+def _valid_chain_distribution(value):
+    return (
+        isinstance(value, dict)
+        and all(isinstance(key, str) and key.isdigit()
+                and _is_nonnegative_int(count)
+                for key, count in value.items())
+    )
+
+
 def enrich_baseline(quality_health, before_date):
     """Median removed-field ratio over the output days preceding the window."""
     records = (quality_health or {}).get("records")
@@ -456,6 +490,18 @@ def evaluate_objectivity_shadow(shadow_summary, *, shadow_outcome):
     if missing:
         return {"status": "needs_review",
                 "reasons": [f"shadow summary missing {', '.join(sorted(missing))}"]}
+    before = shadow_summary["selected_before_audit"]
+    after = shadow_summary["selected_after_audit"]
+    audited = shadow_summary["audited_candidate_count"]
+    demoted = shadow_summary["demoted_from_selected"]
+    if (any(not _is_nonnegative_int(value)
+            for value in (before, after, audited, demoted))
+            or after > before or demoted > before
+            or before - after != demoted
+            or not _valid_source_concentration(
+                shadow_summary["source_reference_concentration"])):
+        return {"status": "needs_review",
+                "reasons": ["shadow summary metrics are malformed or inconsistent"]}
     return {"status": "pass", "reasons": [],
             "metrics": {name: shadow_summary.get(name)
                         for name in ("selected_before_audit", "selected_after_audit",
@@ -479,10 +525,25 @@ def evaluate_source_metrics(
     if missing:
         return {"status": "neutral",
                 "reasons": [f"shadow metrics missing {', '.join(sorted(missing))}"]}
+    rate = shadow_summary["high_risk_single_source_rate"]
+    if (isinstance(rate, bool) or not isinstance(rate, (int, float))
+            or not math.isfinite(float(rate)) or not 0 <= float(rate) <= 1
+            or not _valid_chain_distribution(
+                shadow_summary["independent_chain_distribution"])
+            or not _valid_source_concentration(
+                shadow_summary["source_reference_concentration"])):
+        return {"status": "neutral",
+                "reasons": ["shadow source metrics are malformed"]}
+    if any(not isinstance(row, dict)
+           or not _is_nonnegative_int(row.get("count"))
+           or type(row.get("error")) is not bool
+           for row in rows.values()):
+        return {"status": "neutral",
+                "reasons": ["source health metrics are malformed"]}
     errored = sum(1 for row in rows.values()
-                  if isinstance(row, dict) and row.get("error"))
+                  if row["error"])
     empty = sum(1 for row in rows.values()
-                if isinstance(row, dict) and not int(row.get("count") or 0))
+                if row["count"] == 0)
     return {"status": "pass", "reasons": [],
             "metrics": {"sources": len(rows), "errored": errored, "zero_update": empty}}
 

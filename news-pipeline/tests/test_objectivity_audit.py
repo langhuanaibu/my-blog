@@ -45,6 +45,142 @@ def test_enrich_ignores_non_object_rows_in_model_response():
     }]
 
 
+def test_enrich_rejects_boolean_event_indexes():
+    class BooleanIndexLLM:
+        def json_call(self, _system, _user):
+            return [{"idx": True, "title": "Wrong event"}]
+
+    events = [
+        {"ids": [0], "category": "world", "title": "Event zero"},
+        {"ids": [1], "category": "world", "title": "Event one"},
+    ]
+    items = [
+        {
+            "title": f"Source {index}",
+            "desc": "Source summary",
+            "source": "Synthetic Wire",
+            "source_id": f"synthetic-{index}",
+            "source_type": "fact",
+            "tier": "T1",
+            "credibility": 9,
+            "url": f"https://example.com/report-{index}",
+            "time": "2026-07-22T00:00:00+00:00",
+        }
+        for index in range(2)
+    ]
+
+    result = dn.enrich(
+        BooleanIndexLLM(),
+        events,
+        items,
+        {"topic_tags": [], "detail": {"enabled": False},
+         "objectivity": {"mode": "interim"}},
+    )
+
+    assert [event["title"] for event in result] == ["Event zero", "Event one"]
+
+
+def test_model_boolean_indexes_are_never_treated_as_integer_positions():
+    items = [
+        {
+            "title": f"Source {index}",
+            "desc": "Source summary",
+            "source": f"Wire {index}",
+            "source_id": f"wire-{index}",
+            "source_type": "fact",
+            "tier": "T1",
+            "credibility": 9,
+            "url": f"https://example.com/report-{index}",
+            "time": "2026-07-22T00:00:00+00:00",
+        }
+        for index in range(2)
+    ]
+
+    class PrefilterLLM:
+        def json_call(self, _system, _user):
+            return {"drop": [True], "soft": [False]}
+
+    assert dn.prefilter(PrefilterLLM(), [dict(item) for item in items]) == items
+
+    class TriageLLM:
+        def json_call(self, _system, _user):
+            return [{
+                "ids": [True],
+                "category": "world",
+                "dims": {dimension: 5 for dimension in dn.DIMS},
+                "title": "Boolean event",
+            }]
+
+    assert dn.triage(TriageLLM(), [dict(item) for item in items]) == []
+
+    class NonFiniteTriageLLM:
+        def json_call(self, _system, _user):
+            return [{
+                "ids": [0],
+                "category": "world",
+                "dims": {
+                    **{dimension: 5 for dimension in dn.DIMS},
+                    "impact": "NaN",
+                },
+                "title": "Non-finite score",
+            }]
+
+    triaged = dn.triage(NonFiniteTriageLLM(), [dict(item) for item in items])
+    assert triaged[0]["dims"]["impact"] == 3.0
+
+    class MergeLLM:
+        def json_call(self, _system, _user):
+            return [[True, 0]]
+
+    events = [
+        {"ids": [0], "category": "world", "title": "Zero"},
+        {"ids": [1], "category": "world", "title": "One"},
+    ]
+    assert len(dn.merge_events(MergeLLM(), events, items)) == 2
+    assert dn._serialized_source_ids({"ids": [True, 0]}, items) == [0]
+    assert dn.sanitize_claims(
+        [{"text": "Claim", "kind": "fact", "source_indexes": [True]}],
+        ["Wire 0", "Wire 1"],
+    ) == [{"text": "Claim", "kind": "fact", "sources": []}]
+
+    class MatchLLM:
+        def json_call(self, _system, _user):
+            return {"matches": [
+                {"today": "0", "registry": 0},
+                {"today": True, "registry": 0},
+            ]}
+
+    active = [{
+        "event_id": "evt-0",
+        "title": "Active",
+        "category": "world",
+        "last_seen": "2026-07-21",
+        "history": [{"date": "2026-07-21", "summary": "Earlier"}],
+    }]
+    picked = [{"title": "Today", "summary": "Update", "category": "world"}]
+    assert dn.match_events_llm(MatchLLM(), active, picked) == []
+
+    class FitLLM:
+        def json_call(self, _system, _user):
+            return {"fits": [
+                {"idx": 0, "fit": "NaN"},
+                {"idx": True, "fit": 10},
+            ]}
+
+    fitted = [{"title": "Today", "category": "world"}]
+    dn.interest_fit(FitLLM(), "## 更关注\n- 主题", fitted)
+    assert "interest_mult" not in fitted[0]
+
+    class OpinionLLM:
+        def json_call(self, _system, _user):
+            return [{"idx": "0", "title": "String index"},
+                    {"idx": True, "title": "Boolean index"}]
+
+    pulse = [{"platform": "微博", "word": "主题", "url": "https://example.com"}]
+    assert dn.opinion_pulse(
+        OpinionLLM(), {"opinion": {"enabled": True}}, pulse) == []
+
+
 def test_article_blocking_read_obeys_wall_clock_deadline_and_closes_response():
     class BlockingResponse:
         status_code = 200

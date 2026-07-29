@@ -336,7 +336,28 @@ function normalizeDate(value) {
   const text = String(value || '').trim();
   if (!text) return today();
   // 接受纯日期或带时间的日期（原样保留，日期变了 permalink 就变了）
-  if (/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2})?)?$/.test(text)) return text;
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/.exec(text);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const hour = Number(match[4] || 0);
+    const minute = Number(match[5] || 0);
+    const second = Number(match[6] || 0);
+    const parsed = new Date(0);
+    parsed.setUTCHours(hour, minute, second, 0);
+    parsed.setUTCFullYear(year, month - 1, day);
+    if (
+      hour <= 23
+      && minute <= 59
+      && second <= 59
+      && parsed.getUTCFullYear() === year
+      && parsed.getUTCMonth() === month - 1
+      && parsed.getUTCDate() === day
+    ) {
+      return text;
+    }
+  }
   // 无法解析的日期直接报错，静默回退到今天会改文章 URL、断开评论关联
   throw createHttpError(400, `Invalid date: ${text}`);
 }

@@ -1224,6 +1224,8 @@ else:
          "intro": "旧", "detail_url": "/news/dj_detail?id=2"},
         {"id": "3", "title": "无法定日期", "release_time": "上周",
          "intro": "x", "detail_url": "/news/dj_detail?id=3"},
+        {"id": "4", "title": "内网诱导", "release_time": "07月15日",
+         "intro": "短", "detail_url": "http://169.254.169.254/latest/meta-data"},
     ]}
     _late_html = ('<html><div class="article-body ql-editor">' + '正文内容' * 120
                   + '</div></html>')
@@ -1836,6 +1838,8 @@ try:
     dn.write_all_archive(_aa_items, _aa_sources, "2026-07-10",
                          keep_days=90, min_score=45)
     _bf_events = [
+        {"ids": [True, -1, 99, "0"], "score": 99},
+        {"ids": [0], "score": float("nan")},
         {"ids": [0], "score": 71.6},          # 命中 A（url https://a.com/1）
         {"ids": [1], "score": None},          # 无分事件不回填
     ]

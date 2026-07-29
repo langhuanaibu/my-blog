@@ -108,13 +108,14 @@ function validateEntry(type, payload) {
   if (!isRealIsoDate(payload.date)) {
     throw createHttpError(400, 'payload.date must be a real calendar date in YYYY-MM-DD format');
   }
-  if (!String(payload.item_id || '').trim()) {
+  const itemId = clip(payload.item_id, 60).trim();
+  if (!itemId) {
     throw createHttpError(400, 'payload.item_id is required');
   }
 
   const entry = {
     date: payload.date,
-    item_id: clip(payload.item_id, 60),
+    item_id: itemId,
     title: clip(payload.title, 200),
     category: clip(payload.category, 20)
   };
@@ -136,9 +137,12 @@ function validateEntry(type, payload) {
     if (payload.event_id) entry.event_id = clip(payload.event_id, 60);
     if (payload.source) entry.source = clip(payload.source, 100);
   } else if (type === 'read_later') {
-    entry.op = READ_LATER_OPS.includes(payload.op) ? payload.op : 'add';
+    entry.op = payload.op === undefined ? 'add' : payload.op;
+    if (!READ_LATER_OPS.includes(entry.op)) {
+      throw createHttpError(400, `payload.op must be one of: ${READ_LATER_OPS.join(', ')}`);
+    }
     if (entry.op === 'add') {
-      const url = String(payload.url || '');
+      const url = String(payload.url || '').trim();
       if (!isHttpUrl(url)) {
         throw createHttpError(400, 'payload.url must be an http(s) URL');
       }
@@ -148,10 +152,16 @@ function validateEntry(type, payload) {
   } else {
     // favorites：永久收藏。核心是 date+item_id 引用（前端凭它从 daily/*.js
     // 重渲染完整卡片），url 仅作降级展示的兜底，允许缺省
-    entry.op = FAVORITES_OPS.includes(payload.op) ? payload.op : 'add';
+    entry.op = payload.op === undefined ? 'add' : payload.op;
+    if (!FAVORITES_OPS.includes(entry.op)) {
+      throw createHttpError(400, `payload.op must be one of: ${FAVORITES_OPS.join(', ')}`);
+    }
     if (entry.op === 'add') {
-      const url = String(payload.url || '');
-      if (/^https?:\/\//i.test(url)) entry.url = clip(url, 500);
+      const url = String(payload.url || '').trim();
+      if (url && !isHttpUrl(url)) {
+        throw createHttpError(400, 'payload.url must be an http(s) URL');
+      }
+      if (url) entry.url = clip(url, 500);
     }
   }
 

@@ -189,8 +189,12 @@ export function renderDailyReport(data, options = {}) {
   }).filter(Boolean).join("");
   const deepItems = data.deep || [];
   const deepMinutes = deepItems.reduce((total, item) => total + (Number.isFinite(item.read_minutes) && item.read_minutes > 0 ? item.read_minutes : 0), 0);
+  const tracked = options.tracked || {};
+  const trackedItems = (data.tracking || []).filter(
+    (item) => !Object.hasOwn(tracked, item.event_id) || tracked[item.event_id] !== false,
+  );
   const supplementary = [
-    ["追踪中", "tracking", (data.tracking || []).map((item) => trackingCard(item, data.date, options)), ""],
+    ["追踪中", "tracking", trackedItems.map((item) => trackingCard(item, data.date, options)), ""],
     ["深度阅读", "deep", deepItems.map((item) => contentCard(item, "deep", data.date, options)), deepMinutes ? `<span class="n">${deepItems.length} 篇 · 原文约 ${deepMinutes} 分钟</span>` : ""],
     ["今日论文", "papers", (data.papers || []).map((item) => contentCard(item, "paper", data.date, options)), ""],
     ["舆论观察", "opinion", (data.opinion || []).map((item) => contentCard(item, "opinion", data.date, options)), ""],

@@ -851,6 +851,8 @@ def evaluate_rollout(evidence, *, shadow_success, judge_llm):
         },
         "fingerprints": copy.deepcopy(evidence.get("fingerprints", {}))
         if isinstance(evidence, dict) else {},
+        "enrich_sample": copy.deepcopy(evidence["enrich_sample"])
+        if valid_envelope else {},
     }
 
 

@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 
 import { createNewsApp } from "../../source/news/js/app.js";
 import { renderDailyReport, renderWeeklyReport } from "../../source/news/js/reports.js";
+import { createStorage, STORAGE_KEYS } from "../../source/news/js/storage.js";
 const TimelineCore = createRequire(import.meta.url)("../../source/news/news-timeline.js");
 const NewsState = createRequire(import.meta.url)("../../api/newsState.js");
 
@@ -103,6 +104,24 @@ function dataApi() {
     events: async () => ({ events: [{ event_id: "evt-1", title: "主题事件", status: "active", pinned: false, history: [{ date: day.date, summary: "进展" }] }] }),
   };
 }
+
+test("local personal-state maps recover from valid but incompatible JSON", () => {
+  const values = new Map([
+    [STORAGE_KEYS.hidden, "null"],
+    [STORAGE_KEYS.liked, "[]"],
+    [STORAGE_KEYS.tracked, '"text"'],
+    [STORAGE_KEYS.seenDays, "1"],
+  ]);
+  const localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  const storage = createStorage(localStorage);
+
+  for (const key of values.keys()) assert.deepEqual(storage.get(key), {});
+  assert.equal(storage.toggle(STORAGE_KEYS.liked, "2026-07-15:pick-1"), true);
+  assert.doesNotThrow(() => storage.markSeen("2026-07-15"));
+});
 
 test("app rewrites old route, marks seen and respects hidden state", async () => {
   const dom = shell();
@@ -231,6 +250,123 @@ test("personal actions preserve newsState storage and API contracts", async () =
   assert.ok(requests.some((request) => request.type === "favorites"));
   assert.ok(requests.some((request) => request.type === "read_later"));
   assert.equal(JSON.parse(dom.window.localStorage.getItem("news_like"))["2026-07-15:pick-1"], true);
+});
+
+test("daily tracking cancellation keeps a false override and hides the tracking card", async () => {
+  const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
+  const requests = [];
+  const app = createNewsApp({
+    window: dom.window,
+    document: dom.window.document,
+    dataApi: dataApi(),
+    personal: true,
+    fetch: async (_url, init) => {
+      requests.push(JSON.parse(init.body));
+      return { ok: true, json: async () => ({ success: true, data: {} }) };
+    },
+  });
+  await app.start();
+
+  dom.window.document.querySelector('[data-action="untrack"][data-event="evt-1"]').click();
+  await app.idle();
+
+  assert.equal(
+    JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.tracked) || "{}")["evt-1"],
+    false,
+  );
+  assert.equal(dom.window.document.querySelector('[data-action="untrack"][data-event="evt-1"]'), null);
+  assert.ok(requests.some((request) => request.payload.action === "untrack"));
+});
+
+test("failed personal-state writes roll back optimistic card actions", async () => {
+  const dom = shell("https://example.test/news/?view=reports&period=day&date=2026-07-15");
+  const fetchStub = async (_url, init = {}) => {
+    if (!init.method) {
+      return { ok: true, json: async () => ({ success: true, data: { version: 1, entries: [] } }) };
+    }
+    return {
+      ok: false,
+      status: 503,
+      json: async () => ({ success: false, error: "repository unavailable" }),
+    };
+  };
+  const app = createNewsApp({
+    window: dom.window,
+    document: dom.window.document,
+    dataApi: dataApi(),
+    personal: true,
+    fetch: fetchStub,
+  });
+  await app.start();
+  const key = `${day.date}:pick-1`;
+
+  dom.window.document.querySelector('[data-action="like"][data-ref="pick-1"]').click();
+  await app.idle();
+  assert.equal(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.liked) || "{}")[key], undefined);
+  assert.equal(dom.window.document.querySelector('[data-action="like"][data-ref="pick-1"]').classList.contains("done"), false);
+
+  dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-1"]').click();
+  await app.idle();
+  assert.equal(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.favorites) || "{}")[key], undefined);
+  assert.equal(dom.window.document.querySelector('[data-action="favorite"][data-ref="pick-1"]').classList.contains("done"), false);
+
+  dom.window.document.querySelector('[data-action="read-later"][data-ref="pick-1"]').click();
+  await app.idle();
+  assert.equal(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.readLater) || "{}")[key], undefined);
+  assert.equal(dom.window.document.querySelector('[data-action="read-later"][data-ref="pick-1"]').classList.contains("done"), false);
+
+  dom.window.document.querySelector('[data-action="untrack"][data-event="evt-1"]').click();
+  await app.idle();
+  assert.equal(
+    Object.hasOwn(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.tracked) || "{}"), "evt-1"),
+    false,
+  );
+  assert.ok(dom.window.document.querySelector('[data-action="untrack"][data-event="evt-1"]'));
+
+  dom.window.document.querySelector('[data-action="not-interested"][data-ref="pick-1"]').click();
+  dom.window.document.querySelector('[data-action="submit-not-interested"]').click();
+  await app.idle();
+  assert.equal(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.hidden) || "{}")[key], undefined);
+  assert.match(dom.window.document.querySelector("main").textContent, /隐藏候选/);
+});
+
+test("failed topic tracking restores the prior local override", async () => {
+  const dom = shell("https://example.test/news/?view=topics");
+  const api = dataApi();
+  api.events = async () => ({
+    events: [{
+      event_id: "evt-1",
+      title: "主题事件",
+      status: "active",
+      pinned: false,
+      history: [
+        { date: "2026-07-14", summary: "前序进展" },
+        { date: day.date, summary: "最新进展" },
+      ],
+    }],
+  });
+  const app = createNewsApp({
+    window: dom.window,
+    document: dom.window.document,
+    dataApi: api,
+    manifests: { daily: [day.date] },
+    personal: true,
+    fetch: async () => ({
+      ok: false,
+      status: 503,
+      json: async () => ({ success: false, error: "repository unavailable" }),
+    }),
+  });
+  await app.start();
+
+  dom.window.document.querySelector('[data-action="track-topic"]').click();
+  await app.idle();
+  assert.equal(
+    Object.hasOwn(JSON.parse(dom.window.localStorage.getItem(STORAGE_KEYS.tracked) || "{}"), "evt-1"),
+    false,
+  );
+  assert.match(dom.window.document.querySelector('[data-action="track-topic"]').textContent, /追踪/);
+  assert.doesNotMatch(dom.window.document.querySelector('[data-action="track-topic"]').textContent, /取消/);
 });
 
 test("misses state is independent, constrained, removable, and capped", () => {

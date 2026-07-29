@@ -225,6 +225,25 @@ test("all personal state types reject impossible calendar dates", () => {
   }
 });
 
+test("admin article dates reject impossible calendar dates", () => {
+  for (const date of [
+    "2026-02-29",
+    "2026-02-30",
+    "2026-13-01",
+    "2026-00-10",
+    "2026-07-01 24:00",
+    "2026-07-01 23:60",
+    "2026-07-01 23:59:60",
+  ]) {
+    assert.throws(
+      () => github.normalizeDate(date),
+      /invalid date/i,
+    );
+  }
+  assert.equal(github.normalizeDate("2024-02-29"), "2024-02-29");
+  assert.equal(github.normalizeDate("2024-02-29 08:30:00"), "2024-02-29 08:30:00");
+});
+
 test("read-later rejects HTTP prefixes without a valid URL", () => {
   for (const url of ["http://", "https://not a url", "javascript:alert(1)"]) {
     assert.throws(
@@ -237,6 +256,48 @@ test("read-later rejects HTTP prefixes without a valid URL", () => {
       /http\(s\)/i,
     );
   }
+});
+
+test("personal state rejects unknown operations instead of silently adding entries", () => {
+  for (const type of ["read_later", "favorites"]) {
+    assert.throws(
+      () => newsState._test.validateEntry(type, {
+        date: "2026-07-15",
+        item_id: "pick-1",
+        op: "typo",
+        url: "https://example.com/a",
+      }),
+      /payload\.op/i,
+    );
+  }
+});
+
+test("personal state normalizes identifiers and validates optional favorite URLs", () => {
+  const entry = newsState._test.validateEntry("favorites", {
+    date: "2026-07-15",
+    item_id: "  pick-1  ",
+    op: "add",
+    url: "https://example.com/a",
+  });
+  assert.equal(entry.item_id, "pick-1");
+
+  assert.throws(
+    () => newsState._test.validateEntry("favorites", {
+      date: "2026-07-15",
+      item_id: `${" ".repeat(60)}x`,
+      op: "add",
+    }),
+    /item_id/i,
+  );
+  assert.throws(
+    () => newsState._test.validateEntry("favorites", {
+      date: "2026-07-15",
+      item_id: "pick-1",
+      op: "add",
+      url: "https://",
+    }),
+    /http\(s\)/i,
+  );
 });
 
 test("state type allowlist rejects inherited object keys", () => {

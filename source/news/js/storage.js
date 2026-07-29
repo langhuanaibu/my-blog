@@ -4,7 +4,14 @@ export const STORAGE_KEYS = {
 };
 
 export function createStorage(localStorage) {
-  const get = (key) => { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } };
+  const get = (key) => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  };
   const set = (key, value) => localStorage.setItem(key, JSON.stringify(value));
   const itemKey = (date, id) => /^\d{4}-\d{2}-\d{2}:/.test(id) ? id : `${date}:${id}`;
   const toggle = (key, id, value = undefined) => {

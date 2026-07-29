@@ -396,7 +396,9 @@ def build_enrich_sample(picked, date_str):
     for category, ids in by_category.items():
         ordered = sorted(set(ids))
         digest = hashlib.sha1(
-            f"{date_str}:{category}".encode("utf-8")).hexdigest()
+            f"{date_str}:{category}".encode("utf-8"),
+            usedforsecurity=False,
+        ).hexdigest()
         sample[category] = [ordered[int(digest, 16) % len(ordered)]]
     return dict(sorted(sample.items()))
 
@@ -1015,6 +1017,28 @@ def extract_latepost_content(page_html):
     return ""
 
 
+def _same_origin_http_url(base, value):
+    """Resolve one upstream link while refusing scheme, credential or origin changes."""
+    try:
+        base_parts = urlsplit(str(base or ""))
+        resolved = urljoin(str(base or "").rstrip("/") + "/", str(value or "").strip())
+        parts = urlsplit(resolved)
+        if (base_parts.scheme not in ("http", "https")
+                or parts.scheme not in ("http", "https")
+                or not base_parts.hostname or not parts.hostname
+                or parts.username is not None or parts.password is not None):
+            return ""
+        base_port = base_parts.port or (443 if base_parts.scheme == "https" else 80)
+        resolved_port = parts.port or (443 if parts.scheme == "https" else 80)
+        if (parts.scheme != base_parts.scheme
+                or parts.hostname.lower() != base_parts.hostname.lower()
+                or resolved_port != base_port):
+            return ""
+        return urlunsplit(parts)
+    except (TypeError, ValueError):
+        return ""
+
+
 def fetch_latepost(src, window_start, max_items, now=None):
     """晚点长报道适配器：公开 JSON 列表 + 服务端详情页，无浏览器依赖。"""
     base = str(src.get("url") or "https://www.latepost.com").rstrip("/")
@@ -1038,7 +1062,9 @@ def fetch_latepost(src, window_start, max_items, now=None):
         pub = parse_latepost_time(row.get("release_time"), reference)
         if not title or not detail_url or pub is None or pub < window_start:
             continue
-        url = detail_url if detail_url.startswith("http") else base + "/" + detail_url.lstrip("/")
+        url = _same_origin_http_url(base, detail_url)
+        if not url:
+            continue
         summary = strip_html(" ".join(str(row.get(k) or "")
                                       for k in ("intro", "abstract", "problem", "answer")))
         pending.append({"title": title, "url": url, "summary": summary, "pub": pub})
@@ -1495,8 +1521,18 @@ class LLM:
             else LLM_PRICE_USD_PER_MTOK.get(self.model)
         )
         if self.protocol == "openai":
-            from openai import OpenAI
-            self.client = OpenAI(base_url=self.base_url, api_key=self.api_key)
+            from openai import OpenAI, Timeout
+            self.client = OpenAI(
+                base_url=self.base_url,
+                api_key=self.api_key,
+                # Retries are owned by _call so one logical attempt cannot
+                # silently expand into multiple paid SDK requests.
+                max_retries=0,
+                timeout=Timeout(
+                    self.request_timeout[1],
+                    connect=self.request_timeout[0],
+                ),
+            )
         else:
             self.client = None
         # 按阶段累计的 token 消耗。计量只读响应里的 usage，不参与任何管线决策。
@@ -1548,6 +1584,7 @@ class LLM:
             resp = self.client.chat.completions.create(
                 model=self.model,
                 temperature=self.temperature if temperature is None else temperature,
+                max_tokens=self.max_tokens,
                 messages=[{"role": "system", "content": system},
                           {"role": "user", "content": user}],
                 extra_body=self.extra_body,
@@ -1764,6 +1801,19 @@ def warn_if_cost_exceeds(usage, cfg, policy):
 # 3. 预筛（便宜模型）：丢垃圾，主模型只处理幸存者
 # ----------------------------------------------------------------
 
+
+def _model_index(value, size):
+    """Return a strict JSON integer index; booleans and numeric strings are invalid."""
+    return value if type(value) is int and 0 <= value < size else None
+
+
+def _model_number(value):
+    """Return a finite JSON number, rejecting booleans, strings, NaN and infinity."""
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return None
+    number = float(value)
+    return number if math.isfinite(number) else None
+
 PREFILTER_SYSTEM = """你是新闻信息流的第一道过滤器。用户给你一批带编号的条目标题。
 输出两类编号：
 - drop（丢弃）：广告软文、纯营销、促销、招聘、菜谱/生活贴士、纯情绪帖、
@@ -1784,10 +1834,10 @@ def prefilter(llm, items):
         try:
             result = llm.json_call(PREFILTER_SYSTEM, "\n".join(lines))
             for i in result.get("drop", []):
-                if isinstance(i, int) and bi <= i < bi + len(batch):
+                if isinstance(i, int) and not isinstance(i, bool) and bi <= i < bi + len(batch):
                     drop.add(i)
             for i in result.get("soft", []):
-                if isinstance(i, int) and bi <= i < bi + len(batch):
+                if isinstance(i, int) and not isinstance(i, bool) and bi <= i < bi + len(batch):
                     soft.add(i)
         except Exception as e:
             log(f"  预筛批次失败，该批全部保留: {e}")
@@ -1857,12 +1907,16 @@ def triage(llm, items, quality=None):
             # 编号必须落在本批次范围内——模型若返回批内相对编号，
             # 会静默指向其他批次的条目，造成标题与来源错配
             ids = [i for i in ev.get("ids", [])
-                   if isinstance(i, int) and bi <= i < bi + len(batch)]
+                   if isinstance(i, int) and not isinstance(i, bool)
+                   and bi <= i < bi + len(batch)]
             ids = cap_same_source(ids, items)
             if not ids:
                 continue
             raw_dims = ev.get("dims", {}) or {}
-            dims = {d: max(0.0, min(10.0, float(raw_dims.get(d, 3)))) for d in DIMS}
+            dims = {}
+            for dimension in DIMS:
+                value = _model_number(raw_dims.get(dimension))
+                dims[dimension] = max(0.0, min(10.0, value if value is not None else 3.0))
             events.append({
                 "ids": ids,
                 "category": ev.get("category") if ev.get("category") in CATEGORIES else "world",
@@ -1889,7 +1943,8 @@ def merge_events(llm, events, items):
         return events
     merged_away = set()
     for group in groups:
-        group = [g for g in group if isinstance(g, int) and 0 <= g < len(events)]
+        group = [g for g in group if isinstance(g, int) and not isinstance(g, bool)
+                 and 0 <= g < len(events)]
         if len(group) < 2:
             continue
         primary = group[0]
@@ -2717,7 +2772,9 @@ def corroborate_high_risk_events(events, items, raw_pool, quality=None):
 
 def _serialized_source_ids(event, items, limit=5):
     """Return the exact stable source order shared by acquisition and output."""
-    ids = [i for i in event.get("ids", []) if isinstance(i, int) and 0 <= i < len(items)]
+    ids = [i for i in event.get("ids", [])
+           if isinstance(i, int) and not isinstance(i, bool)
+           and 0 <= i < len(items)]
     ids.sort(key=lambda i: (
         items[i].get("source_type") != "fact",
         -float(items[i].get("credibility", 0)),
@@ -3325,7 +3382,8 @@ def sanitize_claims(raw_claims, source_names):
             indexes = []
         names = list(dict.fromkeys(
             source_names[i] for i in indexes
-            if isinstance(i, int) and 0 <= i < len(source_names)
+            if isinstance(i, int) and not isinstance(i, bool)
+            and 0 <= i < len(source_names)
         ))
         claims.append({"text": text, "kind": kind, "sources": names})
     return claims
@@ -3577,7 +3635,8 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
             if not isinstance(r, dict):
                 continue
             k = r.get("idx")
-            if not isinstance(k, int) or not (0 <= k < len(picked)):
+            if (not isinstance(k, int) or isinstance(k, bool)
+                    or not (0 <= k < len(picked))):
                 continue
             ev = picked[k]
             source_ids = _serialized_source_ids(ev, items, limit=1)
@@ -4225,11 +4284,11 @@ def match_events_llm(llm, active_events, picked):
         matches = result.get("matches", []) if isinstance(result, dict) else []
         pairs, seen_today, seen_reg = [], set(), set()
         for m in matches:
-            try:
-                t, r = int(m["today"]), int(m["registry"])
-            except Exception:
+            if not isinstance(m, dict):
                 continue
-            if not (0 <= t < len(picked) and 0 <= r < len(active_events)):
+            t = _model_index(m.get("today"), len(picked))
+            r = _model_index(m.get("registry"), len(active_events))
+            if t is None or r is None:
                 continue
             if t in seen_today or r in seen_reg:
                 continue
@@ -4679,7 +4738,10 @@ def _allocate_same_day_event_ids(picked, entries, matched, reserved_ids, date_st
         for ordinal, index in enumerate(indexes, start=1):
             seed = descriptor if len(indexes) == 1 else \
                 f"{descriptor}|duplicate:{ordinal}"
-            digest = hashlib.sha1(seed.encode("utf-8")).hexdigest()[:6]
+            digest = hashlib.sha1(
+                seed.encode("utf-8"),
+                usedforsecurity=False,
+            ).hexdigest()[:6]
             event_id = f"evt-{date_token}-{digest}"
             collision = 0
             while event_id in used_ids:
@@ -5284,13 +5346,14 @@ def interest_fit(llm, profile_text, events, span=0.30):
         result = llm.json_call(FIT_SYSTEM, user)
         fits = result.get("fits", []) if isinstance(result, dict) else []
         for f_ in fits:
-            try:
-                i, fit = int(f_["idx"]), float(f_["fit"])
-            except Exception:
+            if not isinstance(f_, dict):
                 continue
-            if 0 <= i < len(events):
+            i = _model_index(f_.get("idx"), len(events))
+            fit = _model_number(f_.get("fit"))
+            if i is not None and fit is not None:
                 fit = max(0.0, min(10.0, fit))
-                events[i]["interest_mult"] = round(1.0 + (fit - 5.0) / 5.0 * span, 3)
+                events[i]["interest_mult"] = round(
+                    1.0 + (fit - 5.0) / 5.0 * span, 3)
         n = sum(1 for e in events if e.get("interest_mult", 1.0) != 1.0)
         log(f"  兴趣拟合：{n}/{len(events)} 个事件获得非中性乘数")
     except Exception as e:
@@ -5521,11 +5584,11 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
         source_by_id = {s["id"]: s for s in deep_sources}
         threshold = float(dcfg.get("pick_threshold", 7))
         for r in (result if isinstance(result, list) else []):
-            try:
-                i, score = int(r["idx"]), float(r["score"])
-            except Exception:
+            if not isinstance(r, dict):
                 continue
-            if 0 <= i < len(candidates):
+            i = _model_index(r.get("idx"), len(candidates))
+            score = _model_number(r.get("score"))
+            if i is not None and score is not None:
                 sid = candidates[i].get("source_id")
                 metrics = score_stats.setdefault(
                     sid, {"scored": 0, "topic_matched": 0, "above_threshold": 0})
@@ -5550,7 +5613,10 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
             used.add(i)
             c = candidates[i]
             deep_item = {
-                "id": "deep-" + hashlib.sha1(c["url"].encode("utf-8")).hexdigest()[:8],
+                "id": "deep-" + hashlib.sha1(
+                    c["url"].encode("utf-8"),
+                    usedforsecurity=False,
+                ).hexdigest()[:8],
                 "title": c["title"],
                 "title_zh": str(r.get("title_zh") or c["title"])[:40],
                 "url": c["url"],
@@ -5690,11 +5756,11 @@ def papers_channel(llm, cfg, date_str, profile_text=""):
 
         scored = []
         for r in (result if isinstance(result, list) else []):
-            try:
-                i, score = int(r["idx"]), float(r["score"])
-            except Exception:
+            if not isinstance(r, dict):
                 continue
-            if 0 <= i < len(candidates):
+            i = _model_index(r.get("idx"), len(candidates))
+            score = _model_number(r.get("score"))
+            if i is not None and score is not None:
                 scored.append((max(0.0, min(10.0, score)), i, r))
         threshold = float(pcfg.get("pick_threshold", 7))
         pick_max = int(pcfg.get("pick_max", 4))
@@ -5818,17 +5884,16 @@ def opinion_pulse(llm, cfg, pulse, profile_text=""):
         out, used = [], set()
         pick_max = int(ocfg.get("pick_max", 3))
         for r in (result if isinstance(result, list) else []):
-            try:
-                i = int(r["idx"])
-            except Exception:
-                continue
-            if not (0 <= i < len(cand)) or i in used or len(out) >= pick_max:
+            i = _model_index(r.get("idx"), len(cand)) if isinstance(r, dict) else None
+            if i is None or i in used or len(out) >= pick_max:
                 continue
             used.add(i)
             p = cand[i]
             out.append({
                 "id": "op-" + hashlib.sha1(
-                    (p["platform"] + p["word"]).encode("utf-8")).hexdigest()[:8],
+                    (p["platform"] + p["word"]).encode("utf-8"),
+                    usedforsecurity=False,
+                ).hexdigest()[:8],
                 "platform": p["platform"],
                 "word": p["word"],
                 "title": str(r.get("title") or p["word"])[:30],
@@ -6092,7 +6157,7 @@ def extract_vocab(llm, picked, items, seen_lemmas, cfg):
         if not lemma or lemma in seen_lemmas or lemma in used:
             continue
         k = r.get("item_id")
-        meta = idx_to_meta.get(k) if isinstance(k, int) else None
+        meta = idx_to_meta.get(k) if isinstance(k, int) and not isinstance(k, bool) else None
         if meta is None:   # LLM 漏填或填错编号：退化到第一条精选，避免丢词
             meta = next(iter(idx_to_meta.values()),
                         {"item_id": "", "item_title": "", "category": ""})
@@ -6251,11 +6316,18 @@ def backfill_all_scores(events, items, date_str):
     payload = json.loads(m.group(1))
     url_score = {}
     for ev in events:
-        sc = ev.get("score")
+        sc = _model_number(ev.get("score"))
         if sc is None:
             continue
         for i in ev.get("ids", []):
-            url_score[items[i]["url"].split("?")[0]] = round(sc)
+            if type(i) is not int or not 0 <= i < len(items):
+                continue
+            item = items[i]
+            if not isinstance(item, dict):
+                continue
+            url = str(item.get("url") or "").split("?")[0]
+            if url:
+                url_score[url] = round(sc)
     n = 0
     for r in payload.get("items", []):
         sc = url_score.get((r.get("u") or "").split("?")[0])
@@ -7316,7 +7388,8 @@ def update_source_health(fetch_stats, date_str, events=None, picked=None, items=
         return {
             items[index].get("source_id")
             for index in event.get("ids", [])
-            if isinstance(index, int) and 0 <= index < len(items)
+            if isinstance(index, int) and not isinstance(index, bool)
+            and 0 <= index < len(items)
             and items[index].get("source_id")
         }
 
