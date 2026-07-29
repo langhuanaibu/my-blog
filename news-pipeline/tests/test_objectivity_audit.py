@@ -1622,3 +1622,101 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
         "title": len(long_values["title"]), "summary": 100, "why": 80, "context": 80,
         "significance": 70, "watch": 80, "detail": 800,
     }
+
+
+def _breakdown_invariant(quality):
+    """removed_fields 必须同时等于两个分项各自的和。"""
+    total = quality["removed_fields"]
+    return (sum(quality["removed_field_counts"].values()) == total
+            and sum(quality["removed_field_reasons"].values()) == total)
+
+
+def test_removed_field_breakdown_attributes_audit_removals_by_field_and_reason():
+    items = [source_item(title="检方提交起诉书", desc="Reuters 报道检方提交了起诉书。",
+                         source="Reuters", source_id="reuters")]
+    event = enriched_event(title="被告已经犯罪")
+    event["risk_flags"] = {"allegation_legal": True}
+    first = all_pass(event)
+    first["fields"]["title"] = False
+    again = all_pass(event)
+    again["fields"]["title"] = False
+    audit = QueueLLM([first, {"fields": {"title": "检方提交起诉书"}, "claims": []}, again])
+    quality = dn.new_quality_stats()
+
+    dn.audit_enrichment_support(audit, [event], items, quality, secondary=[])
+
+    # 降级会剥掉全部扩展字段，分项必须逐个记到字段名上，原因全是审计判不支持。
+    assert all(field not in event for field in dn.QUALITY_EXTENSION_FIELDS)
+    assert quality["removed_field_counts"] == {field: 1 for field in dn.QUALITY_EXTENSION_FIELDS}
+    assert quality["removed_field_reasons"]["audit_unsupported"] == quality["removed_fields"]
+    assert _breakdown_invariant(quality)
+
+
+def test_removed_field_breakdown_separates_evidence_copies_from_audit_removals():
+    # 直抄判定对 detail 要求 80、claims 要求 60 个规范化字符，证据必须够长。
+    body = "OpenAI 今日发布了新一代模型并同步公布了完整评测结果" * 5
+    item = source_item(desc=body)
+    item["evidence_basis"] = "fulltext"  # 直抄检测只对全文证据生效
+    event = enriched_event()
+    # 让 detail 与 claim 逐字照抄证据原文，触发直抄剥离而不是审计判定。
+    event["detail"] = body
+    event["claims"] = [{"text": body, "kind": "fact", "sources": ["OpenAI"]}]
+    quality = dn.new_quality_stats()
+
+    dn.sanitize_objectivity_event(event, [item], quality)
+
+    assert "detail" not in event and "claims" not in event
+    assert quality["removed_field_reasons"] == {
+        "evidence_copy": quality["removed_fields"], "audit_unsupported": 0,
+        "claim_unsupported": 0}
+    assert quality["removed_field_counts"]["detail"] == 1
+    assert quality["removed_field_counts"]["claims"] == 1
+    assert _breakdown_invariant(quality)
+
+
+ENGLISH_DESC = "A new field report shows how scientists use AI coding agents to modernize legacy code."
+CHINESE_DESC = "微软开源 4B 参数的 Mage-VL 与 Mage-Flow 模型，分别用于图像理解和图像编辑。"
+
+
+@pytest.mark.parametrize("desc,kept", [
+    (ENGLISH_DESC, False),
+    (CHINESE_DESC, True),
+    ("", False),
+    ("   ", False),
+])
+def test_fallback_summary_only_survives_when_the_source_blurb_reads_as_chinese(desc, kept):
+    assert bool(dn.readable_fallback_summary(desc)) is kept
+
+
+def test_secondary_item_drops_untranslated_blurb_instead_of_passing_it_off_as_a_summary():
+    items = [source_item("英文源条目", ENGLISH_DESC, "Guardian", "guardian")]
+    event = {"ids": [0], "category": "world", "title": "中文标题已由阶段 A 生成",
+             "dims": {name: 7 for name in dn.DIMS}, "score": 60, "tier": "T1"}
+
+    serialized = dn.event_to_item(event, items, "more")
+
+    # 次级不跑 enrich，摘要位只能回退到来源原文；英文原句不是我们写的摘要，宁可留空。
+    assert "summary" not in serialized
+    assert serialized["title"] == "中文标题已由阶段 A 生成"
+
+
+def test_secondary_item_keeps_a_chinese_source_blurb():
+    items = [source_item("中文源条目", CHINESE_DESC, "IT之家", "ithome")]
+    event = {"ids": [0], "category": "ai", "title": "微软开源 Mage 模型",
+             "dims": {name: 7 for name in dn.DIMS}, "score": 60, "tier": "T1"}
+
+    assert dn.event_to_item(event, items, "more")["summary"] == CHINESE_DESC[:100]
+
+
+@pytest.mark.parametrize("desc", [ENGLISH_DESC, CHINESE_DESC])
+def test_audit_projection_and_serialization_agree_on_the_fallback_summary(desc):
+    # _materialize_reader_projection 的契约就是「和 event_to_item 暴露的默认值完全一致」，
+    # 两边各改一处就会让审计去审一段永远不会发布的文字。
+    items = [source_item("条目", desc, "Source", "source")]
+    base = {"ids": [0], "category": "world", "title": "中文标题",
+            "dims": {name: 7 for name in dn.DIMS}, "score": 60, "tier": "T1"}
+    audited, serialized = dict(base), dict(base)
+
+    dn._materialize_reader_projection(audited, items)
+
+    assert audited.get("summary") == dn.event_to_item(serialized, items, "more").get("summary")

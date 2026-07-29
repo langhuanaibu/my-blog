@@ -51,6 +51,24 @@ export function sourceLinks(item) {
   return sources.map((source) => `<a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.name || "原文")}</a>`).join("");
 }
 
+// 事实源排前：先看事实、再看别人的判断，与详情页「事实先行」的区块顺序同一原则。
+const SOURCE_TYPE_ORDER = { 事实源: 0, 分析源: 1, 舆论源: 2 };
+
+function relatedLinks(item) {
+  const sources = item.sources?.length ? item.sources : (item.url ? [{ name: item.source || "原文", url: item.url }] : []);
+  const rows = sources.filter((source) => /^https?:\/\//i.test(source?.url || ""));
+  if (!rows.length) return "";
+  const ordered = rows
+    .map((source, index) => ({ source, index }))
+    .sort((a, b) => (SOURCE_TYPE_ORDER[a.source.type] ?? 9) - (SOURCE_TYPE_ORDER[b.source.type] ?? 9) || a.index - b.index);
+  return `<section class="detail-links"><h2 class="detail-sec-t">相关链接</h2><ul class="link-list">${ordered.map(({ source }) => {
+    let host = "";
+    try { host = new URL(source.url).hostname.replace(/^www\./, ""); } catch { host = ""; }
+    const type = Object.hasOwn(SOURCE_TYPE_ORDER, source.type) ? `<span class="tag src-type${source.type === "事实源" ? " t-fact" : ""}">${escapeHtml(source.type)}</span>` : "";
+    return `<li><a href="${safeUrl(source.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(source.name || host || "原文")}</a>${type}${host ? `<span class="link-host">${escapeHtml(host)}</span>` : ""}</li>`;
+  }).join("")}</ul></section>`;
+}
+
 export function actionButtons(item, options = {}) {
   const { personal = false, date = "", type = "news" } = options;
   if (!personal) return "";
@@ -264,7 +282,10 @@ function evidenceHtml(item) {
 export function renderDetail(item, type = "news", date = "", options = {}) {
   if (!item) return '<div class="empty">找不到这条内容（可能数据未加载）</div>';
   const title = item.title_zh || item.title;
-  const common = type !== "news" && (item.summary || item.brief) ? `<p class="detail-lede">${escapeHtml(item.summary || item.brief)}</p>` : "";
+  // news 也走 lede：摘要是详情页唯一 100% 有的字段，而搜索、周报引用、延续链接
+  // 这三条入口进来时读者没见过卡片，删掉就是纯丢信息。降级成无标题导语既去掉
+  // 与卡片的「重复区块」观感，又一个字不丢。
+  const common = (item.summary || item.brief) ? `<p class="detail-lede">${escapeHtml(item.summary || item.brief)}</p>` : "";
   const update = type === "news" && item.is_update ? `<div class="detail-update"><b>重大更新</b>${item.first_seen ? ` · 首次收录：${escapeHtml(item.first_seen)}` : ""}</div>` : "";
   let body = "";
   if (type === "news") {
@@ -272,10 +293,10 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
     const contextText = recapData ? recapData.context : item.context;
     const contextLabel = item.trusted_continuation === true ? "来龙" : "起因";
     const context = contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">${contextLabel}</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
-    const summaryPart = item.summary ? `<section data-trajectory="current"><h2 class="detail-sec-t">AI 摘要</h2><p class="detail-lede">${escapeHtml(item.summary)}</p></section>` : "";
     const whyPart = item.why ? `<section data-trajectory="why"><h2 class="detail-sec-t">为什么重要</h2><div class="kv why">${escapeHtml(item.why)}</div></section>` : "";
     const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">正文</h2><div class="detail-body"><p>${escapeHtml(item.detail)}</p></div></section>` : "";
-    const current = `${summaryPart}${whyPart}${bodyPart}`;
+    // 事实先行：正文在判断之前。摘要已由 lede 承担，这里不再重复。
+    const current = `${bodyPart}${whyPart}`;
     const recap = recapData ? `<div class="trajectory-recap recap-${recapData.status}"><span>走向回对 · ${recapData.status}</span>${escapeHtml(recapData.text)}</div>` : "";
     const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";
     const significance = item.significance ? `<section data-trajectory="significance"><h2 class="detail-sec-t">对我的意义</h2><div class="kv">${escapeHtml(item.significance)}</div></section>` : "";
@@ -284,7 +305,8 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;
   const head = type === "news" ? `${detailMeta(item)}${primarySourceLink(item)}` : "";
-  return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${head}${common}${update}${body}<div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type })}</article>`;
+  const sources = type === "news" ? relatedLinks(item) : `<div class="srcs">${sourceLinks(item)}</div>`;
+  return `<article class="detail-wrap reading-view"><a class="dback" href="${routeUrl({ view: "reports", period: "day", date })}" data-route>← 返回 ${escapeHtml(date)} 当日</a><h1 class="detail-title">${escapeHtml(title)}</h1>${head}${common}${update}${body}${sources}${actionButtons(item, { ...options, date, type })}</article>`;
 }
 
 function refLink(ref, title) { const [date, ...rest] = String(ref || "").split(":"); const item = rest.join(":"); if (!date || !item) return ""; const type = item.startsWith("deep-") ? "deep" : item.startsWith("paper-") ? "paper" : "news"; return `<a data-ref="${escapeHtml(ref)}" href="${routeUrl({ view: "detail", date, type, item })}" data-route>${escapeHtml(title || ref)}</a>`; }

@@ -74,6 +74,9 @@ DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
 QUALITY_NEUTRAL_EVIDENCE = 5.0
 QUALITY_EXTENSION_FIELDS = ("why", "context", "significance", "watch", "detail", "claims")
 OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "significance", "watch", "detail")
+# 读者可见字段被删掉的三种原因。分项计数只为回答「详情页的空块是闸门删的还是
+# 生成端没写」，不改任何判定。
+REMOVAL_REASONS = ("evidence_copy", "audit_unsupported", "claim_unsupported")
 GENERATED_TITLE_MAX_CHARS = 120
 SOURCE_TITLE_MAX_CHARS = 300
 OBJECTIVITY_FIELD_LIMITS = {
@@ -168,8 +171,28 @@ def new_quality_stats():
         "high_risk_demoted": 0,
         "cause_evidence_rejected": 0,
         "cause_speculation_rejected": 0,
+        # removed_fields 的两维分项：按字段名、按删除原因。总数仍以 removed_fields
+        # 为准，两个分项之和必须与它相等——诊断用，不参与任何判定或验收门。
+        "removed_field_counts": {field: 0 for field in QUALITY_EXTENSION_FIELDS},
+        "removed_field_reasons": {reason: 0 for reason in REMOVAL_REASONS},
         "degraded": False,
     }
+
+
+def count_removed_field(quality, field, reason):
+    """Increment the removal total together with both breakdown dimensions.
+
+    Going through one helper is what keeps ``removed_fields`` equal to the sum of
+    either breakdown; incrementing the total by hand anywhere would break that.
+    """
+    quality["removed_fields"] = int(quality.get("removed_fields", 0)) + 1
+    for key, bucket in (("removed_field_counts", field),
+                        ("removed_field_reasons", reason)):
+        counts = quality.get(key)
+        if not isinstance(counts, dict):
+            counts = {}
+            quality[key] = counts
+        counts[bucket] = int(counts.get(bucket, 0)) + 1
 
 
 def log(msg):
@@ -3471,6 +3494,21 @@ def _clip_objectivity_field(field, value):
     return normalized[:OBJECTIVITY_FIELD_LIMITS[field]]
 
 
+def readable_fallback_summary(desc):
+    """Return the source blurb only when it reads as Chinese, else nothing.
+
+    次级条目不跑 enrich，摘要只能回退到来源原文。英文源的原文照抄放进摘要位，读
+    起来像是我们写的中文摘要，实际是没翻译的外语原句——`CONTEXT.md` 的「次级」本
+    就定义为只以标题形式呈现，宁可留空。实测 231 条次级摘要里中文最低占比 0.22、
+    英文全为 0.00，0.1~0.2 之间没有样本，阈值取在这个空档正中。
+    """
+    text = str(desc or "").strip()[:100]
+    if not text:
+        return ""
+    chinese = sum(1 for character in text if "一" <= character <= "鿿")
+    return text if chinese / len(text) >= 0.15 else ""
+
+
 def select_reader_title(candidate, source_title):
     """Keep complete generated titles and fall back instead of slicing them."""
     generated = str(candidate or "").strip()
@@ -3565,11 +3603,11 @@ def sanitize_objectivity_event(event, items=None, quality=None):
         if field in event and _is_direct_evidence_copy(
                 field, event.get(field), evidence_texts):
             event.pop(field, None)
-            quality["removed_fields"] = int(quality.get("removed_fields", 0)) + 1
+            count_removed_field(quality, field, "evidence_copy")
     kept_claims = []
     for claim in event.get("claims") or []:
         if _is_direct_evidence_copy("claims", claim.get("text"), evidence_texts):
-            quality["removed_fields"] = int(quality.get("removed_fields", 0)) + 1
+            count_removed_field(quality, "claims", "evidence_copy")
             continue
         kept_claims.append(claim)
     if kept_claims:
@@ -3711,7 +3749,7 @@ SUPPORT_AUDIT_SYSTEM = """你是新闻事实支撑质检员。原始报道是唯
 def _remove_extension(event, field, quality):
     if field in event:
         event.pop(field, None)
-        quality["removed_fields"] += 1
+        count_removed_field(quality, field, "audit_unsupported")
 
 
 def _strip_extensions(event, quality):
@@ -3778,7 +3816,7 @@ def audit_enrichment_support_interim(llm, picked, items, quality=None):
                     and claim_sources and set(claim_sources).issubset(valid_sources)):
                 kept.append(claim)
             else:
-                quality["removed_fields"] += 1
+                count_removed_field(quality, "claims", "claim_unsupported")
         if kept:
             event["claims"] = kept
         else:
@@ -3889,7 +3927,9 @@ def _materialize_reader_projection(event, items):
     if "title" not in event:
         event["title"] = primary.get("title", "")
     if "summary" not in event:
-        event["summary"] = str(primary.get("desc") or "")[:100]
+        fallback = readable_fallback_summary(primary.get("desc"))
+        if fallback:
+            event["summary"] = fallback
     return event
 
 
@@ -4832,7 +4872,8 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
 
     entries = [
         _registry_history_entry(
-            event, date_str, cfg, items, "pick", event.get("summary", ""))
+            event, date_str, cfg, items, "pick",
+            event.get("summary") or event.get("title", ""))
         for event in picked
     ]
     new_event_ids = _allocate_same_day_event_ids(
@@ -5924,7 +5965,9 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
     primary = items[sorted_ids[0]]
     ev["title"] = select_reader_title(ev.get("title"), primary["title"])
     if "summary" not in ev:
-        ev["summary"] = primary["desc"][:100]
+        fallback = readable_fallback_summary(primary["desc"])
+        if fallback:
+            ev["summary"] = fallback
     if full_objectivity:
         sanitize_objectivity_event(ev, items)
     sources = []
@@ -5949,7 +5992,7 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         "tier": tier,
         "category": ev["category"],
         "title": ev.get("title", primary["title"]),
-        "summary": ev.get("summary", primary["desc"][:100]),
+        **({"summary": ev["summary"]} if ev.get("summary") else {}),
         "status": ev.get("status", ""),
         "tags": ev.get("tags", []),
         **({"why": ev["why"]} if ev.get("why") else {}),
@@ -6357,6 +6400,21 @@ def validate_daily_payload(payload):
                 not isinstance(value, int) or isinstance(value, bool) or value < 0):
             errors.append(
                 "quality.enrichment_audited_events must be a non-negative integer")
+        # 分项与总数对不上说明埋点漏了或重复计数，诊断数据不可用——阻断发布比事后
+        # 发现一周的分项是错的便宜。缺失仍然合法：本次之前的日报没有这两个键。
+        for field, allowed in (("removed_field_counts", QUALITY_EXTENSION_FIELDS),
+                               ("removed_field_reasons", REMOVAL_REASONS)):
+            counts = quality.get(field)
+            if counts is None:
+                continue
+            if not isinstance(counts, dict) or set(counts) != set(allowed) or any(
+                    not isinstance(value, int) or isinstance(value, bool) or value < 0
+                    for value in counts.values()):
+                errors.append(
+                    f"quality.{field} must map {'/'.join(allowed)} to non-negative integers")
+            elif sum(counts.values()) != quality.get("removed_fields"):
+                errors.append(
+                    f"quality.{field} must sum to quality.removed_fields")
         for field in (
                 "duplicate_audited_events", "same_day_duplicates_merged",
                 "duplicate_audit_failures", "same_day_candidate_pairs",

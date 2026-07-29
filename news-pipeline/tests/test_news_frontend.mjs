@@ -334,14 +334,29 @@ test("详情保留完整扩展字段", () => {
   for (const text of ["背景机制", "对我的意义", "后续关注", "长叙述", "事实"]) assert.match(html, new RegExp(text));
 });
 
-test("新闻详情按来龙摘要意义正文走向和对我的意义组织阅读顺序", () => {
+test("新闻详情事实先行：来龙正文为什么重要走向和对我的意义", () => {
   const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true }, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "why", "body", "watch", "significance"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "AI 摘要", "为什么重要", "正文", "走向", "对我的意义"]);
-  assert.match(sections[1].textContent, /摘要/);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch", "significance"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "正文", "为什么重要", "走向", "对我的意义"]);
+  assert.match(sections[1].textContent, /长叙述/);
   assert.match(sections[2].textContent, /为什么重要/);
-  assert.match(sections[3].textContent, /长叙述/);
+});
+
+test("新闻详情把摘要放在标题下的无标题导语里而不是独立区块", () => {
+  const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
+  const lede = doc.querySelector(".detail-lede");
+  assert.match(lede?.textContent || "", new RegExp(daily.items[0].summary));
+  // 摘要不再占章节标题，但必须仍然显示——搜索、周报引用和延续链接这三条入口
+  // 进详情页时读者没见过卡片，删掉就是纯丢信息。
+  assert.equal(doc.querySelector(".detail-trajectory > section")?.dataset.trajectory !== "current", true);
+  assert.doesNotMatch(doc.body.textContent, /AI 摘要/);
+});
+
+test("只有摘要的次级条目详情页仍有正文可读", () => {
+  const item = { id: "more-1", title: "次级条目", summary: "只有摘要的次级条目", sources: daily.items[0].sources };
+  const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
+  assert.match(doc.querySelector(".detail-lede")?.textContent || "", /只有摘要的次级条目/);
 });
 
 test("详情把末尾格式完整的四种走向回对独立显示", () => {
@@ -382,7 +397,7 @@ test("一次性条目的前情标为起因而不是来龙", () => {
 test("起因占据来龙同一槽位并保持阅读顺序", () => {
   const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "current", "why", "body", "watch", "significance"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch", "significance"]);
   assert.equal(sections[0].querySelector("h2")?.textContent, "起因");
 });
 
@@ -397,8 +412,25 @@ test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序",
   const item = { ...daily.items[0], context: "", watch: "", significance: "" };
   const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["current", "why", "body"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["AI 摘要", "为什么重要", "正文"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["body", "why"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["正文", "为什么重要"]);
+});
+
+test("新闻详情把来源列成相关链接并把事实源排在判断源之前", () => {
+  const item = {
+    ...daily.items[0],
+    sources: [
+      { name: "评论员专栏", url: "https://opinion.example.com/a", type: "舆论源" },
+      { name: "官方公告", url: "https://www.official.example.org/b", type: "事实源" },
+      { name: "行业分析", url: "https://analysis.example.net/c", type: "分析源" },
+    ],
+  };
+  const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
+  const rows = [...doc.querySelectorAll(".detail-links .link-list li")];
+  assert.deepEqual(rows.map((node) => node.querySelector(".src-type")?.textContent), ["事实源", "分析源", "舆论源"]);
+  assert.deepEqual(rows.map((node) => node.querySelector(".link-host")?.textContent),
+    ["official.example.org", "analysis.example.net", "opinion.example.com"]);
+  assert.ok(rows[0].querySelector(".src-type")?.classList.contains("t-fact"));
 });
 
 test("新闻详情以可用证据概览区分发布源、独立链、证据基础与降级状态", () => {
