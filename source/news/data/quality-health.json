@@ -6,7 +6,8 @@
       "audited_events": 33,
       "split_events": 12,
       "removed_fields": 40,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 23
     },
     {
       "date": "2026-07-17",
@@ -16,7 +17,8 @@
       "cross_day_duplicates": 1,
       "material_updates": 1,
       "update_judge_failures": 0,
-      "degraded": false
+      "degraded": false,
+      "enrichment_audited_events": 24
     },
     {
       "date": "2026-07-18",
@@ -26,7 +28,8 @@
       "cross_day_duplicates": 3,
       "material_updates": 3,
       "update_judge_failures": 0,
-      "degraded": false
+      "degraded": false,
+      "enrichment_audited_events": 24
     },
     {
       "date": "2026-07-19",
@@ -36,7 +39,8 @@
       "cross_day_duplicates": 21,
       "material_updates": 0,
       "update_judge_failures": 0,
-      "degraded": false
+      "degraded": false,
+      "enrichment_audited_events": 24
     },
     {
       "date": "2026-07-20",
@@ -46,7 +50,8 @@
       "cross_day_duplicates": 1,
       "material_updates": 1,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 20
     },
     {
       "date": "2026-07-21",
@@ -56,7 +61,8 @@
       "cross_day_duplicates": 2,
       "material_updates": 2,
       "update_judge_failures": 0,
-      "degraded": false
+      "degraded": false,
+      "enrichment_audited_events": 32
     },
     {
       "date": "2026-07-22",
@@ -66,7 +72,8 @@
       "cross_day_duplicates": 29,
       "material_updates": 8,
       "update_judge_failures": 0,
-      "degraded": false
+      "degraded": false,
+      "enrichment_audited_events": 27
     },
     {
       "date": "2026-07-23",
@@ -79,7 +86,8 @@
       "degraded": true,
       "duplicate_audited_events": 40,
       "same_day_duplicates_merged": 9,
-      "duplicate_audit_failures": 0
+      "duplicate_audit_failures": 0,
+      "enrichment_audited_events": 25
     },
     {
       "date": "2026-07-24",
@@ -92,7 +100,8 @@
       "cross_day_duplicates": 2,
       "material_updates": 3,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 36
     },
     {
       "date": "2026-07-25",
@@ -105,7 +114,8 @@
       "cross_day_duplicates": 4,
       "material_updates": 2,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 34
     },
     {
       "date": "2026-07-26",
@@ -118,7 +128,8 @@
       "cross_day_duplicates": 1,
       "material_updates": 0,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 28
     },
     {
       "date": "2026-07-27",
@@ -131,7 +142,8 @@
       "cross_day_duplicates": 95,
       "material_updates": 3,
       "update_judge_failures": 0,
-      "degraded": true
+      "degraded": true,
+      "enrichment_audited_events": 21
     },
     {
       "date": "2026-07-28",
@@ -153,13 +165,42 @@
       "llm_cached_input_tokens": 46720,
       "llm_output_tokens": 62061,
       "llm_cost_usd": 0.175,
+      "llm_cost_known": true,
+      "enrichment_audited_events": 36
+    },
+    {
+      "date": "2026-07-29",
+      "audited_events": 36,
+      "split_events": 12,
+      "removed_fields": 70,
+      "enrichment_audited_events": 32,
+      "duplicate_audited_events": 279,
+      "same_day_duplicates_merged": 52,
+      "duplicate_audit_failures": 0,
+      "same_day_candidate_pairs": 488,
+      "same_day_bridge_batches": 14,
+      "same_day_reconcile_calls": 20,
+      "same_day_deferred_batches": 1,
+      "same_day_budget_exhausted": true,
+      "event_lines_audited": 20,
+      "event_lines_merged": 2,
+      "event_line_audit_failures": 0,
+      "cross_day_duplicates": 55,
+      "material_updates": 3,
+      "update_judge_failures": 0,
+      "degraded": true,
+      "llm_calls": 123,
+      "llm_input_tokens": 304818,
+      "llm_cached_input_tokens": 28032,
+      "llm_output_tokens": 70824,
+      "llm_cost_usd": 0.0587,
       "llm_cost_known": true
     }
   ],
   "summary": {
-    "days": 13,
-    "audited_events": 472,
-    "split_events": 243,
-    "split_rate": 0.5148
+    "days": 14,
+    "audited_events": 508,
+    "split_events": 255,
+    "split_rate": 0.502
   }
 }
