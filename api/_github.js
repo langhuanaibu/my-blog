@@ -6,6 +6,7 @@ const COVER_MAP_PATH = 'source/_data/category-covers.json';
 const FALLBACK_COVER = '/images/covers/defaults/fallback.webp';
 const ADMIN_SESSION_COOKIE = 'aoiblog_admin_session';
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const DEFAULT_JSON_BODY_BYTES = 1024 * 1024;
 
 function setCors(res) {
   // 管理接口仅允许同源调用；不返回 Allow-Origin，避免第三方站点探测认证状态。
@@ -212,17 +213,51 @@ async function putTextFilesAtomic(files, message, options = {}) {
   return commit;
 }
 
-async function readJsonBody(req) {
-  if (req.body && typeof req.body === 'object') return req.body;
-  if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
+function parseJsonBody(raw) {
+  try {
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    throw createHttpError(400, 'Invalid JSON body');
+  }
+}
+
+function assertJsonBodySize(value, maxBytes) {
+  let serialized;
+  try {
+    serialized = typeof value === 'string' ? value : JSON.stringify(value);
+  } catch {
+    throw createHttpError(400, 'Invalid JSON body');
+  }
+  if (Buffer.byteLength(serialized || '', 'utf8') > maxBytes) {
+    throw createHttpError(413, 'JSON body too large');
+  }
+}
+
+async function readJsonBody(req, maxBytes = DEFAULT_JSON_BODY_BYTES) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes <= 0) {
+    throw new TypeError('maxBytes must be a positive safe integer');
+  }
+  if (req.body && typeof req.body === 'object') {
+    assertJsonBodySize(req.body, maxBytes);
+    return req.body;
+  }
+  if (typeof req.body === 'string') {
+    assertJsonBodySize(req.body, maxBytes);
+    return parseJsonBody(req.body);
+  }
 
   const chunks = [];
+  let totalBytes = 0;
   for await (const chunk of req) {
+    totalBytes += Buffer.byteLength(chunk);
+    if (totalBytes > maxBytes) {
+      throw createHttpError(413, 'JSON body too large');
+    }
     chunks.push(chunk);
   }
 
   const raw = Buffer.concat(chunks).toString('utf8');
-  return raw ? JSON.parse(raw) : {};
+  return parseJsonBody(raw);
 }
 
 async function listDirectory(dirPath) {

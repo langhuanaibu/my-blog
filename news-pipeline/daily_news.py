@@ -7218,7 +7218,7 @@ def xml_esc(s):
 
 def _cdata(s):
     # CDATA 内唯一的禁忌是 "]]>"
-    return "<![CDATA[" + str(s or "").replace("]]>", "]]&gt;") + "]]>"
+    return "<![CDATA[" + str(s or "").replace("]]>", "]]]]><![CDATA[>") + "]]>"
 
 
 def _rfc822(iso, fallback):

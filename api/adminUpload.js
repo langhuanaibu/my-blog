@@ -96,7 +96,8 @@ module.exports = async (req, res) => {
 
   try {
     requireAdmin(req);
-    const body = await readJsonBody(req);
+    // 8 MiB 二进制编码成 data URL 后约 10.7 MiB；请求体仍需有明确上限。
+    const body = await readJsonBody(req, 12 * 1024 * 1024);
     const upload = parseUpload(body);
     const filePath = destination(upload);
     await putBase64File(filePath, upload.base64, `upload image: ${filePath.split('/').pop()}`);

@@ -63,6 +63,27 @@ test("personal-session authentication accepts a signed cookie without granting b
   });
 });
 
+test("JSON body reader rejects malformed and oversized pre-parsed bodies", async () => {
+  await assert.rejects(
+    github.readJsonBody({ body: '{"broken"' }),
+    (error) => error.status === 400 && error.message === "Invalid JSON body",
+  );
+  await assert.rejects(
+    github.readJsonBody({ body: { value: "x".repeat(32) } }, 16),
+    (error) => error.status === 413 && error.message === "JSON body too large",
+  );
+  const streamed = {
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from('{"value":"');
+      yield Buffer.from("x".repeat(32));
+    },
+  };
+  await assert.rejects(
+    github.readJsonBody(streamed, 16),
+    (error) => error.status === 413 && error.message === "JSON body too large",
+  );
+});
+
 test("malformed personal-session cookies are rejected as unauthorized", async () => {
   await withRepoEnv(async () => {
     const req = {

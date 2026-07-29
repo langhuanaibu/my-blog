@@ -1135,6 +1135,12 @@ try:
     import xml.dom.minidom
     xml.dom.minidom.parseString(feed)
     check("feed是合法XML", True)
+    cdata = xml.dom.minidom.parseString(
+        f"<value>{dn._cdata('before ]]> after')}</value>")
+    check("feed CDATA 保留分隔符文本",
+          cdata.documentElement.firstChild.data
+          + cdata.documentElement.firstChild.nextSibling.data
+          == "before ]]> after")
 
     # --- update_search_index ---
     cfg3 = {"search_index_days": 180}

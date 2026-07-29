@@ -688,11 +688,12 @@ deep_sources:
     channel: tech_business
     enabled: true
 
-  # ---------- 第二阶段：晚点长报道（暂缓，对方 TLS 证书过期） ----------
+  # ---------- 第二阶段：晚点长报道（暂缓，对方 TLS 信任链不完整） ----------
   # 阮一峰数据门已于 2026-07-26 判定通过（07-13~07-25 deep_health 零抓取失败、
   # 全链路跑通），tech_business 观察位已释放，本源本应接替进入观察期。
-  # 但 2026-07-26 实测 www.latepost.com 证书已过期（SEC_E_CERT_EXPIRED），
-  # 适配器 100% 抓取失败。不得为此关闭证书校验；待对方续期后复测再启用。
+  # 2026-07-29 对方已续期叶子证书，但 Python requests 使用项目锁定的
+  # certifi 2026.6.17 仍因 Root YR 信任链无法闭合而抓取失败。不得关闭证书
+  # 校验或私自附带站点证书；待标准 CA 包可验证后复测再启用。
   - id: latepost
     name: 晚点 LatePost
     type: latepost
