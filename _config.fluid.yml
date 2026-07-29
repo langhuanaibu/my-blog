@@ -15,6 +15,11 @@ navbar:
 search:
   enable: true
 
+fun_features:
+  typing:
+    # 文章标题必须立即完整可见；其余页面继续沿用 Fluid 的打字效果
+    scope: [home, archives, categories, tags, about, links, page, 404]
+
 index:
   banner_img: /images/img_1774022028502.png
   banner_img_height: 80
@@ -42,7 +47,7 @@ post:
     post_order_by: "date"
   meta:
     author:
-      enable: true
+      enable: false
     date:
       enable: true
     wordcount:
