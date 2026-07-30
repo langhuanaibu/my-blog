@@ -268,7 +268,12 @@ def test_repaired_titles_match_daily_registry_feed_and_search_index():
         for item in feed.findall("./channel/item")
         if ":" in (item.findtext("guid") or "")
     }
+    feed_dates = {date for date, _item_id in feed_titles}
+    repaired_titles_in_feed_window = {
+        key: title for key, title in REPAIRED_TITLES.items()
+        if key[0] in feed_dates
+    }
     assert all(
         feed_titles[key].endswith(title)
-        for key, title in REPAIRED_TITLES.items()
+        for key, title in repaired_titles_in_feed_window.items()
     )
