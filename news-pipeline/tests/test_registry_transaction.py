@@ -285,8 +285,15 @@ def test_post_trajectory_sanitization_matches_registry_and_public_watch(monkeypa
 
     monkeypatch.setattr(dn, "sanitize_objectivity_event", sanitize)
     cfg = {"events": {}, "_objectivity_runtime_mode": "active"}
+    trajectory = _trajectory_result()
+    trajectory["trajectories"][0]["watch_detail"] = (
+        "若企业席位继续增长，下一份采用报告是首个路标，"
+        "还需观察企业续约与扩容披露。")
+    audit = _trajectory_audit(fields={
+        "context": True, "watch": True, "watch_detail": True,
+    })
     prepared = dn.prepare_registry_transaction(
-        TrajectoryLLM(_trajectory_result(), _trajectory_audit()),
+        TrajectoryLLM(trajectory, audit),
         _trajectory_registry(), picked, "2026-07-21", cfg,
         items=_source_items())
     public = dn.event_to_item(

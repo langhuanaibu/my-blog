@@ -10,24 +10,24 @@
 
 活动 provider 已从 StepFun 切回 DeepSeek：StepFun 实验 Run #30346999214 在正常新闻阶段 A 触发 HTTP 451，不能作为生产回退；DeepSeek 的 45 条夹具三轮门（Run #30349424143）和 validate（Run #30350219791）已经通过。2026-07-30 的有效 publish（Run #30501045287）在上一共享运行时指纹下记录为选材 1/7、轨迹 1/5、enrich 0/5、客观性 shadow 1/7、信源指标 1/14；enrich 因文字抽样待人工复核而冻结。
 
-当前 HEAD 另含尚未进入有效 publish 的 LLM 用量计量和发布 URL 校验变更，两者都会改变共享运行时指纹。因此**下一次成功 publish 才是当前代码的五门新起点**；07-30 的计数只保留为历史快照，不得继续累计，也不得据旧指纹推算收口日期。新 publish 后的状态与计数只以 GitHub Issue #15 为准。
+当前 HEAD 另含尚未进入有效 publish 的 LLM 用量计量、发布 URL 校验与详情深化变更。详情深化停用新闻 `significance`，新增 `watch_detail`，扩大全文 `context`／`detail` 合同并改变 `daily_news.py` 共享运行时指纹。因此**下一次成功 publish 才是当前代码的五门新起点**；07-30 的计数只保留为历史快照，不得继续累计，也不得据旧指纹推算收口日期。选材 7 个有效日、轨迹 5 个有效日、enrich 5 个有效日、客观性 shadow 7 个有效日、信源指标 14 个有效日全部重新累计，新 publish 后的状态与计数只以 GitHub Issue #15 为准。
 
-删除字段分项诊断（`removed_field_counts` / `removed_field_reasons`）已从 2026-07-30 开始产出；需积累 3-5 个同指纹有效日后，才能用于判断「空块是闸门删的还是生成端没写」，在此之前不得据此调整闸门或 enrich 提示词。
+删除字段分项诊断（`removed_field_counts` / `removed_field_reasons`）已从 2026-07-30 开始产出；旧记录按 v1 读取并允许 `significance`，新记录写 v2（字段增加 `watch_detail`、移除 `significance`，原因增加 `generation_invalid`），历史不回写。需积累 3-5 个同指纹有效日后，才能用于判断「空块是闸门删的还是生成端没写」，在此之前不得据此调整闸门或 enrich 提示词。
 
 - `pass` 仅让对应门 +1，`neutral` / `needs_review` 冻结对应时钟。`fail` 只清零**连续型**门（选材、轨迹、客观性 shadow）；**累计型**门（enrich、信源指标）只统计有效日，缺数据的一天冻结而不清零。
 - **共享运行时指纹变化重置全部五门**——样本构成变了，变更前后的证据不得混用；仅轨迹 UI 指纹变化只重置轨迹门。观察期内冻结这些范围，必要变更按所属阶段重计。
 - 同一北京日期重跑只更新当日台账，不增加日数；任一次发布失败都使当日各门按失败处理，后续成功重跑不覆盖。前一日完全没有台账记录时，`Rollout Heartbeat` 补一条 `neutral` 缺口行——冻结全部门，不计入也不清零。初验、Judge 或台账异常只告警，不阻断发布、不自动回滚。
 - 选材 7 日和轨迹 5 日都达标后只标记「待人工最终确认」，不自动关闭 #15 或 #10，也不替代下列 enrich、客观性和信源观察门。
 - 云端 `rollout-review` 现已一次性记录**五门**：选材、轨迹、enrich 安全指标、客观性 shadow、信源指标。仍需人工执行的只剩 enrich 的三项**文字质量**判断（管线会把每日确定性抽样 id 传入台账，人工用 `Rollout Manual Review` 回填 `samples_passed` / `samples_total`）；修复前台账中缺失的抽样清单不能反推或补算人工通过率。45 条客观性夹具使用独立的、仅限 `main` 的手动 `Objectivity Acceptance` workflow，不属于每日自动台账。
-- `objectivity.mode` 继续保持 `interim`。客观性 Judge 已增加非法批次递归拆分、单条重试和每轮 60 次调用预算；只有真实三轮同时满足红线 0、标签一致性至少 90%、归因至少 95%、结构 100%，并完成 7 日 shadow 观察，才获得 active 人工评审资格，不自动切换公开模式。
+- `objectivity.mode` 继续保持 `interim`。详情深化的长内容只在 shadow 中生成，公开路径只立即停用“对我的意义”、显示“现状”并启用安全段落渲染。客观性 Judge 已增加非法批次递归拆分、单条重试和每轮 60 次调用预算；详情合同变化后必须重新执行 45 条夹具三轮验收，任一 `max_tokens` 截断均按失败处理，成本告警必须先查明原因才可人工接受。夹具三轮和 7 日 shadow 均通过后才获得 active 人工评审资格，不自动切换公开模式。
 - 同日事件初次归并与发布前复核共享每次运行最多 20 次 LLM 调用；耗尽后仅合并共享同一原始条目的确定性重复，其余保留并告警。候选对数、桥接批次数、调用数、延后批次数和预算耗尽状态进入 `quality-health.json`，成本告警不阻断日报。
 
 ## 📅 enrich prompt 五日产出验收（待完成）
 
-2026-07-20 已启用按类目调整解释层次、七字段职责去重和“有来源证据才加深”的 prompt；API、数据 schema、评分、选材、信源、画像与 localStorage 合同未改。自动化回归只证明输入和合同正确，仍需连续 5 个产出日检查实际文字质量。
+详情深化后的 enrich 停用新闻 `significance`，将「现状」与「为什么重要」分开，全文模式增加详情走向及更深的来龙／起因与现状；公开 interim 仍保留短内容合同。自动化回归只证明输入和合同正确，仍需 5 个有效产出日检查实际文字质量。
 
 - 每天从每个有内容的类目抽 1 条，五天最多 25 条。
-- 每条分别检查：没有跨字段复述核心事实；至少包含一项由来源支持的深度增量；非 AI 类的必要术语、机构或背景可被聪明的外行理解。
+- 每条分别检查：没有跨字段复述；现状包含来源支持的深度增量；起因的片段可逐条回溯且完整因果语义成立；短走向与详情走向的关键变量、可观察路标语义一致；详情走向确有关键变量和可观察路标。非 AI 类的必要术语、机构或背景还应可被聪明的外行理解。
 - 至少 80% 样本同时通过当条适用项目。
 - 安全指标按 `removed_fields / enrichment_audited_events` 计算：分母是实际进入事实支撑/客观性审计的读者可见事件数；历史 interim 记录从同日日报 `stats.pick_count` 补全。只有窗口前最近 3 个有效新口径产出日齐全时才计算中位数基线，观察期不得超过基线的 1.2 倍；不足三日只记 `needs_review`，绝不回退到 `audited_events`。
 - 若未通过，只回退 enrich prompt 与类目输入格式，保留已验收的默认日报路由和操作菜单布局；最终生效事实继续以 `readme.md` 为准。
@@ -37,10 +37,10 @@
 
 2026-07-18 公开路径落地的是 **interim wording hotfix**，不是已验收的完整证据系统。
 
-**DeepSeek 当前运行时的 45-case / three-run 夹具门已于 2026-07-28 通过**（Run #30349424143，最差轮残留红线 0 /
-标签一致性 91.11% / 归因 100% / 结构 100%）。但 `--objectivity-shadow` 的 7-day 指标门
-**仍未通过**，人工评审也未进行，因此 **active mode is not enabled**，
-**live acceptance has not occurred**。夹具门通过只授予 active 的人工评审资格。
+DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28 通过（Run #30349424143），
+但详情合同和共享运行时指纹已经变化，该结果只保留为历史证据，当前运行时必须重新执行三轮。
+`--objectivity-shadow` 的 7-day 指标门也从新基线重计，人工评审尚未进行，因此
+**active mode is not enabled**，**live acceptance has not occurred**。夹具门通过只授予 active 的人工评审资格。
 详细行为见 `readme.md` 日报章节；标签接受集与安全边界的决策见 `docs/adr/0005-objectivity-label-accepted-sets.md`。
 
 - 每天保存 GitHub step summary 中的运行时间、全文/混合/摘要分布、抓取重试、
@@ -48,7 +48,7 @@
   `selected_after_audit`、`audited_candidate_count`、`demoted_from_selected` 和
   `source_reference_concentration`（按入审前精选的来源引用次数计算）。
 - 达标后只是获得 active 人工评审资格，不自动切换配置。
-- 选材改革或共享运行时指纹变化会改变 `selected_before_audit` 样本构成，因此 7-day 线上指标门从成本护栏的首个有效 DeepSeek shadow 产出重新计数；它不被选材 7 日或轨迹 5 日代替，45-case / three-run 固定夹具门已按当前 provider 单独重跑。
+- 选材改革或共享运行时指纹变化会改变 `selected_before_audit` 样本构成，因此 7-day 线上指标门从成本护栏的首个有效 DeepSeek shadow 产出重新计数；它不被选材 7 日或轨迹 5 日代替，45-case / three-run 固定夹具门也必须按当前运行时单独重跑。
 - `shadow_mode:auto` 在定时或显式 publish 中持续运行，直到客观性 7 日门和主管线信源 14 日门都完成，最长 14 个有效日；随后以 `accepted` 合法跳过，选材依赖视为满足，客观性与信源计数冻结。手动 validate 的 `auto` 默认跳过，只有 `force` 才运行，`skip` 始终跳过；台账查询失败时 publish 保守运行受成本上限保护的 shadow，手动 validate 仍跳过。
 
 ## 中文视角对冲源评估（待客观性验收后判）

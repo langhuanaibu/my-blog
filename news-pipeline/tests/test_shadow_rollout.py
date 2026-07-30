@@ -1233,7 +1233,7 @@ def test_production_harness_marks_validator_exceptions_as_invalid(monkeypatch):
 
 
 def test_objectivity_field_caps_apply_to_enrichment_repair_and_serialization():
-    limits = dn.OBJECTIVITY_FIELD_LIMITS
+    limits = dn.FULLTEXT_OBJECTIVITY_FIELD_LIMITS
     oversized = "oversized text " * 200
     event = {"ids": [0], **{field: "safe" for field in dn.OBJECTIVITY_FIELDS}}
 
@@ -1249,7 +1249,8 @@ def test_objectivity_field_caps_apply_to_enrichment_repair_and_serialization():
     assert event["title"] == "Safe source title"
     assert all(
         len(event[field]) <= limits[field]
-        for field in dn.OBJECTIVITY_FIELDS if field != "title")
+        for field in dn.OBJECTIVITY_FIELDS
+        if field != "title" and field in event)
 
     evidence_text = "FULLTEXT_SENTINEL_DO_NOT_PERSIST_" + ("z" * 900)
     item = {

@@ -8,6 +8,16 @@ const MISS_REASON_LABELS = { important_event: "重要事件", deep_read: "值得
 export const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 export const safeUrl = (value) => /^https?:\/\//i.test(value || "") ? escapeHtml(value) : "#";
 
+function detailParagraphs(value) {
+  return String(value ?? "")
+    .replace(/\r\n?/g, "\n")
+    .split(/\n\s*\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join("");
+}
+
 function annualIssue(date) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date || "");
   if (!match) return "";
@@ -296,15 +306,16 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
     const recapData = item.trusted_continuation === true ? trajectoryRecap(item.context) : null;
     const contextText = recapData ? recapData.context : item.context;
     const contextLabel = item.trusted_continuation === true ? "来龙" : "起因";
-    const context = contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">${contextLabel}</h2><div class="kv">${escapeHtml(contextText)}</div></section>` : "";
+    const context = contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">${contextLabel}</h2><div class="kv detail-body">${detailParagraphs(contextText)}</div></section>` : "";
     const whyPart = item.why ? `<section data-trajectory="why"><h2 class="detail-sec-t">为什么重要</h2><div class="kv why">${escapeHtml(item.why)}</div></section>` : "";
-    const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">正文</h2><div class="detail-body"><p>${escapeHtml(item.detail)}</p></div></section>` : "";
-    // 事实先行：正文在判断之前。摘要已由 lede 承担，这里不再重复。
+    const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">现状</h2><div class="detail-body">${detailParagraphs(item.detail)}</div></section>` : "";
+    // 事实先行：现状在判断之前。摘要已由 lede 承担，这里不再重复。
     const current = `${bodyPart}${whyPart}`;
     const recap = recapData ? `<div class="trajectory-recap recap-${recapData.status}"><span>走向回对 · ${recapData.status}</span>${escapeHtml(recapData.text)}</div>` : "";
-    const watch = item.watch ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch">${escapeHtml(item.watch)}</div></section>` : "";
-    const significance = item.significance ? `<section data-trajectory="significance"><h2 class="detail-sec-t">对我的意义</h2><div class="kv">${escapeHtml(item.significance)}</div></section>` : "";
-    body = `<div class="detail-trajectory">${context}${current}${recap}${watch}${significance}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
+    const watchText = typeof item.watch_detail === "string" && item.watch_detail.trim()
+      ? item.watch_detail : item.watch;
+    const watch = watchText ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch detail-body">${detailParagraphs(watchText)}</div></section>` : "";
+    body = `<div class="detail-trajectory">${context}${current}${recap}${watch}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
   }
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;

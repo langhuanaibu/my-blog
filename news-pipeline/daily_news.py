@@ -72,11 +72,21 @@ STATUS_SET = {"已确认", "发展中", "有争议", "仅传言"}
 TIER_ORDER = {"T1": 0, "T1.5": 1, "T2": 2}
 DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
 QUALITY_NEUTRAL_EVIDENCE = 5.0
-QUALITY_EXTENSION_FIELDS = ("why", "context", "significance", "watch", "detail", "claims")
-OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "significance", "watch", "detail")
-# 读者可见字段被删掉的三种原因。分项计数只为回答「详情页的空块是闸门删的还是
+QUALITY_EXTENSION_FIELDS = ("why", "context", "watch", "watch_detail", "detail", "claims")
+QUALITY_EXTENSION_FIELDS_V1 = (
+    "why", "context", "significance", "watch", "detail", "claims",
+)
+OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "watch", "watch_detail", "detail")
+REMOVED_FIELD_COUNTS_VERSION = 2
+# 读者可见字段被删掉的四种原因。分项计数只为回答「详情页的空块是闸门删的还是
 # 生成端没写」，不改任何判定。
-REMOVAL_REASONS = ("evidence_copy", "audit_unsupported", "claim_unsupported")
+REMOVAL_REASONS = (
+    "evidence_copy", "audit_unsupported", "claim_unsupported",
+    "generation_invalid",
+)
+REMOVAL_REASONS_V1 = (
+    "evidence_copy", "audit_unsupported", "claim_unsupported",
+)
 GENERATED_TITLE_MAX_CHARS = 120
 SOURCE_TITLE_MAX_CHARS = 300
 OBJECTIVITY_FIELD_LIMITS = {
@@ -84,17 +94,23 @@ OBJECTIVITY_FIELD_LIMITS = {
     "summary": 100,
     "why": 80,
     "context": 80,
-    "significance": 70,
     "watch": 90,
     "detail": 800,
+}
+FULLTEXT_OBJECTIVITY_FIELD_LIMITS = {
+    **OBJECTIVITY_FIELD_LIMITS,
+    "context": 240,
+    "watch": 90,
+    "watch_detail": 260,
+    "detail": 1200,
 }
 OBJECTIVITY_COPY_MIN_LENGTHS = {
     "title": 24,
     "summary": 48,
     "why": 48,
     "context": 48,
-    "significance": 48,
     "watch": 40,
+    "watch_detail": 60,
     "detail": 80,
     "claims": 60,
 }
@@ -182,6 +198,7 @@ def new_quality_stats():
         "enrich_out_of_batch_idx": 0,
         # removed_fields 的两维分项：按字段名、按删除原因。总数仍以 removed_fields
         # 为准，两个分项之和必须与它相等——诊断用，不参与任何判定或验收门。
+        "removed_field_counts_version": REMOVED_FIELD_COUNTS_VERSION,
         "removed_field_counts": {field: 0 for field in QUALITY_EXTENSION_FIELDS},
         "removed_field_reasons": {reason: 0 for reason in REMOVAL_REASONS},
         "degraded": False,
@@ -3433,26 +3450,26 @@ def select_review_and_record(reconcile_llm, cohesion_llm, events, items, cfg,
 
 ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾驶舱"加工精选新闻。
 用户给你若干事件，每个事件附带一条或多条原始报道（标题+简介+来源）。
-若给出了【读者兴趣画像】，请据此写 significance；没有画像则 significance 输出空字符串。
 各字段职责唯一：除实体名和理解所需的最短指代外，不得在字段之间复述同一事实、背景或判断。
 根据事件输入中的类目控制解释层次：非 AI 类面向聪明的外行，就地解释必要术语、机构和背景；AI 类不科普基础概念，直接写增量信息。
 对每个事件输出：
 - title: 精炼中文标题（建议≤30字，信息完整，不标题党；不得为满足长度截断语义）
 - summary: 一句话事实增量（≤70字，只说发生了什么和新在哪里；不写影响、背景或行动建议）
 - why: 公共影响及利害关系（≤80字，说明影响谁、为何重要；不复述事件经过，不写个人学习建议）
-- context: 事件为何此时发生（≤60字）。只写原始报道中明确陈述或明确归因的直接诱因、触发点或既有机制；
+- context: 事件为何此时发生（≤{context_limit}字）。{context_depth}只写原始报道中明确陈述或明确归因的直接诱因、触发点或既有机制；
   来源没有说明原因就留空，禁止用常识、行业背景或你已知的信息补写，禁止写名词解释。
   留空是正常输出，宁可留空也不要凑。以下四种一律不写，写了就是错：
   （1）任何推测性归因——出现"可能/或许/大概/据信"加动机或目的的表述；来源没明说动机就不写动机
   （2）复述 title/summary 已有的当日事实，或给它加"首个/最大/最强"之类的定性
   （3）后续走向、市场预期、风险提示——那是 watch 的职责
   （4）与本事件无因果关系的并列背景或同类事件罗列
-- context_evidence: 你写 context 时依据的那一句原文，从上面来源正文里**逐字复制**（12-160字，不要改写、不要拼接、不要翻译）。
-  context 留空时它也留空。这一句会被程序拿去和原文精确比对，对不上 context 会被整条丢弃——
-  所以找不到能逐字支撑的原句时，正确做法是把 context 留空，而不是编一句
-- significance: 个人学习或行动参考（≤60字）。优先结合【读者兴趣画像】里的"学习参考系"段（兼容旧"我的处境"段），具体到该补什么概念、读什么文档/论文、试什么工具、或观察什么能力趋势；与读者学习参考系无可操作关联就留空，禁止"值得关注""可以了解一下"类空话
+- context_evidence: 最多 3 条依据片段，每条形如 {{"source_index":来源编号,"quote":"逐字原文"}}。
+  quote 必须从对应来源正文中**逐字复制**（12-160字，不要改写、拼接或翻译）。
+  context 留空时输出空数组。每条都会由程序按来源编号精确比对，任一条对不上，context 会被整条丢弃；
+  找不到足够证据时应留空，而不是编造
 - watch: 走向（≤{watch_limit}字）：说明接下来取决于哪 1-2 个关键变量，并给出至少一个可观察路标。
   仅在当前来源明确提供既有趋势或可比历史时使用类比；禁止具体概率数字、无条件断言和来源外类比
+{watch_detail_field}
 - claims: 0-4 条需要显式归因的分析或不确定判断，每条包含 text、kind 和 source_indexes。kind 只用 analysis 或 uncertain；source_indexes 对应输入来源前的编号。没有此类判断时允许空数组，不要把正文事实改写成 claim
 {detail_field}- status: 事件状态，只能是这四个之一：
     已确认（官方发布或多个独立可信来源证实）
@@ -3471,7 +3488,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - 立场性判断优先归入 claims（kind 用 analysis）并标 source_indexes，不要写进正文的叙述语气里。
 
 只输出 JSON 数组，每个元素：
-{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "context_evidence": "...", "significance": "...", "watch": "...", "claims": [{{"text":"...","kind":"fact","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
+{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "context_evidence": [{{"source_index":0,"quote":"..."}}], "watch": "..."{watch_detail_json}, "claims": [{{"text":"...","kind":"analysis","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
 不要输出任何其他文字。"""
 
 
@@ -3505,7 +3522,6 @@ def sanitize_claims(raw_claims, source_names):
 
 CAUSE_EVIDENCE_MAX_CHARS = 160
 CAUSE_EVIDENCE_MIN_CHARS = 12
-CAUSE_EVIDENCE_MATCH_RATIO = 0.9
 # 起因只陈述事实。带推测或动机语气而不归属给任何一方的写法一律丢弃：
 # 引文可以是真的，从它推出的动机却是模型加的，这正是客观性规范禁止的那一类。
 CAUSE_SPECULATION_RE = re.compile(
@@ -3531,40 +3547,50 @@ def _event_evidence_texts(event, items, full_objectivity=False):
             (source.get("evidence_text") or source.get("desc", ""))[:ARTICLE_MAX_CHARS]
             if full_objectivity else str(source.get("desc") or "")[:200]
         )
-        normalized = _normalized_copy_text(raw)
-        if normalized:
-            texts.append(normalized)
+        # Preserve empty entries: source_index is the ordinal shown in the
+        # enrich prompt, so dropping an empty source would shift every later
+        # index and validate a quote against the wrong report.
+        texts.append(_normalized_copy_text(raw))
     return texts
 
 
 def verify_cause_evidence(event, items, quality=None, full_objectivity=False):
-    """Blank a cause whose quoted source span is not verbatim in the evidence.
+    """Blank a cause unless every declared source quote matches verbatim.
 
-    The model is asked to name the sentence it read the cause from. Research on
-    event causality is clear that unstated causes get invented, so a cause that
-    cannot be traced back to the source text word-for-word is dropped rather
-    than trusted. Paraphrase is rejected on purpose — this gate trades coverage
-    for precision.
+    Quotes are indexed against the source order shown to enrich. Exact provenance
+    does not prove entailment; the full objectivity audit separately checks that
+    the resulting cause is actually supported by those reports.
     """
     cause = str(event.get("context") or "").strip()
-    span = str(event.pop("context_evidence", "") or "").strip()[:CAUSE_EVIDENCE_MAX_CHARS]
+    spans = event.pop("context_evidence", None)
     if not cause:
         # 空起因沿用 enrich 的既有约定留作空串，由后续清理阶段统一移除
         return False
-    normalized_span = _normalized_copy_text(span)
-    matched = False
-    if len(normalized_span) >= CAUSE_EVIDENCE_MIN_CHARS:
-        for evidence in _event_evidence_texts(event, items, full_objectivity):
-            if normalized_span in evidence:
-                matched = True
+    evidence_texts = _event_evidence_texts(event, items, full_objectivity)
+    valid = isinstance(spans, list) and 1 <= len(spans) <= 3
+    if valid:
+        for span in spans:
+            if not isinstance(span, dict) or set(span) != {"source_index", "quote"}:
+                valid = False
                 break
-            overlap = SequenceMatcher(
-                None, normalized_span, evidence,
-                autojunk=False).find_longest_match().size
-            if overlap / len(normalized_span) >= CAUSE_EVIDENCE_MATCH_RATIO:
-                matched = True
+            source_index = span.get("source_index")
+            if (not isinstance(source_index, int) or isinstance(source_index, bool)
+                    or not 0 <= source_index < len(evidence_texts)):
+                valid = False
                 break
-    if not matched:
+            quote = str(span.get("quote") or "").strip()
+            if len(quote) > CAUSE_EVIDENCE_MAX_CHARS:
+                valid = False
+                break
+            normalized_span = _normalized_copy_text(quote)
+            evidence = evidence_texts[source_index]
+            if len(normalized_span) < CAUSE_EVIDENCE_MIN_CHARS:
+                valid = False
+                break
+            if normalized_span not in evidence:
+                valid = False
+                break
+    if not valid:
         event.pop("context", None)
         if quality is not None:
             quality["cause_evidence_rejected"] += 1
@@ -3578,11 +3604,36 @@ def verify_cause_evidence(event, items, quality=None, full_objectivity=False):
     return True
 
 
-def _clip_objectivity_field(field, value):
+def _field_limits(full_objectivity=False):
+    return (FULLTEXT_OBJECTIVITY_FIELD_LIMITS
+            if full_objectivity else OBJECTIVITY_FIELD_LIMITS)
+
+
+def _shorten_long_field(value, limit):
+    """Shorten once at a sentence/paragraph boundary; never cut mid-sentence."""
+    normalized = str(value or "").strip()
+    if len(normalized) <= limit:
+        return normalized
+    prefix = normalized[:limit + 1]
+    boundary = max(
+        prefix.rfind(mark)
+        for mark in ("\n\n", "。", "！", "？", ".", "!", "?")
+    )
+    if boundary < max(20, limit // 2):
+        return ""
+    if prefix[boundary:boundary + 2] == "\n\n":
+        return prefix[:boundary].rstrip()
+    return prefix[:boundary + 1].rstrip()
+
+
+def _clip_objectivity_field(field, value, full_objectivity=False):
     normalized = str(value or "").strip()
     if field == "title":
         return normalized
-    return normalized[:OBJECTIVITY_FIELD_LIMITS[field]]
+    limit = _field_limits(full_objectivity)[field]
+    if full_objectivity and field in {"context", "watch", "watch_detail", "detail"}:
+        return _shorten_long_field(normalized, limit)
+    return normalized[:limit]
 
 
 def readable_fallback_summary(desc):
@@ -3640,11 +3691,18 @@ def sanitize_objectivity_event(event, items=None, quality=None):
             source_title = items[source_ids[0]].get("title", "")
     for field in OBJECTIVITY_FIELDS:
         if field in event:
-            event[field] = (
+            raw_value = event[field]
+            value = (
                 select_reader_title(event[field], source_title)
                 if field == "title"
-                else _clip_objectivity_field(field, event[field])
+                else _clip_objectivity_field(field, event[field], True)
             )
+            if field != "title" and str(raw_value or "").strip() and not value:
+                event.pop(field, None)
+                count_removed_field(quality, field, "generation_invalid")
+            else:
+                event[field] = value
+    _remove_orphan_watch_detail(event, quality)
     claims = []
     for claim in event.get("claims") or []:
         if not isinstance(claim, dict):
@@ -3708,31 +3766,92 @@ def sanitize_objectivity_event(event, items=None, quality=None):
     return event
 
 
-def enrich(llm, picked, items, cfg, profile_text="", quality=None):
+def _enrich_batch_ranges(picked, items, full_objectivity):
+    if not full_objectivity:
+        return [(start, min(start + 6, len(picked)))
+                for start in range(0, len(picked), 6)]
+    ranges = []
+    start = 0
+    while start < len(picked):
+        end = start
+        evidence_chars = 0
+        while end < len(picked) and end - start < 3:
+            event_chars = sum(
+                len(str(items[index].get("evidence_text")
+                        or items[index].get("desc") or "")[:ARTICLE_MAX_CHARS])
+                for index in _serialized_source_ids(picked[end], items, limit=4)
+            )
+            if end > start and evidence_chars + event_chars > 48_000:
+                break
+            evidence_chars += event_chars
+            end += 1
+        ranges.append((start, max(start + 1, end)))
+        start = max(start + 1, end)
+    return ranges
+
+
+def _assign_generated_field(event, field, raw, full_objectivity, quality):
+    value = _clip_objectivity_field(field, raw, full_objectivity)
+    if str(raw or "").strip() and not value:
+        event.pop(field, None)
+        if quality is not None:
+            count_removed_field(quality, field, "generation_invalid")
+        return
+    event[field] = value
+
+
+def _remove_orphan_watch_detail(
+        event, quality=None, reason="generation_invalid"):
+    """A detail watch is invalid unless the short public contract also exists."""
+    if event.get("watch_detail") and not event.get("watch"):
+        event.pop("watch_detail", None)
+        if quality is not None:
+            count_removed_field(quality, "watch_detail", reason)
+
+
+def enrich(llm, picked, items, cfg, quality=None):
     tag_vocab = [str(t) for t in (cfg.get("topic_tags") or [])]
     tag_set = set(tag_vocab)
     dcfg = cfg.get("detail") or {}
     detail_on = dcfg.get("enabled", True)
-    detail_chars = int(dcfg.get("max_chars", 600) or 600)
     full_objectivity = _rollout_output_enabled(cfg)
-    detail_field = (
-        f"- detail: 中文长叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
-        "串联来源已提供的因果过程和关键细节，不复述其他字段，尤其不得复述 summary/why/context/significance/watch；"
-        "来源材料能够支持时，从机制或传导链、带比较锚点的数字、利益相关方变化中择最有价值的一至两项写入，不要求每条全部具备；"
-        "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；"
-        "来源媒体的立场性定性须显式归因（如\"BBC 称\"），不得写成客观事实；素材不足就写多少算多少，宁短毋凑）\n"
-    ) if detail_on else ""
+    configured_detail_chars = int(dcfg.get("max_chars", 600) or 600)
+    detail_chars = (min(configured_detail_chars, 1000)
+                    if full_objectivity else min(configured_detail_chars, 600))
+    if detail_on and full_objectivity:
+        detail_field = (
+            f"- detail: 现状长叙述（普通条目约 250-600 字，材料丰富时可到 {detail_chars} 字；"
+            "2-5 段自然行文，段间空行，不用小标题；"
+            "串联来源已提供的事件过程和关键细节，不复述 summary/why/context/watch/watch_detail；"
+            "来源材料能够支持时，从机制或传导链、带比较锚点的数字、利益相关方变化和未决事实中择最有价值的内容写入，不要求每条全部具备；"
+            "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；"
+            "来源媒体的立场性定性须显式归因（如\"BBC 称\"），不得写成客观事实；素材不足就写多少算多少，宁短毋凑）\n"
+        )
+    elif detail_on:
+        detail_field = (
+            f"- detail: 现状短叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
+            "串联摘要材料已有的事件过程和关键细节，不复述 summary/why/context/watch；"
+            "只写输入明确提供的内容，不得凭摘要补全机制、数字、引语或未决事实；素材不足就短写）\n"
+        )
+    else:
+        detail_field = ""
     detail_json = ', "detail": "..."' if detail_on else ""
+    watch_detail_field = (
+        "- watch_detail: 详情走向（建议 120-220 字，最多 260 字）：完整包含 watch 的变量和路标语义，"
+        "可补充第二个关键变量、判断依据和更多可观察路标；不得与 watch 矛盾，不得增加来源外判断\n"
+        if full_objectivity else "")
+    watch_detail_json = ', "watch_detail": "..."' if full_objectivity else ""
     system = ENRICH_SYSTEM.format(
         tag_list="、".join(tag_vocab) if tag_vocab else "（词表为空，tags 输出空数组）",
         detail_field=detail_field, detail_json=detail_json,
-        watch_limit=OBJECTIVITY_FIELD_LIMITS["watch"])
-    prof_block = ""
-    if profile_has_content(profile_text):
-        prof_block = "【读者兴趣画像】\n" + profile_text.strip() + "\n\n"
-    batch_size = 6
-    for bi in range(0, len(picked), batch_size):
-        batch = picked[bi:bi + batch_size]
+        context_limit=(240 if full_objectivity else 60),
+        context_depth=("材料丰富时可写 80-180 字；" if full_objectivity else ""),
+        watch_limit=OBJECTIVITY_FIELD_LIMITS["watch"],
+        watch_detail_field=watch_detail_field,
+        watch_detail_json=watch_detail_json)
+    for batch_number, (bi, batch_end) in enumerate(
+            _enrich_batch_ranges(picked, items, full_objectivity), start=1):
+        batch = picked[bi:batch_end]
         blocks = []
         for j, ev in enumerate(batch):
             srcs = []
@@ -3752,8 +3871,8 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
             blocks.append(
                 f"事件[{bi + j}]（类目：{ev.get('category', 'world')}） {ev['title']}\n"
                 + "\n".join(srcs) + hint_line)
-        log(f"  阶段B 批次 {bi // batch_size + 1}: {len(batch)} 个事件")
-        result = llm.json_call(system, prof_block + "【今日事件】\n" + "\n\n".join(blocks))
+        log(f"  阶段B 批次 {batch_number}: {len(batch)} 个事件")
+        result = llm.json_call(system, "【今日事件】\n" + "\n\n".join(blocks))
         if not isinstance(result, list):
             log("  阶段B 返回结构非法，本批保留基础内容")
             continue
@@ -3781,23 +3900,28 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
             ev["title"] = select_reader_title(r.get("title"), source_title)
             ev["summary"] = _clip_objectivity_field("summary", r.get("summary", ""))
             ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
-            ev["context"] = _clip_objectivity_field("context", r.get("context", ""))
-            ev["context_evidence"] = r.get("context_evidence", "")
+            _assign_generated_field(
+                ev, "context", r.get("context", ""), full_objectivity, quality)
+            ev["context_evidence"] = r.get("context_evidence", [])
             verify_cause_evidence(ev, items, quality, full_objectivity)
-            ev["significance"] = _clip_objectivity_field(
-                "significance", r.get("significance", ""))
-            ev["watch"] = _clip_objectivity_field("watch", r.get("watch", ""))
+            _assign_generated_field(
+                ev, "watch", r.get("watch", ""), full_objectivity, quality)
+            if full_objectivity:
+                _assign_generated_field(
+                    ev, "watch_detail", r.get("watch_detail", ""),
+                    True, quality)
+                _remove_orphan_watch_detail(ev, quality)
             ev["claims"] = sanitize_claims(
                 r.get("claims"), [
                     items[i]["source"]
                     for i in _serialized_source_ids(ev, items, limit=4)
                 ])
             if detail_on:
-                ev["detail"] = (
-                    _clip_objectivity_field("detail", r.get("detail", ""))
-                    if full_objectivity
-                    else str(r.get("detail", "")).strip()[:detail_chars + 200]
-                )
+                if full_objectivity:
+                    _assign_generated_field(
+                        ev, "detail", r.get("detail", ""), True, quality)
+                else:
+                    ev["detail"] = str(r.get("detail", "")).strip()[:detail_chars + 200]
             ev["status"] = r.get("status") if r.get("status") in STATUS_SET else "发展中"
             raw_tags = r.get("tags") or []
             if not isinstance(raw_tags, list):
@@ -3819,16 +3943,17 @@ def enrich(llm, picked, items, cfg, profile_text="", quality=None):
 
 
 OBJECTIVITY_AUDIT_SYSTEM = """你是新闻证据与客观性审计员。输入报道是唯一可用证据，不得用常识补证据。
-逐项检查 title、summary、why、context、significance、watch、detail 以及每条 claim：
+逐项检查 title、summary、why、context、watch、watch_detail、detail 以及每条 claim：
 1. 是否有来源支撑；2. fact/analysis/uncertain 类型是否正确；3. 主张、评价和指控是否正确归因；
 4. 是否加入来源没有的动机或因果推断；5. 是否使用缺少基准的幅度/程度语言；
 6. 是否为追求平衡而虚构反方观点或反诉。
-对 watch 还必须检查：是否说明 1-2 个有来源支撑的关键变量并给出至少一个可观察路标；
-是否含具体概率、无条件断言或来源外类比。任一项不合规，watch 必须为 false。
+对 watch 和 watch_detail 还必须检查：是否说明 1-2 个有来源支撑的关键变量并给出至少一个可观察路标；
+是否含具体概率、无条件断言或来源外类比。watch_detail 还必须完整保留 watch 的变量和路标语义。
+任一项不合规，对应字段必须为 false。
 检方提交起诉书/公诉文件本身是可报道的程序性事实；其中指控仍须归因，起诉不等于定罪。
 只输出 JSON 对象：
 {"fields":{"title":true,"summary":true,"why":true,"context":true,
-"significance":true,"watch":true,"detail":true},"claims":[true]}
+"watch":true,"watch_detail":true,"detail":true},"claims":[true]}
 fields 只列输入中存在的字段；claims 布尔数组必须与输入 claims 等长。任一检查不通过即为 false。"""
 
 OBJECTIVITY_REPAIR_SYSTEM = """你是新闻客观性修复编辑。只能修改输入列出的 failed_fields 和
@@ -3841,11 +3966,12 @@ claim 可用 {"index":编号,"drop":true} 删除。只输出 JSON：
 # Historical name kept for callers that import the prompt constant.
 SUPPORT_AUDIT_SYSTEM = """你是新闻事实支撑质检员。原始报道是唯一可用证据。
 检查编辑扩展字段是否只讨论当前事件且能由原始报道支撑；不要凭常识补证据。
-对 watch 还必须检查：是否说明 1-2 个有来源支撑的关键变量并给出至少一个可观察路标；
-是否含具体概率、无条件断言或来源外类比。任一项不合规，watch 必须为 false。
-对 why/context/significance/watch/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
+对 watch 和 watch_detail 还必须检查：是否说明 1-2 个有来源支撑的关键变量并给出至少一个可观察路标；
+是否含具体概率、无条件断言或来源外类比。watch_detail 还必须完整保留 watch 的变量和路标语义。
+任一项不合规，对应字段必须为 false。
+对 why/context/watch/watch_detail/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
 只输出 JSON 对象：
-{"fields":{"why":true,"context":true,"significance":true,"watch":true,"detail":true},
+{"fields":{"why":true,"context":true,"watch":true,"watch_detail":true,"detail":true},
  "supported_claim_indexes":[0]}
 受到别的事件污染、超出来源或无法确认的字段/claim 必须判为不支持。"""
 
@@ -3965,17 +4091,18 @@ def _objectivity_failures(checked, event, valid_sources):
 
 def _apply_objectivity_repair(
         event, raw, failed_fields, failed_claims, valid_sources,
-        source_title=""):
+        source_title="", quality=None):
     if not isinstance(raw, dict):
         return
     field_repairs = raw.get("fields") if isinstance(raw.get("fields"), dict) else {}
     for field in failed_fields:
         if field in field_repairs:
-            event[field] = (
-                select_reader_title(field_repairs[field], source_title)
-                if field == "title"
-                else _clip_objectivity_field(field, field_repairs[field])
-            )
+            if field == "title":
+                event[field] = select_reader_title(
+                    field_repairs[field], source_title)
+            else:
+                _assign_generated_field(
+                    event, field, field_repairs[field], True, quality)
     claims = list(event.get("claims") or [])
     repairs = raw.get("claims") if isinstance(raw.get("claims"), list) else []
     for repair in repairs:
@@ -4091,7 +4218,8 @@ def audit_enrichment_support(llm, picked, items, quality=None, secondary=None):
                                      json.dumps(repair_payload, ensure_ascii=False))
             _apply_objectivity_repair(
                 event, repaired, failed_fields, failed_claims, valid_sources,
-                source_title=reports[0]["title"] if reports else "")
+                source_title=reports[0]["title"] if reports else "",
+                quality=quality)
             sanitize_objectivity_event(event, items, quality)
         except Exception as exc:
             log(f"  客观性定向修复失败，继续复审并保守降级: {exc}")
@@ -4353,21 +4481,24 @@ reports 是今天该条新闻的原始报道；这两者是唯一可用材料，
 对每条输入分别生成：
 - context（来龙）：只解释已验证事件线怎样走到今天，不补写链外背景；
 - watch（走向）：说明接下来取决于 1-2 个关键变量，并给出至少一个可观察路标；
+- watch_detail（详情走向）：仅当输入 include_watch_detail 为 true 时生成；完整保留 watch 的变量和路标语义，
+  并可补充第二个变量、判断依据和更多可观察路标；
 - claims：只放独立的分析或不确定判断，kind 只能是 analysis 或 uncertain，sources 必须来自输入 evidence_sources。
 若最近历史有最终 watch，且今天材料足以判断，可在 context 中追加一句
 “走向回对（状态）：结论”，状态只能是 兑现、部分兑现、未兑现、反转；证据不足或旧 watch 缺失时不要回对，
-也不要写占位语。watch 禁止具体概率、无条件断言和来源外类比。
-只输出 JSON：{"trajectories":[{"idx":数字,"context":"...","watch":"...",
+也不要写占位语。watch 和 watch_detail 禁止具体概率、无条件断言和来源外类比。
+只输出 JSON：{"trajectories":[{"idx":数字,"context":"...","watch":"...","watch_detail":"...",
 "claims":[{"text":"...","kind":"analysis|uncertain","sources":["来源"]}]}]}。
-每个 idx 最多一次；只允许 idx/context/watch/claims 四个键，不要输出其他文字。"""
+每个 idx 最多一次；只允许 idx/context/watch/watch_detail/claims 五个键，不要输出其他文字。"""
 
 TRAJECTORY_AUDIT_SYSTEM = """你负责批量执行独立轨迹审计。每条输入的 history 是逐行验证的历史投影，
 reports 是今天的原始报道；它们是唯一证据，不得使用未验证登记行、模型常识或联网补证据。
-只检查 trajectory 中实际出现的 context、watch、claims，不检查或修改其他字段，也不得改变精选层级。
+只检查 trajectory 中实际出现的 context、watch、watch_detail、claims，不检查或修改其他字段，也不得改变精选层级。
 context 只能叙述已验证来龙；若含走向回对，必须有旧版最终 watch 和今天证据，并且状态只能是
-兑现、部分兑现、未兑现、反转。watch 必须有 1-2 个有依据的关键变量和至少一个可观察路标，
-不得含具体概率、无条件断言或来源外类比。逐条检查 claim 的类型、内容与 sources 归属。
-只输出 JSON：{"audits":[{"idx":数字,"fields":{"context":布尔值,"watch":布尔值},
+兑现、部分兑现、未兑现、反转。watch 和 watch_detail 必须有 1-2 个有依据的关键变量和至少一个可观察路标，
+不得含具体概率、无条件断言或来源外类比；watch_detail 必须完整保留 watch 的变量和路标语义。
+逐条检查 claim 的类型、内容与 sources 归属。
+只输出 JSON：{"audits":[{"idx":数字,"fields":{"context":布尔值,"watch":布尔值,"watch_detail":布尔值},
 "claims":[布尔值]}]}。fields 只列 trajectory 中存在的文字字段，claims 数组与输入 claims 等长；
 每个 idx 最多一次，不要输出其他文字。"""
 
@@ -4392,7 +4523,7 @@ def new_trajectory_health():
 
 
 def _trajectory_fallback_units(proposal):
-    return sum(field in proposal for field in ("context", "watch")) \
+    return sum(field in proposal for field in ("context", "watch", "watch_detail")) \
         + len(proposal.get("claims", []))
 
 
@@ -4575,11 +4706,11 @@ def _trajectory_claim_sources(reports):
             if isinstance(report.get("source"), str) and report["source"].strip()}
 
 
-def _valid_trajectory_context(value, history):
+def _valid_trajectory_context(value, history, *, full_objectivity=False):
     if not isinstance(value, str) or not value.strip():
         return None
     value = value.strip()
-    if len(value) > OBJECTIVITY_FIELD_LIMITS["context"]:
+    if len(value) > _field_limits(full_objectivity)["context"]:
         return None
     if "走向回对" not in value:
         return value
@@ -4591,11 +4722,12 @@ def _valid_trajectory_context(value, history):
     return value
 
 
-def _valid_trajectory_watch(value):
+def _valid_trajectory_watch(value, *, detail=False):
     if not isinstance(value, str) or not value.strip():
         return None
     value = value.strip()
-    if len(value) > OBJECTIVITY_FIELD_LIMITS["watch"]:
+    field = "watch_detail" if detail else "watch"
+    if len(value) > _field_limits(detail)[field]:
         return None
     return value
 
@@ -4649,7 +4781,8 @@ def _restore_trajectory_field(event, snapshot, field):
 
 
 def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
-                         items, audit_llm=None, source_limit=5, health=None):
+                         items, audit_llm=None, source_limit=5, health=None,
+                         include_watch_detail=False):
     """Generate and independently audit trusted trajectories as separate batches."""
     if not trusted_pairs:
         return set()
@@ -4665,12 +4798,14 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             verified_history_by_today.get(today_index, []))
         reports = _trajectory_reports(event, items or [], source_limit)
         snapshot = {field: copy.deepcopy(event[field])
-                    for field in ("watch", "claims") if field in event}
+                    for field in ("watch", "watch_detail", "claims") if field in event}
         batch.append({
             "idx": len(batch),
             "event": {field: event.get(field) for field in
-                      ("title", "summary", "why", "context", "watch", "claims")
+                      ("title", "summary", "why", "context", "watch",
+                       "watch_detail", "claims")
                       if event.get(field)},
+            "include_watch_detail": include_watch_detail,
             "history": history,
             "reports": reports,
             "evidence_sources": sorted(_trajectory_claim_sources(reports)),
@@ -4701,25 +4836,40 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
     for batch_index, input_row in enumerate(batch):
         row = generated.get(batch_index)
         if (batch_index in generation_duplicates or not isinstance(row, dict)
-                or not set(row).issubset({"idx", "context", "watch", "claims"})):
+                or not set(row).issubset(
+                    {"idx", "context", "watch", "watch_detail", "claims"})):
             generation_fallback_indexes.add(batch_index)
             continue
         proposal = {}
         if "context" in row:
-            context = _valid_trajectory_context(row["context"], input_row["history"])
+            context = _valid_trajectory_context(
+                row["context"], input_row["history"],
+                full_objectivity=include_watch_detail)
             if context is not None:
                 proposal["context"] = context
         if "watch" in row:
             watch = _valid_trajectory_watch(row["watch"])
             if watch is not None:
                 proposal["watch"] = watch
+        if include_watch_detail and "watch_detail" in row:
+            watch_detail = _valid_trajectory_watch(
+                row["watch_detail"], detail=True)
+            if watch_detail is not None:
+                proposal["watch_detail"] = watch_detail
         if "claims" in row:
             claims = _valid_trajectory_claims(
                 row["claims"], set(input_row["evidence_sources"]))
             if claims is not None:
                 proposal["claims"] = claims
-        if set(proposal) != {"context", "watch", "claims"}:
+        expected_fields = {"context", "watch", "claims"}
+        if include_watch_detail:
+            expected_fields.add("watch_detail")
+        if set(proposal) != expected_fields:
             generation_fallback_indexes.add(batch_index)
+        if include_watch_detail and not {"watch", "watch_detail"}.issubset(proposal):
+            # The long field is an expansion of the short public contract.
+            # Auditing only one side cannot establish their semantic agreement.
+            continue
         if not proposal:
             continue
         proposals[batch_index] = proposal
@@ -4761,7 +4911,8 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             if health is not None:
                 health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
-        text_fields = [field for field in ("context", "watch") if field in proposal]
+        text_fields = [field for field in ("context", "watch", "watch_detail")
+                       if field in proposal]
         if (set(fields) != set(text_fields)
                 or any(type(fields[field]) is not bool for field in text_fields)):
             if health is not None:
@@ -4775,7 +4926,24 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
             if health is not None:
                 health["audit_fallbacks"] += _trajectory_fallback_units(proposal)
             continue
+        coupled_watch_fields = (
+            {"watch", "watch_detail"}
+            if include_watch_detail
+            and {"watch", "watch_detail"}.issubset(proposal)
+            else set()
+        )
+        if coupled_watch_fields:
+            if all(fields[field] for field in coupled_watch_fields):
+                for field in coupled_watch_fields:
+                    event[field] = proposal[field]
+            else:
+                for field in coupled_watch_fields:
+                    _restore_trajectory_field(event, snapshot, field)
+                if health is not None:
+                    health["audit_fallbacks"] += len(coupled_watch_fields)
         for field in text_fields:
+            if field in coupled_watch_fields:
+                continue
             if fields[field]:
                 event[field] = proposal[field]
             else:
@@ -5170,7 +5338,8 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
             llm, picked, trusted_pairs, verified_history_by_today, items or [],
             audit_llm=trajectory_audit_llm,
             source_limit=4 if _rollout_output_enabled(cfg) else 5,
-            health=health)
+            health=health,
+            include_watch_detail=_rollout_output_enabled(cfg))
     # context 承载两种前情：可信延续是轨迹生成的来龙，新事件是 enrich 抽取的起因。
     # 进过轨迹批次的事件已在 run_trajectory_stage 里丢掉 enrich 起因，生成失败就没有
     # 前情可展示；连续性门拒绝的事件按新事件处理，保留它的起因。
@@ -6101,9 +6270,11 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         "tags": ev.get("tags", []),
         **({"why": ev["why"]} if ev.get("why") else {}),
         **({"watch": ev["watch"]} if trajectory_enabled and ev.get("watch") else {}),
+        **({"watch_detail": ev["watch_detail"]}
+           if trajectory_enabled and ev.get("watch")
+           and ev.get("watch_detail") else {}),
         **({"context": ev["context"]}
            if trajectory_enabled and ev.get("context") else {}),
-        **({"significance": ev["significance"]} if ev.get("significance") else {}),
         **({"detail": ev["detail"]} if ev.get("detail") else {}),
         **({"claims": ev["claims"]} if ev.get("claims") else {}),
         "score": ev["score"],
@@ -6506,8 +6677,22 @@ def validate_daily_payload(payload):
                 "quality.enrichment_audited_events must be a non-negative integer")
         # 分项与总数对不上说明埋点漏了或重复计数，诊断数据不可用——阻断发布比事后
         # 发现一周的分项是错的便宜。缺失仍然合法：本次之前的日报没有这两个键。
-        for field, allowed in (("removed_field_counts", QUALITY_EXTENSION_FIELDS),
-                               ("removed_field_reasons", REMOVAL_REASONS)):
+        version = quality.get("removed_field_counts_version")
+        if (version is not None
+                and (type(version) is not int
+                     or version != REMOVED_FIELD_COUNTS_VERSION)):
+            errors.append(
+                "quality.removed_field_counts_version must be 2 when present")
+        count_fields = (
+            QUALITY_EXTENSION_FIELDS if version == REMOVED_FIELD_COUNTS_VERSION
+            else QUALITY_EXTENSION_FIELDS_V1
+        )
+        reason_fields = (
+            REMOVAL_REASONS if version == REMOVED_FIELD_COUNTS_VERSION
+            else REMOVAL_REASONS_V1
+        )
+        for field, allowed in (("removed_field_counts", count_fields),
+                               ("removed_field_reasons", reason_fields)):
             counts = quality.get(field)
             if counts is None:
                 continue
@@ -6561,6 +6746,18 @@ def validate_daily_payload(payload):
         elif len(title) > SOURCE_TITLE_MAX_CHARS:
             errors.append(
                 f"item {row.get('id')} title exceeds {SOURCE_TITLE_MAX_CHARS} characters")
+        watch_detail = row.get("watch_detail")
+        if watch_detail is not None:
+            watch = row.get("watch")
+            if (not isinstance(watch_detail, str) or not watch_detail.strip()
+                    or len(watch_detail) > FULLTEXT_OBJECTIVITY_FIELD_LIMITS["watch_detail"]):
+                errors.append(
+                    f"item {row.get('id')} watch_detail must be non-empty and at most "
+                    f"{FULLTEXT_OBJECTIVITY_FIELD_LIMITS['watch_detail']} characters")
+            if (not isinstance(watch, str) or not watch.strip()
+                    or len(watch) > OBJECTIVITY_FIELD_LIMITS["watch"]):
+                errors.append(
+                    f"item {row.get('id')} watch_detail requires a valid short watch")
         source_names = {source.get("name") for source in (row.get("sources") or [])
                         if isinstance(source, dict) and source.get("name")}
         # 前端 safeUrl 只放行 http(s)，但 feed.xml 的 <item><link> 是原样输出的。
@@ -7866,7 +8063,7 @@ def _run_pipeline(started_at, args, cfg, policy):
         log(f"  全量档评分回填失败（不影响主管线）: {e}")
 
     log(f"阶段B：精加工 {len(picked)} 条精选 ...")
-    enrich(llm, picked, items, cfg, profile, quality)
+    enrich(llm, picked, items, cfg, quality=quality)
     if quality.get("cause_evidence_rejected") or quality.get("cause_speculation_rejected"):
         log(f"  起因核对：清空 {quality['cause_evidence_rejected']} 条无法回溯、"
             f"{quality['cause_speculation_rejected']} 条未归因推测")

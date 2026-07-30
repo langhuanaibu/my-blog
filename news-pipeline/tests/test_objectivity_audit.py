@@ -1567,16 +1567,19 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
         "title": "题" * 45,
         "summary": "摘" * 150,
         "why": "因" * 120,
-        "context": "背" * 100,
-        "significance": "义" * 90,
+        "context": "背景事实。" * 30,
         "watch": "看" * 80,
-        "detail": "详" * 900,
+        "watch_detail": "详细走向。" * 30,
+        "detail": "现状事实。" * 180,
     }
 
     def reply():
         return [[{
             "idx": 0, **long_values,
-            "context_evidence": "正文证据正文证据正文证据",
+            "context_evidence": [{
+                "source_index": 0,
+                "quote": "正文证据正文证据正文证据",
+            }],
             "claims": [], "status": "已确认", "tags": [],
         }]]
 
@@ -1591,9 +1594,11 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
     })
 
     assert "FULLTEXT_ONLY_MARKER" not in interim_llm.calls[0][1]
-    assert {field: len(interim_event[field]) for field in long_values} == {
-        "title": len(long_values["title"]), "summary": 100, "why": 80, "context": 80,
-        "significance": 70, "watch": 80, "detail": 800,
+    assert "watch_detail" not in interim_event
+    assert {field: len(interim_event[field]) for field in
+            ("title", "summary", "why", "context", "watch", "detail")} == {
+        "title": len(long_values["title"]), "summary": 100, "why": 80,
+        "context": 80, "watch": 80, "detail": 800,
     }
     interim_output_item = dict(item)
     interim_output_item.pop("evidence_text", None)
@@ -1618,10 +1623,11 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
     })
 
     assert "FULLTEXT_ONLY_MARKER" in active_llm.calls[0][1]
-    assert {field: len(active_event[field]) for field in long_values} == {
-        "title": len(long_values["title"]), "summary": 100, "why": 80, "context": 80,
-        "significance": 70, "watch": 80, "detail": 800,
-    }
+    assert "significance" not in active_event
+    assert len(active_event["context"]) <= 240
+    assert len(active_event["watch"]) == 80
+    assert len(active_event["watch_detail"]) <= 260
+    assert len(active_event["detail"]) <= 1200
 
 
 def _breakdown_invariant(quality):
@@ -1635,6 +1641,7 @@ def test_removed_field_breakdown_attributes_audit_removals_by_field_and_reason()
     items = [source_item(title="检方提交起诉书", desc="Reuters 报道检方提交了起诉书。",
                          source="Reuters", source_id="reuters")]
     event = enriched_event(title="被告已经犯罪")
+    event["watch_detail"] = "详情走向会继续观察司法程序与公开文件。"
     event["risk_flags"] = {"allegation_legal": True}
     first = all_pass(event)
     first["fields"]["title"] = False
@@ -1668,7 +1675,7 @@ def test_removed_field_breakdown_separates_evidence_copies_from_audit_removals()
     assert "detail" not in event and "claims" not in event
     assert quality["removed_field_reasons"] == {
         "evidence_copy": quality["removed_fields"], "audit_unsupported": 0,
-        "claim_unsupported": 0}
+        "claim_unsupported": 0, "generation_invalid": 0}
     assert quality["removed_field_counts"]["detail"] == 1
     assert quality["removed_field_counts"]["claims"] == 1
     assert _breakdown_invariant(quality)

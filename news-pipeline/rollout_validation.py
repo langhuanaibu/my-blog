@@ -377,7 +377,7 @@ def _validate_evidence_allowlist(evidence):
             or not isinstance(evidence.get("review_cases"), list)):
         raise ValueError("rollout evidence violates the allow-list")
     public_fields = {
-        "id", "title", "summary", "context", "watch", "claims",
+        "id", "title", "summary", "context", "watch", "watch_detail", "claims",
         "trusted_continuation", "day_count", "history",
     }
     history_fields = {"date", "title", "summary", "watch", "item_ref"}
@@ -413,8 +413,11 @@ def _validate_evidence_allowlist(evidence):
                 or not _PUBLIC_ITEM_ID_RE.fullmatch(public["id"])
                 or not bounded_text(public.get("title"), 80, empty=False)
                 or not bounded_text(public.get("summary"), 160)
-                or ("context" in public and not bounded_text(public["context"], 160))
+                or ("context" in public and not bounded_text(public["context"], 240))
                 or ("watch" in public and not bounded_text(public["watch"], 160))
+                or ("watch_detail" in public
+                    and not bounded_text(public["watch_detail"], 260))
+                or ("watch_detail" in public and "watch" not in public)
                 or ("trusted_continuation" in public
                     and type(public["trusted_continuation"]) is not bool)
                 or ("day_count" in public

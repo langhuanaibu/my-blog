@@ -76,6 +76,7 @@ def valid_case(idx=0, *, trusted=True, watch="Watch adoption and observe the nex
         "title": "Current update",
         "summary": "A current verified update.",
         "watch": watch,
+        "watch_detail": "Adoption depends on budget approval and integration results. Observe the next audited report and the next procurement notice.",
         "claims": [{"text": "Verified claim", "kind": "fact", "sources": ["Wire"]}],
     }
     history = []
@@ -335,6 +336,36 @@ def test_evidence_is_allow_listed_fingerprinted_and_written_only_to_explicit_tem
         rv.write_rollout_evidence(
             evidence, data_dir=data_dir,
             environ={"ROLLOUT_EVIDENCE_PATH": str(repository_data / "evidence.json")})
+
+
+def test_rollout_allowlist_accepts_detail_watch_and_240_character_context(tmp_path):
+    rv = rollout()
+    case = valid_case()
+    case["public"]["context"] = "来" * 240
+    case["public"]["watch_detail"] = "走" * 260
+    evidence = valid_evidence([case])
+    output = tmp_path / "evidence.json"
+
+    assert rv.write_rollout_evidence(
+        evidence,
+        data_dir=tmp_path / "data",
+        environ={"ROLLOUT_EVIDENCE_PATH": str(output)},
+    ) is True
+
+
+def test_rollout_allowlist_rejects_detail_watch_without_short_watch(tmp_path):
+    rv = rollout()
+    case = valid_case()
+    case["public"].pop("watch")
+
+    with pytest.raises(ValueError, match="allow-list"):
+        rv.write_rollout_evidence(
+            valid_evidence([case]),
+            data_dir=tmp_path / "data",
+            environ={
+                "ROLLOUT_EVIDENCE_PATH": str(tmp_path / "evidence.json"),
+            },
+        )
 
 
 def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):

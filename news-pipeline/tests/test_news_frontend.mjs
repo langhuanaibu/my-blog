@@ -14,7 +14,7 @@ const daily = {
   lead: "今天最重要的一句话。",
   themes: [{ title: "主线一", overview: "主线说明" }],
   items: [
-    { id: "pick-ai", tier: "pick", category: "ai", title: "AI 事件", summary: "摘要", why: "为什么重要", context: "背景机制", significance: "对我的意义", watch: "后续关注", detail: "长叙述", claims: [{ text: "事实", kind: "fact" }] },
+    { id: "pick-ai", tier: "pick", category: "ai", title: "AI 事件", summary: "摘要", why: "为什么重要", context: "背景机制", significance: "历史对我的意义", watch: "后续关注", watch_detail: "详细走向第一段。\n\n详细走向第二段。", detail: "现状第一段。\n\n现状第二段。", claims: [{ text: "事实", kind: "fact" }] },
     { id: "pick-world", tier: "pick", category: "world", title: "国际事件", summary: "国际摘要", why: "国际意义" },
   ],
   deep: [], papers: [], opinion: [], tracking: [],
@@ -358,16 +358,43 @@ test("详情保留完整扩展字段", () => {
   assert.match(html, /detail-wrap reading-view/);
   assert.match(html, /为什么重要/);
   assert.match(html, /单独的判断价值/);
-  for (const text of ["背景机制", "对我的意义", "后续关注", "长叙述", "事实"]) assert.match(html, new RegExp(text));
+  for (const text of ["背景机制", "详细走向第一段", "现状第一段", "事实"]) assert.match(html, new RegExp(text));
+  assert.doesNotMatch(html, /历史对我的意义/);
+  assert.doesNotMatch(html, /后续关注/);
 });
 
-test("新闻详情事实先行：来龙正文为什么重要走向和对我的意义", () => {
+test("新闻详情事实先行：来龙现状为什么重要和详情走向", () => {
   const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true }, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch", "significance"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "正文", "为什么重要", "走向", "对我的意义"]);
-  assert.match(sections[1].textContent, /长叙述/);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "现状", "为什么重要", "走向"]);
+  assert.match(sections[1].textContent, /现状第一段/);
   assert.match(sections[2].textContent, /为什么重要/);
+});
+
+test("详情把长字段按空行安全渲染为自然段", () => {
+  const item = {
+    ...daily.items[0],
+    context: "起因一。\r\n\r\n起因二<script>alert(1)</script>。",
+    detail: "现状一。\n\n\n现状二。",
+    watch_detail: "走向一。\n \n走向二。",
+  };
+  const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
+  assert.equal(doc.querySelectorAll('[data-trajectory="context"] p').length, 2);
+  assert.equal(doc.querySelectorAll('[data-trajectory="body"] p').length, 2);
+  assert.equal(doc.querySelectorAll('[data-trajectory="watch"] p').length, 2);
+  assert.equal(doc.querySelector("script"), null);
+  assert.match(doc.querySelector('[data-trajectory="context"]').textContent, /<script>alert\(1\)<\/script>/);
+});
+
+test("空白详情走向回退到短走向", () => {
+  const doc = new JSDOM(`<main>${renderDetail({
+    ...daily.items[0],
+    watch: "短走向仍应显示。",
+    watch_detail: " \n ",
+  }, "news", daily.date)}</main>`).window.document;
+
+  assert.match(doc.querySelector('[data-trajectory="watch"]')?.textContent || "", /短走向仍应显示/);
 });
 
 test("新闻详情把摘要放在标题下的无标题导语里而不是独立区块", () => {
@@ -424,7 +451,7 @@ test("一次性条目的前情标为起因而不是来龙", () => {
 test("起因占据来龙同一槽位并保持阅读顺序", () => {
   const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch", "significance"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch"]);
   assert.equal(sections[0].querySelector("h2")?.textContent, "起因");
 });
 
@@ -436,11 +463,11 @@ test("延续条目的走向回对不被起因标题吞掉", () => {
 });
 
 test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序", () => {
-  const item = { ...daily.items[0], context: "", watch: "", significance: "" };
+  const item = { ...daily.items[0], context: "", watch: "", watch_detail: "", significance: "" };
   const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
   assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["body", "why"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["正文", "为什么重要"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["现状", "为什么重要"]);
 });
 
 test("新闻详情把来源列成相关链接并把事实源排在判断源之前", () => {
