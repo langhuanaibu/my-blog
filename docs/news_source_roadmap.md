@@ -4,13 +4,13 @@
 >
 > 最后更新：2026-07-30
 
-## 当前生产基线（等待当前 HEAD 的首次有效 publish）
+## 当前生产基线（等待新指纹首次有效 publish）
 
 本次温和扩充已于 2026-07-24 合并并推送到 `main`：精选上限调为 36、五类保留席调为 4、深读上限调为 4，并加入内容类型、分离时长和漏读复盘。它会改变公开样本构成，因此合并后的首个有效产出日是新的统一基线起点；此前未完成的 selection、trajectory、enrich、objectivity shadow 和主管线 source metrics 均按各自有效日条件重新计时，不沿用旧连续天数。
 
 活动 provider 已从 StepFun 切回 DeepSeek：StepFun 实验 Run #30346999214 在正常新闻阶段 A 触发 HTTP 451，不能作为生产回退；DeepSeek 的 45 条夹具三轮门（Run #30349424143）和 validate（Run #30350219791）已经通过。2026-07-30 的有效 publish（Run #30501045287）在上一共享运行时指纹下记录为选材 1/7、轨迹 1/5、enrich 0/5、客观性 shadow 1/7、信源指标 1/14；enrich 因文字抽样待人工复核而冻结。
 
-当前 HEAD 另含尚未进入有效 publish 的 LLM 用量计量、发布 URL 校验与详情深化变更。详情深化停用新闻 `significance`，新增 `watch_detail`，扩大全文 `context`／`detail` 合同并改变 `daily_news.py` 共享运行时指纹。因此**下一次成功 publish 才是当前代码的五门新起点**；07-30 的计数只保留为历史快照，不得继续累计，也不得据旧指纹推算收口日期。选材 7 个有效日、轨迹 5 个有效日、enrich 5 个有效日、客观性 shadow 7 个有效日、信源指标 14 个有效日全部重新累计，新 publish 后的状态与计数只以 GitHub Issue #15 为准。
+提交 `fce074a` 已把 LLM 用量计量、发布 URL 校验与详情深化变更合并到 `main`，但尚未进入有效 publish。详情深化停用新闻 `significance`，新增 `watch_detail`，扩大全文 `context`／`detail` 合同并改变 `daily_news.py` 共享运行时指纹。因此**首个包含该提交的成功 publish 才是新代码的五门起点**；07-30 的计数只保留为历史快照，不得继续累计，也不得据旧指纹推算收口日期。选材 7 个有效日、轨迹 5 个有效日、enrich 5 个有效日、客观性 shadow 7 个有效日、信源指标 14 个有效日全部重新累计，新 publish 后的状态与计数只以 GitHub Issue #15 为准。
 
 删除字段分项诊断（`removed_field_counts` / `removed_field_reasons`）已从 2026-07-30 开始产出；旧记录按 v1 读取并允许 `significance`，新记录写 v2（字段增加 `watch_detail`、移除 `significance`，原因增加 `generation_invalid`），历史不回写。需积累 3-5 个同指纹有效日后，才能用于判断「空块是闸门删的还是生成端没写」，在此之前不得据此调整闸门或 enrich 提示词。
 
