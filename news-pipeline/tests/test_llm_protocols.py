@@ -245,6 +245,16 @@ def test_anthropic_timeout_and_truncation_share_attempt_budget_and_record_usage(
     assert llm.stage_usage["OTHER"]["output"] == 16396
 
 
+def test_stage_classifier_handles_formatted_prompts_without_prefix_false_positive():
+    formatted = dn.ENRICH_SYSTEM.format(
+        tag_list="AI", detail_field="", detail_json="", watch_limit=120)
+
+    assert dn.stage_of_prompt(dn.TRIAGE_SYSTEM) == "TRIAGE_SYSTEM"
+    assert dn.stage_of_prompt(formatted) == "ENRICH_SYSTEM"
+    assert dn.stage_of_prompt(
+        dn.TRIAGE_SYSTEM[:40] + "这不是阶段 A 的提示词") == "OTHER"
+
+
 @pytest.mark.parametrize("payload", [
     {"stop_reason": "end_turn", "usage": {"input_tokens": 2, "output_tokens": 1}},
     anthropic_payload(""),
@@ -362,6 +372,73 @@ def test_text_call_uses_shared_transport_and_openai_keeps_request_options(monkey
     }
 
 
+def test_openai_usage_reads_standard_nested_cached_tokens():
+    usage = types.SimpleNamespace(
+        prompt_tokens=21,
+        prompt_tokens_details=types.SimpleNamespace(cached_tokens=8),
+        completion_tokens=5,
+    )
+
+    assert dn.LLM._openai_usage(usage) == {
+        "input": 21,
+        "input_cached": 8,
+        "output": 5,
+    }
+
+
+def test_retry_meter_adds_every_response_that_reports_usage(monkeypatch):
+    llm = dn.LLM(dn.resolve_llm_config(
+        provider_config(), environ={"STEPFUN_API_KEY": "secret"}))
+    attempts = iter([
+        dn.LLMCallError(
+            "truncated",
+            retryable=True,
+            usage={"input": 30, "input_cached": 10, "output": 16},
+        ),
+        ('{"ok":true}', {"input": 25, "input_cached": 5, "output": 4}),
+    ])
+
+    def complete(*args, **kwargs):
+        result = next(attempts)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+    monkeypatch.setattr(llm, "_complete", complete)
+    monkeypatch.setattr(dn.time, "sleep", lambda _delay: None)
+
+    assert llm.json_call(dn.TRIAGE_SYSTEM, "user") == {"ok": True}
+    assert llm.stage_usage["TRIAGE_SYSTEM"] == {
+        "calls": 2,
+        "input": 55,
+        "input_cached": 15,
+        "output": 20,
+    }
+
+
+def test_cost_clamps_cached_tokens_to_total_input():
+    price = {"input_miss": 1.0, "input_hit": 0.1, "output": 2.0}
+
+    assert dn.usage_cost_usd({
+        "input": 10,
+        "input_cached": 20,
+        "output": 0,
+    }, price) == pytest.approx(1 / 1_000_000)
+
+
+@pytest.mark.parametrize("price", [
+    {"input_miss": 1.0, "output": 2.0},
+    {"input_miss": 1.0, "input_hit": "invalid", "output": 2.0},
+    {"input_miss": -1.0, "input_hit": 0.1, "output": 2.0},
+])
+def test_invalid_price_configuration_marks_cost_unknown(price):
+    assert dn.usage_cost_usd({
+        "input": 10,
+        "input_cached": 2,
+        "output": 1,
+    }, price) is None
+
+
 def test_usage_report_keeps_model_identity_and_marks_unknown_cost():
     known = types.SimpleNamespace(
         provider="stepfun",
@@ -387,6 +464,72 @@ def test_usage_report_keeps_model_identity_and_marks_unknown_cost():
     assert totals["llm_calls"] == 2
     assert totals["llm_cost_usd"] is None
     assert totals["llm_cost_known"] is False
+
+
+def test_usage_report_merges_multiple_clients_with_the_same_identity():
+    price = {"input_miss": 1.0, "input_hit": 0.1, "output": 2.0}
+    clients = [
+        types.SimpleNamespace(
+            provider="deepseek",
+            model="shared-model",
+            price_usd_per_mtok=price,
+            stage_usage={"TRIAGE_SYSTEM": {
+                "calls": 1, "input": 100, "input_cached": 20, "output": 10}},
+        ),
+        types.SimpleNamespace(
+            provider="deepseek",
+            model="shared-model",
+            price_usd_per_mtok=price,
+            stage_usage={"TRIAGE_SYSTEM": {
+                "calls": 2, "input": 50, "input_cached": 5, "output": 4}},
+        ),
+    ]
+
+    merged = dn.merge_usage(clients)
+
+    assert merged[("deepseek", "shared-model", "TRIAGE_SYSTEM")] == {
+        "calls": 3,
+        "input": 150,
+        "input_cached": 25,
+        "output": 14,
+        "price_usd_per_mtok": price,
+    }
+    assert dn.usage_totals(merged) == {
+        "llm_calls": 3,
+        "llm_input_tokens": 150,
+        "llm_cached_input_tokens": 25,
+        "llm_output_tokens": 14,
+        "llm_cost_usd": 0.0002,
+        "llm_cost_known": True,
+    }
+
+
+def test_usage_report_marks_conflicting_prices_for_same_identity_unknown():
+    clients = [
+        types.SimpleNamespace(
+            provider="deepseek",
+            model="shared-model",
+            price_usd_per_mtok={
+                "input_miss": 1.0, "input_hit": 0.1, "output": 2.0},
+            stage_usage={"TRIAGE_SYSTEM": {
+                "calls": 1, "input": 100, "input_cached": 20, "output": 10}},
+        ),
+        types.SimpleNamespace(
+            provider="deepseek",
+            model="shared-model",
+            price_usd_per_mtok={
+                "input_miss": 2.0, "input_hit": 0.2, "output": 4.0},
+            stage_usage={"TRIAGE_SYSTEM": {
+                "calls": 1, "input": 50, "input_cached": 5, "output": 4}},
+        ),
+    ]
+
+    merged = dn.merge_usage(clients)
+
+    assert merged[
+        ("deepseek", "shared-model", "TRIAGE_SYSTEM")
+    ]["price_usd_per_mtok"] is None
+    assert dn.usage_totals(merged)["llm_cost_known"] is False
 
 
 def test_cost_guard_warns_without_blocking_when_mode_limit_is_exceeded(capsys):

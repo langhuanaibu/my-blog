@@ -137,6 +137,46 @@ def test_quality_health_backfills_enrichment_audits_from_daily_pick_count(tmp_pa
     assert records["2026-07-25"]["enrichment_audited_events"] == 34
 
 
+def test_quality_health_writes_allowlisted_usage_deterministically(tmp_path):
+    usage = {
+        "date": "overwritten",
+        "llm_output_tokens": 30,
+        "llm_calls": 4,
+        "llm_cost_known": True,
+        "llm_cost_usd": 0.0123,
+        "llm_cached_input_tokens": 20,
+        "llm_input_tokens": 100,
+        "private_detail": "must not persist",
+    }
+    quality = {**dn.new_quality_stats(), "audited_events": 2}
+
+    first = dn.update_quality_health(
+        tmp_path, "2026-07-25", quality, usage=usage)
+    first_bytes = (tmp_path / "quality-health.json").read_bytes()
+    second = dn.update_quality_health(
+        tmp_path, "2026-07-25", quality, usage=dict(reversed(usage.items())))
+    second_bytes = (tmp_path / "quality-health.json").read_bytes()
+
+    assert first == second
+    assert first_bytes == second_bytes
+    row = second["records"][0]
+    assert row["date"] == "2026-07-25"
+    assert {
+        key: row[key] for key in (
+            "llm_calls", "llm_input_tokens", "llm_cached_input_tokens",
+            "llm_output_tokens", "llm_cost_usd", "llm_cost_known",
+        )
+    } == {
+        "llm_calls": 4,
+        "llm_input_tokens": 100,
+        "llm_cached_input_tokens": 20,
+        "llm_output_tokens": 30,
+        "llm_cost_usd": 0.0123,
+        "llm_cost_known": True,
+    }
+    assert "private_detail" not in row
+
+
 def test_all_daily_claims_and_themes_reference_published_rows():
     failures = []
     for path in sorted(DAILY_DIR.glob("*.js")):

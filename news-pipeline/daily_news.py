@@ -125,6 +125,14 @@ LLM_PRICE_USD_PER_MTOK = {
         "output": 0.0,
     },
 }
+LLM_USAGE_FIELDS = (
+    "llm_calls",
+    "llm_input_tokens",
+    "llm_cached_input_tokens",
+    "llm_output_tokens",
+    "llm_cost_usd",
+    "llm_cost_known",
+)
 
 ROLLOUT_QUALITY_FIELDS = {
     "article_fetch_attempts", "article_fetch_successes", "article_fetch_retries",
@@ -362,12 +370,10 @@ def build_shadow_summary(
         for source, count in sorted(source_counts.items(), key=lambda row: (-row[1], row[0]))[:10]
     ]
     selected_after_ids = {id(event) for event in selected_after}
-    safe_usage = {}
-    for key in (
-            "llm_calls", "llm_input_tokens", "llm_cached_input_tokens",
-            "llm_output_tokens", "llm_cost_usd", "llm_cost_known"):
-        if key in (usage or {}):
-            safe_usage[key] = usage[key]
+    safe_usage = {
+        key: usage[key] for key in LLM_USAGE_FIELDS
+        if key in (usage or {})
+    }
     return {
         "mode": "shadow",
         "runtime_seconds": round(float(runtime_seconds), 3),
@@ -1505,6 +1511,7 @@ def resolve_llm_config(cfg, section="llm", environ=None):
     return merged
 
 _STAGE_PROMPT_INDEX = None
+_FORMATTED_STAGE_PROMPTS = ("ENRICH_SYSTEM", "VOCAB_SYSTEM")
 
 
 def stage_of_prompt(system):
@@ -1512,16 +1519,31 @@ def stage_of_prompt(system):
 
     Stage labels stay zero-maintenance this way: adding a new ``*_SYSTEM``
     constant automatically gets its own accounting row, with no call-site edits.
-    Templates are matched by their leading text because callers pass a
-    ``.format()``-ed copy; no two prompts share those leading characters.
+    The two formatted templates are matched by their full literal prefix.
+    Static prompts require exact equality, so an unrelated prompt cannot enter
+    a known cost bucket merely by sharing its first characters.
     """
     global _STAGE_PROMPT_INDEX
     if _STAGE_PROMPT_INDEX is None:
-        _STAGE_PROMPT_INDEX = {
-            value[:40]: name for name, value in list(globals().items())
+        exact = {
+            value: name for name, value in list(globals().items())
             if name.endswith("_SYSTEM") and isinstance(value, str) and value
         }
-    return _STAGE_PROMPT_INDEX.get(str(system or "")[:40], "OTHER")
+        formatted = []
+        for name in _FORMATTED_STAGE_PROMPTS:
+            template = globals().get(name)
+            if isinstance(template, str) and "{" in template:
+                formatted.append((template.split("{", 1)[0], name))
+                exact.pop(template, None)
+        _STAGE_PROMPT_INDEX = exact, tuple(formatted)
+    prompt = str(system or "")
+    exact, formatted = _STAGE_PROMPT_INDEX
+    if prompt in exact:
+        return exact[prompt]
+    for prefix, name in formatted:
+        if prompt.startswith(prefix):
+            return name
+    return "OTHER"
 
 
 def new_usage_stats():
@@ -1533,10 +1555,25 @@ def usage_cost_usd(usage, price=None):
     price = price if price is not None else usage.get("price_usd_per_mtok")
     if not isinstance(price, dict):
         return None
-    miss = max(0, int(usage.get("input", 0)) - int(usage.get("input_cached", 0)))
-    return (miss * price["input_miss"]
-            + int(usage.get("input_cached", 0)) * price["input_hit"]
-            + int(usage.get("output", 0)) * price["output"]) / 1e6
+    try:
+        input_miss_price = float(price["input_miss"])
+        input_hit_price = float(price["input_hit"])
+        output_price = float(price["output"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if any(
+            not math.isfinite(value) or value < 0
+            for value in (
+                input_miss_price, input_hit_price, output_price)):
+        return None
+    input_tokens = max(0, int(usage.get("input", 0)))
+    cached_tokens = min(
+        input_tokens, max(0, int(usage.get("input_cached", 0))))
+    output_tokens = max(0, int(usage.get("output", 0)))
+    miss = input_tokens - cached_tokens
+    return (miss * input_miss_price
+            + cached_tokens * input_hit_price
+            + output_tokens * output_price) / 1e6
 
 
 class LLMCallError(RuntimeError):
@@ -1603,11 +1640,17 @@ class LLM:
     def _openai_usage(usage):
         if usage is None:
             return None
+        input_tokens = max(0, int(getattr(usage, "prompt_tokens", 0) or 0))
+        details = getattr(usage, "prompt_tokens_details", None)
+        cached_tokens = max(
+            int(getattr(usage, "prompt_cache_hit_tokens", 0) or 0),
+            int(getattr(details, "cached_tokens", 0) or 0),
+        )
         return {
-            "input": int(getattr(usage, "prompt_tokens", 0) or 0),
-            "input_cached": int(
-                getattr(usage, "prompt_cache_hit_tokens", 0) or 0),
-            "output": int(getattr(usage, "completion_tokens", 0) or 0),
+            "input": input_tokens,
+            "input_cached": min(input_tokens, max(0, cached_tokens)),
+            "output": max(
+                0, int(getattr(usage, "completion_tokens", 0) or 0)),
         }
 
     @staticmethod
@@ -1770,10 +1813,17 @@ def merge_usage(llms):
                 str(getattr(llm, "model", "unknown")),
                 stage,
             )
-            target = merged.setdefault(identity, {
-                **new_usage_stats(),
-                "price_usd_per_mtok": getattr(llm, "price_usd_per_mtok", None),
-            })
+            client_price = getattr(llm, "price_usd_per_mtok", None)
+            if identity not in merged:
+                merged[identity] = {
+                    **new_usage_stats(),
+                    "price_usd_per_mtok": client_price,
+                }
+            target = merged[identity]
+            if target["price_usd_per_mtok"] != client_price:
+                # One identity must not silently inherit whichever role happened
+                # to be merged first. A conflicting override makes cost unknown.
+                target["price_usd_per_mtok"] = None
             for key in new_usage_stats():
                 target[key] += int(row.get(key, 0))
     return merged
@@ -6629,9 +6679,13 @@ def update_quality_health(data_dir, date_str, quality, keep_days=90,
         pick_count = _daily_pick_count(data_dir, row.get("date"))
         if pick_count is not None:
             row["enrichment_audited_events"] = pick_count
+    safe_usage = {
+        key: usage[key] for key in LLM_USAGE_FIELDS
+        if key in (usage or {})
+    }
     records.append({"date": date_str,
                     **_quality_for_output(quality, include_rollout),
-                    **(usage or {})})
+                    **safe_usage})
     records.sort(key=lambda row: row.get("date", ""))
     records = records[-max(1, int(keep_days)):]
     audited = sum(int(row.get("audited_events", 0)) for row in records)
