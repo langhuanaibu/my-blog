@@ -100,13 +100,74 @@ def test_publication_gate_rejects_non_http_source_urls():
             }],
         }
 
-    for url in ("javascript:alert(1)", "data:text/html,x", "//example.com", "ftp://x/y", ""):
+    for url in (
+            "javascript:alert(1)", "data:text/html,x", "//example.com", "ftp://x/y", "",
+            "https://", "https://not a url", "https://example.com:bad/path"):
         assert any(
             "source URL must be http(s)" in error
             for error in dn.validate_daily_payload(payload_with(url))
         ), url
 
     assert dn.validate_daily_payload(payload_with("https://example.com/a")) == []
+
+
+def test_publication_gate_rejects_invalid_deep_urls():
+    payload = {
+        "date": "2026-07-22",
+        "quality": {
+            "audited_events": 1,
+            "split_events": 0,
+            "removed_fields": 0,
+            "degraded": False,
+        },
+        "items": [],
+        "deep": [{
+            "id": "deep-1",
+            "title": "Deep read",
+            "url": "javascript:alert(1)",
+        }],
+    }
+
+    assert any(
+        "deep deep-1 URL must be http(s)" in error
+        for error in dn.validate_daily_payload(payload))
+
+
+def test_feed_falls_back_for_invalid_urls_in_legacy_daily_files(tmp_path):
+    daily_dir = tmp_path / "daily"
+    daily_dir.mkdir()
+    payload = {
+        "date": "2026-07-22",
+        "generated_at": "2026-07-22T05:00:00+00:00",
+        "items": [{
+            "id": "pick-1",
+            "tier": "pick",
+            "category": "tech",
+            "title": "Item",
+            "summary": "Summary",
+            "sources": [{"name": "Source", "url": "javascript:alert(1)"}],
+        }],
+        "deep": [{
+            "id": "deep-1",
+            "title": "Deep read",
+            "url": "https://",
+        }],
+    }
+    (daily_dir / "2026-07-22.js").write_text(
+        'window.NEWS_DATA["2026-07-22"] = '
+        f'{json.dumps(payload, ensure_ascii=False)};\n',
+        encoding="utf-8")
+
+    dn.write_feed(tmp_path, "2026-07-22", {
+        "feed_days": 7,
+        "site_url": "https://example.com",
+    })
+
+    feed = ET.parse(tmp_path / "feed.xml")
+    assert [
+        item.findtext("link") for item in feed.findall("./channel/item")
+    ] == ["https://example.com/news/", "https://example.com/news/"]
+    assert "javascript:" not in (tmp_path / "feed.xml").read_text(encoding="utf-8")
 
 
 def test_quality_health_backfills_enrichment_audits_from_daily_pick_count(tmp_path):

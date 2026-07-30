@@ -208,7 +208,20 @@ def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-PUBLIC_URL_RE = re.compile(r"^https?://", re.I)
+def _is_valid_http_url(value):
+    """Return whether a reader-facing URL is a well-formed HTTP(S) URL."""
+    raw = str(value or "")
+    if not raw or raw != raw.strip() or re.search(r"\s", raw):
+        return False
+    try:
+        parts = urlsplit(raw)
+        parts.port
+    except ValueError:
+        return False
+    return (
+        parts.scheme.lower() in {"http", "https"}
+        and bool(parts.hostname)
+    )
 _RSSHUB_KEY_RE = re.compile(r"(?i)([?&]key=)[^&\s]+")
 
 
@@ -6556,7 +6569,7 @@ def validate_daily_payload(payload):
             if not isinstance(source, dict):
                 continue
             url = source.get("url")
-            if url is not None and not PUBLIC_URL_RE.match(str(url)):
+            if url is not None and not _is_valid_http_url(url):
                 errors.append(
                     f"item {row.get('id')} source URL must be http(s): {source.get('name')}")
         evidence = row.get("evidence")
@@ -6636,6 +6649,11 @@ def validate_daily_payload(payload):
         refs = theme.get("member_ids") if isinstance(theme, dict) else None
         if not isinstance(refs, list) or any(ref not in valid_ids for ref in refs):
             errors.append("theme has unknown item reference")
+    for row in payload.get("deep") or []:
+        if not isinstance(row, dict):
+            continue
+        if not _is_valid_http_url(row.get("url")):
+            errors.append(f"deep {row.get('id')} URL must be http(s)")
     return errors
 
 
@@ -7407,7 +7425,11 @@ def write_feed(data_dir, date_str, cfg):
             for it in payload.get("items", []):
                 if it.get("tier") != "pick":
                     continue
-                srcs = it.get("sources") or []
+                srcs = [
+                    source for source in (it.get("sources") or [])
+                    if isinstance(source, dict)
+                    and _is_valid_http_url(source.get("url"))
+                ]
                 link = (srcs[0].get("url") if srcs else "") or f"{site}/news/"
                 desc = f"<p>{html.escape(it.get('summary', ''))}</p>"
                 if it.get("why"):
@@ -7428,6 +7450,8 @@ def write_feed(data_dir, date_str, cfg):
                     f"<description>{_cdata(desc)}</description>"
                     "</item>")
             for dp in payload.get("deep", []):
+                link = (dp.get("url") if _is_valid_http_url(dp.get("url")) else
+                        f"{site}/news/")
                 desc = f"<p>{html.escape(dp.get('brief', ''))}</p>"
                 if dp.get("why"):
                     desc += f"<p><b>为什么值得读：</b>{html.escape(dp['why'])}</p>"
@@ -7436,7 +7460,7 @@ def write_feed(data_dir, date_str, cfg):
                 items_xml.append(
                     "<item>"
                     f"<title>{xml_esc('【深读】' + (dp.get('title_zh') or dp.get('title', '')))}</title>"
-                    f"<link>{xml_esc(dp.get('url', ''))}</link>"
+                    f"<link>{xml_esc(link)}</link>"
                     f"<guid isPermaLink=\"false\">{xml_esc(d + ':' + dp.get('id', ''))}</guid>"
                     f"<pubDate>{day_rfc}</pubDate>"
                     f"<description>{_cdata(desc)}</description>"
