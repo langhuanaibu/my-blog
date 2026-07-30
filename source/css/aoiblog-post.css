@@ -28,6 +28,10 @@
   margin: 0 0 1.2em;
 }
 
+.post-content .markdown-body > p:not(:has(img)) {
+  text-indent: 2em;
+}
+
 .post-content .markdown-body a {
   color: var(--aoi-accent-strong);
   text-decoration: underline;

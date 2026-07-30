@@ -343,3 +343,37 @@ test("highlight wrapping changes code whitespace without changing figure table l
 
   dom.window.close();
 });
+
+test("indents only top-level text paragraphs in article content", () => {
+  const dom = new JSDOM(`
+    <!doctype html>
+    <html>
+      <head><style>${postCssSource}</style></head>
+      <body>
+        <article class="post-content">
+          <div class="markdown-body">
+            <p id="text-paragraph">正文段落</p>
+            <p id="image-paragraph"><img src="/images/example.png" alt="示例"></p>
+            <blockquote><p id="quote-paragraph">引用段落</p></blockquote>
+          </div>
+        </article>
+      </body>
+    </html>
+  `);
+  const { window } = dom;
+
+  assert.equal(
+    window.getComputedStyle(window.document.getElementById("text-paragraph")).textIndent,
+    "2em",
+  );
+  assert.notEqual(
+    window.getComputedStyle(window.document.getElementById("image-paragraph")).textIndent,
+    "2em",
+  );
+  assert.notEqual(
+    window.getComputedStyle(window.document.getElementById("quote-paragraph")).textIndent,
+    "2em",
+  );
+
+  dom.window.close();
+});
