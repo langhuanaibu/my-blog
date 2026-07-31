@@ -518,6 +518,7 @@
   <input id="contentImageFile" class="hidden" type="file" accept="image/*">
   <input id="markdownFile" class="hidden" type="file" accept=".md,.markdown,text/markdown,text/plain">
 
+  <script src="/admin/marked.min.js"></script>
   <script src="/admin/editor-tools.js"></script>
   <script>
     try { localStorage.removeItem('aoiblog_admin_token'); } catch (_) {}
@@ -1107,16 +1108,20 @@
     $('markdownFile').addEventListener('change', async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      const text = await file.text();
-      const titleMatch = text.match(/^#\s+(.+)$/m);
-
-      if (!$('title').value && titleMatch) {
-        $('title').value = titleMatch[1].trim();
+      try {
+        const replacement = editorTools.markdownImportReplacement({
+          source: await file.text(),
+          title: $('title').value
+        });
+        $('title').value = replacement.title;
+        $('content').value = replacement.value;
+        updatePreview();
+        setStatus('Markdown 已导入');
+      } catch (error) {
+        setStatus(`Markdown 导入失败：${error.message}`);
+      } finally {
+        event.target.value = '';
       }
-
-      $('content').value = text.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/^#\s+(.+)\n?/, '').trim();
-      updatePreview();
-      event.target.value = '';
     });
 
     // 会话在 cookie 里，刷新页面不该被踢回登录框。

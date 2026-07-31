@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { createRequire } from "node:module";
@@ -553,6 +554,137 @@ test("admin upload rejects bytes that do not match the claimed image type", asyn
   });
 });
 
+function gitBlobSha(buffer) {
+  return createHash("sha1")
+    .update(`blob ${buffer.length}\0`)
+    .update(buffer)
+    .digest("hex");
+}
+
+function currentUploadDirectory() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `source/images/uploads/${value.year}/${value.month}`;
+}
+
+test("admin content upload reuses an identical Git blob in the current month", async () => {
+  await withRepoEnv(async () => {
+    const png = Buffer.from("89504e470d0a1a0a00000000", "hex");
+    const directory = currentUploadDirectory();
+    const existingPath = `${directory}/existing-image.png`;
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+      calls.push({ url: String(url), method: options.method || "GET" });
+      assert.equal(options.method || "GET", "GET");
+      assert.match(decodeURIComponent(String(url)), new RegExp(directory.replaceAll("/", "\\/")));
+      return jsonResponse([{
+        type: "file",
+        name: "existing-image.png",
+        path: existingPath,
+        sha: gitBlobSha(png),
+      }]);
+    };
+    const res = mockResponse();
+    try {
+      await adminUpload({
+        method: "POST",
+        headers: { authorization: "Bearer admin-secret" },
+        body: { fileName: "copy.png", contentBase64: png.toString("base64"), purpose: "content" },
+      }, res);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.data.path, existingPath);
+    assert.equal(res.body.data.url, `/${existingPath.replace(/^source\//, "")}`);
+    assert.equal(calls.length, 1);
+  });
+});
+
+test("admin cover upload scopes deduplication to the cover directory and uploads different bytes", async () => {
+  await withRepoEnv(async () => {
+    const png = Buffer.from("89504e470d0a1a0a00000001", "hex");
+    const originalFetch = globalThis.fetch;
+    const calls = [];
+    globalThis.fetch = async (url, options = {}) => {
+      calls.push({ url: decodeURIComponent(String(url)), method: options.method || "GET" });
+      if ((options.method || "GET") === "GET") {
+        return jsonResponse([{ type: "file", path: "source/images/covers/custom/other.png", sha: "different" }]);
+      }
+      return jsonResponse({ content: { sha: "saved" } });
+    };
+    const res = mockResponse();
+    try {
+      await adminUpload({
+        method: "POST",
+        headers: { authorization: "Bearer admin-secret" },
+        body: { fileName: "cover.png", contentBase64: png.toString("base64"), purpose: "cover" },
+      }, res);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    assert.equal(res.statusCode, 200);
+    assert.match(calls[0].url, /source\/images\/covers\/custom/);
+    assert.equal(calls[0].method, "GET");
+    assert.equal(calls[1].method, "PUT");
+  });
+});
+
+test("admin upload treats a missing target directory as empty", async () => {
+  await withRepoEnv(async () => {
+    const png = Buffer.from("89504e470d0a1a0a00000002", "hex");
+    const originalFetch = globalThis.fetch;
+    const methods = [];
+    globalThis.fetch = async (_url, options = {}) => {
+      const method = options.method || "GET";
+      methods.push(method);
+      if (method === "GET") return jsonResponse({ message: "Not Found" }, 404);
+      return jsonResponse({ content: { sha: "saved" } });
+    };
+    const res = mockResponse();
+    try {
+      await adminUpload({
+        method: "POST",
+        headers: { authorization: "Bearer admin-secret" },
+        body: { fileName: "new.png", contentBase64: png.toString("base64"), purpose: "content" },
+      }, res);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(methods, ["GET", "PUT"]);
+  });
+});
+
+test("admin upload surfaces non-404 directory lookup failures without writing", async () => {
+  await withRepoEnv(async () => {
+    const png = Buffer.from("89504e470d0a1a0a00000003", "hex");
+    const originalFetch = globalThis.fetch;
+    const methods = [];
+    globalThis.fetch = async (_url, options = {}) => {
+      methods.push(options.method || "GET");
+      return jsonResponse({ message: "upstream failed" }, 502);
+    };
+    const res = mockResponse();
+    try {
+      await adminUpload({
+        method: "POST",
+        headers: { authorization: "Bearer admin-secret" },
+        body: { fileName: "failed.png", contentBase64: png.toString("base64"), purpose: "content" },
+      }, res);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+    assert.equal(res.statusCode, 502);
+    assert.deepEqual(methods, ["GET"]);
+  });
+});
+
 test("production dependency lock excludes known vulnerable build-chain versions", async () => {
   const lock = JSON.parse(
     await readFile(new URL("../../package-lock.json", import.meta.url), "utf8"),
@@ -771,9 +903,10 @@ test("new articles serialize a timezone-stable midnight", () => {
     date: "2026-08-01",
     category: "随笔",
     content: "Body",
-  }, { default: "/fallback.webp" }, null);
+  }, { default: "/fallback.webp" }, null, "source/_posts/2026-08-01-new-post.md");
 
   assert.match(composed.content, /^date: "2026-08-01 00:00:00"$/m);
+  assert.match(composed.content, /^permalink: "\/2026\/08\/01\/new-post\/"$/m);
 });
 
 test("new articles preserve an explicit publication time", () => {
@@ -782,9 +915,10 @@ test("new articles preserve an explicit publication time", () => {
     date: "2026-08-01 09:30:00",
     category: "随笔",
     content: "Body",
-  }, { default: "/fallback.webp" }, null);
+  }, { default: "/fallback.webp" }, null, "source/_posts/2026-08-01-scheduled-post.md");
 
   assert.match(composed.content, /^date: "2026-08-01 09:30:00"$/m);
+  assert.match(composed.content, /^permalink: "\/2026\/08\/01\/scheduled-post\/"$/m);
 });
 
 test("editing an existing article preserves its original date scalar", () => {
@@ -798,10 +932,11 @@ test("editing an existing article preserves its original date scalar", () => {
     date: "2026-07-23",
     category: "随笔",
     content: "Updated body",
-  }, { default: "/fallback.webp" }, existing);
+  }, { default: "/fallback.webp" }, existing, "source/_posts/2026-07-23-existing-post.md");
 
   assert.match(composed.content, /^date: "2026-07-23"$/m);
   assert.doesNotMatch(composed.content, /^date: "2026-07-23 00:00:00"$/m);
+  assert.doesNotMatch(composed.content, /^permalink:/m);
 });
 
 test("changing an existing article date uses timezone-stable midnight", () => {
@@ -815,9 +950,10 @@ test("changing an existing article date uses timezone-stable midnight", () => {
     date: "2026-08-02",
     category: "随笔",
     content: "Updated body",
-  }, { default: "/fallback.webp" }, existing);
+  }, { default: "/fallback.webp" }, existing, "source/_posts/2026-07-23-rescheduled-post.md");
 
   assert.match(composed.content, /^date: "2026-08-02 00:00:00"$/m);
+  assert.match(composed.content, /^permalink: "\/2026\/08\/02\/rescheduled-post\/"$/m);
 });
 
 test("editing an explicit publication time on the same day uses the new time", () => {
@@ -831,8 +967,72 @@ test("editing an explicit publication time on the same day uses the new time", (
     date: "2026-08-01 09:30:00",
     category: "随笔",
     content: "Updated body",
-  }, { default: "/fallback.webp" }, existing);
+  }, { default: "/fallback.webp" }, existing, "source/_posts/2026-08-01-rescheduled-post.md");
 
   assert.match(composed.content, /^date: "2026-08-01 09:30:00"$/m);
   assert.doesNotMatch(composed.content, /^date: "2026-08-01 08:00:00"$/m);
+  assert.doesNotMatch(composed.content, /^permalink:/m);
+});
+
+test("editing title or time preserves an existing explicit permalink", () => {
+  const existing = {
+    date: "2026-08-01 08:00:00",
+    permalink: "/2026/07/31/stable-slug/",
+    category: "随笔",
+    index_img: "/cover.webp",
+  };
+  const composed = github.composePost({
+    title: "Renamed post",
+    date: "2026-08-01 09:30:00",
+    category: "随笔",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing, "source/_posts/2026-08-01-file-slug.md");
+
+  assert.match(composed.content, /^permalink: "\/2026\/07\/31\/stable-slug\/"$/m);
+});
+
+test("changing the calendar date updates only the date segments of an explicit permalink", () => {
+  const existing = {
+    date: "2026-08-01",
+    permalink: "/2026/07/31/stable-slug/",
+    category: "随笔",
+    index_img: "/cover.webp",
+  };
+  const composed = github.composePost({
+    title: "Renamed post",
+    date: "2026-08-03",
+    category: "随笔",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing, "source/_posts/2026-08-01-file-slug.md");
+
+  assert.match(composed.content, /^permalink: "\/2026\/08\/03\/stable-slug\/"$/m);
+});
+
+test("post parsing exposes an optional explicit permalink", () => {
+  const source = [
+    "---",
+    'title: "Pinned"',
+    'date: "2026-08-01 00:00:00"',
+    'permalink: "/2026/07/31/pinned/"',
+    "---",
+    "Body",
+    "",
+  ].join("\n");
+  assert.equal(
+    github.parsePost("source/_posts/2026-08-01-pinned.md", source, "sha").permalink,
+    "/2026/07/31/pinned/",
+  );
+});
+
+test("post parsing omits permalink for historical articles that do not define one", () => {
+  const source = [
+    "---",
+    'title: "Historical"',
+    'date: "2026-07-23"',
+    "---",
+    "Body",
+    "",
+  ].join("\n");
+  const article = github.parsePost("source/_posts/2026-07-23-historical.md", source, "sha");
+  assert.equal(Object.hasOwn(article, "permalink"), false);
 });

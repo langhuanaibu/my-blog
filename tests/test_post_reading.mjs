@@ -16,13 +16,10 @@ const homeCssSource = await readFile(
   new URL("../source/css/aoiblog-home.css", import.meta.url),
   "utf8",
 );
-const latestEssaySource = await readFile(
-  new URL(
-    "../source/_posts/2026-08-01-2026-nian-de-zhe-ge-xia-tian-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie.md",
-    import.meta.url,
-  ),
+const vercelConfig = JSON.parse(await readFile(
+  new URL("../vercel.json", import.meta.url),
   "utf8",
-);
+));
 
 function createPostDom(body, { desktop = false, height = 500 } = {}) {
   const dom = new JSDOM(
@@ -426,14 +423,13 @@ test("homepage article titles override Fluid truncation and remain fully visible
   dom.window.close();
 });
 
-test("latest essay renders Word paragraphs as separate top-level paragraphs", () => {
-  const body = latestEssaySource.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
-  const rendered = marked.parse(body, { gfm: true, breaks: true });
-  const dom = new JSDOM(`<main class="markdown-body">${rendered}</main>`);
-  const paragraphs = dom.window.document.querySelectorAll(".markdown-body > p");
-
-  assert.ok(paragraphs.length > 50, `expected many paragraphs, got ${paragraphs.length}`);
-  assert.equal(paragraphs[0].querySelectorAll("br").length, 0);
-
-  dom.window.close();
+test("the deleted essay URL permanently redirects to the current essay URL", () => {
+  const redirect = vercelConfig.redirects?.find((entry) => (
+    entry.source === "/2026/07/31/2026-nian-de-zhe-ge-xia-tian-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie/"
+  ));
+  assert.deepEqual(redirect, {
+    source: "/2026/07/31/2026-nian-de-zhe-ge-xia-tian-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie/",
+    destination: "/2026/07/31/2026-nian-xia-tian-de-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie/",
+    permanent: true,
+  });
 });

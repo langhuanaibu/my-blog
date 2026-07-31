@@ -83,15 +83,15 @@ npm run test:post
 ## 内容维护
 
 - 在线后台地址是 `/admin/`。登录后可以发布、编辑、删除文章，也可以上传文章封面和正文图片。
-- 从 Microsoft Word 粘贴到后台正文框时，只导入纯文本并把 Word 段落转换成 Markdown 空行分段；Word 的加粗、标题等格式不保留。普通正文中按 `Enter` 新建段落，按 `Shift+Enter` 插入段内换行；列表、引用、表格、标题与代码块内继续使用 Markdown 的单换行。后台预览会按独立段落显示两格首行缩进，包含图片的段落不缩进。
+- 从 Microsoft Word 粘贴到后台正文框时，只导入纯文本并把 Word 段落转换成 Markdown 空行分段；Word 的加粗、标题等格式不保留。导入 Markdown 时，后台使用本地 Marked 分词，只把顶层普通正文的单换行转为空行，标题、列表、引用、表格、代码、原始 HTML、图片和引用定义保持原结构。普通正文中按 `Enter` 新建段落，按 `Shift+Enter` 写入两个行尾空格加换行的 Markdown 硬换行；列表、引用、表格、标题与代码块内继续使用 Markdown 的单换行。后台预览会按独立段落显示两格首行缩进，包含图片的段落不缩进。
 - 后台“站点设置”可以修改常用展示文本，包括站点标题、副标题、首页标语、页脚文本、关于页昵称/简介和现有导航显示名；页脚按纯文本保存并进行 HTML 转义。
 - 新文章最终会写入 `source/_posts/`。
-- 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`；后台上传会校验 PNG、JPEG、GIF、WebP 的文件签名，扩展名与内容不一致时拒绝写入。
+- 图片统一放入 `source/images/`，文章中使用 `/images/<filename>`；后台上传会校验 PNG、JPEG、GIF、WebP 的文件签名，扩展名与内容不一致时拒绝写入。相同内容的正文图片会在当月上传目录内复用，封面会在自定义封面目录内复用，不跨用途或跨月份扫描。
 - 默认分类封面配置在 `source/_data/category-covers.json`。
 - 文章 front matter 中的 `index_img` 是首页卡片封面；如果后台没有上传单篇封面，会自动使用分类默认封面。
 - 首页文章卡片标题允许自然换行，桌面端和移动端都不会再使用 Fluid 默认的单行省略或两行截断；覆盖样式位于 `source/css/aoiblog-home.css`。
-- 文章 URL 使用 `/:year/:month/:day/:title/`。
-- 新文章的纯日期 `date` 会写成带午夜时间的 `YYYY-MM-DD 00:00:00`，避免 Vercel UTC 构建把 URL 日期提前一天；编辑日期未变化的旧文章时保留原始日期文本，因此不会迁移既有 URL。脚本或 API 显式传入时分秒时仍保留完整时间。
+- 文章 URL 默认使用 `/:year/:month/:day/:title/`；后台新建文章时会按所选日期和最终文件 slug 写入显式 `permalink`，避免构建时区改变 URL。主动改日期时只更新永久链接的日期段并保留稳定 slug；普通编辑保留旧文章已有链接，没有显式链接的历史文章不会被批量迁移。
+- 新文章的纯日期 `date` 写成 `YYYY-MM-DD 00:00:00`，脚本或 API 显式传入时分秒时原样保留。`date` 是发布元数据，不再承担固定 URL 的职责。
 - 迁移自旧站的文章保留 `old_id` 和 `twikooPath` front matter，用于旧链接兼容和 Twikoo 评论路径。
 
 ## 在线后台环境变量

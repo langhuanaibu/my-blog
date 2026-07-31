@@ -424,6 +424,9 @@ function parsePost(filePath, source, sha, includeContent = false) {
     excerpt: editableContent.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160)
   };
 
+  const permalink = readScalar(frontMatter, 'permalink');
+  if (permalink) article.permalink = permalink;
+
   if (includeContent) {
     article.content = editableContent;
     article.legacySuffix = legacySuffix;
@@ -515,7 +518,24 @@ function coverForCategory(coverMap, category, explicitCover) {
   return explicitCover || coverMap[category] || coverMap.default || FALLBACK_COVER;
 }
 
-function composePost(article, coverMap, existing) {
+function postSlugFromPath(filePath) {
+  return String(filePath || '')
+    .replace(/^.*\//, '')
+    .replace(/\.md$/, '')
+    .replace(/^\d{4}-\d{2}-\d{2}-/, '');
+}
+
+function permalinkSlug(permalink, fallback) {
+  const match = /^\/\d{4}\/\d{2}\/\d{2}\/([^/]+)\/$/.exec(String(permalink || ''));
+  return match ? match[1] : fallback;
+}
+
+function datedPermalink(day, slug) {
+  if (!slug) throw createHttpError(500, 'Cannot create a permalink without a post slug');
+  return `/${day.replace(/-/g, '/')}/${slug}/`;
+}
+
+function composePost(article, coverMap, existing, filePath = article.filePath) {
   const title = String(article.title || '').trim();
   if (!title) throw createHttpError(400, 'Title is required');
 
@@ -525,6 +545,7 @@ function composePost(article, coverMap, existing) {
   const requestedDay = requestedDate.slice(0, 10);
   const requestedHasTime = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(requestedInput);
   const existingDate = existing?.date ? normalizeDate(existing.date) : '';
+  const dateChanged = Boolean(existingDate && existingDate.slice(0, 10) !== requestedDay);
   const date = existingDate && !requestedHasTime && existingDate.slice(0, 10) === requestedDay
     ? existing.date
     : requestedHasTime
@@ -534,6 +555,17 @@ function composePost(article, coverMap, existing) {
   const indexImg = coverForCategory(coverMap, category, String(article.index_img || '').trim());
   const oldId = existing?.old_id || '';
   const twikooPath = existing?.twikooPath || '';
+  const fileSlug = postSlugFromPath(filePath);
+  let permalink = '';
+  if (!existing) {
+    permalink = datedPermalink(requestedDay, fileSlug);
+  } else if (existing.permalink) {
+    permalink = dateChanged
+      ? datedPermalink(requestedDay, permalinkSlug(existing.permalink, fileSlug))
+      : existing.permalink;
+  } else if (dateChanged) {
+    permalink = datedPermalink(requestedDay, fileSlug);
+  }
   let body = stripFrontMatter(article.content);
 
   if (existing?.legacySuffix && !body.includes('legacy-comments')) {
@@ -544,6 +576,7 @@ function composePost(article, coverMap, existing) {
     '---',
     `title: ${yamlString(title)}`,
     `date: ${yamlString(date)}`,
+    ...(permalink ? [`permalink: ${yamlString(permalink)}`] : []),
     `updated: ${yamlString(updated)}`,
     'categories:',
     `  - ${yamlString(category)}`,

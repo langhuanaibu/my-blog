@@ -119,7 +119,7 @@ module.exports = async (req, res) => {
         filePath = await createPostPath(article.title, article.date);
       }
 
-      const next = composePost(article, coverMap, existing);
+      const next = composePost(article, coverMap, existing, filePath);
       const result = await putTextFile(
         filePath,
         next.content,

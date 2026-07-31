@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/2026/07/31/2026-nian-de-zhe-ge-xia-tian-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie/",
+      "destination": "/2026/07/31/2026-nian-xia-tian-de-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie/",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/admin",
