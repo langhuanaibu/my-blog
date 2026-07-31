@@ -764,3 +764,75 @@ test("article delete rejects a stale editor SHA without deleting", async () => {
     assert.equal(deletes, 0);
   });
 });
+
+test("new articles serialize a timezone-stable midnight", () => {
+  const composed = github.composePost({
+    title: "New post",
+    date: "2026-08-01",
+    category: "随笔",
+    content: "Body",
+  }, { default: "/fallback.webp" }, null);
+
+  assert.match(composed.content, /^date: "2026-08-01 00:00:00"$/m);
+});
+
+test("new articles preserve an explicit publication time", () => {
+  const composed = github.composePost({
+    title: "Scheduled post",
+    date: "2026-08-01 09:30:00",
+    category: "随笔",
+    content: "Body",
+  }, { default: "/fallback.webp" }, null);
+
+  assert.match(composed.content, /^date: "2026-08-01 09:30:00"$/m);
+});
+
+test("editing an existing article preserves its original date scalar", () => {
+  const existing = {
+    date: "2026-07-23",
+    category: "随笔",
+    index_img: "/cover.webp",
+  };
+  const composed = github.composePost({
+    title: "Existing post",
+    date: "2026-07-23",
+    category: "随笔",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing);
+
+  assert.match(composed.content, /^date: "2026-07-23"$/m);
+  assert.doesNotMatch(composed.content, /^date: "2026-07-23 00:00:00"$/m);
+});
+
+test("changing an existing article date uses timezone-stable midnight", () => {
+  const existing = {
+    date: "2026-07-23",
+    category: "随笔",
+    index_img: "/cover.webp",
+  };
+  const composed = github.composePost({
+    title: "Rescheduled post",
+    date: "2026-08-02",
+    category: "随笔",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing);
+
+  assert.match(composed.content, /^date: "2026-08-02 00:00:00"$/m);
+});
+
+test("editing an explicit publication time on the same day uses the new time", () => {
+  const existing = {
+    date: "2026-08-01 08:00:00",
+    category: "随笔",
+    index_img: "/cover.webp",
+  };
+  const composed = github.composePost({
+    title: "Rescheduled post",
+    date: "2026-08-01 09:30:00",
+    category: "随笔",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing);
+
+  assert.match(composed.content, /^date: "2026-08-01 09:30:00"$/m);
+  assert.doesNotMatch(composed.content, /^date: "2026-08-01 08:00:00"$/m);
+});

@@ -520,7 +520,16 @@ function composePost(article, coverMap, existing) {
   if (!title) throw createHttpError(400, 'Title is required');
 
   const category = String(article.category || existing?.category || '未分类').trim() || '未分类';
-  const date = normalizeDate(article.date || existing?.date);
+  const requestedInput = String(article.date || existing?.date || '').trim();
+  const requestedDate = normalizeDate(requestedInput);
+  const requestedDay = requestedDate.slice(0, 10);
+  const requestedHasTime = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(requestedInput);
+  const existingDate = existing?.date ? normalizeDate(existing.date) : '';
+  const date = existingDate && !requestedHasTime && existingDate.slice(0, 10) === requestedDay
+    ? existing.date
+    : requestedHasTime
+      ? requestedDate
+      : `${requestedDay} 00:00:00`;
   const updated = today();
   const indexImg = coverForCategory(coverMap, category, String(article.index_img || '').trim());
   const oldId = existing?.old_id || '';

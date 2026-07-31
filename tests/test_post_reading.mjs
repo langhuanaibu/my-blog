@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { marked } from "marked";
 import { JSDOM } from "jsdom";
 
 const scriptSource = await readFile(
@@ -9,6 +10,17 @@ const scriptSource = await readFile(
 );
 const postCssSource = await readFile(
   new URL("../source/css/aoiblog-post.css", import.meta.url),
+  "utf8",
+);
+const homeCssSource = await readFile(
+  new URL("../source/css/aoiblog-home.css", import.meta.url),
+  "utf8",
+);
+const latestEssaySource = await readFile(
+  new URL(
+    "../source/_posts/2026-08-01-2026-nian-de-zhe-ge-xia-tian-wo-jiu-jing-zai-ru-he-li-jie-zhe-ge-shi-jie.md",
+    import.meta.url,
+  ),
   "utf8",
 );
 
@@ -374,6 +386,54 @@ test("indents only top-level text paragraphs in article content", () => {
     window.getComputedStyle(window.document.getElementById("quote-paragraph")).textIndent,
     "2em",
   );
+
+  dom.window.close();
+});
+
+test("homepage article titles override Fluid truncation and remain fully visible", () => {
+  const dom = new JSDOM(`
+    <!doctype html>
+    <html>
+      <head>
+        <style>
+          .index-header {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+          }
+        </style>
+        <style>${homeCssSource}</style>
+      </head>
+      <body>
+        <main id="board">
+          <h2 class="index-header">
+            <a>2026年的这个夏天，我究竟在如何理解这个世界？</a>
+          </h2>
+        </main>
+      </body>
+    </html>
+  `);
+  const title = dom.window.document.querySelector(".index-header");
+  const style = dom.window.getComputedStyle(title);
+
+  assert.equal(style.whiteSpace, "normal");
+  assert.equal(style.overflow, "visible");
+  assert.equal(style.textOverflow, "clip");
+  assert.equal(style.getPropertyValue("-webkit-line-clamp"), "none");
+
+  dom.window.close();
+});
+
+test("latest essay renders Word paragraphs as separate top-level paragraphs", () => {
+  const body = latestEssaySource.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
+  const rendered = marked.parse(body, { gfm: true, breaks: true });
+  const dom = new JSDOM(`<main class="markdown-body">${rendered}</main>`);
+  const paragraphs = dom.window.document.querySelectorAll(".markdown-body > p");
+
+  assert.ok(paragraphs.length > 50, `expected many paragraphs, got ${paragraphs.length}`);
+  assert.equal(paragraphs[0].querySelectorAll("br").length, 0);
 
   dom.window.close();
 });

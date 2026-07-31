@@ -283,6 +283,10 @@
       background: var(--surface-soft);
     }
 
+    .preview > p:not(:has(img)) {
+      text-indent: 2em;
+    }
+
     .preview img {
       max-width: 100%;
       border-radius: 6px;
@@ -514,6 +518,7 @@
   <input id="contentImageFile" class="hidden" type="file" accept="image/*">
   <input id="markdownFile" class="hidden" type="file" accept=".md,.markdown,text/markdown,text/plain">
 
+  <script src="/admin/editor-tools.js"></script>
   <script>
     try { localStorage.removeItem('aoiblog_admin_token'); } catch (_) {}
     // 登录后只保留 HttpOnly 的 admin 会话 cookie（JS 读不到、8 小时过期），
@@ -526,6 +531,7 @@
       current: null,
       coverTouched: false
     };
+    const editorTools = window.AoiAdminEditorTools;
 
     const $ = (id) => document.getElementById(id);
 
@@ -677,7 +683,7 @@
         return `
           <button class="article-item${active}" type="button" data-path="${escapeHtml(article.filePath)}">
             <span class="article-title">${escapeHtml(article.title)}</span>
-            <span class="article-meta">${escapeHtml(article.date || '')} / ${escapeHtml(article.category || '')}</span>
+            <span class="article-meta">${escapeHtml(String(article.date || '').slice(0, 10))} / ${escapeHtml(article.category || '')}</span>
           </button>
         `;
       }).join('');
@@ -704,7 +710,7 @@
       $('deleteBtn').classList.toggle('hidden', !article?.filePath);
       $('filePath').value = article?.filePath || '';
       $('title').value = article?.title || '';
-      $('date').value = article?.date || today();
+      $('date').value = String(article?.date || today()).slice(0, 10);
       $('category').value = article?.category || state.categories[0] || '';
       $('coverUrl').value = article?.index_img || defaultCover($('category').value);
       $('content').value = article?.content || '';
@@ -788,6 +794,16 @@
 
     function updatePreview() {
       $('preview').innerHTML = renderMarkdown($('content').value);
+    }
+
+    function applyEditorReplacement(replacement) {
+      if (!replacement) return false;
+      const textarea = $('content');
+      textarea.value = replacement.value;
+      textarea.selectionStart = replacement.selectionStart;
+      textarea.selectionEnd = replacement.selectionEnd;
+      updatePreview();
+      return true;
     }
 
     function insertAtCursor(text) {
@@ -1000,6 +1016,38 @@
     $('editorForm').addEventListener('submit', savePost);
     $('deleteBtn').addEventListener('click', deleteCurrentPost);
     $('content').addEventListener('input', updatePreview);
+    $('content').addEventListener('keydown', (event) => {
+      if (
+        event.key !== 'Enter'
+        || event.isComposing
+        || event.ctrlKey
+        || event.altKey
+        || event.metaKey
+      ) return;
+
+      const textarea = event.currentTarget;
+      const replacement = editorTools.editorEnterReplacement({
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd,
+        shiftKey: event.shiftKey
+      });
+      event.preventDefault();
+      applyEditorReplacement(replacement);
+    });
+    $('content').addEventListener('paste', (event) => {
+      const textarea = event.currentTarget;
+      const replacement = editorTools.wordPasteReplacement({
+        html: event.clipboardData?.getData('text/html') || '',
+        text: event.clipboardData?.getData('text/plain') || '',
+        value: textarea.value,
+        selectionStart: textarea.selectionStart,
+        selectionEnd: textarea.selectionEnd
+      });
+      if (!replacement) return;
+      event.preventDefault();
+      applyEditorReplacement(replacement);
+    });
     $('coverUrl').addEventListener('input', () => {
       state.coverTouched = true;
       updateCoverPreview();
