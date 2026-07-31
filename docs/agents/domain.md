@@ -22,7 +22,7 @@ Single-context repo (this repo):
 ├── docs/adr/
 │   ├── 0001-daily-item-trajectory-model.md
 │   ├── …
-│   └── 0010-admin-writes-accept-scoped-session.md
+│   └── NNNN-decision-name.md
 ├── news-pipeline/
 └── source/
 ```
