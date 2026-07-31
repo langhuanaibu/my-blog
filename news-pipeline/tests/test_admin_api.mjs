@@ -1036,3 +1036,91 @@ test("post parsing omits permalink for historical articles that do not define on
   const article = github.parsePost("source/_posts/2026-07-23-historical.md", source, "sha");
   assert.equal(Object.hasOwn(article, "permalink"), false);
 });
+
+test("quoted front matter scalars survive repeated parse and save cycles", () => {
+  const source = [
+    "---",
+    'title: "A \\"quoted\\" \\\\ title"',
+    'date: "2026-08-01 00:00:00"',
+    "categories:",
+    '  - "Essay"',
+    'index_img: "/cover.webp"',
+    "---",
+    "Body",
+    "",
+  ].join("\n");
+  const first = github.parsePost("source/_posts/2026-08-01-example.md", source, "sha", true);
+  assert.equal(first.title, 'A "quoted" \\ title');
+
+  const saved = github.composePost({ ...first, content: first.content }, { default: "/fallback.webp" }, first, first.filePath);
+  const second = github.parsePost(first.filePath, saved.content, "sha-2", true);
+  assert.equal(second.title, first.title);
+  const savedAgain = github.composePost({ ...second, content: second.content }, { default: "/fallback.webp" }, second, second.filePath);
+  assert.equal(savedAgain.content, saved.content);
+});
+
+test("editing a post preserves uncontrolled front matter and additional categories", () => {
+  const source = [
+    "---",
+    'title: "Original"',
+    'date: "2026-08-01 00:00:00"',
+    'updated: "2026-08-01"',
+    "categories:",
+    '  - "Essay"',
+    '  - "Personal"',
+    "tags:",
+    '  - "kept"',
+    "custom:",
+    "  nested: true",
+    "sticky: 3",
+    'index_img: "/cover.webp"',
+    'old_id: "legacy-id"',
+    'twikooPath: "/legacy/comments/"',
+    "---",
+    "Body",
+    "",
+  ].join("\n");
+  const existing = github.parsePost("source/_posts/2026-08-01-original.md", source, "sha", true);
+  assert.equal(Object.keys(existing).some((key) => /front/i.test(key)), false);
+
+  const composed = github.composePost({
+    ...existing,
+    title: "Renamed",
+    category: "Updated essay",
+    content: "Updated body",
+  }, { default: "/fallback.webp" }, existing, existing.filePath);
+
+  for (const unchanged of [
+    '  - "Personal"',
+    'tags:\n  - "kept"',
+    'custom:\n  nested: true',
+    'sticky: 3',
+    'old_id: "legacy-id"',
+    'twikooPath: "/legacy/comments/"',
+  ]) {
+    assert.ok(composed.content.includes(unchanged), unchanged);
+  }
+  assert.match(composed.content, /^  - "Updated essay"$/m);
+  assert.deepEqual(github.parsePost(existing.filePath, composed.content, "sha-2").categories, ["Updated essay", "Personal"]);
+});
+
+test("category cover lookup falls back only for a missing mapping file", async () => {
+  await withRepoEnv(async () => {
+    const originalFetch = global.fetch;
+    try {
+      global.fetch = async () => jsonResponse({ message: "Not Found" }, 404);
+      assert.deepEqual(await github.readCoverMap(), { default: "/images/covers/defaults/fallback.webp" });
+
+      global.fetch = async () => jsonResponse({ message: "server error" }, 500);
+      await assert.rejects(github.readCoverMap(), (error) => error.status === 500);
+
+      global.fetch = async () => jsonResponse({ content: Buffer.from("not json").toString("base64"), sha: "sha" });
+      await assert.rejects(github.readCoverMap(), /cover map|JSON/i);
+
+      global.fetch = async () => jsonResponse({ content: Buffer.from("[]").toString("base64"), sha: "sha" });
+      await assert.rejects(github.readCoverMap(), /cover map|object/i);
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+});

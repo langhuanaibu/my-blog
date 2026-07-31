@@ -60,10 +60,10 @@
 ## 3. 文件创建决策指南（当你需要加东西时）
 
 **场景 1：我要发布一篇新文章**
-👉 **动作**：优先通过 `/admin/` 发布；从 Word 粘贴时后台只保留纯文本并转换成 Markdown 空行分段，导入 Markdown 时也只规范化顶层普通正文。普通正文用 `Enter` 新建段落，`Shift+Enter` 写入两个行尾空格加换行的 Markdown 硬换行。后台新文章使用纯日期午夜值并写入显式 `permalink`；旧文章普通编辑保留原日期和链接，主动改日期时更新链接日期段并保留稳定 slug。需要手工维护时，在 `/source/_posts/` 下创建 `YYYY-MM-DD-slug.md` 并填写 front matter。
+👉 **动作**：优先通过 `/admin/` 发布；从 Word 粘贴时后台只保留纯文本并转换成 Markdown 空行分段，导入 Markdown 时也只规范化顶层普通正文。普通正文用 `Enter` 新建段落，`Shift+Enter` 写入两个行尾空格加换行的 Markdown 硬换行；列表、续行、引用、表格、标题、代码、原始 HTML 与引用/脚注定义内使用单换行。当前标签页会用 `sessionStorage` 保存一份文章会话草稿，远端 SHA 未变时可在刷新或重新登录后恢复，发生冲突时必须复制内容或明确恢复；关闭标签页后不长期保留。后台新文章使用纯日期午夜值并写入显式 `permalink`；旧文章普通编辑保留原日期和链接，并原样保留未知 Front Matter、额外分类、`old_id` 与 `twikooPath`，主动改日期时更新链接日期段并保留稳定 slug。需要手工维护时，在 `/source/_posts/` 下创建 `YYYY-MM-DD-slug.md` 并填写 front matter。
 
 **场景 2：我要上传一张说明图，并在文章中引用**
-👉 **动作**：将图片放入 `/source/images/`，命名为 `xxx-architecture.png`，确保名字有语义。文章中引用路径为 `/images/xxx-architecture.png`。后台会在正文图片当月目录或自定义封面目录内按 Git blob SHA 复用相同文件，但不会跨用途、跨月份清理历史图片。
+👉 **动作**：将图片放入 `/source/images/`，命名为 `xxx-architecture.png`，确保名字有语义。文章中引用路径为 `/images/xxx-architecture.png`。后台会在正文图片当月目录或自定义封面目录内按 Git blob SHA 复用相同文件，但不会跨用途、跨月份清理历史图片。后台选择图片后会立即提交资产；放弃文章只提示图片继续保留，不自动删除上传文件。
 
 **场景 3：我要给后台或日报页增加一个写回功能**
 👉 **动作**：在 `/api/` 下创建职责明确的小驼峰文件，例如 `adminSummary.js` 或 `newsState.js`；一个文件只处理一类接口职责。

@@ -371,7 +371,9 @@
       <button id="settingsViewBtn" class="secondary view-button" type="button">站点设置</button>
       <button id="newPostBtn" type="button">新文章</button>
       <button id="refreshBtn" class="secondary" type="button">刷新</button>
-      <a class="link-button secondary" href="/">返回前台</a>
+      <button id="restoreDraftBtn" class="secondary hidden" type="button">恢复会话草稿</button>
+      <button id="discardDraftBtn" class="secondary hidden" type="button">放弃会话草稿</button>
+      <a id="frontLink" class="link-button secondary" href="/">返回前台</a>
       <span id="status" class="status"></span>
     </div>
 
@@ -530,9 +532,15 @@
       coverMap: {},
       settings: null,
       current: null,
-      coverTouched: false
+      coverTouched: false,
+      articleBaseline: '',
+      settingsBaseline: '',
+      uploadedDuringDraft: false,
+      pendingDraft: null,
+      draftTimer: null
     };
     const editorTools = window.AoiAdminEditorTools;
+    const DRAFT_KEY = 'aoiblog_admin_article_draft_v1';
 
     const $ = (id) => document.getElementById(id);
 
@@ -561,7 +569,14 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) {
-        throw new Error(data.error || `请求失败: ${response.status}`);
+        const error = new Error(data.error || `请求失败: ${response.status}`);
+        error.status = response.status;
+        if (response.status === 401) {
+          persistDraftNow();
+          showLogin();
+          setStatus('会话已过期，请重新登录；当前文章草稿已保留。', $('loginStatus'));
+        }
+        throw error;
       }
       return data.data;
     }
@@ -609,9 +624,43 @@
       $('navAbout').value = nav.about || '';
       $('navLinks').value = nav.links || '';
       $('navGuestbook').value = nav.guestbook || '';
+      state.settingsBaseline = JSON.stringify(settingsFormValues());
+    }
+
+    function settingsFormValues() {
+      return {
+        title: $('settingTitle').value.trim(),
+        subtitle: $('settingSubtitle').value.trim(),
+        slogan: $('settingSlogan').value.trim(),
+        footerText: $('settingFooter').value.trim(),
+        aboutName: $('settingAboutName').value.trim(),
+        aboutIntro: $('settingAboutIntro').value.trim(),
+        nav: {
+          home: $('navHome').value.trim(),
+          archive: $('navArchive').value.trim(),
+          category: $('navCategory').value.trim(),
+          about: $('navAbout').value.trim(),
+          links: $('navLinks').value.trim(),
+          guestbook: $('navGuestbook').value.trim()
+        }
+      };
+    }
+
+    function hasUnsavedSettings() {
+      return !$('settingsView').classList.contains('hidden')
+        && state.settingsBaseline
+        && JSON.stringify(settingsFormValues()) !== state.settingsBaseline;
+    }
+
+    function confirmSettingsDiscard() {
+      if (!hasUnsavedSettings()) return true;
+      if (!confirm('站点设置尚未保存，确认放弃修改吗？')) return false;
+      renderSettings();
+      return true;
     }
 
     function showPostsView() {
+      if (!confirmSettingsDiscard()) return;
       $('postsView').classList.remove('hidden');
       $('settingsView').classList.add('hidden');
       $('postsViewBtn').classList.add('active');
@@ -620,6 +669,8 @@
     }
 
     async function showSettingsView() {
+      if (!confirmArticleDiscard()) return;
+      closeEditor();
       $('postsView').classList.add('hidden');
       $('settingsView').classList.remove('hidden');
       $('postsViewBtn').classList.remove('active');
@@ -627,6 +678,7 @@
       $('newPostBtn').classList.add('hidden');
 
       if (!state.settings) {
+        state.settingsBaseline = JSON.stringify(settingsFormValues());
         await loadSettings();
       }
     }
@@ -640,22 +692,7 @@
         state.settings = await api('/api/adminSettings', {
           method: 'POST',
           body: JSON.stringify({
-            settings: {
-              title: $('settingTitle').value.trim(),
-              subtitle: $('settingSubtitle').value.trim(),
-              slogan: $('settingSlogan').value.trim(),
-              footerText: $('settingFooter').value.trim(),
-              aboutName: $('settingAboutName').value.trim(),
-              aboutIntro: $('settingAboutIntro').value.trim(),
-              nav: {
-                home: $('navHome').value.trim(),
-                archive: $('navArchive').value.trim(),
-                category: $('navCategory').value.trim(),
-                about: $('navAbout').value.trim(),
-                links: $('navLinks').value.trim(),
-                guestbook: $('navGuestbook').value.trim()
-              }
-            }
+            settings: settingsFormValues()
           })
         });
         renderSettings();
@@ -703,6 +740,139 @@
       $('coverPreview').src = url;
     }
 
+    function articleFormValues() {
+      return {
+        filePath: $('filePath').value,
+        sha: state.current?.sha || '',
+        title: $('title').value,
+        date: $('date').value,
+        category: $('category').value,
+        index_img: $('coverUrl').value,
+        content: $('content').value
+      };
+    }
+
+    function articleFingerprint(article) {
+      const source = article || {};
+      return JSON.stringify({
+        filePath: String(source.filePath || ''),
+        sha: String(source.sha || ''),
+        title: String(source.title || ''),
+        date: String(source.date || '').slice(0, 10),
+        category: String(source.category || ''),
+        index_img: String(source.index_img || ''),
+        content: String(source.content || '')
+      });
+    }
+
+    function hasUnsavedArticle() {
+      return !$('editorForm').classList.contains('hidden')
+        && state.articleBaseline
+        && (state.uploadedDuringDraft
+          || articleFingerprint(articleFormValues()) !== state.articleBaseline);
+    }
+
+    function storedDraft() {
+      try {
+        return editorTools.parseSessionDraft(sessionStorage.getItem(DRAFT_KEY));
+      } catch {
+        return null;
+      }
+    }
+
+    function updateDraftButtons() {
+      const visible = Boolean(state.pendingDraft);
+      $('restoreDraftBtn').classList.toggle('hidden', !visible);
+      $('discardDraftBtn').classList.toggle('hidden', !visible);
+    }
+
+    function clearDraft() {
+      if (state.draftTimer) clearTimeout(state.draftTimer);
+      state.draftTimer = null;
+      try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
+      state.pendingDraft = null;
+      state.uploadedDuringDraft = false;
+      updateDraftButtons();
+    }
+
+    function persistDraftNow() {
+      if (state.draftTimer) clearTimeout(state.draftTimer);
+      state.draftTimer = null;
+      if (!hasUnsavedArticle()) {
+        if (!state.pendingDraft) {
+          try { sessionStorage.removeItem(DRAFT_KEY); } catch (_) {}
+        }
+        return;
+      }
+      const draft = editorTools.createSessionDraft(articleFormValues(), state.uploadedDuringDraft);
+      try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch (_) {}
+    }
+
+    function scheduleDraft() {
+      if (state.draftTimer) clearTimeout(state.draftTimer);
+      state.draftTimer = setTimeout(persistDraftNow, 350);
+    }
+
+    function applyDraft(draft) {
+      $('filePath').value = draft.filePath;
+      $('title').value = draft.title;
+      $('date').value = draft.date;
+      $('category').value = draft.category;
+      $('coverUrl').value = draft.index_img;
+      $('content').value = draft.content;
+      state.uploadedDuringDraft = draft.uploaded;
+      state.coverTouched = true;
+      updateCoverPreview();
+      updatePreview();
+      persistDraftNow();
+    }
+
+    function confirmArticleDiscard() {
+      if (!hasUnsavedArticle() && !state.pendingDraft) return true;
+      if (hasUnsavedArticle()) persistDraftNow();
+      const draft = state.pendingDraft?.draft || storedDraft() || editorTools.createSessionDraft(
+        articleFormValues(),
+        state.uploadedDuringDraft
+      );
+      if (!confirm(editorTools.draftDiscardMessage(draft))) return false;
+      clearDraft();
+      return true;
+    }
+
+    async function restoreSessionDraft() {
+      const draft = storedDraft();
+      if (!draft) return;
+      let remote = null;
+      if (draft.filePath) {
+        try {
+          remote = await api(`/api/adminArticles?filePath=${encodeURIComponent(draft.filePath)}`);
+        } catch (error) {
+          if (error.status === 401) return;
+        }
+      } else {
+        remote = {
+          filePath: '',
+          sha: '',
+          title: '',
+          date: today(),
+          category: state.categories[0] || '',
+          index_img: '',
+          content: ''
+        };
+      }
+
+      if (editorTools.draftRestoreState(draft, remote) === 'restore') {
+        showEditor(remote);
+        applyDraft(draft);
+        setStatus('已恢复当前标签页中的会话草稿。');
+        return;
+      }
+
+      state.pendingDraft = { draft, remote };
+      updateDraftButtons();
+      setStatus('检测到会话草稿，但远端文章已变化；请先复制内容，或明确恢复冲突草稿。');
+    }
+
     function showEditor(article = null) {
       state.current = article;
       state.coverTouched = Boolean(article?.index_img && article.index_img !== defaultCover(article.category));
@@ -717,10 +887,22 @@
       $('content').value = article?.content || '';
       updateCoverPreview();
       updatePreview();
+      state.uploadedDuringDraft = false;
+      state.articleBaseline = articleFingerprint({
+        filePath: article?.filePath || '',
+        sha: article?.sha || '',
+        title: article?.title || '',
+        date: String(article?.date || today()).slice(0, 10),
+        category: article?.category || state.categories[0] || '',
+        index_img: article?.index_img || defaultCover(article?.category || state.categories[0] || ''),
+        content: article?.content || ''
+      });
       renderArticles();
     }
 
     async function editPost(filePath) {
+      if (state.current?.filePath === filePath) return;
+      if (!confirmArticleDiscard()) return;
       try {
         setStatus('正在打开文章...');
         const article = await api(`/api/adminArticles?filePath=${encodeURIComponent(filePath)}`);
@@ -732,6 +914,7 @@
     }
 
     function newPost() {
+      if (!confirmArticleDiscard()) return;
       showEditor({
         title: '',
         date: today(),
@@ -742,11 +925,17 @@
       $('title').focus();
     }
 
-    function hideEditor() {
+    function closeEditor() {
       state.current = null;
+      state.articleBaseline = '';
       $('editorForm').classList.add('hidden');
       $('emptyState').classList.remove('hidden');
       renderArticles();
+    }
+
+    function hideEditor() {
+      if (!confirmArticleDiscard()) return;
+      closeEditor();
     }
 
     function escapeHtml(value) {
@@ -759,11 +948,7 @@
     }
 
     function safeMarkdownUrl(value) {
-      const url = String(value || '').trim();
-      if (/^https?:\/\//i.test(url)) return url;
-      if (/^(javascript|data|vbscript):/i.test(url)) return '#';
-      if (/^(\/(?!\/)|\.{0,2}\/|#|[A-Za-z0-9_-])/.test(url)) return url;
-      return '#';
+      return editorTools.safeMarkdownUrl(value);
     }
 
     function renderMarkdown(markdown) {
@@ -804,6 +989,7 @@
       textarea.selectionStart = replacement.selectionStart;
       textarea.selectionEnd = replacement.selectionEnd;
       updatePreview();
+      scheduleDraft();
       return true;
     }
 
@@ -815,6 +1001,7 @@
       textarea.focus();
       textarea.selectionStart = textarea.selectionEnd = start + text.length;
       updatePreview();
+      scheduleDraft();
     }
 
     function readFileAsDataUrl(file) {
@@ -945,6 +1132,7 @@
         });
 
         setStatus('已提交到 GitHub，Vercel 会自动重新部署');
+        clearDraft();
         state.current = saved;
         await loadAll();
         showEditor(saved);
@@ -967,6 +1155,8 @@
           method: 'DELETE',
           body: JSON.stringify({ filePath: state.current.filePath, sha: state.current.sha })
         });
+        clearDraft();
+        state.articleBaseline = articleFingerprint(articleFormValues());
         hideEditor();
         await loadAll();
         setStatus('文章已删除');
@@ -994,29 +1184,52 @@
         if (!sessionResponse.ok) throw new Error('后台口令错误');
         field.value = '';
         showAdmin();
-        await loadAll();
         setStatus('', $('loginStatus'));
       } catch (error) {
         showLogin();
         setStatus(error.message, $('loginStatus'));
+        return;
+      }
+
+      try {
+        await loadAll();
+        await restoreSessionDraft();
+      } catch (error) {
+        if (error.status !== 401) {
+          showAdmin();
+          setStatus(`登录成功，但文章列表加载失败：${error.message}。请点击刷新重试。`);
+        }
       }
     });
 
     $('logoutBtn').addEventListener('click', async () => {
+      if (!confirmArticleDiscard() || !confirmSettingsDiscard()) return;
       await fetch('/api/adminSession', { method: 'DELETE', credentials: 'same-origin' }).catch(() => {});
       showLogin();
     });
 
-    $('refreshBtn').addEventListener('click', loadAll);
+    $('refreshBtn').addEventListener('click', () => {
+      loadAll().catch((error) => setStatus(`加载失败：${error.message}。请重试。`));
+    });
     $('postsViewBtn').addEventListener('click', showPostsView);
-    $('settingsViewBtn').addEventListener('click', showSettingsView);
+    $('settingsViewBtn').addEventListener('click', () => {
+      showSettingsView().catch((error) => setStatus(`站点设置加载失败：${error.message}。请重试。`));
+    });
     $('settingsForm').addEventListener('submit', saveSettings);
-    $('reloadSettingsBtn').addEventListener('click', loadSettings);
+    $('reloadSettingsBtn').addEventListener('click', () => {
+      if (confirmSettingsDiscard()) loadSettings().catch((error) => setStatus(error.message));
+    });
     $('newPostBtn').addEventListener('click', newPost);
     $('cancelBtn').addEventListener('click', hideEditor);
     $('editorForm').addEventListener('submit', savePost);
     $('deleteBtn').addEventListener('click', deleteCurrentPost);
-    $('content').addEventListener('input', updatePreview);
+    for (const id of ['title', 'date']) {
+      $(id).addEventListener('input', scheduleDraft);
+    }
+    $('content').addEventListener('input', () => {
+      updatePreview();
+      scheduleDraft();
+    });
     $('content').addEventListener('keydown', (event) => {
       if (
         event.key !== 'Enter'
@@ -1052,18 +1265,21 @@
     $('coverUrl').addEventListener('input', () => {
       state.coverTouched = true;
       updateCoverPreview();
+      scheduleDraft();
     });
     $('category').addEventListener('input', () => {
       if (!state.coverTouched) {
         $('coverUrl').value = defaultCover($('category').value.trim());
       }
       updateCoverPreview();
+      scheduleDraft();
     });
 
     $('useDefaultCoverBtn').addEventListener('click', () => {
       state.coverTouched = false;
       $('coverUrl').value = defaultCover($('category').value.trim());
       updateCoverPreview();
+      scheduleDraft();
     });
 
     $('uploadCoverBtn').addEventListener('click', () => $('coverFile').click());
@@ -1077,10 +1293,12 @@
 
       try {
         const image = await uploadImage(file, 'cover');
+        state.uploadedDuringDraft = true;
         $('coverUrl').value = image.url;
         state.coverTouched = true;
         // 用本地压缩结果即时预览，避免请求尚未部署的线上路径导致破图。
         $('coverPreview').src = image.previewDataUrl;
+        scheduleDraft();
         setStatus('封面已上传，部署完成后线上生效');
       } catch (error) {
         setStatus(error.message);
@@ -1096,6 +1314,7 @@
 
       try {
         const image = await uploadImage(file, 'content');
+        state.uploadedDuringDraft = true;
         insertAtCursor(`\n![${file.name}](${image.url})\n`);
         setStatus('图片已插入');
       } catch (error) {
@@ -1116,12 +1335,53 @@
         $('title').value = replacement.title;
         $('content').value = replacement.value;
         updatePreview();
+        scheduleDraft();
         setStatus('Markdown 已导入');
       } catch (error) {
         setStatus(`Markdown 导入失败：${error.message}`);
       } finally {
         event.target.value = '';
       }
+    });
+
+    $('restoreDraftBtn').addEventListener('click', () => {
+      const pending = state.pendingDraft;
+      if (!pending) return;
+      if (!confirm('远端文章已经变化。明确恢复会用草稿内容覆盖编辑器，请确认已复制需要保留的远端内容。')) return;
+      showPostsView();
+      showEditor(pending.remote || {
+        filePath: pending.draft.filePath,
+        sha: '',
+        title: '',
+        date: today(),
+        category: state.categories[0] || '',
+        index_img: '',
+        content: ''
+      });
+      applyDraft(pending.draft);
+      state.pendingDraft = null;
+      updateDraftButtons();
+      setStatus('已明确恢复冲突草稿；保存前请再次核对远端变化。');
+    });
+
+    $('discardDraftBtn').addEventListener('click', () => {
+      const draft = state.pendingDraft?.draft;
+      if (!draft) return;
+      if (!confirm(editorTools.draftDiscardMessage(draft))) return;
+      clearDraft();
+      setStatus('会话草稿已放弃。');
+    });
+
+    $('frontLink').addEventListener('click', (event) => {
+      if (confirmArticleDiscard() && confirmSettingsDiscard()) return;
+      event.preventDefault();
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+      if (!hasUnsavedArticle() && !state.pendingDraft && !hasUnsavedSettings()) return;
+      persistDraftNow();
+      event.preventDefault();
+      event.returnValue = '';
     });
 
     // 会话在 cookie 里，刷新页面不该被踢回登录框。
@@ -1132,8 +1392,11 @@
         if (!response.ok) return;
         showAdmin();
         await loadAll();
-      } catch (_) {
-        showLogin();
+        await restoreSessionDraft();
+      } catch (error) {
+        if (error?.status === 401) return;
+        showAdmin();
+        setStatus(`文章列表加载失败：${error.message || '未知错误'}。请点击刷新重试。`);
       }
     })();
   </script>

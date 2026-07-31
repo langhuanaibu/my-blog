@@ -39,46 +39,6 @@
     );
   }
 
-  function isInsideFence(value, position) {
-    const lines = value.slice(0, position).split("\n");
-    let fence = "";
-    for (const line of lines) {
-      const match = /^\s*(`{3,}|~{3,})/.exec(line);
-      if (!match) continue;
-      const marker = match[1][0];
-      if (!fence) fence = marker;
-      else if (fence === marker) fence = "";
-    }
-    return Boolean(fence);
-  }
-
-  function currentLine(value, position) {
-    const beforeCursor = value.slice(0, position);
-    const start = beforeCursor.lastIndexOf("\n") + 1;
-    return beforeCursor.slice(start);
-  }
-
-  function isMarkdownStructure(value, position) {
-    if (isInsideFence(value, position)) return true;
-    const line = currentLine(value, position);
-    return /^\s*(?:[-+*]\s+|\d+[.)]\s+|>\s?|#{1,6}\s+|`{3,}|~{3,}| {4}\S)/.test(line)
-      || /^\s*\|.*\|\s*$/.test(line)
-      || /\S\s*\|\s*\S/.test(line);
-  }
-
-  function editorEnterReplacement({ value, selectionStart, selectionEnd, shiftKey }) {
-    const text = String(value || "");
-    const line = currentLine(text, selectionStart);
-    const useSingleBreak = !line.trim()
-      || isMarkdownStructure(text, selectionStart);
-    return replaceSelection(
-      text,
-      selectionStart,
-      selectionEnd,
-      shiftKey ? "  \n" : useSingleBreak ? "\n" : "\n\n",
-    );
-  }
-
   function markedApi() {
     if (root?.marked?.lexer) return root.marked;
     if (typeof require === "function") {
@@ -144,6 +104,109 @@
     return -1;
   }
 
+  function paragraphHasStructuralSyntax(source, position) {
+    const before = source.slice(0, position);
+    const separator = before.lastIndexOf("\n\n");
+    const block = before.slice(separator < 0 ? 0 : separator + 2);
+    const lines = block.split("\n");
+    const line = lines[lines.length - 1] || "";
+    return /^\s*(?:\[(?:\^[^\]]+|[^\]]+)\]:|[-+*]\s+|\d+[.)]\s+|>\s?|#{1,6}\s+| {4}\S)/.test(block)
+      || /^\s*\|.*\|\s*$/.test(line)
+      || /\S\s*\|\s*\S/.test(line);
+  }
+
+  function isTopLevelParagraphAt(source, position) {
+    let tokens;
+    try {
+      tokens = defaultLexer(source);
+    } catch {
+      // A missing or broken parser must not make structural Markdown destructive.
+      return false;
+    }
+    if (!Array.isArray(tokens)) return false;
+    const definitionRanges = referenceDefinitionRanges(source, tokens);
+    let cursor = 0;
+    for (const token of tokens) {
+      if (!token.raw) continue;
+      const start = tokenStartOutsideRanges(
+        source,
+        token.raw,
+        cursor,
+        token.type === "paragraph" ? definitionRanges : [],
+      );
+      if (start < 0) return false;
+      const end = start + token.raw.length;
+      if (position >= start && position <= end) {
+        return token.type === "paragraph" && !paragraphHasStructuralSyntax(source, position);
+      }
+      cursor = end;
+    }
+    return false;
+  }
+
+  function editorEnterReplacement({ value, selectionStart, selectionEnd, shiftKey }) {
+    const text = String(value || "");
+    const insertedText = shiftKey
+      ? "  \n"
+      : isTopLevelParagraphAt(text, selectionStart) ? "\n\n" : "\n";
+    return replaceSelection(text, selectionStart, selectionEnd, insertedText);
+  }
+
+  function safeMarkdownUrl(value) {
+    const url = String(value || "").trim();
+    if (!url || /[\u0000-\u001f\u007f]/.test(url) || /^\/\//.test(url)) return "#";
+    if (url.startsWith("#")) return url;
+    try {
+      const parsed = new URL(url, "https://preview.invalid/admin/");
+      if (!["http:", "https:", "mailto:", "tel:"].includes(parsed.protocol)) return "#";
+      return url;
+    } catch {
+      return "#";
+    }
+  }
+
+  const SESSION_DRAFT_VERSION = 1;
+
+  function createSessionDraft(fields, uploaded = false, savedAt = Date.now()) {
+    const source = fields && typeof fields === "object" ? fields : {};
+    return {
+      version: SESSION_DRAFT_VERSION,
+      filePath: String(source.filePath || ""),
+      sha: String(source.sha || ""),
+      title: String(source.title || ""),
+      date: String(source.date || ""),
+      category: String(source.category || ""),
+      index_img: String(source.index_img || ""),
+      content: String(source.content || ""),
+      uploaded: Boolean(uploaded),
+      savedAt: Number.isFinite(Number(savedAt)) ? Number(savedAt) : Date.now(),
+    };
+  }
+
+  function parseSessionDraft(value) {
+    try {
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
+      if (!parsed || typeof parsed !== "object" || parsed.version !== SESSION_DRAFT_VERSION) return null;
+      for (const key of ["filePath", "sha", "title", "date", "category", "index_img", "content"]) {
+        if (typeof parsed[key] !== "string") return null;
+      }
+      return createSessionDraft(parsed, parsed.uploaded, parsed.savedAt);
+    } catch {
+      return null;
+    }
+  }
+
+  function draftRestoreState(draft, article) {
+    if (!draft || !article || draft.filePath !== String(article.filePath || "")) return "conflict";
+    return draft.sha === String(article.sha || "") ? "restore" : "conflict";
+  }
+
+  function draftDiscardMessage(draft) {
+    return draft?.uploaded
+      ? "文章尚未保存，确认放弃吗？已上传的图片会继续保留在仓库中。"
+      : "文章尚未保存，确认放弃吗？";
+  }
+
   function splitImportedMarkdown(source) {
     let body = String(source || "")
       .replace(/^\uFEFF/, "")
@@ -198,9 +261,14 @@
   }
 
   return {
+    createSessionDraft,
+    draftDiscardMessage,
+    draftRestoreState,
     editorEnterReplacement,
     markdownImportReplacement,
     normalizeWordText,
+    parseSessionDraft,
+    safeMarkdownUrl,
     wordPasteReplacement,
   };
 }));

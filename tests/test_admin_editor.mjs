@@ -104,6 +104,84 @@ test("Markdown structures keep standard single-line Enter behavior", () => {
   }
 });
 
+test("Enter keeps a single line break throughout top-level Markdown structures", () => {
+  assert.ok(editorTools, "editor tools module should exist");
+  const cases = [
+    { value: "````markdown\n```\nstill fenced", cursor: "````markdown\n```\nstill fenced".length },
+    { value: "~~~~text\n~~~\nstill fenced", cursor: "~~~~text\n~~~\nstill fenced".length },
+    { value: "<section>\nraw html", cursor: "<section>\nraw html".length },
+    { value: "- list item\n  continuation", cursor: "- list item\n  continuation".length },
+    { value: "> quote\n> continuation", cursor: "> quote\n> continuation".length },
+    { value: "Column A | Column B\n--- | ---\none | two", cursor: "Column A | Column B\n--- | ---\none | two".length },
+    { value: "Setext heading\n--------------", cursor: "Setext heading\n--------------".length },
+    { value: "[ref]: /target\n  continued title", cursor: "[ref]: /target\n  continued title".length },
+    { value: "[^note]: first line\n  continuation", cursor: "[^note]: first line\n  continuation".length },
+  ];
+
+  for (const { value, cursor } of cases) {
+    const result = editorTools.editorEnterReplacement({
+      value,
+      selectionStart: cursor,
+      selectionEnd: cursor,
+      shiftKey: false,
+    });
+    assert.equal(result.value, `${value}\n`, value);
+  }
+});
+
+test("preview URLs reject script schemes even when control characters disguise them", () => {
+  assert.ok(editorTools, "editor tools module should exist");
+  for (const value of [
+    "javascript:alert(1)",
+    "JaVaScRiPt:alert(1)",
+    "java\tscript:alert(1)",
+    "java\nscript:alert(1)",
+    "data:text/html,alert(1)",
+    "vbscript:msgbox(1)",
+    "//evil.example/path",
+  ]) {
+    assert.equal(editorTools.safeMarkdownUrl(value), "#", value);
+  }
+
+  for (const value of [
+    "https://example.com/path",
+    "http://example.com/path",
+    "/images/example.webp",
+    "./relative",
+    "../relative",
+    "relative/path",
+    "#heading",
+  ]) {
+    assert.equal(editorTools.safeMarkdownUrl(value), value, value);
+  }
+});
+
+test("session drafts validate their shape and distinguish safe restore from conflicts", () => {
+  assert.ok(editorTools, "editor tools module should exist");
+  const draft = editorTools.createSessionDraft({
+    filePath: "source/_posts/example.md",
+    sha: "opened-sha",
+    title: "Draft title",
+    date: "2026-08-01",
+    category: "Essay",
+    index_img: "/cover.webp",
+    content: "Draft body",
+  }, true, 1234);
+
+  assert.equal(editorTools.parseSessionDraft(JSON.stringify(draft)).content, "Draft body");
+  assert.equal(editorTools.parseSessionDraft("not json"), null);
+  assert.equal(editorTools.parseSessionDraft(JSON.stringify({ version: 999 })), null);
+  assert.equal(editorTools.draftRestoreState(draft, {
+    filePath: "source/_posts/example.md",
+    sha: "opened-sha",
+  }), "restore");
+  assert.equal(editorTools.draftRestoreState(draft, {
+    filePath: "source/_posts/example.md",
+    sha: "new-sha",
+  }), "conflict");
+  assert.match(editorTools.draftDiscardMessage(draft), /图片|上传/);
+});
+
 test("Markdown import normalizes BOM and CRLF before reading front matter and a leading H1", () => {
   assert.ok(editorTools, "editor tools module should exist");
   assert.deepEqual(editorTools.markdownImportReplacement({
@@ -267,6 +345,18 @@ test("admin loads the vendored Markdown parser before editor tools", async () =>
   assert.ok(toolsIndex > markedIndex);
   const markedSource = await readFile(new URL("../source/admin/marked.min.js", import.meta.url), "utf8");
   assert.match(markedSource, /marked/i);
+});
+
+test("admin wires session-only draft recovery, dirty guards, and the shared URL validator", async () => {
+  const html = await readFile(new URL("../source/admin/index.html", import.meta.url), "utf8");
+  assert.match(html, /sessionStorage\.setItem\(DRAFT_KEY/);
+  assert.match(html, /sessionStorage\.removeItem\(DRAFT_KEY/);
+  assert.doesNotMatch(html, /localStorage\.setItem\([^)]*draft/i);
+  assert.match(html, /addEventListener\(['"]beforeunload['"]/);
+  assert.match(html, /draftRestoreState/);
+  assert.match(html, /response\.status === 401/);
+  assert.match(html, /settingsBaseline/);
+  assert.match(html, /editorTools\.safeMarkdownUrl/);
 });
 
 test("vendored Marked and editor tools work together through browser globals", async () => {

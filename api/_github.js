@@ -377,7 +377,18 @@ function yamlString(value) {
 }
 
 function unquote(value) {
-  return String(value || '').trim().replace(/^['"]|['"]$/g, '');
+  const text = String(value || '').trim();
+  if (text.startsWith('"') && text.endsWith('"')) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text.slice(1, -1);
+    }
+  }
+  if (text.startsWith("'") && text.endsWith("'")) {
+    return text.slice(1, -1).replace(/''/g, "'");
+  }
+  return text;
 }
 
 function readScalar(frontMatter, key) {
@@ -431,6 +442,15 @@ function parsePost(filePath, source, sha, includeContent = false) {
     article.content = editableContent;
     article.legacySuffix = legacySuffix;
   }
+
+  // The original block is server-only editing state. Keeping it non-enumerable
+  // prevents it from changing the public API response while allowing precise edits.
+  Object.defineProperty(article, '_frontMatter', {
+    value: frontMatter,
+    enumerable: false,
+    configurable: false,
+    writable: false
+  });
 
   return article;
 }
@@ -535,6 +555,36 @@ function datedPermalink(day, slug) {
   return `/${day.replace(/-/g, '/')}/${slug}/`;
 }
 
+function replaceFrontMatterScalar(frontMatter, key, value) {
+  const line = `${key}: ${yamlString(value)}`;
+  const pattern = new RegExp(`^${key}:.*$`, 'm');
+  if (pattern.test(frontMatter)) return frontMatter.replace(pattern, line);
+  return `${frontMatter}${frontMatter ? '\n' : ''}${line}`;
+}
+
+function replacePrimaryCategory(frontMatter, category) {
+  const list = /^categories:\s*\n((?:[ \t]+-[^\n]*(?:\n|$))*)/m;
+  const match = list.exec(frontMatter);
+  if (!match) return `${frontMatter}${frontMatter ? '\n' : ''}categories:\n  - ${yamlString(category)}`;
+  const items = match[1];
+  if (!items) {
+    return frontMatter.replace(match[0], `categories:\n  - ${yamlString(category)}\n`);
+  }
+  const updatedItems = items.replace(/^([ \t]+-)[^\n]*/m, `$1 ${yamlString(category)}`);
+  return `${frontMatter.slice(0, match.index)}categories:\n${updatedItems}${frontMatter.slice(match.index + match[0].length)}`;
+}
+
+function patchExistingFrontMatter(frontMatter, values) {
+  let next = String(frontMatter || '');
+  next = replaceFrontMatterScalar(next, 'title', values.title);
+  next = replaceFrontMatterScalar(next, 'date', values.date);
+  if (values.permalink) next = replaceFrontMatterScalar(next, 'permalink', values.permalink);
+  next = replaceFrontMatterScalar(next, 'updated', values.updated);
+  next = replacePrimaryCategory(next, values.category);
+  next = replaceFrontMatterScalar(next, 'index_img', values.indexImg);
+  return next;
+}
+
 function composePost(article, coverMap, existing, filePath = article.filePath) {
   const title = String(article.title || '').trim();
   if (!title) throw createHttpError(400, 'Title is required');
@@ -572,23 +622,33 @@ function composePost(article, coverMap, existing, filePath = article.filePath) {
     body = `${body}\n\n${existing.legacySuffix}`;
   }
 
-  const frontMatter = [
-    '---',
-    `title: ${yamlString(title)}`,
-    `date: ${yamlString(date)}`,
-    ...(permalink ? [`permalink: ${yamlString(permalink)}`] : []),
-    `updated: ${yamlString(updated)}`,
-    'categories:',
-    `  - ${yamlString(category)}`,
-    `index_img: ${yamlString(indexImg)}`
-  ];
-
-  if (oldId) frontMatter.push(`old_id: ${yamlString(oldId)}`);
-  if (twikooPath) frontMatter.push(`twikooPath: ${yamlString(twikooPath)}`);
-  frontMatter.push('---', '');
+  let frontMatter;
+  if (existing && Object.hasOwn(existing, '_frontMatter')) {
+    frontMatter = patchExistingFrontMatter(existing._frontMatter, {
+      title,
+      date,
+      permalink,
+      updated,
+      category,
+      indexImg
+    });
+  } else {
+    const lines = [
+      `title: ${yamlString(title)}`,
+      `date: ${yamlString(date)}`,
+      ...(permalink ? [`permalink: ${yamlString(permalink)}`] : []),
+      `updated: ${yamlString(updated)}`,
+      'categories:',
+      `  - ${yamlString(category)}`,
+      `index_img: ${yamlString(indexImg)}`
+    ];
+    if (oldId) lines.push(`old_id: ${yamlString(oldId)}`);
+    if (twikooPath) lines.push(`twikooPath: ${yamlString(twikooPath)}`);
+    frontMatter = lines.join('\n');
+  }
 
   return {
-    content: `${frontMatter.join('\n')}${body.trim()}\n`,
+    content: `---\n${frontMatter}\n---\n${body.trim()}\n`,
     date,
     category,
     indexImg,
@@ -599,9 +659,20 @@ function composePost(article, coverMap, existing, filePath = article.filePath) {
 async function readCoverMap() {
   try {
     const { content } = await readTextFile(COVER_MAP_PATH);
-    return JSON.parse(content);
-  } catch {
-    return { default: FALLBACK_COVER };
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      throw createHttpError(502, 'Category cover map contains invalid JSON');
+    }
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object'
+      || Object.values(parsed).some((value) => typeof value !== 'string')) {
+      throw createHttpError(502, 'Category cover map must be an object of string paths');
+    }
+    return parsed;
+  } catch (error) {
+    if (error?.status === 404) return { default: FALLBACK_COVER };
+    throw error;
   }
 }
 
