@@ -60,7 +60,7 @@
 ## 3. 文件创建决策指南（当你需要加东西时）
 
 **场景 1：我要发布一篇新文章**
-👉 **动作**：在 `/source/_posts/` 下创建 `YYYY-MM-DD-slug.md`，填写 front matter。
+👉 **动作**：优先通过 `/admin/` 发布；从 Word 粘贴时后台只保留纯文本并把 Word 段落转换成 Markdown 空行分段，普通正文用 `Enter` 新建段落、`Shift+Enter` 段内换行。后台会把新文章的纯日期写成 `YYYY-MM-DD 00:00:00`，编辑日期未变化的旧文章则保留原日期文本。需要手工维护时，在 `/source/_posts/` 下创建 `YYYY-MM-DD-slug.md` 并填写 front matter。
 
 **场景 2：我要上传一张说明图，并在文章中引用**
 👉 **动作**：将图片放入 `/source/images/`，命名为 `xxx-architecture.png`，确保名字有语义。文章中引用路径为 `/images/xxx-architecture.png`。
