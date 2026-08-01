@@ -165,6 +165,10 @@ def new_quality_stats():
         "audited_events": 0,
         "split_events": 0,
         "removed_fields": 0,
+        # 阶段A 返回形状非法的两个诊断维度：跳过的单个非法元素、整批降级次数。
+        # 只做留痕，不参与任何判定或验收门，见 docs/adr/0012。
+        "triage_invalid_rows": 0,
+        "triage_fallback_batches": 0,
         "enrichment_audited_events": 0,
         "duplicate_audited_events": 0,
         "same_day_duplicates_merged": 0,
@@ -2021,6 +2025,40 @@ def cap_same_source(ids, items, limit=2):
     return kept
 
 
+def _triage_rows(result, quality):
+    """把模型返回归一化成事件行列表；整体不可用时返回 None。
+
+    模型偶尔会退化成「只返回一个对象」而不是对象数组，此时直接迭代拿到的是
+    字符串 key，`ev.get` 会抛 AttributeError 并炸掉整条管线。形状不可信是常态，
+    见 docs/adr/0012。"""
+    if isinstance(result, dict):
+        result = [result]
+    if not isinstance(result, list):
+        return None
+    rows = [ev for ev in result if isinstance(ev, dict)]
+    # 空数组是合法回答（该批全是垃圾）；非空但一个可用行都没有，说明模型
+    # 整体跑偏，按整批不可用处理，否则这批条目会静默丢光。
+    if result and not rows:
+        return None
+    invalid = len(result) - len(rows)
+    if invalid and quality is not None:
+        quality["triage_invalid_rows"] += invalid
+        quality["degraded"] = True
+    return rows
+
+
+def _triage_singleton_events(batch, bi):
+    """整批降级：每条各自成事件。阶段A 是聚类步骤，跳过一批等于这些条目
+    彻底不进事件层，是内容损失且表面看不出来；宁可不去重也不能丢内容。
+    重复由后面的全量同日归并接住。"""
+    return [{
+        "ids": [bi + j],
+        "category": "world",
+        "dims": {dimension: 3.0 for dimension in DIMS},
+        "title": it["title"],
+    } for j, it in enumerate(batch)]
+
+
 def triage(llm, items, quality=None):
     """分批聚类打分，返回事件列表"""
     batch_size = 50
@@ -2033,17 +2071,33 @@ def triage(llm, items, quality=None):
             lines.append(f"[{idx}] ({it['source']}|{TYPE_NAMES[it['source_type']]}|{it['tier']}) "
                          f"{it['title']} —— {it['desc'][:120]}")
         log(f"  阶段A 批次 {bi // batch_size + 1}: {len(batch)} 条")
-        result = llm.json_call(TRIAGE_SYSTEM, "\n".join(lines))
-        for ev in result:
+        try:
+            rows = _triage_rows(
+                llm.json_call(TRIAGE_SYSTEM, "\n".join(lines)), quality)
+            if rows is None:
+                raise ValueError("triage response is neither an object nor an array")
+        except Exception as exc:
+            log(f"  阶段A 批次失败，该批每条降级为单条事件: {exc}")
+            if quality is not None:
+                quality["triage_fallback_batches"] += 1
+                quality["degraded"] = True
+            events.extend(_triage_singleton_events(batch, bi))
+            continue
+        for ev in rows:
             # 编号必须落在本批次范围内——模型若返回批内相对编号，
             # 会静默指向其他批次的条目，造成标题与来源错配
-            ids = [i for i in ev.get("ids", [])
+            raw_ids = ev.get("ids", [])
+            if not isinstance(raw_ids, (list, tuple)):
+                raw_ids = []
+            ids = [i for i in raw_ids
                    if isinstance(i, int) and not isinstance(i, bool)
                    and bi <= i < bi + len(batch)]
             ids = cap_same_source(ids, items)
             if not ids:
                 continue
             raw_dims = ev.get("dims", {}) or {}
+            if not isinstance(raw_dims, dict):
+                raw_dims = {}
             dims = {}
             for dimension in DIMS:
                 value = _model_number(raw_dims.get(dimension))
@@ -6716,7 +6770,8 @@ def validate_daily_payload(payload):
         exhausted = quality.get("same_day_budget_exhausted")
         if exhausted is not None and not isinstance(exhausted, bool):
             errors.append("quality.same_day_budget_exhausted must be a boolean")
-        for field in ("cross_day_duplicates", "material_updates", "update_judge_failures"):
+        for field in ("cross_day_duplicates", "material_updates", "update_judge_failures",
+                      "triage_invalid_rows", "triage_fallback_batches"):
             value = quality.get(field)
             if value is not None and (not isinstance(value, int)
                                       or isinstance(value, bool) or value < 0):

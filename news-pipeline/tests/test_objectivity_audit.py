@@ -181,6 +181,122 @@ def test_model_boolean_indexes_are_never_treated_as_integer_positions():
         OpinionLLM(), {"opinion": {"enabled": True}}, pulse) == []
 
 
+def _triage_items(count):
+    return [
+        {
+            "title": f"Source {index}",
+            "desc": "Source summary",
+            "source": f"Wire {index}",
+            "source_id": f"wire-{index}",
+            "source_type": "fact",
+            "tier": "T1",
+            "credibility": 9,
+            "url": f"https://example.com/report-{index}",
+            "time": "2026-07-22T00:00:00+00:00",
+        }
+        for index in range(count)
+    ]
+
+
+def _triage_event(index):
+    return {
+        "ids": [index],
+        "category": "world",
+        "dims": {dimension: 5 for dimension in dn.DIMS},
+        "title": f"Event {index}",
+    }
+
+
+def test_triage_normalizes_single_object_response():
+    """2026-08-01 线上故障：模型只返回一个对象而不是对象数组，
+    迭代得到字符串 key，整条管线 AttributeError 退出。"""
+    items = _triage_items(1)
+    quality = dn.new_quality_stats()
+
+    class SingleObjectLLM:
+        def json_call(self, _system, _user):
+            return _triage_event(0)
+
+    events = dn.triage(SingleObjectLLM(), [dict(item) for item in items], quality)
+
+    assert [event["ids"] for event in events] == [[0]]
+    assert events[0]["title"] == "Event 0"
+    assert quality["triage_invalid_rows"] == 0
+    assert quality["triage_fallback_batches"] == 0
+    assert quality["degraded"] is False
+
+
+def test_triage_skips_non_object_rows_and_keeps_the_rest():
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class MixedRowsLLM:
+        def json_call(self, _system, _user):
+            return [_triage_event(0), "不是对象", _triage_event(1)]
+
+    events = dn.triage(MixedRowsLLM(), [dict(item) for item in items], quality)
+
+    assert sorted(event["ids"][0] for event in events) == [0, 1]
+    assert quality["triage_invalid_rows"] == 1
+    assert quality["triage_fallback_batches"] == 0
+    assert quality["degraded"] is True
+
+
+@pytest.mark.parametrize("payload", [
+    ["纯字符串数组"],
+    "标量",
+    42,
+])
+def test_triage_unusable_response_degrades_to_one_event_per_item(payload):
+    """整批不可用时每条各自成事件——阶段A 跳过一批等于这些条目彻底不进
+    事件层，是内容损失且日报表面看不出来。"""
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class UnusableLLM:
+        def json_call(self, _system, _user):
+            return payload
+
+    events = dn.triage(UnusableLLM(), [dict(item) for item in items], quality)
+
+    assert sorted(event["ids"][0] for event in events) == [0, 1]
+    assert [event["title"] for event in events] == ["Source 0", "Source 1"]
+    assert all(event["dims"] == {dimension: 3.0 for dimension in dn.DIMS}
+               for event in events)
+    assert quality["triage_fallback_batches"] == 1
+    assert quality["degraded"] is True
+
+
+def test_triage_call_failure_degrades_to_one_event_per_item():
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class RaisingLLM:
+        def json_call(self, _system, _user):
+            raise RuntimeError("LLM 调用重试均失败")
+
+    events = dn.triage(RaisingLLM(), [dict(item) for item in items], quality)
+
+    assert sorted(event["ids"][0] for event in events) == [0, 1]
+    assert quality["triage_fallback_batches"] == 1
+    assert quality["degraded"] is True
+
+
+def test_triage_tolerates_non_list_ids_and_non_dict_dims():
+    items = _triage_items(1)
+    quality = dn.new_quality_stats()
+
+    class MalformedFieldsLLM:
+        def json_call(self, _system, _user):
+            return [{"ids": 0, "category": "world", "dims": "high", "title": "Bad"},
+                    {"ids": [0], "category": "world", "dims": None, "title": "Good"}]
+
+    events = dn.triage(MalformedFieldsLLM(), [dict(item) for item in items], quality)
+
+    assert [event["title"] for event in events] == ["Good"]
+    assert events[0]["dims"] == {dimension: 3.0 for dimension in dn.DIMS}
+
+
 def test_article_blocking_read_obeys_wall_clock_deadline_and_closes_response():
     class BlockingResponse:
         status_code = 200
