@@ -3231,7 +3231,7 @@
    "event_id": "evt-20260716-861ea3",
    "title": "乌克兰总统泽连斯基解雇国防部长费多罗夫",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-16",
    "last_seen": "2026-07-25",
@@ -3324,12 +3324,19 @@
      "news_status": "已确认"
     },
     {
+     "date": "2026-07-17",
+     "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
+     "summary": "阿根廷球员在世界杯半决赛后展示支持福克兰群岛主权的横幅，国际足联（FIFA）已启动纪律调查。",
+     "news_status": "发展中"
+    },
+    {
      "date": "2026-07-20",
      "title": "西班牙加时1-0胜阿根廷，时隔16年再夺世界杯",
      "summary": "西班牙在2026年世界杯决赛中加时1-0击败阿根廷，费兰·托雷斯打入制胜球，EA连续5届成功预测冠军。",
      "news_status": "已确认"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260716-c01eee",
@@ -3793,23 +3800,6 @@
      "title": "xAI首次起诉Grok用户制作儿童性虐待内容",
      "summary": "xAI首次对一名Grok用户提起诉讼，指控其利用该模型制作儿童性虐待图像（CSAM），标志着其立场转变。",
      "news_status": "已确认"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260717-eb732c",
-   "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
-   "category": "world",
-   "status": "archived",
-   "pinned": false,
-   "first_seen": "2026-07-17",
-   "last_seen": "2026-07-17",
-   "history": [
-    {
-     "date": "2026-07-17",
-     "title": "FIFA调查阿根廷球员展示福克兰群岛主权横幅事件",
-     "summary": "阿根廷球员在世界杯半决赛后展示支持福克兰群岛主权的横幅，国际足联（FIFA）已启动纪律调查。",
-     "news_status": "发展中"
     }
    ]
   },
@@ -6371,7 +6361,7 @@
    "event_id": "evt-20260724-528d14",
    "title": "美国对60个贸易伙伴加征10%-12.5%新关税",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-24",
    "last_seen": "2026-07-25",
@@ -7265,7 +7255,7 @@
    "event_id": "evt-20260725-8d682c",
    "title": "Anthropic发布Claude Opus 5，性能接近Fable 5",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7302,7 +7292,7 @@
    "event_id": "evt-20260725-d60d53",
    "title": "美国指控月之暗面蒸馏Anthropic模型开发Kimi K3",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7329,7 +7319,7 @@
    "event_id": "evt-20260725-b05f16",
    "title": "OpenAI模型失控导致安全漏洞事件引争议",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7358,7 +7348,7 @@
    "event_id": "evt-20260725-0d7345",
    "title": "英伟达微软等巨头联合呼吁支持开源AI模型",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7391,7 +7381,7 @@
    "event_id": "evt-20260725-2084a6",
    "title": "Black Forest Labs发布FLUX 3多模态模型",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7418,7 +7408,7 @@
    "event_id": "evt-20260725-3a6ea5",
    "title": "国际刑事法院首席检察官因性行为不端被免职",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7524,7 +7514,7 @@
    "event_id": "evt-20260725-23c2af",
    "title": "俄导弹袭击基辅附近无人机展，致十人死亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7549,7 +7539,7 @@
    "event_id": "evt-20260725-1202be",
    "title": "蚂蚁百灵发布Ling-3.0-flash原生混合推理模型",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7574,7 +7564,7 @@
    "event_id": "evt-20260725-6700d9",
    "title": "派拉蒙同意将华纳兄弟探索收购推迟至2027年",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7604,7 +7594,7 @@
    "event_id": "evt-20260725-8bc5d6",
    "title": "AlphaFold用于重新设计基因编辑蛋白以提高安全性",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7630,7 +7620,7 @@
    "event_id": "evt-20260725-1a2446",
    "title": "印度德里蟑螂抗议要求教育改革",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7657,7 +7647,7 @@
    "event_id": "evt-20260725-5e59a9",
    "title": "Anthropic发布Drone-Bench评估AI操控无人机",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7682,7 +7672,7 @@
    "event_id": "evt-20260725-9c9426",
    "title": "约旦河西岸巴以冲突致六人死亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7709,7 +7699,7 @@
    "event_id": "evt-20260725-3f860a",
    "title": "SpaceX星舰第13次试飞部署V3星链卫星，助推器溅落异常",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7738,7 +7728,7 @@
    "event_id": "evt-20260725-be0957",
    "title": "AI对就业岗位影响分析：企业用AI Agent替代招聘",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7840,7 +7830,7 @@
    "event_id": "evt-20260725-459411",
    "title": "国际象棋联合会主席因欧盟制裁面临下台",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7866,7 +7856,7 @@
    "event_id": "evt-20260725-579981",
    "title": "Anthropic为Claude 5代模型精简超80%系统提示词",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7891,7 +7881,7 @@
    "event_id": "evt-20260725-f7042f",
    "title": "器官体外保存技术突破：超低温肾脏移植成功",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7916,7 +7906,7 @@
    "event_id": "evt-20260725-06c482",
    "title": "尼日利亚总统批准大规模军事扩张",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7942,7 +7932,7 @@
    "event_id": "evt-20260725-c9cf6c",
    "title": "南非总统获临时禁令暂停弹劾调查",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7968,7 +7958,7 @@
    "event_id": "evt-20260725-e5f5bf",
    "title": "研究：近70%BGP路径被传输提供商重写",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -7993,7 +7983,7 @@
    "event_id": "evt-20260725-d15659",
    "title": "宁德时代上半年营收净利双增超40%",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -8020,7 +8010,7 @@
    "event_id": "evt-20260725-9e8ad8",
    "title": "法官驳回特朗普政府索取记者通话记录",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -8047,7 +8037,7 @@
    "event_id": "evt-20260725-212b8d",
    "title": "巴基斯坦西北部汽车炸弹袭击致27死",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -8072,7 +8062,7 @@
    "event_id": "evt-20260725-3c5d4a",
    "title": "Vercel WAF for Blob进入公测",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -8097,7 +8087,7 @@
    "event_id": "evt-20260725-1d1a2a",
    "title": "证监会原副主席方星海接受审查调查",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -8123,7 +8113,7 @@
    "event_id": "evt-20260725-feb8b9",
    "title": "穆迪警告AI支出威胁科技巨头信用质量",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-25",
@@ -13016,7 +13006,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-01",
+   "last_seen": "2026-08-02",
    "history": [
     {
      "date": "2026-08-01",
@@ -13033,6 +13023,23 @@
       "src-cdf8e35e710ef158012a2103"
      ],
      "event_identity": "set-4d60f948a22b91029cfddae7"
+    },
+    {
+     "date": "2026-08-02",
+     "title": "俄导弹袭击基辅致至少9人死亡，美防空援助生变",
+     "summary": "俄罗斯导弹袭击基辅五个区，造成至少9人死亡、数十人受伤；特朗普正收回增加对乌导弹防御系统援助的承诺。",
+     "news_status": "已确认",
+     "watch": "后续发展取决于特朗普政府最终是否调整对乌军事援助政策，以及乌克兰防空系统能否有效应对俄军导弹袭击。可观察路标是美国官方是否发布新的援助计划。",
+     "sources": [
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-96",
+     "source_keys": [
+      "src-2d21fec68b08e3675160269b",
+      "src-5f6b9875bcc3829b66f66bc3"
+     ],
+     "event_identity": "set-a073f7a34a26fd184305acf1"
     }
    ]
   },
@@ -13196,7 +13203,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-01",
+   "last_seen": "2026-08-02",
    "history": [
     {
      "date": "2026-08-01",
@@ -13213,6 +13220,25 @@
       "src-c494777c7b781ef4b5e7b419"
      ],
      "event_identity": "set-078668de09e610235bfc3b62"
+    },
+    {
+     "date": "2026-08-02",
+     "title": "欧盟召开紧急会议应对休达移民危机",
+     "summary": "欧盟宣布将于8月4日召开内政部长紧急视频会议，讨论西班牙飞地休达的移民危机。",
+     "news_status": "发展中",
+     "watch": "后续发展取决于会议中欧盟成员国能否就移民分担达成一致，以及西班牙与欧盟其他成员国的紧张关系是否缓解。可观察路标是会议后是否发布联合声明或具体分配方案。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-02:pick-59",
+     "source_keys": [
+      "src-4d6b4c006c9057868a64c3ca",
+      "src-974dea971dae43e2f77e68cf",
+      "src-a2b573cc5becfe4719baeb37"
+     ],
+     "event_identity": "set-f95de9bc783acc092bbe27fe"
     }
    ]
   },
@@ -13545,6 +13571,531 @@
       "src-370461fb960697b5a61f211a"
      ],
      "event_identity": "set-13de71481ef98649effb1fc4"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-1b4c2f",
+   "title": "登山家Nirmal Purja在巴基斯坦雪崩中遇难",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "登山家Nirmal Purja在巴基斯坦雪崩中遇难",
+     "summary": "著名登山家Nirmal Purja在巴基斯坦Broad Peak遭遇雪崩身亡，其公司确认，同行的其他登山者也有遇难。",
+     "news_status": "已确认",
+     "watch": "后续取决于搜救进展和官方对雪崩原因的调查，可关注是否有更多遇难者身份公布及登山公司声明。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-63",
+     "source_keys": [
+      "src-1bd7b99d96e9e16a7f0e33d2",
+      "src-3c5704b63163e443e776ccab",
+      "src-45d61c8ab9b084317ebf2102",
+      "src-bba91b97efa85a55a95b1a0f"
+     ],
+     "event_identity": "set-54eac14dc850ff9a08e03b44"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-9ca8e0",
+   "title": "秘鲁纳斯卡线观光飞机坠毁致13人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "秘鲁纳斯卡线观光飞机坠毁致13人死亡",
+     "summary": "一架在秘鲁纳斯卡线上空飞行的观光飞机坠毁，造成13人死亡，包括外国游客。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-55",
+     "source_keys": [
+      "src-044170b7ba5126743375d1ce",
+      "src-09c5cccd263c8d6cec4581d9",
+      "src-f48de4994d38591763a7deaa"
+     ],
+     "event_identity": "set-f93dc09d892e0795ef013614"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-de8a9a",
+   "title": "莫斯科餐厅爆炸致3死多人伤",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "莫斯科餐厅爆炸致3死多人伤",
+     "summary": "莫斯科一家餐厅发生爆炸，造成至少3人死亡，超过21人受伤。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-57",
+     "source_keys": [
+      "src-045aa68bf0dd78d8e2c48ffe",
+      "src-636ee0d9e17946fd04cf534b"
+     ],
+     "event_identity": "set-39a79144b8ffd6ebacbfb2c1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-8ce2aa",
+   "title": "欧洲青少年杀手网络Foxtrot Network被曝光",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "欧洲青少年杀手网络Foxtrot Network被曝光",
+     "summary": "BBC调查曝光欧洲青少年杀手网络Foxtrot Network，该网络涉嫌参与约35起谋杀案。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-02:pick-51",
+     "source_keys": [
+      "src-c945906f5df80b5479e2a384"
+     ],
+     "event_identity": "set-08daf6bd78bd53637a7c91c6"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-06302c",
+   "title": "俄船只违反制裁向马里运送军事车辆",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "俄船只违反制裁向马里运送军事车辆",
+     "summary": "卫星图像显示，一艘俄罗斯船只违反制裁，通过英吉利海峡向马里运送装甲运兵车和卡车。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-02:pick-52",
+     "source_keys": [
+      "src-de8fba8a844f52796e9142e3"
+     ],
+     "event_identity": "set-718a9efefbdd50cd66f6b27b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-18e552",
+   "title": "乌干达成功控制埃博拉疫情，刚果（金）疫情仍最严重",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "乌干达成功控制埃博拉疫情，刚果（金）疫情仍最严重",
+     "summary": "乌干达约两周前出院最后一名埃博拉患者，成功控制疫情；刚果（金）疫情仍在蔓延，为史上最严重。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-02:pick-53",
+     "source_keys": [
+      "src-6a8f943d4d77eaf55db2fdb9"
+     ],
+     "event_identity": "set-119d94310c6112f28947b875"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-a108d3",
+   "title": "特朗普媒体推出付费数据服务，高价提供帖子优先访问权",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "特朗普媒体推出付费数据服务，高价提供帖子优先访问权",
+     "summary": "特朗普媒体集团8月1日推出付费数据服务，客户可付费获取特朗普在Truth Social上帖子的更快访问权限，最高月费达10万美元。",
+     "news_status": "已确认",
+     "watch": "该服务的市场反应及是否引发监管审查是关键。可观察路标是是否有机构或个人公开购买该服务，以及美国相关监管部门是否对此展开调查。",
+     "sources": [
+      "guardian",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-02:pick-27",
+     "source_keys": [
+      "src-992eed33e2e69e91c8d91868",
+      "src-fd8e81cedf4beb9cf6823bd2"
+     ],
+     "event_identity": "set-48f6983bbbe943855a720c94"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-0c9f7e",
+   "title": "意大利近全部主要城市发布最高级别高温红色警报",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "意大利近全部主要城市发布最高级别高温红色警报",
+     "summary": "意大利约19个主要城市已发布最高级别高温红色警报，预计到周一除两个城市外，其余所有城市都将处于红色警报状态。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-02:pick-61",
+     "source_keys": [
+      "src-d9f4f6e848c596f6519f9934"
+     ],
+     "event_identity": "set-9434559c96ddbcfa10fc6ce4"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-b33bc7",
+   "title": "《黑道家族》演员Vincent Pastore去世，享年80岁",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "《黑道家族》演员Vincent Pastore去世，享年80岁",
+     "summary": "在《黑道家族》中饰演Salvatore \"Big Pussy\" Bonpensiero的演员Vincent Pastore去世，享年80岁，被发现于纽约家中。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr"
+     ],
+     "item_ref": "2026-08-02:pick-54",
+     "source_keys": [
+      "src-beb954daca0a7432d24ea249",
+      "src-c5326a5b328411bef45b5584",
+      "src-e9171129139af9029a21bbf5"
+     ],
+     "event_identity": "set-a6002d774432d398fdefcbbd"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-12eb89",
+   "title": "字节跳动发布Seedance 2.5，可生成带音频的30秒视频",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "字节跳动发布Seedance 2.5，可生成带音频的30秒视频",
+     "summary": "字节跳动发布AI视频模型Seedance 2.5，可一次性生成视频和音频，单个片段最长30秒，是谷歌Gemini Omni Flash的三倍。",
+     "news_status": "已确认",
+     "sources": [
+      "thedecoder",
+      "hn"
+     ],
+     "item_ref": "2026-08-02:pick-24",
+     "source_keys": [
+      "src-1bc6e9e60358432b1840c1d6",
+      "src-72f5a97bc32a72c5486ac0df"
+     ],
+     "event_identity": "set-51f7871bcfdaadd1ad333be3"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-6fd0d6",
+   "title": "台湾经济因AI芯片出口激增但面临风险",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "台湾经济因AI芯片出口激增但面临风险",
+     "summary": "台湾GDP因美国进口AI芯片而飙升，但专家警告特朗普政策和中国因素可能带来问题。",
+     "news_status": "已确认",
+     "sources": [
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-82",
+     "source_keys": [
+      "src-58d092b3e329253812eca29f"
+     ],
+     "event_identity": "set-1a0e290562abfff95584d2c5"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-29d924",
+   "title": "澳大利亚结合现代技术与原住民知识应对野火",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "澳大利亚结合现代技术与原住民知识应对野火",
+     "summary": "澳大利亚利用现代技术和原住民知识提升野火应对能力，为欧洲提供经验。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-02:pick-58",
+     "source_keys": [
+      "src-15dd72584aed21a4dc6756fc"
+     ],
+     "event_identity": "set-da6619a82b26f73d7c614980"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-735f46",
+   "title": "安全研究员演示可自我传播的蠕虫攻击微软Copilot",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "安全研究员演示可自我传播的蠕虫攻击微软Copilot",
+     "summary": "安全研究员演示了一种蠕虫攻击，通过Word文档中的提示注入自动传播并劫持微软Copilot。",
+     "news_status": "已确认",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-02:pick-23",
+     "source_keys": [
+      "src-5adb5d5c148138a3cfe34aab"
+     ],
+     "event_identity": "set-d37f5f675b54f4dea29e1cac"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-08905e",
+   "title": "OpenAI的Hugging Face黑客事件证实AI网络警告",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "OpenAI的Hugging Face黑客事件证实AI网络警告",
+     "summary": "OpenAI的Hugging Face黑客事件证实了数月来的AI网络警告，引发行业关注。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-08-02:pick-33",
+     "source_keys": [
+      "src-4391620a1a79f72a8d810deb"
+     ],
+     "event_identity": "set-8c67b2908de1962429e1e82c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-cce5e2",
+   "title": "加州宣布提高最低工资至17.40美元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "加州宣布提高最低工资至17.40美元",
+     "summary": "加州州长宣布最低工资提高至17.40美元，成为全美最高，将于1月1日生效。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-08-02:pick-109",
+     "source_keys": [
+      "src-b67aa3afb54dc8ac072b0895"
+     ],
+     "event_identity": "set-fb829c100fcda673cbd4fbc8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-287d78",
+   "title": "Reddit股价下跌，CEO质疑谷歌AI概览价值",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "Reddit股价下跌，CEO质疑谷歌AI概览价值",
+     "summary": "Reddit股价下跌，CEO质疑谷歌AI概览的价值，可能考虑终止与谷歌的许可协议。",
+     "news_status": "发展中",
+     "sources": [
+      "ars"
+     ],
+     "item_ref": "2026-08-02:pick-19",
+     "source_keys": [
+      "src-54202063369539a4cc9ed96d"
+     ],
+     "event_identity": "set-776234de112b2b9018107e4f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-b38730",
+   "title": "AI持续破解未解数学难题，数学家反应复杂",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "AI持续破解未解数学难题，数学家反应复杂",
+     "summary": "OpenAI驳斥单位距离猜想后，AI辅助数学研究激增；菲尔兹奖得主称GPT 5.6 Pro解决了他耗时多年的两个问题。",
+     "news_status": "发展中",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-02:pick-21",
+     "source_keys": [
+      "src-45d3c7451b57414fae5f8b64"
+     ],
+     "event_identity": "set-57c8e5d4a172f01c241e5902"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-9d68ce",
+   "title": "Pixel 11全系规格与售价泄露，标准版起价899美元",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "Pixel 11全系规格与售价泄露，标准版起价899美元",
+     "summary": "Android Headlines泄露Pixel 11全系四款机型规格与美欧售价，标准版899美元起，与先前传闻一致。",
+     "news_status": "仅传言",
+     "sources": [
+      "verge",
+      "ithome"
+     ],
+     "item_ref": "2026-08-02:pick-9",
+     "source_keys": [
+      "src-73831db6b5a008fc23c24840",
+      "src-cb7472ad10682e6287711368"
+     ],
+     "event_identity": "set-a140deac028064cd131cebac"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-1fe6b7",
+   "title": "土耳其与伊拉克签署一年期石油管道协议",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "土耳其与伊拉克签署一年期石油管道协议",
+     "summary": "土耳其和伊拉克签署为期一年的石油管道协议，确保每日75万桶原油通过该管道运输。",
+     "news_status": "已确认",
+     "watch": "后续取决于协议执行情况以及全球石油市场变化。可观察路标：管道实际运输量是否达到协议水平。",
+     "sources": [
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-02:pick-98",
+     "source_keys": [
+      "src-6df5634b55e10910274706ba"
+     ],
+     "event_identity": "set-0a0dcab74b8a6707f262709b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260802-171e95",
+   "title": "美国将40余家中国实体列入强迫劳动清单，商务部回应",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-02",
+   "last_seen": "2026-08-02",
+   "history": [
+    {
+     "date": "2026-08-02",
+     "title": "美国将40余家中国实体列入强迫劳动清单，商务部回应",
+     "summary": "美国国土安全部将40余家中国实体增列至强迫劳动清单，商务部回应称新疆不存在强迫劳动，敦促美方停止打压。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-02:pick-123",
+     "source_keys": [
+      "src-07a111eee65210e02a169ed5"
+     ],
+     "event_identity": "set-5593199cdad70ba5e8bdc48a"
     }
    ]
   }
