@@ -778,6 +778,19 @@ test("deployment headers prevent MIME sniffing and admin clickjacking", async ()
 
   assert.equal(headersFor("/(.*)")["x-content-type-options"], "nosniff");
   assert.equal(headersFor("/admin/(.*)")["x-frame-options"], "DENY");
+  const newsPolicy = headersFor("/news/(.*)")["content-security-policy"];
+  assert.match(newsPolicy, /(?:^|; )script-src 'self'(?:;|$)/);
+  assert.match(newsPolicy, /(?:^|; )object-src 'none'(?:;|$)/);
+  assert.match(newsPolicy, /(?:^|; )base-uri 'none'(?:;|$)/);
+  assert.match(newsPolicy, /(?:^|; )frame-ancestors 'none'(?:;|$)/);
+  assert.equal(headersFor("/news")["content-security-policy"], newsPolicy);
+});
+
+test("authenticated API responses are explicitly non-cacheable", () => {
+  const res = mockResponse();
+  github.setCors(res);
+  assert.equal(res.headers["cache-control"], "no-store");
+  assert.equal(res.headers["access-control-allow-origin"], undefined);
 });
 
 test("personal state files are excluded from static deployments", async () => {
