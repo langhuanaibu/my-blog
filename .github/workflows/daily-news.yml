@@ -44,6 +44,9 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+    outputs:
+      committed: ${{ steps.publish.outputs.committed }}
+      published_date: ${{ steps.publish.outputs.published_date }}
     env:
       TZ: Asia/Shanghai
       RUN_MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode }}
@@ -104,6 +107,7 @@ jobs:
       # CLAUDE.md 把这一步列为「严禁自动 push」的唯一例外，例外的边界在代码里画死：
       # 只在 main 上跑、只提交 source/news/data、只推 main。
       - name: Commit and push
+        id: publish
         if: ${{ env.RUN_MODE == 'publish' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "github-actions[bot]"
@@ -111,11 +115,86 @@ jobs:
           git add source/news/data
           if git diff --cached --quiet; then
             echo "No data changes, skip commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "Update daily briefing data ($(date +%F))"
           git pull --rebase origin main
           git push origin HEAD:main
+          # 部署校验要等的是"刚发布的那一天"，不是它自己跑起来时的今天——
+          # 跨零点的手动发布下两者会不同，用 date 会误判成没上线。
+          published_date="$(grep -o '"[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}"' \
+            source/news/data/manifest.js | head -1 | tr -d '"')"
+          echo "committed=true" >> "$GITHUB_OUTPUT"
+          echo "published_date=$published_date" >> "$GITHUB_OUTPUT"
+
+  # 数据推上 main 不等于线上能读到：2026-08-01 机器人提交 2623d4c 后 Vercel
+  # 没有收到 webhook，日报在 main 上完好却一整天没上线，而且完全静默。
+  # 本 job 刻意独立：rollout-review 的 publication 取自 generate 的结果，把部署
+  # 校验塞进 generate 会让 Vercel 打个嗝就把当天判成发布失败、五门归零。
+  deploy-check:
+    needs: [generate]
+    if: ${{ needs.generate.result == 'success' && github.ref == 'refs/heads/main' && needs.generate.outputs.committed == 'true' }}
+    runs-on: ubuntu-latest
+    # 两轮各 10 分钟的轮询加上钩子调用，上界约 21 分钟；留出余量。
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      TZ: Asia/Shanghai
+      SITE_MANIFEST: https://aoiblog.top/news/data/manifest.js
+      PUBLISHED_DATE: ${{ needs.generate.outputs.published_date }}
+    steps:
+      - name: Wait for the briefing to go live
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ -z "$PUBLISHED_DATE" ]; then
+            echo "::error::generate reported a commit but no published date; cannot verify."
+            exit 1
+          fi
+          echo "Expecting $PUBLISHED_DATE in $SITE_MANIFEST"
+
+          # 每次都带 cache-bust query：CDN 缓存会让陈旧的 manifest 看起来像未部署。
+          live() {
+            curl -fsS --max-time 20 "${SITE_MANIFEST}?cb=${RANDOM}${RANDOM}" 2>/dev/null \
+              | grep -q "\"${PUBLISHED_DATE}\""
+          }
+
+          # 按墙钟设上界，循环次数不再隐含在 sleep 与 curl 超时的乘积里。
+          poll() {
+            deadline=$(( $(date +%s) + $1 ))
+            while [ "$(date +%s)" -lt "$deadline" ]; do
+              if live; then return 0; fi
+              sleep 20
+            done
+            return 1
+          }
+
+          if poll 600; then
+            echo "Briefing for $PUBLISHED_DATE is live."
+            exit 0
+          fi
+
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "::error::$PUBLISHED_DATE is on main but not live, and no VERCEL_DEPLOY_HOOK is configured."
+            echo "Add the deploy hook secret to let this job self-heal."
+            exit 1
+          fi
+
+          echo "::warning::Not live after 10 minutes; triggering the Vercel deploy hook."
+          curl -fsS --max-time 30 -X POST "$DEPLOY_HOOK" >/dev/null \
+            || echo "::warning::Deploy hook call failed; still checking whether the site updates."
+
+          if poll 600; then
+            echo "Briefing for $PUBLISHED_DATE is live after the deploy hook."
+            exit 0
+          fi
+
+          echo "::error::$PUBLISHED_DATE is still not live after the deploy hook. Check Vercel."
+          exit 1
 
   shadow-policy:
     runs-on: ubuntu-latest

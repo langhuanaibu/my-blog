@@ -111,7 +111,13 @@ def test_model_boolean_indexes_are_never_treated_as_integer_positions():
                 "title": "Boolean event",
             }]
 
-    assert dn.triage(TriageLLM(), [dict(item) for item in items]) == []
+    # 布尔 ids 被拒后这一批一个事件都没落地，按 ADR-0012 降级为单条事件而不是
+    # 让条目凭空消失。要守的不变式是「布尔永远不当下标」：降级出来的 ids 必须
+    # 是货真价实的整数位置，且 True 没有被当成 1。
+    boolean_triaged = dn.triage(TriageLLM(), [dict(item) for item in items])
+    assert [event["ids"] for event in boolean_triaged] == [[0], [1]]
+    assert all(type(i) is int for event in boolean_triaged for i in event["ids"])
+    assert [event["title"] for event in boolean_triaged] == ["Source 0", "Source 1"]
 
     class NonFiniteTriageLLM:
         def json_call(self, _system, _user):
@@ -207,6 +213,66 @@ def _triage_event(index):
     }
 
 
+def test_model_rows_reads_the_wrapped_contract():
+    payload = {"events": [{"a": 1}, {"b": 2}]}
+    assert dn._model_rows(payload, "events") == [{"a": 1}, {"b": 2}]
+    assert dn._model_rows({"events": []}, "events") == []
+
+
+def test_model_rows_accepts_a_drifted_wrapper_key():
+    """模型把 events 写成别的键：整个对象只有这一个键才认，靠字段数区分
+    包裹对象和裸行对象。"""
+    assert dn._model_rows({"event_list": [{"a": 1}]}, "events") == [{"a": 1}]
+
+
+def test_model_rows_never_mistakes_a_row_field_for_the_row_list():
+    """裸行对象自己带 ids / claims / context_evidence 这类列表字段。
+    早期用「唯一的列表值」做判据会把 ids 当成行列表，正好在本次故障的形状上判错。"""
+    row = {"ids": [0], "category": "world", "title": "Bare row"}
+    assert dn._model_rows(row, "events") == [row]
+
+    enriched = {"idx": 0, "title": "Bare enrich row",
+                "claims": [{"text": "c"}], "context_evidence": []}
+    assert dn._model_rows(enriched, "items") == [enriched]
+
+
+def test_model_rows_keeps_bare_array_compatibility_and_rejects_scalars():
+    assert dn._model_rows([{"a": 1}], "events") == [{"a": 1}]
+    assert dn._model_rows([], "events") == []
+    assert dn._model_rows("标量", "events") is None
+    assert dn._model_rows(42, "events") is None
+    assert dn._model_rows(None, "events") is None
+
+
+def test_batch_spans_folds_a_short_tail_into_the_previous_batch():
+    """2026-08-01 崩在只有 2 条的尾批上。历史尾批都 ≥ 13，阈值 10 让常规
+    日子的分批边界完全不变。"""
+    assert dn.batch_spans(302, 50) == [
+        (0, 50), (50, 100), (100, 150), (150, 200), (200, 250), (250, 302)]
+    # 尾批 13 条：历史常见值，边界不得改变
+    assert dn.batch_spans(313, 50)[-2:] == [(250, 300), (300, 313)]
+    # 单批不足阈值时不能被折叠掉
+    assert dn.batch_spans(3, 50) == [(0, 3)]
+    assert dn.batch_spans(0, 50) == []
+
+
+def test_triage_reads_the_wrapped_event_contract():
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class WrappedLLM:
+        def json_call(self, _system, _user):
+            return {"events": [_triage_event(0), _triage_event(1)]}
+
+    events = dn.triage(WrappedLLM(), [dict(item) for item in items], quality)
+
+    # 只断言阶段A 自己的计数器：两个事件会触发后续的同日归并，那一步拿到的是
+    # 阶段A 的载荷、走自己的降级路径，degraded 由它置位，与本用例无关。
+    assert sorted(event["ids"][0] for event in events) == [0, 1]
+    assert quality["triage_invalid_rows"] == 0
+    assert quality["triage_fallback_batches"] == 0
+
+
 def test_triage_normalizes_single_object_response():
     """2026-08-01 线上故障：模型只返回一个对象而不是对象数组，
     迭代得到字符串 key，整条管线 AttributeError 退出。"""
@@ -267,6 +333,45 @@ def test_triage_unusable_response_degrades_to_one_event_per_item(payload):
     assert quality["degraded"] is True
 
 
+@pytest.mark.parametrize("payload", [
+    # 模型用了批内相对编号：行是合法对象，但编号全落在本批窗口外
+    {"events": [{"ids": [900], "category": "world",
+                 "dims": {d: 5 for d in dn.DIMS}, "title": "越界"}]},
+    # 退化成一个空对象
+    {},
+])
+def test_triage_degrades_when_rows_land_no_events(payload):
+    """行是对象但一个事件都没落地时也必须降级。只看「元素是不是 dict」会漏掉
+    这条路径，让整批条目静默消失——和形状崩坏后果相同，只是没人看得见。"""
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class NoLandingLLM:
+        def json_call(self, _system, _user):
+            return payload
+
+    events = dn.triage(NoLandingLLM(), [dict(item) for item in items], quality)
+
+    assert sorted(event["ids"][0] for event in events) == [0, 1]
+    assert quality["triage_fallback_batches"] == 1
+    assert quality["degraded"] is True
+
+
+def test_triage_keeps_an_explicit_empty_answer_empty():
+    """{"events": []} 是合法回答（该批全是垃圾），不得触发降级——否则模型
+    每次正当地清空一批，都会被塞回一堆单条事件。"""
+    items = _triage_items(2)
+    quality = dn.new_quality_stats()
+
+    class EmptyLLM:
+        def json_call(self, _system, _user):
+            return {"events": []}
+
+    assert dn.triage(EmptyLLM(), [dict(item) for item in items], quality) == []
+    assert quality["triage_fallback_batches"] == 0
+    assert quality["degraded"] is False
+
+
 def test_triage_call_failure_degrades_to_one_event_per_item():
     items = _triage_items(2)
     quality = dn.new_quality_stats()
@@ -295,6 +400,85 @@ def test_triage_tolerates_non_list_ids_and_non_dict_dims():
 
     assert [event["title"] for event in events] == ["Good"]
     assert events[0]["dims"] == {dimension: 3.0 for dimension in dn.DIMS}
+
+
+def test_enrich_reads_the_wrapped_item_contract():
+    class WrappedLLM:
+        def json_call(self, _system, _user):
+            return {"items": [{"idx": 0, "title": "加工后标题",
+                               "summary": "事实增量", "status": "已确认"}]}
+
+    events = [{"ids": [0], "category": "world", "title": "Original title"}]
+    items = [{
+        "title": "Source title",
+        "desc": "Source summary",
+        "source": "Synthetic Wire",
+        "source_id": "synthetic-wire",
+        "source_type": "fact",
+        "tier": "T1",
+        "credibility": 9,
+        "url": "https://example.com/report",
+        "time": "2026-07-22T00:00:00+00:00",
+    }]
+
+    result = dn.enrich(
+        WrappedLLM(), events, items,
+        {"topic_tags": [], "detail": {"enabled": True},
+         "objectivity": {"mode": "interim"}},
+    )
+
+    assert result[0]["title"] == "加工后标题"
+
+
+def test_enrich_counts_an_unusable_response_and_keeps_base_content():
+    class ScalarLLM:
+        def json_call(self, _system, _user):
+            return "阶段B 跑偏了"
+
+    events = [{"ids": [0], "category": "world", "title": "Original title"}]
+    items = [{
+        "title": "Source title",
+        "desc": "Source summary",
+        "source": "Synthetic Wire",
+        "source_id": "synthetic-wire",
+        "source_type": "fact",
+        "tier": "T1",
+        "credibility": 9,
+        "url": "https://example.com/report",
+        "time": "2026-07-22T00:00:00+00:00",
+    }]
+    quality = dn.new_quality_stats()
+
+    result = dn.enrich(
+        ScalarLLM(), events, items,
+        {"topic_tags": [], "detail": {"enabled": True},
+         "objectivity": {"mode": "interim"}},
+        quality,
+    )
+
+    assert result[0]["title"] == "Original title"
+    assert quality["model_unusable_responses"] == 1
+    assert quality["degraded"] is True
+
+
+@pytest.mark.parametrize("payload,expected", [
+    ({"picks": [{"idx": 0, "title": "话题", "why_hot": "原因",
+                 "emotion": "情绪", "mechanism": "机制"}]}, 1),
+    ([{"idx": 0, "title": "话题", "why_hot": "原因",
+       "emotion": "情绪", "mechanism": "机制"}], 1),
+    ({"idx": 0, "title": "话题", "why_hot": "原因",
+      "emotion": "情绪", "mechanism": "机制"}, 1),
+    ("跑偏了", 0),
+])
+def test_opinion_pulse_accepts_wrapped_bare_and_single_object(payload, expected):
+    """舆论观察此前收到裸对象会静默变空，且一行日志都没有。"""
+    class ShapeLLM:
+        def json_call(self, _system, _user):
+            return payload
+
+    pulse = [{"platform": "微博", "word": "主题", "url": "https://example.com"}]
+    picks = dn.opinion_pulse(ShapeLLM(), {"opinion": {"enabled": True}}, pulse)
+    assert len(picks) == expected
 
 
 def test_article_blocking_read_obeys_wall_clock_deadline_and_closes_response():

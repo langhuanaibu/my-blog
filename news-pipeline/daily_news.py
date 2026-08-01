@@ -165,10 +165,12 @@ def new_quality_stats():
         "audited_events": 0,
         "split_events": 0,
         "removed_fields": 0,
-        # 阶段A 返回形状非法的两个诊断维度：跳过的单个非法元素、整批降级次数。
-        # 只做留痕，不参与任何判定或验收门，见 docs/adr/0012。
+        # 模型返回形状的三个诊断维度：阶段A 跳过的单个非法元素、阶段A 整批降级
+        # 次数、以及所有调用点上「整体不可用」的次数。只做留痕，不参与任何判定
+        # 或验收门，见 docs/adr/0012。
         "triage_invalid_rows": 0,
         "triage_fallback_batches": 0,
+        "model_unusable_responses": 0,
         "enrichment_audited_events": 0,
         "duplicate_audited_events": 0,
         "same_day_duplicates_merged": 0,
@@ -1949,6 +1951,31 @@ def _model_number(value):
     number = float(value)
     return number if math.isfinite(number) else None
 
+
+def _model_rows(raw, key):
+    """把模型返回归一化成行列表；整体不可用时返回 None。
+
+    本仓库的默认输出契约是对象包裹 `{key: [...]}`——裸数组契约在答案只有单个
+    元素时会被模型丢掉外壳，退化成裸对象，见 docs/adr/0012。这里同时接住三种
+    历史与退化形态，任一命中都不算故障。"""
+    if isinstance(raw, dict):
+        rows = raw.get(key)
+        if isinstance(rows, list):
+            return rows
+        # 键名漂移（events 写成 event_list 之类）：判据是"整个对象只有这一个
+        # 键"。包裹对象只有一个键，而丢了外壳的裸行对象总是带着 idx/title/dims
+        # 等一堆字段——按字段数区分不可能误判。换成"唯一的列表值"就会误判：
+        # 裸行自己就带 ids / claims / context_evidence 这类列表字段。
+        if len(raw) == 1:
+            only = next(iter(raw.values()))
+            if isinstance(only, list):
+                return only
+        return [raw]
+    if isinstance(raw, list):
+        return raw
+    return None
+
+
 PREFILTER_SYSTEM = """你是新闻信息流的第一道过滤器。用户给你一批带编号的条目标题。
 输出两类编号：
 - drop（丢弃）：广告软文、纯营销、促销、招聘、菜谱/生活贴士、纯情绪帖、
@@ -2006,10 +2033,11 @@ TRIAGE_SYSTEM = """你是一个严格的新闻编辑，负责筛选每日高质�
    注意：大佬转发/名人鸡汤 substance 和 durability 必须低；论文没有实验验证时 impact 别打高。
 4. 丢弃残余垃圾（广告、花边、无信息量的帖子）
 
-只输出 JSON 数组，每个元素：
+只输出 JSON 对象：{"events":[事件...]}，每个事件：
 {"ids": [条目编号列表，同一事件的都放进来], "category": "ai|tech|finance|society|world",
  "dims": {"impact": 0-10, "novelty": 0-10, "substance": 0-10, "evidence": 0-10, "durability": 0-10},
  "title": "该事件的一句话中文标题"}
+只有一个事件时也必须放在 events 数组里。没有事件就输出 {"events":[]}。
 被丢弃的条目不要出现在任何事件里。不要输出任何其他文字。"""
 
 
@@ -2026,25 +2054,34 @@ def cap_same_source(ids, items, limit=2):
 
 
 def _triage_rows(result, quality):
-    """把模型返回归一化成事件行列表；整体不可用时返回 None。
-
-    模型偶尔会退化成「只返回一个对象」而不是对象数组，此时直接迭代拿到的是
-    字符串 key，`ev.get` 会抛 AttributeError 并炸掉整条管线。形状不可信是常态，
-    见 docs/adr/0012。"""
-    if isinstance(result, dict):
-        result = [result]
-    if not isinstance(result, list):
+    """归一化阶段A 返回并逐元素过滤；整体不可用时返回 None。"""
+    raw_rows = _model_rows(result, "events")
+    if raw_rows is None:
         return None
-    rows = [ev for ev in result if isinstance(ev, dict)]
+    rows = [ev for ev in raw_rows if isinstance(ev, dict)]
     # 空数组是合法回答（该批全是垃圾）；非空但一个可用行都没有，说明模型
     # 整体跑偏，按整批不可用处理，否则这批条目会静默丢光。
-    if result and not rows:
+    if raw_rows and not rows:
         return None
-    invalid = len(result) - len(rows)
+    invalid = len(raw_rows) - len(rows)
     if invalid and quality is not None:
         quality["triage_invalid_rows"] += invalid
         quality["degraded"] = True
     return rows
+
+
+def batch_spans(total, batch_size, min_tail=10):
+    """分批区间；尾批不足 min_tail 条时并入前一批。
+
+    2026-08-01 崩在只有 2 条的尾批上：输入极少时模型很可能只产出单个元素，
+    而单元素答案极易被丢掉数组外壳。历史尾批都在 13 条以上，阈值 10 让常规
+    日子的分批边界完全不变，只吃掉这种离群值。"""
+    spans = [(bi, min(bi + batch_size, total))
+             for bi in range(0, total, batch_size)]
+    if len(spans) > 1 and spans[-1][1] - spans[-1][0] < min_tail:
+        tail = spans.pop()
+        spans[-1] = (spans[-1][0], tail[1])
+    return spans
 
 
 def _triage_singleton_events(batch, bi):
@@ -2061,28 +2098,29 @@ def _triage_singleton_events(batch, bi):
 
 def triage(llm, items, quality=None):
     """分批聚类打分，返回事件列表"""
-    batch_size = 50
     events = []
-    for bi in range(0, len(items), batch_size):
-        batch = items[bi:bi + batch_size]
+    for batch_number, (bi, end) in enumerate(batch_spans(len(items), 50), start=1):
+        batch = items[bi:end]
         lines = []
         for j, it in enumerate(batch):
             idx = bi + j
             lines.append(f"[{idx}] ({it['source']}|{TYPE_NAMES[it['source_type']]}|{it['tier']}) "
                          f"{it['title']} —— {it['desc'][:120]}")
-        log(f"  阶段A 批次 {bi // batch_size + 1}: {len(batch)} 条")
+        log(f"  阶段A 批次 {batch_number}: {len(batch)} 条")
         try:
             rows = _triage_rows(
                 llm.json_call(TRIAGE_SYSTEM, "\n".join(lines)), quality)
             if rows is None:
-                raise ValueError("triage response is neither an object nor an array")
+                raise ValueError("triage response has no usable event rows")
         except Exception as exc:
             log(f"  阶段A 批次失败，该批每条降级为单条事件: {exc}")
             if quality is not None:
                 quality["triage_fallback_batches"] += 1
+                quality["model_unusable_responses"] += 1
                 quality["degraded"] = True
             events.extend(_triage_singleton_events(batch, bi))
             continue
+        produced = 0
         for ev in rows:
             # 编号必须落在本批次范围内——模型若返回批内相对编号，
             # 会静默指向其他批次的条目，造成标题与来源错配
@@ -2108,6 +2146,16 @@ def triage(llm, items, quality=None):
                 "dims": dims,
                 "title": ev.get("title", items[ids[0]]["title"]),
             })
+            produced += 1
+        # 模型给了行、却一个事件都没落地，几乎只有一种成因：整批编号都不在本批
+        # 窗口内（模型用了批内相对编号）。此时不降级就等于这批条目静默消失，
+        # 和形状崩坏的后果一样，只是没人看得见。空数组是合法回答，不在此列。
+        if rows and not produced:
+            log(f"  阶段A 批次 {batch_number} 没有落地任何事件，该批每条降级为单条事件")
+            if quality is not None:
+                quality["triage_fallback_batches"] += 1
+                quality["degraded"] = True
+            events.extend(_triage_singleton_events(batch, bi))
     # 阶段A之后统一做证据归并：既覆盖跨批次漏项，也覆盖单批次模型漏项。
     if len(events) > 1:
         events = reconcile_same_day_events(llm, events, items, quality)
@@ -3541,9 +3589,9 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - 禁止为"平衡"补充原始报道中不存在的对立观点或说法；素材只有单一来源立场时，归因后照写即可，宁缺毋造。
 - 立场性判断优先归入 claims（kind 用 analysis）并标 source_indexes，不要写进正文的叙述语气里。
 
-只输出 JSON 数组，每个元素：
+只输出 JSON 对象：{{"items":[条目...]}}，每个条目：
 {{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "context_evidence": [{{"source_index":0,"quote":"..."}}], "watch": "..."{watch_detail_json}, "claims": [{{"text":"...","kind":"analysis","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
-不要输出任何其他文字。"""
+只有一个条目时也必须放在 items 数组里。不要输出任何其他文字。"""
 
 
 def sanitize_claims(raw_claims, source_names):
@@ -3926,9 +3974,13 @@ def enrich(llm, picked, items, cfg, quality=None):
                 f"事件[{bi + j}]（类目：{ev.get('category', 'world')}） {ev['title']}\n"
                 + "\n".join(srcs) + hint_line)
         log(f"  阶段B 批次 {batch_number}: {len(batch)} 个事件")
-        result = llm.json_call(system, "【今日事件】\n" + "\n\n".join(blocks))
-        if not isinstance(result, list):
+        result = _model_rows(
+            llm.json_call(system, "【今日事件】\n" + "\n\n".join(blocks)), "items")
+        if result is None:
             log("  阶段B 返回结构非法，本批保留基础内容")
+            if quality is not None:
+                quality["model_unusable_responses"] += 1
+                quality["degraded"] = True
             continue
         invalid_rows = sum(not isinstance(row, dict) for row in result)
         if invalid_rows:
@@ -5749,7 +5801,7 @@ DEEP_SYSTEM = """你为个人读者筛选"今天值得花时间深读的长文"�
  "content_type": "reporting|analysis|opinion", "topic_fit": true|false}
 content_type 分别表示报道、分析、观点；无法可靠判断时省略该字段。
 未标 filter 的候选，topic_fit 一律输出 true。
-只输出 JSON 数组，不要其他文字。"""
+只输出 JSON 对象：{"picks":[候选...]}。只有一个也必须放在 picks 数组里。不要其他文字。"""
 
 
 def estimate_read_minutes(item, lang):
@@ -5947,11 +5999,15 @@ def deep_channel(llm, cfg, date_str, profile_text=""):
                                candidates, {}, [])
             raise
 
+        rows = _model_rows(result, "picks")
+        if rows is None:
+            log("  深读返回结构非法，本次不推荐")
+            rows = []
         scored = []
         score_stats = {}
         source_by_id = {s["id"]: s for s in deep_sources}
         threshold = float(dcfg.get("pick_threshold", 7))
-        for r in (result if isinstance(result, list) else []):
+        for r in rows:
             if not isinstance(r, dict):
                 continue
             i = _model_index(r.get("idx"), len(candidates))
@@ -6056,7 +6112,7 @@ PAPERS_SYSTEM = """你为一位**前端/全栈开发者**从每天的 arXiv 热�
  "why": "为什么值得读：该补什么概念/能不能用上（≤60字）",
  "contribution": "核心贡献（≤80字）", "evidence": "主要证据或实验（≤80字）",
  "limitations": "适用边界或局限（≤80字）", "takeaway": "对个人学习最有用的结论（≤80字）"}
-只输出 JSON 数组，不要其他文字。"""
+只输出 JSON 对象：{"picks":[论文...]}。只有一篇也必须放在 picks 数组里。不要其他文字。"""
 
 
 def fetch_hf_papers(date_str, days=2):
@@ -6120,10 +6176,13 @@ def papers_channel(llm, cfg, date_str, profile_text=""):
         if profile_has_content(profile_text):
             user = "【兴趣画像】\n" + profile_text + "\n\n"
         user += "【候选论文】\n" + "\n".join(lines)
-        result = llm.json_call(PAPERS_SYSTEM, user)
+        rows = _model_rows(llm.json_call(PAPERS_SYSTEM, user), "picks")
+        if rows is None:
+            log("  论文返回结构非法，本次不推荐")
+            rows = []
 
         scored = []
-        for r in (result if isinstance(result, list) else []):
+        for r in rows:
             if not isinstance(r, dict):
                 continue
             i = _model_index(r.get("idx"), len(candidates))
@@ -6196,7 +6255,8 @@ OPINION_SYSTEM = """你为一位关注"舆论机制"的读者做每日舆论观�
  "why_hot": "为什么热：事件是什么+传播动力（≤60字）",
  "emotion": "映射的群体情绪（≤40字）",
  "mechanism": "平台机制的作用（算法推流/话题运营/社群结构等，≤40字）"}
-拿不准的宁可少挑，一个都不值得说就输出 []。只输出 JSON 数组，不要其他文字。"""
+只输出 JSON 对象：{"picks":[话题...]}。只有一个也必须放在 picks 数组里。
+拿不准的宁可少挑，一个都不值得说就输出 {"picks":[]}。不要其他文字。"""
 
 
 def _cjk_norm(s):
@@ -6247,11 +6307,14 @@ def opinion_pulse(llm, cfg, pulse, profile_text=""):
         if profile_has_content(profile_text):
             user = "【读者兴趣画像】\n" + profile_text + "\n\n"
         user += "【今日热榜】\n" + "\n".join(lines)
-        result = llm.json_call(OPINION_SYSTEM, user)
+        rows = _model_rows(llm.json_call(OPINION_SYSTEM, user), "picks")
+        if rows is None:
+            log("  舆论观察返回结构非法，本次留空")
+            rows = []
 
         out, used = [], set()
         pick_max = int(ocfg.get("pick_max", 3))
-        for r in (result if isinstance(result, list) else []):
+        for r in rows:
             i = _model_index(r.get("idx"), len(cand)) if isinstance(r, dict) else None
             if i is None or i in used or len(out) >= pick_max:
                 continue
@@ -6771,7 +6834,8 @@ def validate_daily_payload(payload):
         if exhausted is not None and not isinstance(exhausted, bool):
             errors.append("quality.same_day_budget_exhausted must be a boolean")
         for field in ("cross_day_duplicates", "material_updates", "update_judge_failures",
-                      "triage_invalid_rows", "triage_fallback_batches"):
+                      "triage_invalid_rows", "triage_fallback_batches",
+                      "model_unusable_responses"):
             value = quality.get(field)
             if value is not None and (not isinstance(value, int)
                                       or isinstance(value, bool) or value < 0):
