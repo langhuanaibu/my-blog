@@ -13,10 +13,12 @@ const points = [...new Set([...fs.readFileSync(subsetFile, "utf8")].map((char) =
 fontSplit({
   input: path.resolve(input),
   outDir: path.resolve(outDir),
+  // subsets 是首屏热区，subsetRemainChars 把热区外的全部字形保留成尾部分片，
+  // 浏览器按 unicode-range 只取用得上的那几片。两者缺一：只给 subsets 会丢字，
+  // 只开 autoSubset 则热区不成片、单页要拉约 40 片。
   subsets: [points],
-  subsetRemainChars: false,
-  autoSubset: false,
-  languageAreas: false,
+  subsetRemainChars: true,
+  autoSubset: true,
   chunkSize: 70000,
   testHtml: false,
   reporter: false,

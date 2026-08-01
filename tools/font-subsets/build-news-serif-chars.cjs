@@ -1,3 +1,6 @@
+// 这份清单只决定衬线字体的首屏分片装什么，不决定字体覆盖什么。
+// 子集外的字形由 tools/generate-news-font.cjs 的 subsetRemainChars 保留在尾部
+// 分片里，按需加载，所以语料增长不会导致漏字，也就不需要定期重新生成。
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -22,20 +25,18 @@ const corpus = corpusRoots.flatMap(filesUnder)
   .filter((file) => /\.(?:html|js|json)$/i.test(file))
   .map((file) => fs.readFileSync(file, "utf8"))
   .join("\n");
-const counts = new Map();
+const han = new Set();
 for (const char of corpus) {
-  if (!/\p{Script=Han}/u.test(char)) continue;
-  counts.set(char, (counts.get(char) || 0) + 1);
+  if (/\p{Script=Han}/u.test(char)) han.add(char);
 }
 
 const fixed = [...new Set([
   ...Array.from({ length: 0x7f - 0x20 }, (_, index) => String.fromCodePoint(0x20 + index)),
   ..."，。！？；：、（）《》〈〉【】“”‘’—…·￥／＋＝％＃＠＆＊｜～　",
 ])];
-const commonHan = [...counts]
-  .sort((a, b) => b[1] - a[1] || a[0].codePointAt(0) - b[0].codePointAt(0))
-  .slice(0, 600)
-  .map(([char]) => char);
+// 语料里出现过的汉字全收：热区越贴合真实用字，首屏命中的尾部分片越少。
+// 按码位排序而非词频，保证同一仓库状态下输出逐字节可复现。
+const corpusHan = [...han].sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
 
-fs.writeFileSync(output, fixed.concat(commonHan).join(""), "utf8");
-console.log(`Wrote ${fixed.length + commonHan.length} characters to ${path.relative(root, output)}`);
+fs.writeFileSync(output, fixed.concat(corpusHan).join(""), "utf8");
+console.log(`Wrote ${fixed.length + corpusHan.length} characters to ${path.relative(root, output)}`);

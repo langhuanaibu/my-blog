@@ -659,10 +659,72 @@ test("日报自托管衬线字体包含样式入口与许可证", async () => {
   assert.match(fontCss, /font-weight:\s*700/);
   assert.match(fontCss, /font-display:\s*swap/);
   assert.match(license, /SIL OPEN FONT LICENSE Version 1\.1/);
+});
+
+// 字体是按 unicode-range 分片的：目录总字节数不是任何人会下载的量，
+// 冷传输预算只能按「最新一天真正用到的字命中了哪几片」来算。
+function parseFontChunks(css) {
+  return css.split("@font-face").slice(1).map((face) => {
+    const file = face.match(/url\("\.\/([^"]+)"\)/)[1];
+    const covered = new Set();
+    for (const part of face.match(/unicode-range:([^;]+);/)[1].split(",")) {
+      const range = part.trim().replace(/^U\+/i, "");
+      if (range.includes("-")) {
+        const [from, to] = range.split("-").map((hex) => parseInt(hex, 16));
+        for (let cp = from; cp <= to; cp += 1) covered.add(cp);
+      } else covered.add(parseInt(range, 16));
+    }
+    return { file, covered };
+  });
+}
+
+// 页面上以 var(--serif) 渲染的全部文本：刊头、标题、章节名与导航常量。
+const SERIF_CHROME = "每日驾驶舱时间线全部动态报告档案收藏稍后读返回博客第期年月日"
+  + "人工智能互联网科技财经社会国际今日主线追踪中深度阅读今日论文舆论观察更多资讯本周值得读遗漏记录";
+
+function serifCodepoints(day) {
+  const parts = [day.brief || "", SERIF_CHROME];
+  for (const item of day.items || []) parts.push(item.title || "");
+  for (const theme of day.themes || []) parts.push(theme.title || "");
+  for (const item of day.deep || []) parts.push(item.title_zh || item.title || "");
+  for (const item of day.papers || []) parts.push(item.title_zh || item.title || "");
+  for (const item of day.opinion || []) parts.push(item.title || "");
+  return new Set([...parts.join("")].map((char) => char.codePointAt(0)));
+}
+
+test("衬线字体覆盖最新一天的全部标题用字且冷传输在预算内", async () => {
   const fontDir = new URL("../../source/news/fonts/noto-serif-sc-700/", import.meta.url);
-  const files = (await readdir(fontDir)).filter((name) => name.endsWith(".woff2"));
-  const transferBytes = (await Promise.all(files.map((name) => stat(new URL(name, fontDir))))).reduce((sum, item) => sum + item.size, 0);
-  assert.ok(transferBytes <= 500_000, `cold font budget exceeded: ${transferBytes} bytes`);
+  const chunks = parseFontChunks(await readFile(new URL("result.css", fontDir), "utf8"));
+
+  const dailyDir = new URL("../../source/news/data/daily/", import.meta.url);
+  const latest = (await readdir(dailyDir)).filter((name) => name.endsWith(".js")).sort().pop();
+  const scope = { window: {} };
+  new Function("window", await readFile(new URL(latest, dailyDir), "utf8"))(scope.window);
+  const day = Object.values(scope.window.NEWS_DATA)[0];
+  const wanted = serifCodepoints(day);
+
+  // 这条才是本次改动要保住的东西：一个字都不许掉出去回退系统宋体。
+  const missing = [...wanted].filter((cp) => !chunks.some((chunk) => chunk.covered.has(cp)));
+  assert.deepEqual(missing.map((cp) => String.fromCodePoint(cp)), [], `${latest} 有字符未被衬线字体覆盖`);
+
+  const hit = chunks.filter((chunk) => [...wanted].some((cp) => chunk.covered.has(cp)));
+  const sizes = await Promise.all(hit.map((chunk) => stat(new URL(chunk.file, fontDir))));
+  const transferBytes = sizes.reduce((sum, item) => sum + item.size, 0);
+  assert.ok(
+    transferBytes <= 1_400_000,
+    `cold font budget exceeded: ${transferBytes} bytes across ${hit.length}/${chunks.length} chunks`,
+  );
+});
+
+test("每一处衬线字体用法都显式声明 700 字重", async () => {
+  // 只托管 700 一个字面，漏写字重的规则会静默回退到系统宋体。
+  const css = await readFile(new URL("../../source/news/news.css", import.meta.url), "utf8");
+  const offenders = css.split("\n")
+    .map((line, index) => ({ line, no: index + 1 }))
+    .filter(({ line }) => line.includes("var(--serif)") && !line.startsWith("  --serif"))
+    .filter(({ line }) => !/font-weight:\s*700/.test(line))
+    .map(({ no, line }) => `${no}: ${line.slice(0, 60)}`);
+  assert.deepEqual(offenders, []);
 });
 
 test("报刊改版不保留已确认无引用的旧样式", async () => {
