@@ -5811,7 +5811,7 @@
    "event_id": "evt-20260723-7fbdb2",
    "title": "美中考虑在AI领域筑起技术壁垒",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-23",
    "last_seen": "2026-07-26",
@@ -8186,7 +8186,7 @@
    "event_id": "evt-20260726-c36e1b",
    "title": "柏林骄傲游行遭汽车冲撞致1死16伤，警方搜捕21岁嫌犯",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8218,7 +8218,7 @@
    "event_id": "evt-20260726-157230",
    "title": "科技界与立法者聚焦AI蒸馏技术监管",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8243,7 +8243,7 @@
    "event_id": "evt-20260726-a71eca",
    "title": "Claude Opus 5在ARC-AGI-3基准测试中创纪录，得分超GPT-5.6 Sol近4倍",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8268,7 +8268,7 @@
    "event_id": "evt-20260726-4fefb9",
    "title": "数百用户向ChatGPT索要生物武器配方，部分获指南",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8295,7 +8295,7 @@
    "event_id": "evt-20260726-056a67",
    "title": "Claude Opus 5系统提示词被完整泄露",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8320,7 +8320,7 @@
    "event_id": "evt-20260726-e1f31b",
    "title": "台风“红霞”登陆广东致逾71万人疏散",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8348,7 +8348,7 @@
    "event_id": "evt-20260726-9a418c",
    "title": "罗马尼亚三天内击落第三架无人机并召见俄大使",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8376,7 +8376,7 @@
    "event_id": "evt-20260726-f90bdb",
    "title": "在8美元ESP32-S3上运行28.9M参数大模型",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8401,7 +8401,7 @@
    "event_id": "evt-20260726-b7ca2f",
    "title": "黎巴嫩流离失所者通过卫星图像查看家园损毁",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8428,7 +8428,7 @@
    "event_id": "evt-20260726-31d2db",
    "title": "新泽西州长签署法律禁止零售商使用个人数据差别定价",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8453,7 +8453,7 @@
    "event_id": "evt-20260726-5e6240",
    "title": "ACM调查：68%计算机教育者因AI改变考试方式",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8479,7 +8479,7 @@
    "event_id": "evt-20260726-697bec",
    "title": "沪市一周新增增持回购计划最高158亿元",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8509,7 +8509,7 @@
    "event_id": "evt-20260726-74a1d2",
    "title": "研究：一小时训练可提高识别AI生成面孔能力",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8534,7 +8534,7 @@
    "event_id": "evt-20260726-f0e133",
    "title": "亿田智能子公司拟不超20亿元采购服务器布局算力服务",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8562,7 +8562,7 @@
    "event_id": "evt-20260726-66696b",
    "title": "委内瑞拉男子起诉航空公司在特朗普移民行动中将其送往萨尔瓦多监狱",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8587,7 +8587,7 @@
    "event_id": "evt-20260726-48bb55",
    "title": "宁德时代启动A股史上最大规模回购",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8612,7 +8612,7 @@
    "event_id": "evt-20260726-b54821",
    "title": "法国养蜂人抗议政府解除新烟碱类农药禁令",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8637,7 +8637,7 @@
    "event_id": "evt-20260726-67bd16",
    "title": "研究揭示女性ADHD症状不同且存在独特健康风险",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8662,7 +8662,7 @@
    "event_id": "evt-20260726-2bed34",
    "title": "下周全球迎央行决议与财报密集发布超级周",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8687,7 +8687,7 @@
    "event_id": "evt-20260726-4fbcca",
    "title": "市场对美联储下周加息可能性高度分歧",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8712,7 +8712,7 @@
    "event_id": "evt-20260726-e370a1",
    "title": "华纳兄弟起诉亚马逊非法挖角高管",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -8739,7 +8739,7 @@
    "event_id": "evt-20260726-e0a72d",
    "title": "冯哲芸新书《唯红花绽放》探讨中国普通人生活",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-26",
    "last_seen": "2026-07-26",
@@ -12627,7 +12627,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-31",
-   "last_seen": "2026-07-31",
+   "last_seen": "2026-08-03",
    "history": [
     {
      "date": "2026-07-31",
@@ -12642,6 +12642,24 @@
       "src-97dbb8e9c50de50117988654"
      ],
      "event_identity": "set-e3fa7ab344fcb9d3739f6cde"
+    },
+    {
+     "date": "2026-08-03",
+     "title": "西班牙休达移民潮引发政治风暴，死亡人数升至72",
+     "summary": "摩洛哥移民涌入西班牙休达，死亡人数升至72人，事件引发欧盟政治风暴和社交媒体假信息传播。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn",
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-03:pick-47",
+     "source_keys": [
+      "src-072826c104fb10dab5f9c063",
+      "src-86902213f9d9abbcc8f9890b",
+      "src-a3eea8ee64281b93fc2062bc"
+     ],
+     "event_identity": "set-dbab73a09d233648ec171695"
     }
    ]
   },
@@ -12794,7 +12812,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-01",
+   "last_seen": "2026-08-03",
    "history": [
     {
      "date": "2026-08-01",
@@ -12811,6 +12829,20 @@
       "src-7ab9b0ed6daf85c93f090668"
      ],
      "event_identity": "set-c73420eba03fffda81da8be6"
+    },
+    {
+     "date": "2026-08-03",
+     "title": "DeepSeek-V4-Flash正式版上线，Agent能力增强",
+     "summary": "DeepSeek-V4-Flash正式版上线，架构不变，仅重新后训练，Agent能力大幅增强，基准测试得分提升。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-03:pick-193",
+     "source_keys": [
+      "src-e820d9cd9a96dcda5559ae1c"
+     ],
+     "event_identity": "set-29050c4d7c93c776a1069ba5"
     }
    ]
   },
@@ -13642,7 +13674,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-02",
-   "last_seen": "2026-08-02",
+   "last_seen": "2026-08-03",
    "history": [
     {
      "date": "2026-08-02",
@@ -13659,6 +13691,22 @@
       "src-636ee0d9e17946fd04cf534b"
      ],
      "event_identity": "set-39a79144b8ffd6ebacbfb2c1"
+    },
+    {
+     "date": "2026-08-03",
+     "title": "莫斯科意大利餐厅爆炸致3死21伤",
+     "summary": "莫斯科一家意大利餐厅发生爆炸，造成3人死亡、21人受伤，据称爆炸装置由一名女子携带。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian"
+     ],
+     "item_ref": "2026-08-03:pick-50",
+     "source_keys": [
+      "src-365aba389046cc333ef7a7c6",
+      "src-b70b9d40dc228ebbf1ef99d0"
+     ],
+     "event_identity": "set-2bae5e0c4a77fb90bb51f094"
     }
    ]
   },
@@ -14096,6 +14144,562 @@
       "src-07a111eee65210e02a169ed5"
      ],
      "event_identity": "set-5593199cdad70ba5e8bdc48a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-fe7066",
+   "title": "美国西北部野火肆虐致数万人撤离",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "美国西北部野火肆虐致数万人撤离",
+     "summary": "华盛顿州东部野火蔓延超25万英亩，斯波坎地区约6万人撤离，至少600座建筑被毁。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-03:pick-57",
+     "source_keys": [
+      "src-243f2d437c897c00e30c0e2b",
+      "src-80706a4da83023b3e60b522e",
+      "src-a2e9af0c8d2c051ded94d454",
+      "src-fbf7e6f8dca815c70778faac"
+     ],
+     "event_identity": "set-cbe7755d6bdac8d094e58c10"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-f083c7",
+   "title": "特朗普取消对伊朗军事打击，称已达成协议框架",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "特朗普取消对伊朗军事打击，称已达成协议框架",
+     "summary": "特朗普宣布取消计划中的对伊朗军事打击，称因伊朗及中东国家请求，且协议框架已达成。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn",
+      "bbc-world",
+      "guardian",
+      "npr",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-03:pick-27",
+     "source_keys": [
+      "src-19e09fef91d877a412244e55",
+      "src-30ff595269a96922e5854936",
+      "src-3334676e0448c2de86ddd79a",
+      "src-480286778643d7ff57e5a428",
+      "src-7b63969001836e14e87ea8f1",
+      "src-ab066df63ca03c52035bd971",
+      "src-cc377cf719ed208f8ba22f07"
+     ],
+     "event_identity": "set-35e39ccfe26951af2e73c776"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-c0e296",
+   "title": "赛里木湖景区殴打司机事件：7人被行政拘留",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "赛里木湖景区殴打司机事件：7人被行政拘留",
+     "summary": "新疆联合工作组通报赛里木湖景区工作人员殴打旅游车司机事件，7人被行政拘留，并优化自驾服务费。",
+     "news_status": "已确认",
+     "sources": [
+      "thepaper",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-03:pick-173",
+     "source_keys": [
+      "src-9c25ded0e38433e8941759e2",
+      "src-d3270ab1d2b53ce80bc0f4c4"
+     ],
+     "event_identity": "set-e68d85cdd0f5302a3d5e3375"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-fa2e9c",
+   "title": "以色列空袭加沙致至少13人死亡，发现胎儿遗体",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "以色列空袭加沙致至少13人死亡，发现胎儿遗体",
+     "summary": "以色列空袭加沙多地致至少13人死亡，居民在废墟中发现未出生胎儿遗体。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-03:pick-52",
+     "source_keys": [
+      "src-3a376ee3cbd4a134442cbd02",
+      "src-4766379a4fcbe2d445c07a70"
+     ],
+     "event_identity": "set-cf27fff68c6e503d991d9867"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-1e9d92",
+   "title": "科技巨头财报显示AI投入兑现，云计算成关键信号",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "科技巨头财报显示AI投入兑现，云计算成关键信号",
+     "summary": "微软、亚马逊等科技巨头财报后股价大涨，云计算业务加速被视为AI投入回报的直接信号。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-08-03:pick-133",
+     "source_keys": [
+      "src-20b3c958e1eda8a645301e13"
+     ],
+     "event_identity": "set-ec88c2ab07a3f263b9e2d308"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-6f4c7d",
+   "title": "俄乌互袭致14死，乌打击俄炼油厂和机场",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "俄乌互袭致14死，乌打击俄炼油厂和机场",
+     "summary": "俄乌互袭致14人死亡，乌克兰打击俄炼油厂和机场，俄军称袭击乌黑海港口和船只。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-03:pick-53",
+     "source_keys": [
+      "src-2682c478922a10180b818bca",
+      "src-688afa504cbd2b0403f67db1"
+     ],
+     "event_identity": "set-89be1d1244b5620f04027307"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-5b1258",
+   "title": "爱达荷州快餐店枪击案致3死，嫌疑人自杀",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "爱达荷州快餐店枪击案致3死，嫌疑人自杀",
+     "summary": "爱达荷州快餐店枪击案致3死，嫌疑人24岁，警方称其自杀身亡，可能单独作案。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian",
+      "npr"
+     ],
+     "item_ref": "2026-08-03:pick-104",
+     "source_keys": [
+      "src-22630f6cc407c2219e14cf68",
+      "src-a375c2dae9c1ad4e44e6823f"
+     ],
+     "event_identity": "set-7bd0d916d8a8928fc4ee11c7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-66b621",
+   "title": "希腊两架消防直升机灭火时相撞致两人死亡",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "希腊两架消防直升机灭火时相撞致两人死亡",
+     "summary": "希腊两架消防直升机在灭火时空中相撞，导致两人死亡，澳大利亚公司表示深切悲痛。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-03:pick-73",
+     "source_keys": [
+      "src-8bedbe1e6ba4ba672cdc306f",
+      "src-cc2d78b50c942c796af28085"
+     ],
+     "event_identity": "set-8e880764fc8c095baa80259c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-32d432",
+   "title": "印尼渡轮起火致5死41失踪",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "印尼渡轮起火致5死41失踪",
+     "summary": "印尼一艘载有至少250人的渡轮在马都拉岛附近起火，造成5人死亡、41人失踪。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-03:pick-54",
+     "source_keys": [
+      "src-a8ec7db1af156ce07560439a"
+     ],
+     "event_identity": "set-626da17c94856f0ac859ca42"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-abee50",
+   "title": "国常会核准四个核电项目，总投资超1700亿元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "国常会核准四个核电项目，总投资超1700亿元",
+     "summary": "国务院常务会议核准辽宁庄河一期等四个核电项目，估算总投资超1700亿元，并部署高质量建设新型电网。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-03:pick-183",
+     "source_keys": [
+      "src-96acde9f44ed9c82535820d5"
+     ],
+     "event_identity": "set-9e8c252e58798fb2a909bf34"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-b3b533",
+   "title": "“十五五”特高压在建规模翻倍，设备龙头订单可期",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "“十五五”特高压在建规模翻倍，设备龙头订单可期",
+     "summary": "国家电网称“十五五”特高压在建总规模将为“十四五”两倍，将围绕柔性直流、海上新能源消纳等保障清洁能源外送。",
+     "news_status": "已确认",
+     "watch": "后续关注特高压项目招标节奏及设备企业订单落地情况，可观察国家电网是否发布具体线路核准或招标公告。",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-03:pick-180",
+     "source_keys": [
+      "src-9a75dc63e54ace4e2edd62fa"
+     ],
+     "event_identity": "set-f80bd4196f8e19c0dd92fa93"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-9edf4b",
+   "title": "阿斯利康与百时美施贵宝洽谈4000亿美元合并",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "阿斯利康与百时美施贵宝洽谈4000亿美元合并",
+     "summary": "据英国《金融时报》报道，阿斯利康正与百时美施贵宝洽谈合并，交易规模或达4000亿美元，商讨发生在近几个月内。",
+     "news_status": "仅传言",
+     "sources": [
+      "cnbc",
+      "36kr"
+     ],
+     "item_ref": "2026-08-03:pick-28",
+     "source_keys": [
+      "src-4535dbcfea70b38da23bc834",
+      "src-99f469029b0b4cbccf0f9f19"
+     ],
+     "event_identity": "set-34d2831f275f3f2fad6c5bde"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-7236b0",
+   "title": "Claude Opus 5从提示词生成完整3D游戏原型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "Claude Opus 5从提示词生成完整3D游戏原型",
+     "summary": "Anthropic的Claude Opus 5可从单一提示词生成完整3D游戏，包括第一人称射击、卡丁车和《我的世界》克隆，无需外部资源。",
+     "news_status": "已确认",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-03:pick-44",
+     "source_keys": [
+      "src-d3dc5fac0b19241459ae3fe2"
+     ],
+     "event_identity": "set-ee5f4d3805efc1a00a0be5b2"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-acffec",
+   "title": "美日韩联合干预汇市支撑日元韩元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "美日韩联合干预汇市支撑日元韩元",
+     "summary": "美国、日本、韩国本周实施近三十年来最大规模协调外汇干预，日本财务省宣布与美国协同购买日元，美国财长称遏制了无序波动。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn",
+      "36kr"
+     ],
+     "item_ref": "2026-08-03:pick-91",
+     "source_keys": [
+      "src-5fa4d09b333f0c161a3c3f4d",
+      "src-c4d5ccc7eb60e1eaef7439e4"
+     ],
+     "event_identity": "set-a57fcb5689a1101734357171"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-4be333",
+   "title": "IBM三项实验实现可验证的量子优势",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "IBM三项实验实现可验证的量子优势",
+     "summary": "IBM联合多家机构在三项独立实验中实现“量子优势”，基于Quantum Heron R3系统，结合新型误差缓解技术，结果可获验证。",
+     "news_status": "已确认",
+     "sources": [
+      "36kr"
+     ],
+     "item_ref": "2026-08-03:pick-94",
+     "source_keys": [
+      "src-b2852c79dcd41dc407fde3c2"
+     ],
+     "event_identity": "set-748c78b476b1412e37ad6ddf"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-7f5efc",
+   "title": "三星存储长协条款偏向供应端，AI需求支撑价格反弹",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "三星存储长协条款偏向供应端，AI需求支撑价格反弹",
+     "summary": "美银美林报告称，三星将60%-70%存储销售纳入长期协议，条款限制跌幅不限涨幅，AI服务器需求支撑价格反弹。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-08-03:pick-136",
+     "source_keys": [
+      "src-2f680a43c6614f52d2a3498a"
+     ],
+     "event_identity": "set-643db063e9d9240fdfb3b992"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-d223c0",
+   "title": "Capital One称因洗钱担忧关闭特朗普集团账户",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "Capital One称因洗钱担忧关闭特朗普集团账户",
+     "summary": "Capital One要求法官永久驳回特朗普关联企业的诉讼，称关闭数百个账户源于数月内部审查，而非2021年国会山骚乱。",
+     "news_status": "发展中",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-08-03:pick-117",
+     "source_keys": [
+      "src-d61b7b18ec12e2a5522c80ec"
+     ],
+     "event_identity": "set-c471b10c9a8a0cef3de83910"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-68ebe9",
+   "title": "西雅图抗议少年死亡案新视频证据曝光",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "西雅图抗议少年死亡案新视频证据曝光",
+     "summary": "西雅图时报、KUOW和NPR联合调查，审查当晚十几段视频，揭示少年在抗议中死亡事件的最全面画面。",
+     "news_status": "发展中",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-08-03:pick-119",
+     "source_keys": [
+      "src-1acbe82916410559c5734aa2"
+     ],
+     "event_identity": "set-4194a60d8a638748ec6dfb9d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-53de8c",
+   "title": "OpenAI推出Presence企业AI代理产品",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "OpenAI推出Presence企业AI代理产品",
+     "summary": "OpenAI发布新企业产品Presence，旨在让AI代理投入生产，用于客户服务和内部工作流，与现有Workspace Agents不同。",
+     "news_status": "已确认",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-03:pick-40",
+     "source_keys": [
+      "src-136b686d71754e75f0fd36e5"
+     ],
+     "event_identity": "set-5e2296addbd2da14a9124359"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-6faa9b",
+   "title": "SpaceX猎鹰9号火箭残骸将撞击月球",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "SpaceX猎鹰9号火箭残骸将撞击月球",
+     "summary": "科学家称，SpaceX猎鹰9号火箭的废弃部分将以超过5000英里/小时的速度撞击月球。",
+     "news_status": "已确认",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-08-03:pick-116",
+     "source_keys": [
+      "src-4b58f11b98af98f2a81bec55"
+     ],
+     "event_identity": "set-882b32eb02207854cbcb7c63"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260803-07ab41",
+   "title": "印度考试泄题事件暴露Z世代就业危机",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-03",
+   "last_seen": "2026-08-03",
+   "history": [
+    {
+     "date": "2026-08-03",
+     "title": "印度考试泄题事件暴露Z世代就业危机",
+     "summary": "印度考试泄题是学生抗议的导火索，但CNBC报道称，不断上升的失业率才是真正激怒印度Z世代的原因。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-08-03:pick-39",
+     "source_keys": [
+      "src-c5d60e20c838e78ff7f07005"
+     ],
+     "event_identity": "set-7be244cec1c67f20bcd10ec0"
     }
    ]
   }

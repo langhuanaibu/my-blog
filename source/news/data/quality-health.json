@@ -374,12 +374,59 @@
       "llm_output_tokens": 25231,
       "llm_cost_usd": 0.0268,
       "llm_cost_known": true
+    },
+    {
+      "date": "2026-08-03",
+      "audited_events": 19,
+      "split_events": 5,
+      "removed_fields": 51,
+      "triage_invalid_rows": 0,
+      "triage_fallback_batches": 0,
+      "model_unusable_responses": 0,
+      "enrichment_audited_events": 24,
+      "duplicate_audited_events": 192,
+      "same_day_duplicates_merged": 14,
+      "duplicate_audit_failures": 0,
+      "same_day_candidate_pairs": 464,
+      "same_day_bridge_batches": 12,
+      "same_day_reconcile_calls": 18,
+      "same_day_deferred_batches": 0,
+      "same_day_budget_exhausted": false,
+      "event_lines_audited": 12,
+      "event_lines_merged": 0,
+      "event_line_audit_failures": 0,
+      "cross_day_duplicates": 9,
+      "material_updates": 1,
+      "update_judge_failures": 0,
+      "enrich_out_of_batch_idx": 0,
+      "removed_field_counts_version": 2,
+      "removed_field_counts": {
+        "why": 17,
+        "context": 2,
+        "watch": 23,
+        "watch_detail": 0,
+        "detail": 2,
+        "claims": 7
+      },
+      "removed_field_reasons": {
+        "evidence_copy": 0,
+        "audit_unsupported": 45,
+        "claim_unsupported": 6,
+        "generation_invalid": 0
+      },
+      "degraded": true,
+      "llm_calls": 86,
+      "llm_input_tokens": 238162,
+      "llm_cached_input_tokens": 18048,
+      "llm_output_tokens": 27585,
+      "llm_cost_usd": 0.0386,
+      "llm_cost_known": true
     }
   ],
   "summary": {
-    "days": 18,
-    "audited_events": 622,
-    "split_events": 290,
-    "split_rate": 0.4662
+    "days": 19,
+    "audited_events": 641,
+    "split_events": 295,
+    "split_rate": 0.4602
   }
 }
