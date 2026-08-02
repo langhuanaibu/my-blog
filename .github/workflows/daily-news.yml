@@ -118,13 +118,29 @@ jobs:
             echo "committed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # 在 push 前从 manifest 合同中取出发布日期。不能使用 grep | head：
+          # Actions 的 pipefail 会把 head 提前关管道造成的 SIGPIPE 判成失败。
+          published_date="$(
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          manifest = Path("source/news/data/manifest.js").read_text(encoding="utf-8")
+          match = re.search(
+              r'^window\.NEWS_MANIFEST\s*=\s*\[\s*"(\d{4}-\d{2}-\d{2})"',
+              manifest,
+              re.MULTILINE,
+          )
+          if not match:
+              raise SystemExit("manifest does not start with a published date")
+          print(match.group(1))
+          PY
+          )"
           git commit -m "Update daily briefing data ($(date +%F))"
           git pull --rebase origin main
           git push origin HEAD:main
           # 部署校验要等的是"刚发布的那一天"，不是它自己跑起来时的今天——
           # 跨零点的手动发布下两者会不同，用 date 会误判成没上线。
-          published_date="$(grep -o '"[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}"' \
-            source/news/data/manifest.js | head -1 | tr -d '"')"
           echo "committed=true" >> "$GITHUB_OUTPUT"
           echo "published_date=$published_date" >> "$GITHUB_OUTPUT"
 
@@ -142,7 +158,7 @@ jobs:
       contents: read
     env:
       TZ: Asia/Shanghai
-      SITE_MANIFEST: https://aoiblog.top/news/data/manifest.js
+      SITE_MANIFEST: https://www.aoiblog.top/news/data/manifest.js
       PUBLISHED_DATE: ${{ needs.generate.outputs.published_date }}
     steps:
       - name: Wait for the briefing to go live
@@ -151,16 +167,20 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          if [ -z "$PUBLISHED_DATE" ]; then
+          if [ -z "${PUBLISHED_DATE:-}" ]; then
             echo "::error::generate reported a commit but no published date; cannot verify."
             exit 1
           fi
           echo "Expecting $PUBLISHED_DATE in $SITE_MANIFEST"
+          MAX_RESPONSE_BYTES=65536
 
-          # 每次都带 cache-bust query：CDN 缓存会让陈旧的 manifest 看起来像未部署。
+          # www 是生产主域；这里刻意不跟随重定向，域名合同漂移必须显式失败。
           live() {
-            curl -fsS --max-time 20 "${SITE_MANIFEST}?cb=${RANDOM}${RANDOM}" 2>/dev/null \
-              | grep -q "\"${PUBLISHED_DATE}\""
+            local manifest_body
+            if ! manifest_body="$(curl -fsS --max-time 20 --max-filesize "$MAX_RESPONSE_BYTES" "$SITE_MANIFEST" 2>/dev/null)"; then
+              return 1
+            fi
+            grep -Fq "window.NEWS_MANIFEST = [\"${PUBLISHED_DATE}\"" <<< "$manifest_body"
           }
 
           # 按墙钟设上界，循环次数不再隐含在 sleep 与 curl 超时的乘积里。
@@ -178,21 +198,123 @@ jobs:
             exit 0
           fi
 
-          if [ -z "$DEPLOY_HOOK" ]; then
+          diagnostic_dir="$(mktemp -d "${RUNNER_TEMP:-/tmp}/daily-news-deploy-check.XXXXXX")"
+          hook_response_file="$diagnostic_dir/hook-response.json"
+          diagnostic_headers="$diagnostic_dir/headers"
+          diagnostic_body="$diagnostic_dir/body"
+          cleanup() {
+            rm -f "$hook_response_file" "$diagnostic_headers" "$diagnostic_body"
+            rmdir "$diagnostic_dir" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          header_value() {
+            local wanted="$1"
+            awk -v wanted="$wanted" '
+              {
+                line = $0
+                sub(/\r$/, "", line)
+                key = line
+                sub(/:.*/, "", key)
+                if (tolower(key) == tolower(wanted)) {
+                  sub(/^[^:]*:[[:space:]]*/, "", line)
+                  value = line
+                }
+              }
+              END {
+                if (value != "") print value
+                else print "<missing>"
+              }
+            ' "$diagnostic_headers"
+          }
+
+          diagnose() {
+            local diagnostic_metrics curl_exit response_preview
+            : > "$diagnostic_headers"
+            : > "$diagnostic_body"
+            if diagnostic_metrics="$(
+              curl -sS --max-time 20 --max-filesize "$MAX_RESPONSE_BYTES" \
+                --dump-header "$diagnostic_headers" \
+                --output "$diagnostic_body" \
+                --write-out 'http_code=%{http_code} url_effective=%{url_effective} num_redirects=%{num_redirects}' \
+                "$SITE_MANIFEST"
+            )"; then
+              curl_exit=0
+            else
+              curl_exit=$?
+            fi
+            echo "Probe diagnostic: curl_exit=$curl_exit ${diagnostic_metrics:-metrics_unavailable}"
+            printf 'Probe headers: Location=%s X-Vercel-Cache=%s Age=%s ETag=%s Last-Modified=%s\n' \
+              "$(header_value Location)" \
+              "$(header_value X-Vercel-Cache)" \
+              "$(header_value Age)" \
+              "$(header_value ETag)" \
+              "$(header_value Last-Modified)"
+            response_preview="$(head -c 200 "$diagnostic_body" | tr '\r\n' '  ')"
+            printf 'Probe response_preview=%s\n' "${response_preview:-<empty>}"
+          }
+
+          if [ -z "${DEPLOY_HOOK:-}" ]; then
             echo "::error::$PUBLISHED_DATE is on main but not live, and no VERCEL_DEPLOY_HOOK is configured."
             echo "Add the deploy hook secret to let this job self-heal."
+            diagnose
             exit 1
           fi
 
           echo "::warning::Not live after 10 minutes; triggering the Vercel deploy hook."
-          curl -fsS --max-time 30 -X POST "$DEPLOY_HOOK" >/dev/null \
-            || echo "::warning::Deploy hook call failed; still checking whether the site updates."
+          : > "$hook_response_file"
+          if hook_http_code="$(
+            curl -sS --max-time 30 --max-filesize "$MAX_RESPONSE_BYTES" -X POST \
+              --output "$hook_response_file" \
+              --write-out '%{http_code}' \
+              "$DEPLOY_HOOK"
+          )"; then
+            hook_curl_exit=0
+          else
+            hook_curl_exit=$?
+          fi
+
+          if [ "$hook_curl_exit" -ne 0 ]; then
+            echo "::warning::Deploy hook call failed with curl exit $hook_curl_exit; still checking whether the site updates."
+          elif [[ ! "$hook_http_code" =~ ^2[0-9][0-9]$ ]]; then
+            echo "::warning::Deploy hook returned HTTP $hook_http_code; still checking whether the site updates."
+          elif hook_metadata="$(
+            python3 - "$hook_response_file" <<'PY'
+          import json
+          import re
+          import sys
+
+          try:
+              with open(sys.argv[1], encoding="utf-8") as handle:
+                  payload = json.load(handle)
+              job = payload["job"]
+              job_id = job["id"]
+              state = job["state"]
+              created_at = job["createdAt"]
+          except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
+              raise SystemExit(1)
+
+          if not isinstance(job_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{1,128}", job_id):
+              raise SystemExit(1)
+          if not isinstance(state, str) or not re.fullmatch(r"[A-Z_]{1,32}", state):
+              raise SystemExit(1)
+          if type(created_at) is not int or created_at < 0:
+              raise SystemExit(1)
+
+          print(f"id={job_id} state={state} createdAt={created_at}")
+          PY
+          )"; then
+            echo "Deploy hook accepted: $hook_metadata"
+          else
+            echo "::warning::Deploy hook returned HTTP $hook_http_code but its job metadata was unusable; still checking whether the site updates."
+          fi
 
           if poll 600; then
             echo "Briefing for $PUBLISHED_DATE is live after the deploy hook."
             exit 0
           fi
 
+          diagnose
           echo "::error::$PUBLISHED_DATE is still not live after the deploy hook. Check Vercel."
           exit 1
 

@@ -2,6 +2,8 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import sys
 import yaml
@@ -1057,6 +1059,43 @@ def step_named(job, name):
     return next(step for step in job["steps"] if step.get("name") == name)
 
 
+def deploy_check_job():
+    return workflow()["jobs"]["deploy-check"]
+
+
+def deploy_check_script():
+    return step_named(
+        deploy_check_job(), "Wait for the briefing to go live")["run"]
+
+
+def deploy_hook_metadata_parser():
+    script = deploy_check_script()
+    marker = 'python3 - "$hook_response_file" <<\'PY\'\n'
+    start = script.index(marker) + len(marker)
+    return script[start:script.index("\nPY\n", start)]
+
+
+def run_deploy_hook_metadata_parser(tmp_path, payload):
+    response = tmp_path / "hook-response.json"
+    response.write_text(json.dumps(payload), encoding="utf-8")
+    return subprocess.run(
+        [sys.executable, "-c", deploy_hook_metadata_parser(), str(response)],
+        text=True,
+        capture_output=True,
+    )
+
+
+def bash_executable():
+    bash = shutil.which("bash")
+    if bash is not None:
+        return bash
+    git = shutil.which("git")
+    if git is None:
+        return None
+    candidate = Path(git).resolve().parent.parent / "bin" / "bash.exe"
+    return str(candidate) if candidate.is_file() else None
+
+
 def run_prepare_rollout_review(tmp_path, shadow_text=None):
     prepare = step_named(workflow()["jobs"]["rollout-review"],
                          "Prepare rollout review")
@@ -1102,6 +1141,145 @@ def test_workflow_permissions_are_minimal_and_publication_stage_is_unchanged():
     assert "git add source/news/data" in commit
     assert "git add ." not in commit
     assert "git add -A" not in commit
+
+
+def test_publish_date_extraction_cannot_abort_after_push_under_pipefail():
+    commit = step_named(workflow()["jobs"]["generate"], "Commit and push")["run"]
+
+    assert "published_date=" in commit
+    assert "source/news/data/manifest.js" in commit
+    assert not re.search(
+        r"^\s*grep\b[^\n]*(?:\n\s*[^#\n][^\n]*)*?\|\s*head\b",
+        commit,
+        re.MULTILINE,
+    )
+    assert commit.index("published_date=") < commit.index("git push origin HEAD:main")
+
+
+def test_deploy_check_probes_the_canonical_host_without_redirects_or_cache_bust():
+    deploy = deploy_check_job()
+    script = deploy_check_script()
+
+    assert deploy["env"]["SITE_MANIFEST"] == (
+        "https://www.aoiblog.top/news/data/manifest.js")
+    assert (
+        'curl -fsS --max-time 20 --max-filesize "$MAX_RESPONSE_BYTES" '
+        '"$SITE_MANIFEST"' in script
+    )
+    assert "?cb=" not in script
+    assert "--max-redirs" not in script
+    assert not re.search(r"(?:^|\s)-L(?:\s|$)", script)
+
+
+def test_deploy_check_live_probe_cannot_false_fail_from_grep_closing_the_pipe():
+    script = deploy_check_script()
+
+    assert "local manifest_body" in script
+    assert (
+        'grep -Fq "window.NEWS_MANIFEST = [\\\"${PUBLISHED_DATE}\\\"" '
+        '<<< "$manifest_body"' in script
+    )
+    assert not re.search(r"curl [^\n]+\n\s*\| grep -q", script)
+
+
+def test_deploy_check_matches_the_manifest_contract_not_a_bare_date():
+    script = deploy_check_script()
+
+    assert (
+        'grep -Fq "window.NEWS_MANIFEST = [\\\"${PUBLISHED_DATE}\\\""'
+        in script
+    )
+
+
+def test_deploy_check_records_bounded_deploy_hook_metadata_without_logging_secret():
+    script = deploy_check_script()
+
+    assert "hook_response_file" in script
+    assert 'job["id"]' in script
+    assert 'job["state"]' in script
+    assert 'job["createdAt"]' in script
+    log_lines = [
+        line for line in script.splitlines()
+        if re.search(r"\b(?:echo|printf)\b", line)
+    ]
+    assert all(
+        "$DEPLOY_HOOK" not in line and "${DEPLOY_HOOK}" not in line
+        for line in log_lines
+    )
+
+
+def test_deploy_hook_metadata_rejects_boolean_timestamp(tmp_path):
+    result = run_deploy_hook_metadata_parser(tmp_path, {
+        "job": {"id": "job_123", "state": "PENDING", "createdAt": True},
+    })
+
+    assert result.returncode != 0
+
+
+def test_deploy_hook_metadata_rejects_oversized_job_id(tmp_path):
+    result = run_deploy_hook_metadata_parser(tmp_path, {
+        "job": {
+            "id": "a" * 129,
+            "state": "PENDING",
+            "createdAt": 1785661733449,
+        },
+    })
+
+    assert result.returncode != 0
+
+
+def test_deploy_hook_metadata_accepts_the_documented_shape(tmp_path):
+    result = run_deploy_hook_metadata_parser(tmp_path, {
+        "job": {
+            "id": "job_123",
+            "state": "PENDING",
+            "createdAt": 1785661733449,
+        },
+    })
+
+    assert result.returncode == 0
+    assert result.stdout.strip() == (
+        "id=job_123 state=PENDING createdAt=1785661733449")
+
+
+def test_deploy_check_failure_diagnostic_is_bounded_and_failure_tolerant():
+    script = deploy_check_script()
+
+    for expected in (
+            "diagnostic_headers", "diagnostic_body", "curl_exit",
+            "http_code=%{http_code}", "url_effective=%{url_effective}",
+            "num_redirects=%{num_redirects}", "Location", "X-Vercel-Cache",
+            "Age", "ETag", "Last-Modified", "head -c 200"):
+        assert expected in script
+    assert "trap " in script
+    assert script.rstrip().endswith("exit 1")
+
+
+def test_deploy_check_bounds_every_downloaded_response():
+    script = deploy_check_script()
+
+    assert "MAX_RESPONSE_BYTES=65536" in script
+    assert script.count('--max-filesize "$MAX_RESPONSE_BYTES"') == 3
+
+
+def test_deploy_check_missing_inputs_are_safe_under_nounset():
+    script = deploy_check_script()
+
+    assert '[ -z "${PUBLISHED_DATE:-}" ]' in script
+    assert '[ -z "${DEPLOY_HOOK:-}" ]' in script
+
+
+def test_deploy_check_shell_syntax_is_valid_when_bash_is_available():
+    bash = bash_executable()
+    if bash is None:
+        pytest.skip("bash is unavailable")
+
+    subprocess.run(
+        [bash, "--noprofile", "--norc", "-n"],
+        input=deploy_check_script(),
+        text=True,
+        check=True,
+    )
 
 
 def test_workflow_artifacts_are_temp_scoped_short_lived_and_sha_pinned():
