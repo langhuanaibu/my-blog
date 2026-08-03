@@ -12812,7 +12812,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-03",
+   "last_seen": "2026-08-01",
    "history": [
     {
      "date": "2026-08-01",
@@ -12829,20 +12829,6 @@
       "src-7ab9b0ed6daf85c93f090668"
      ],
      "event_identity": "set-c73420eba03fffda81da8be6"
-    },
-    {
-     "date": "2026-08-03",
-     "title": "DeepSeek-V4-Flash正式版上线，Agent能力增强",
-     "summary": "DeepSeek-V4-Flash正式版上线，架构不变，仅重新后训练，Agent能力大幅增强，基准测试得分提升。",
-     "news_status": "已确认",
-     "sources": [
-      "cls-depth"
-     ],
-     "item_ref": "2026-08-03:pick-193",
-     "source_keys": [
-      "src-e820d9cd9a96dcda5559ae1c"
-     ],
-     "event_identity": "set-29050c4d7c93c776a1069ba5"
     }
    ]
   },

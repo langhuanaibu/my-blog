@@ -296,6 +296,8 @@ def test_config_declares_interim_default():
     assert config["cost_guard"] == {
         "same_day_reconcile_max_calls": 20,
         "same_day_min_shared_keys": 4,
+        "cross_source_novelty_batch_size": 20,
+        "cross_source_novelty_max_calls": 8,
         "generate_warn_usd": 0.06,
         "shadow_warn_usd": 0.09,
     }

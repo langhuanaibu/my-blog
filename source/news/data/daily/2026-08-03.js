@@ -6,7 +6,7 @@ window.NEWS_DATA["2026-08-03"] = {
  "stats": {
   "sources_count": 21,
   "raw_count": 199,
-  "pick_count": 24,
+  "pick_count": 23,
   "more_count": 8
  },
  "quality": {
@@ -403,40 +403,6 @@ window.NEWS_DATA["2026-08-03"] = {
     }
    ],
    "event_id": "evt-20260803-32d432"
-  },
-  {
-   "id": "pick-193",
-   "tier": "pick",
-   "category": "ai",
-   "title": "DeepSeek-V4-Flash正式版上线，Agent能力增强",
-   "summary": "DeepSeek-V4-Flash正式版上线，架构不变，仅重新后训练，Agent能力大幅增强，基准测试得分提升。",
-   "status": "已确认",
-   "tags": [
-    "模型发布"
-   ],
-   "why": "DeepSeek-V4系列升级，性能追平旗舰模型，可能影响AI模型市场竞争格局。",
-   "detail": "DeepSeek-V4-Flash正式版于7月31日上线，模型架构、大小与预览版相同，即MoE架构、2840亿总参数、130亿激活参数、1M上下文。正式版仅重新进行了后训练，Agent能力大幅增强，基准测试得分有所提升。",
-   "claims": [
-    {
-     "text": "DeepSeek-V4-Flash正式版通过后训练提升Agent能力，可能反映后训练对Agent性能的关键作用。",
-     "kind": "analysis",
-     "sources": [
-      "财联社·深度"
-     ]
-    }
-   ],
-   "score": 69,
-   "src_tier": "T1.5",
-   "source_type": "分析源",
-   "time": "2026-08-02T09:58:20+00:00",
-   "sources": [
-    {
-     "name": "财联社·深度",
-     "url": "https://www.cls.cn/detail/2443548",
-     "type": "分析源"
-    }
-   ],
-   "event_id": "evt-20260801-f55954"
   },
   {
    "id": "pick-183",
@@ -953,7 +919,6 @@ window.NEWS_DATA["2026-08-03"] = {
    "one_liner": "多家科技公司发布AI新品，量子计算与模型能力取得进展，商业化加速。",
    "member_ids": [
     "pick-133",
-    "pick-193",
     "pick-44",
     "pick-40",
     "more-59",

@@ -95,8 +95,9 @@ else:
     kept = dn.filter_cross_day_news(BrokenJudge(),
                                     [news_item(desc="疑似新增内容")], prior,
                                     "2026-07-16", q)
-    check("更新判定失败时按重复过滤",
-          kept == [] and q["update_judge_failures"] == 1)
+    check("更新判定失败时保留候选",
+          len(kept) == 1 and q["update_judge_failures"] == 1
+          and q["degraded"] is True)
 
     q = dn.new_quality_stats()
     kept = dn.filter_cross_day_news(UpdateJudge(False), [news_item()], prior,

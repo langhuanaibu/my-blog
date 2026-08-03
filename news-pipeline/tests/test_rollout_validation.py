@@ -397,6 +397,8 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
         "cost_guard": {
             "same_day_reconcile_max_calls": 20,
             "same_day_min_shared_keys": 4,
+            "cross_source_novelty_batch_size": 20,
+            "cross_source_novelty_max_calls": 8,
             "generate_warn_usd": 0.06,
             "shadow_warn_usd": 0.09,
         },
@@ -430,6 +432,10 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
     same_day_guard_change = copy.deepcopy(config)
     same_day_guard_change["cost_guard"]["same_day_reconcile_max_calls"] = 12
     assert fingerprints(same_day_guard_change)["runtime"] != baseline["runtime"]
+
+    novelty_guard_change = copy.deepcopy(config)
+    novelty_guard_change["cost_guard"]["cross_source_novelty_max_calls"] = 4
+    assert fingerprints(novelty_guard_change)["runtime"] != baseline["runtime"]
 
     cost_warning_change = copy.deepcopy(config)
     cost_warning_change["cost_guard"]["generate_warn_usd"] = 0.04

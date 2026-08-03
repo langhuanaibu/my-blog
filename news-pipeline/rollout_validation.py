@@ -275,7 +275,9 @@ def _runtime_config_projection(config):
         ),
         "objectivity": _selected_mapping(config.get("objectivity"), ("mode",)),
         "cost_guard": _selected_mapping(config.get("cost_guard"), (
-            "same_day_reconcile_max_calls", "same_day_min_shared_keys")),
+            "same_day_reconcile_max_calls", "same_day_min_shared_keys",
+            "cross_source_novelty_batch_size",
+            "cross_source_novelty_max_calls")),
         "selection": {
             **_selected_mapping(config, (
                 "pick_threshold", "pick_min", "pick_max",

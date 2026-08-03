@@ -150,6 +150,17 @@ LLM_USAGE_FIELDS = (
     "llm_cost_known",
 )
 
+CROSS_SOURCE_NOVELTY_FIELDS = (
+    "cross_source_novelty_candidates",
+    "cross_source_material_additions",
+    "cross_source_restatements",
+    "cross_source_novelty_failures",
+    "cross_source_novelty_calls",
+    "cross_source_novelty_deferred",
+    "cross_source_novelty_budget_exhausted",
+)
+CROSS_SOURCE_NOVELTY_MAX_PROMPT_CHARS = 64_000
+
 ROLLOUT_QUALITY_FIELDS = {
     "article_fetch_attempts", "article_fetch_successes", "article_fetch_retries",
     "article_http_requests", "evidence_fulltext_sources", "evidence_snippet_sources",
@@ -207,6 +218,20 @@ def new_quality_stats():
         "removed_field_counts_version": REMOVED_FIELD_COUNTS_VERSION,
         "removed_field_counts": {field: 0 for field in QUALITY_EXTENSION_FIELDS},
         "removed_field_reasons": {reason: 0 for reason in REMOVAL_REASONS},
+        "degraded": False,
+    }
+
+
+def new_cross_source_novelty_stats():
+    """Create operational metrics kept out of the reader-facing daily payload."""
+    return {
+        "cross_source_novelty_candidates": 0,
+        "cross_source_material_additions": 0,
+        "cross_source_restatements": 0,
+        "cross_source_novelty_failures": 0,
+        "cross_source_novelty_calls": 0,
+        "cross_source_novelty_deferred": 0,
+        "cross_source_novelty_budget_exhausted": False,
         "degraded": False,
     }
 
@@ -1317,7 +1342,7 @@ def fetch_all(sources, cfg):
 
 NEWS_SEEN_DIR = "news-seen"
 UPDATE_JUDGE_SYSTEM = """你是新闻更新审计员。比较同一 URL 上次与本次的标题和摘要。
-只有官方确认、事件结果、关键数字、影响范围或政策结论出现实质新增，material 才为 true。
+只有事件结果、关键数字、影响范围、政策结论、正式更正，或首次官方确认/否认导致可信状态变化，material 才为 true。
 措辞润色、翻译变化、标题改写、时间戳刷新和背景补充均为 false。
 严格返回 JSON：{"updates":[{"index":0,"material":false}]}，每个输入 index 恰好一项。"""
 
@@ -1443,19 +1468,25 @@ def filter_cross_day_news(llm, items, seen, date_str, quality=None):
     try:
         raw = llm.json_call(UPDATE_JUDGE_SYSTEM,
                             json.dumps(request_rows, ensure_ascii=False))
-        rows = raw.get("updates") if isinstance(raw, dict) else None
+        rows = raw.get("updates") if (isinstance(raw, dict)
+                                        and set(raw) == {"updates"}) else None
         if not isinstance(rows, list):
             raise ValueError("updates must be a list")
         for row in rows:
-            if (not isinstance(row, dict) or isinstance(row.get("index"), bool)
+            if (not isinstance(row, dict) or set(row) != {"index", "material"}
+                    or isinstance(row.get("index"), bool)
                     or not isinstance(row.get("index"), int)
                     or not isinstance(row.get("material"), bool)):
-                continue
+                raise ValueError("invalid update row")
             idx = row["index"]
-            if 0 <= idx < len(changed) and idx not in decisions:
-                decisions[idx] = row["material"]
+            if not 0 <= idx < len(changed) or idx in decisions:
+                raise ValueError("duplicate or out-of-range update index")
+            decisions[idx] = row["material"]
+        if set(decisions) != set(range(len(changed))):
+            raise ValueError("updates must cover every input exactly once")
     except Exception as exc:
-        log(f"  重大更新判定失败，按跨日重复过滤: {exc}")
+        decisions = {}
+        log(f"  重大更新判定失败，候选保留: {exc}")
         quality["degraded"] = True
 
     for idx, (item, prior) in enumerate(changed):
@@ -1464,11 +1495,12 @@ def filter_cross_day_news(llm, items, seen, date_str, quality=None):
             item["first_seen"] = prior.get("first_seen") or prior.get("last_seen")
             kept.append(item)
             quality["material_updates"] += 1
-        else:
+        elif idx in decisions:
             quality["cross_day_duplicates"] += 1
-            if idx not in decisions:
-                quality["update_judge_failures"] += 1
-                quality["degraded"] = True
+        else:
+            kept.append(item)
+            quality["update_judge_failures"] += 1
+            quality["degraded"] = True
     return kept
 
 
@@ -2570,6 +2602,326 @@ def _event_line_keys(event, progress_limit=6):
     return keys
 
 
+CROSS_SOURCE_NOVELTY_SYSTEM = """你负责执行日报的跨日实质新增门。输入 items 中每条都是今天的候选，
+current 是今天来源明确写出的材料，registry 是同类别的既有精选事件线。只能使用输入证据，不得使用常识或联网信息。
+逐条选择：different_event（不是同一具体事件）、material_addition（同一事件且有实质新增）、
+restatement（同一事件、当前核心事实已被历史明确覆盖且无实质新增）、uncertain（证据不足）。
+实质新增包括新结果、关键数字或影响范围变化、政策结论、正式更正，或首次官方确认/否认使可信状态变化。
+新来源、新标题、背景或参数解释、评论分析、重复基准结果不算实质新增。
+只有证据明确时才能选 restatement；拿不准必须选 uncertain。
+只输出 JSON：{"items":[{"idx":0,"decision":"different_event|material_addition|restatement|uncertain",
+"registry_index":0或null,"reason":"简短证据理由"}]}。每个 idx 必须恰好返回一次，不得增加字段。"""
+
+
+def cross_source_event_key(event):
+    """Stable within one run and changes whenever same-day reconciliation changes."""
+    indexes = [index for index in (event.get("ids") or [])
+               if type(index) is int]
+    return tuple(sorted(set(indexes)))
+
+
+def _cross_source_history_is_pick(row):
+    return bool(re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}:pick-[A-Za-z0-9_-]+",
+        str((row or {}).get("item_ref") or "")))
+
+
+def _cross_source_days_since(date_str, prior):
+    try:
+        return (datetime.strptime(date_str, "%Y-%m-%d")
+                - datetime.strptime(str(prior), "%Y-%m-%d")).days
+    except (TypeError, ValueError):
+        return 10 ** 6
+
+
+def _cross_source_current_projection(event, items):
+    reports = []
+    for index in event.get("ids") or []:
+        if type(index) is not int or not 0 <= index < len(items):
+            continue
+        item = items[index]
+        reports.append({
+            "title": str(item.get("title") or "")[:240],
+            "summary": str(item.get("desc") or "")[:600],
+            "source": str(item.get("source") or "")[:120],
+        })
+    return {
+        "category": str(event.get("category") or ""),
+        "title": str(event.get("title") or "")[:240],
+        "summary": str(event.get("summary") or "")[:600],
+        "reports": reports[:6],
+    }
+
+
+def _cross_source_relevant_history(line, current_keys, limit=7):
+    rows = [row for row in (line.get("history") or [])
+            if isinstance(row, dict) and _cross_source_history_is_pick(row)]
+    if not rows:
+        return []
+    ranked = sorted(
+        enumerate(rows),
+        key=lambda pair: (
+            -len(current_keys.intersection(_event_line_keys({
+                "title": pair[1].get("title", ""), "history": [pair[1]]}))),
+            pair[0],
+        ))
+    chosen = {0, len(rows) - 1}
+    for index, _row in ranked:
+        if len(chosen) >= limit:
+            break
+        chosen.add(index)
+    return [rows[index] for index in sorted(chosen)[:limit]]
+
+
+class CrossSourceNoveltyGate:
+    """Fail-open reviewer for cross-source restatements of prior picks."""
+
+    def __init__(self, llm, registry, data_dir, date_str, cfg, stats=None):
+        self.llm = llm
+        self.data_dir = Path(data_dir)
+        self.date_str = date_str
+        self.stats = stats if stats is not None else new_cross_source_novelty_stats()
+        guard = (cfg or {}).get("cost_guard") or {}
+        self.batch_size = max(1, int(
+            guard.get("cross_source_novelty_batch_size", 20)))
+        self.max_calls = max(0, int(
+            guard.get("cross_source_novelty_max_calls", 8)))
+        self.calls = 0
+        self.decisions = {}
+        self.daily_cache = {}
+        self.lines = []
+        for line in (registry or {}).get("events") or []:
+            if not isinstance(line, dict):
+                continue
+            prior_history = [
+                row for row in (line.get("history") or [])
+                if isinstance(row, dict)
+                and 0 < _cross_source_days_since(date_str, row.get("date")) < 10 ** 6
+            ]
+            if not prior_history:
+                continue
+            historical_line = {**line, "history": prior_history,
+                               "last_seen": max(
+                                   str(row.get("date") or "")
+                                   for row in prior_history)}
+            age = _cross_source_days_since(
+                date_str, historical_line.get("last_seen"))
+            if not 0 <= age <= 60:
+                continue
+            if not any(_cross_source_history_is_pick(row)
+                       for row in prior_history):
+                continue
+            self.lines.append(historical_line)
+
+    def _history_projection(self, row):
+        projection = {
+            "date": str(row.get("date") or ""),
+            "title": str(row.get("title") or "")[:180],
+            "summary": str(row.get("summary") or "")[:320],
+            "status": str(row.get("news_status") or ""),
+            "item_ref": str(row.get("item_ref") or ""),
+        }
+        match = re.fullmatch(
+            r"(\d{4}-\d{2}-\d{2}):(pick-[A-Za-z0-9_-]+)",
+            projection["item_ref"])
+        if not match:
+            return projection
+        day, item_id = match.groups()
+        if day not in self.daily_cache:
+            self.daily_cache[day] = read_daily_payload(
+                self.data_dir / "daily" / f"{day}.js") or {}
+        prior = next((item for item in self.daily_cache[day].get("items") or []
+                      if isinstance(item, dict) and item.get("id") == item_id), None)
+        if not prior:
+            return projection
+        for field, limit in (("title", 180), ("summary", 320),
+                             ("detail", 600), ("status", 80)):
+            if prior.get(field):
+                projection[field] = str(prior[field])[:limit]
+        return projection
+
+    def _shortlist(self, event, items):
+        current = _cross_source_current_projection(event, items)
+        key_event = {
+            "title": " ".join([
+                current["title"], current["summary"],
+                *(report["title"] + " " + report["summary"]
+                  for report in current["reports"]),
+            ]),
+            "history": [],
+        }
+        current_keys = _event_line_keys(key_event)
+        candidates = []
+        for line in self.lines:
+            if line.get("category") != event.get("category"):
+                continue
+            overlap = len(current_keys.intersection(_event_line_keys(line)))
+            if overlap <= 0:
+                continue
+            candidates.append((overlap, str(line.get("last_seen") or ""), line))
+        candidates.sort(key=lambda row: (row[0], row[1]), reverse=True)
+        projected = []
+        for _overlap, _last_seen, line in candidates[:6]:
+            history = _cross_source_relevant_history(line, current_keys)
+            projected.append({
+                "event_id": str(line.get("event_id") or ""),
+                "title": str(line.get("title") or "")[:240],
+                "category": str(line.get("category") or ""),
+                "history": [self._history_projection(row) for row in history],
+            })
+        return current, projected
+
+    def _record_fail_open(self, keys, *, deferred=False):
+        count = 0
+        for key in keys:
+            if key in self.decisions:
+                continue
+            self.decisions[key] = ("uncertain", None)
+            count += 1
+        if deferred:
+            self.stats["cross_source_novelty_deferred"] += count
+            self.stats["cross_source_novelty_budget_exhausted"] = True
+        else:
+            self.stats["cross_source_novelty_failures"] += count
+        if count:
+            self.stats["degraded"] = True
+
+    def _validate(self, raw, expected, shortlist_sizes):
+        if not isinstance(raw, dict) or set(raw) != {"items"}:
+            return None
+        rows = raw.get("items")
+        if not isinstance(rows, list):
+            return None
+        by_index = {}
+        allowed = {"different_event", "material_addition", "restatement", "uncertain"}
+        for row in rows:
+            if not isinstance(row, dict) or set(row) != {
+                    "idx", "decision", "registry_index", "reason"}:
+                return None
+            index = row.get("idx")
+            if type(index) is not int or not 0 <= index < expected or index in by_index:
+                return None
+            decision = row.get("decision")
+            registry_index = row.get("registry_index")
+            reason = row.get("reason")
+            if (decision not in allowed or not isinstance(reason, str)
+                    or not reason.strip() or len(reason.strip()) > 240):
+                return None
+            if decision in {"material_addition", "restatement"}:
+                if (type(registry_index) is not int
+                        or not 0 <= registry_index < shortlist_sizes[index]):
+                    return None
+            elif registry_index is not None and (
+                    type(registry_index) is not int
+                    or not 0 <= registry_index < shortlist_sizes[index]):
+                return None
+            by_index[index] = row
+        return by_index if set(by_index) == set(range(expected)) else None
+
+    def _review_batch(self, batch):
+        keys = [entry[0] for entry in batch]
+        payload = self._batch_payload(batch)
+        validated = None
+        attempts = 0
+        while (attempts < 2 and self.calls < self.max_calls
+               and validated is None):
+            attempts += 1
+            self.calls += 1
+            self.stats["cross_source_novelty_calls"] += 1
+            try:
+                raw = self.llm.json_call(
+                    CROSS_SOURCE_NOVELTY_SYSTEM,
+                    json.dumps(payload, ensure_ascii=False))
+                validated = self._validate(
+                    raw, len(batch), [len(entry[2]) for entry in batch])
+            except Exception as exc:
+                log(f"  跨日实质新增门调用失败，候选保留: {exc}")
+                self._record_fail_open(keys)
+                return
+            if validated is not None:
+                break
+            if attempts < 2 and self.calls < self.max_calls:
+                log("  跨日实质新增门响应非法，重试一次")
+                continue
+            break
+        if validated is None:
+            if self.calls >= self.max_calls:
+                self.stats["cross_source_novelty_budget_exhausted"] = True
+            self._record_fail_open(keys)
+            return
+        for index, key in enumerate(keys):
+            row = validated[index]
+            decision = row["decision"]
+            line = (batch[index][2][row["registry_index"]]
+                    if type(row.get("registry_index")) is int else None)
+            self.decisions[key] = (decision, line)
+            if decision == "restatement":
+                self.stats["cross_source_restatements"] += 1
+            elif decision == "material_addition":
+                self.stats["cross_source_material_additions"] += 1
+            elif decision == "uncertain":
+                self.stats["cross_source_novelty_failures"] += 1
+                self.stats["degraded"] = True
+
+    def review(self, events, items):
+        pending = []
+        event_by_key = {}
+        for event in events:
+            key = cross_source_event_key(event)
+            event_by_key[key] = event
+            if key in self.decisions:
+                continue
+            current, shortlist = self._shortlist(event, items)
+            if not shortlist:
+                self.decisions[key] = ("different_event", None)
+                continue
+            pending.append((key, current, shortlist))
+        self.stats["cross_source_novelty_candidates"] += len(pending)
+
+        batches = []
+        batch = []
+        for entry in pending:
+            proposed = [*batch, entry]
+            oversized = len(json.dumps(
+                self._batch_payload(proposed), ensure_ascii=False)) \
+                > CROSS_SOURCE_NOVELTY_MAX_PROMPT_CHARS
+            if batch and (len(batch) >= self.batch_size or oversized):
+                batches.append(batch)
+                batch = []
+                proposed = [entry]
+            if len(json.dumps(
+                    self._batch_payload(proposed), ensure_ascii=False)) \
+                    > CROSS_SOURCE_NOVELTY_MAX_PROMPT_CHARS:
+                log("  跨日实质新增门证据包过大，候选保留")
+                self._record_fail_open([entry[0]])
+                continue
+            batch = proposed
+        if batch:
+            batches.append(batch)
+
+        for batch in batches:
+            if self.calls >= self.max_calls:
+                self._record_fail_open([entry[0] for entry in batch], deferred=True)
+                continue
+            self._review_batch(batch)
+        restatements = []
+        hints = {}
+        for key, event in event_by_key.items():
+            decision, line = self.decisions.get(key, ("uncertain", None))
+            if decision == "restatement":
+                restatements.append(event)
+            elif decision == "material_addition" and line and line.get("event_id"):
+                hints[key] = line["event_id"]
+        return {"restatements": restatements, "material_hints": hints}
+
+    @staticmethod
+    def _batch_payload(batch):
+        return {"items": [
+            {"idx": index, "current": current, "registry": registry}
+            for index, (_key, current, registry) in enumerate(batch)
+        ]}
+
+
 def _cross_day_line_batches(events, batch_size=CROSS_DAY_LINE_BATCH_SIZE):
     """Pair only lines that share low-frequency vocabulary.
 
@@ -3519,9 +3871,104 @@ def _reaudit_reconciled_same_day_events(llm, events, items, quality):
 
 
 def select_review_and_record(reconcile_llm, cohesion_llm, events, items, cfg,
-                             data_dir, date_str, quality=None):
+                             data_dir, date_str, quality=None, *, novelty_llm=None,
+                             registry=None, novelty_stats=None, novelty_hints=None):
     """Reach a stable reader-facing set, then persist only final scores."""
     quality = quality if quality is not None else new_quality_stats()
+    if novelty_llm is not None:
+        stats = (novelty_stats if novelty_stats is not None
+                 else new_cross_source_novelty_stats())
+        gate = CrossSourceNoveltyGate(
+            novelty_llm, registry or {"version": 2, "events": []}, data_dir,
+            date_str, cfg, stats)
+        hints = novelty_hints if novelty_hints is not None else {}
+        suppressed = set()
+        all_events = list(events)
+        threshold_info = resolve_pick_threshold(cfg, data_dir, date_str)
+
+        def stabilize(threshold):
+            nonlocal all_events
+            max_passes = max(1, len(all_events) * 2)
+            final_stats = {}
+            for pass_index in range(max_passes):
+                suppressed_events = [
+                    event for event in all_events
+                    if cross_source_event_key(event) in suppressed]
+                eligible = [
+                    event for event in all_events
+                    if cross_source_event_key(event) not in suppressed]
+                preliminary_picked, preliminary_secondary = score_and_select(
+                    eligible, items, cfg, effective_threshold=threshold)
+                reviewed, merged = review_reader_facing_duplicates(
+                    reconcile_llm, eligible, preliminary_picked,
+                    preliminary_secondary, items, quality)
+                log(f"  发布前稳定复核第 {pass_index + 1}/{max_passes} 轮："
+                    f"同日归并 {merged} 个")
+                if merged:
+                    reviewed = _reaudit_reconciled_same_day_events(
+                        cohesion_llm, reviewed, items, quality)
+                    all_events = suppressed_events + reviewed
+                    continue
+
+                novelty = gate.review(
+                    [*preliminary_picked, *preliminary_secondary], items)
+                hints.update(novelty["material_hints"])
+                newly_suppressed = {
+                    cross_source_event_key(event)
+                    for event in novelty["restatements"]
+                    if cross_source_event_key(event) not in suppressed
+                }
+                if stats.get("degraded"):
+                    quality["degraded"] = True
+                if newly_suppressed:
+                    suppressed.update(newly_suppressed)
+                    log(f"  跨源复述抑制 {len(newly_suppressed)} 个，重新选位")
+                    continue
+
+                final_stats.clear()
+                picked, secondary = score_and_select(
+                    eligible, items, cfg, effective_threshold=threshold,
+                    selection_stats=final_stats)
+                return eligible, picked, secondary, final_stats
+            quality["duplicate_audit_failures"] += 1
+            quality["degraded"] = True
+            log("  发布前稳定复核未在有限轮次内稳定，保留当前候选")
+            eligible = [event for event in all_events
+                        if cross_source_event_key(event) not in suppressed]
+            picked, secondary = score_and_select(
+                eligible, items, cfg, effective_threshold=threshold,
+                selection_stats=final_stats)
+            return eligible, picked, secondary, final_stats
+
+        eligible, picked, secondary, selection_stats = stabilize(
+            threshold_info["threshold"])
+        if not save_score_history(data_dir, date_str, eligible):
+            static_threshold = int(cfg.get("pick_threshold", 68))
+            offset = max(0, int(
+                (cfg.get("pick_dynamic") or {}).get("backfill_offset", 8)))
+            threshold_info = {
+                "threshold": static_threshold,
+                "source": "fallback_history_write",
+                "history_days": threshold_info["history_days"],
+                "quality_floor": max(5, static_threshold - offset),
+            }
+            eligible, picked, secondary, selection_stats = stabilize(
+                static_threshold)
+        selection_stats.update({
+            "threshold_source": threshold_info["source"],
+            "history_days": threshold_info["history_days"],
+        })
+        finalize_selection_gate_metrics(selection_stats, picked, cfg)
+        log("  跨日实质新增门："
+            f"候选 {stats['cross_source_novelty_candidates']}，"
+            f"实质新增 {stats['cross_source_material_additions']}，"
+            f"复述 {stats['cross_source_restatements']}，"
+            f"失败 {stats['cross_source_novelty_failures']}，"
+            f"调用 {stats['cross_source_novelty_calls']}，"
+            f"延后 {stats['cross_source_novelty_deferred']}，"
+            f"预算耗尽 {int(stats['cross_source_novelty_budget_exhausted'])}")
+        return all_events, picked, secondary, threshold_info, selection_stats
+
     threshold_info = resolve_pick_threshold(cfg, data_dir, date_str)
     max_passes = max(1, len(events))
     for pass_index in range(max_passes):
@@ -5289,6 +5736,7 @@ def update_registry(registry, picked, pairs, active_events, date_str, cfg, items
             _inherit_same_day_identity(entry, prior_today)
             tgt["history"].append(entry)
             tgt["last_seen"] = date_str
+            tgt["status"] = "active"
             # 事件线名是身份标识，取首次出现那天的展示标题；当天的标题只进 history 行。
             if not tgt.get("title"):
                 tgt["title"] = ev.get("title", "")
@@ -5367,7 +5815,8 @@ def _build_trajectory_review_cases(picked, items, cfg):
 def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
                                  secondary=None, feedback=None, items=None,
                                  trajectory_audit_llm=None, trajectory_health=None,
-                                 trajectory_review_cases=None, quality=None):
+                                 trajectory_review_cases=None, quality=None,
+                                 preferred_event_ids=None):
     """Prepare the complete registry update in memory without persisting it."""
     registry = copy.deepcopy(registry)
     quality = quality if quality is not None else new_quality_stats()
@@ -5410,6 +5859,44 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
     llm_picked = [picked[index] for index in llm_picked_indexes]
     llm_pairs = match_events_llm(llm, llm_active, llm_picked) \
         if (llm_active and llm_picked) else []
+    hinted_event_ids = {
+        (preferred_event_ids or {}).get(cross_source_event_key(event))
+        for event in llm_picked
+    }
+    hinted_event_ids.discard(None)
+    active_object_ids = {id(event) for event in llm_active}
+    prune_window = int(evcfg.get("prune_archived_days", 60))
+    llm_active.extend(
+        event for event in registry["events"]
+        if event.get("event_id") in hinted_event_ids
+        and id(event) not in active_object_ids
+        and 0 <= days_since(event.get("last_seen", "")) <= prune_window
+        and any(row.get("date") != date_str for row in event.get("history", [])))
+    event_index_by_id = {
+        event.get("event_id"): index for index, event in enumerate(llm_active)
+        if event.get("event_id")
+    }
+    hinted_pairs = []
+    for local_today, event in enumerate(llm_picked):
+        event_id = (preferred_event_ids or {}).get(cross_source_event_key(event))
+        registry_index = event_index_by_id.get(event_id)
+        if registry_index is not None:
+            hinted_pairs.append((local_today, registry_index))
+    unique_llm_pairs = []
+    seen_today, seen_registry = set(), set()
+    for today_index, registry_index in [*hinted_pairs, *(llm_pairs or [])]:
+        if today_index in seen_today or registry_index in seen_registry:
+            continue
+        if (not 0 <= today_index < len(llm_picked)
+                or not 0 <= registry_index < len(llm_active)):
+            continue
+        if (llm_picked[today_index].get("category")
+                != llm_active[registry_index].get("category")):
+            continue
+        seen_today.add(today_index)
+        seen_registry.add(registry_index)
+        unique_llm_pairs.append((today_index, registry_index))
+    llm_pairs = unique_llm_pairs
     active = [event for _, event in rerun_pairs] + llm_active
     pairs = [(today_index, active_index)
              for active_index, (today_index, _) in enumerate(rerun_pairs)]
@@ -5525,16 +6012,19 @@ def prepare_registry_transaction(llm, registry, picked, date_str, cfg,
 
 def track_events(llm, picked, date_str, cfg, secondary=None, feedback=None, items=None,
                  trajectory_audit_llm=None, trajectory_health=None,
-                 trajectory_review_cases=None, persist=True, quality=None):
+                 trajectory_review_cases=None, persist=True, quality=None,
+                 registry=None, preferred_event_ids=None):
     """Load and prepare one registry transaction, optionally persisting it."""
     data_dir = Path(os.environ["DATA_DIR"]) if os.environ.get("DATA_DIR") else ROOT / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
     health = trajectory_health if trajectory_health is not None else new_trajectory_health()
     registry = prepare_registry_transaction(
-        llm, load_registry(data_dir), picked, date_str, cfg,
+        llm, registry if registry is not None else load_registry(data_dir),
+        picked, date_str, cfg,
         secondary=secondary, feedback=feedback, items=items,
         trajectory_audit_llm=trajectory_audit_llm, trajectory_health=health,
-        trajectory_review_cases=trajectory_review_cases, quality=quality)
+        trajectory_review_cases=trajectory_review_cases, quality=quality,
+        preferred_event_ids=preferred_event_ids)
     if persist:
         persist_registry(registry, data_dir)
     n_cont = sum(1 for ev in picked if ev.get("trusted_continuation"))
@@ -6991,7 +7481,7 @@ def _daily_pick_count(data_dir, date_str):
 
 
 def update_quality_health(data_dir, date_str, quality, keep_days=90,
-                          include_rollout=True, usage=None):
+                          include_rollout=True, usage=None, novelty_stats=None):
     """Upsert a rolling, non-daily-file quality health record.
 
     ``usage`` carries the run's token bill. It is merged here rather than into
@@ -7017,8 +7507,13 @@ def update_quality_health(data_dir, date_str, quality, keep_days=90,
         key: usage[key] for key in LLM_USAGE_FIELDS
         if key in (usage or {})
     }
+    safe_novelty = {
+        key: novelty_stats[key] for key in CROSS_SOURCE_NOVELTY_FIELDS
+        if key in (novelty_stats or {})
+    }
     records.append({"date": date_str,
                     **_quality_for_output(quality, include_rollout),
+                    **safe_novelty,
                     **safe_usage})
     records.sort(key=lambda row: row.get("date", ""))
     records = records[-max(1, int(keep_days)):]
@@ -8153,9 +8648,14 @@ def _run_pipeline(started_at, args, cfg, policy):
     if n_pulse:
         log(f"  公众热度加权：{n_pulse} 个事件命中热榜")
 
+    registry_snapshot = load_registry(_data_dir)
+    novelty_stats = new_cross_source_novelty_stats()
+    novelty_hints = {}
     events, picked, secondary, threshold_info, selection_stats = \
         select_review_and_record(
-            llm, audit_llm, events, items, cfg, _data_dir, date_str, quality)
+            llm, audit_llm, events, items, cfg, _data_dir, date_str, quality,
+            novelty_llm=audit_llm, registry=registry_snapshot,
+            novelty_stats=novelty_stats, novelty_hints=novelty_hints)
     log(f"动态精选线：{threshold_info['threshold']} 分 "
         f"（{threshold_info['source']}，历史 {threshold_info['history_days']} 天）")
     append_github_selection_summary(selection_stats)
@@ -8202,7 +8702,9 @@ def _run_pipeline(started_at, args, cfg, policy):
                             trajectory_audit_llm=audit_llm,
                             trajectory_health=trajectory_health,
                             trajectory_review_cases=trajectory_review_cases,
-                            persist=False, quality=quality)
+                            persist=False, quality=quality,
+                            registry=registry_snapshot,
+                            preferred_event_ids=novelty_hints)
     brief, themes = write_brief(
         llm, picked, secondary,
         audit_llm=audit_llm if policy["full_objectivity"] else None)
@@ -8227,7 +8729,8 @@ def _run_pipeline(started_at, args, cfg, policy):
     try:
         update_quality_health(
             _data_dir, date_str, quality,
-            include_rollout=policy["full_objectivity"])
+            include_rollout=policy["full_objectivity"],
+            novelty_stats=novelty_stats)
     except Exception as e:
         log(f"  质量健康记录写入失败（不影响当日日报）: {e}")
     log("英语单词本：挑词 + 补全手动词 ...")
@@ -8268,7 +8771,8 @@ def _run_pipeline(started_at, args, cfg, policy):
         try:
             update_quality_health(
                 _data_dir, date_str, quality,
-                include_rollout=policy["full_objectivity"], usage=run_usage)
+                include_rollout=policy["full_objectivity"], usage=run_usage,
+                novelty_stats=novelty_stats)
         except Exception as e:
             log(f"  用量记录写入失败（不影响当日日报）: {e}")
 
