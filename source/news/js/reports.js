@@ -118,7 +118,6 @@ export function dailyCard(item, date, options = {}) {
     <div class="card-top">${timeline?.time ? `<time class="timeline-time" datetime="${escapeHtml(item.time || "")}">${escapeHtml(timeline.time)}</time>` : ""}<span class="tag cat-${escapeHtml(item.category)}">${escapeHtml(CATEGORY_LABELS[item.category] || item.category)}</span>${item.is_update ? '<span class="tag update-mark">重大更新</span>' : ""}${timeline?.continuation ? '<span class="continuation-mark">延续</span>' : ""}${item.status ? `<span class="tag${STATUS_CLASSES.has(item.status) ? ` st-${item.status}` : ""}">${escapeHtml(item.status)}</span>` : ""}${continuationLink(item, trajectoryEnabled)}${Number.isFinite(item.score) ? `<span class="score-num">${item.score}</span>` : ""}</div>
     <h3><a href="${routeUrl({ view: "detail", date, type: "news", item: item.id })}" data-route>${escapeHtml(item.title)}</a></h3>
     ${item.summary ? `<p class="sum">${escapeHtml(item.summary)}</p>` : ""}
-    ${item.why ? `<div class="kv why"><b>为什么重要：</b>${escapeHtml(item.why)}</div>` : ""}
     ${trajectoryEnabled && item.watch ? `<div class="kv watch"><b>走向：</b>${escapeHtml(item.watch)}</div>` : ""}
     <div class="srcs">${sourceLinks(item)}</div>${actionButtons(item, { ...options, date, type: "news" })}
   </article>`;
@@ -134,7 +133,7 @@ function coreReadMinutes(data, picks) {
   return textMinutes([
     data.lead || data.brief,
     ...(data.themes || []).slice(0, 3).flatMap((theme) => [theme.title, theme.overview || theme.one_liner]),
-    ...picks.flatMap((item) => [item.title, item.summary, item.why, trajectoryEnabled ? item.watch : ""]),
+    ...picks.flatMap((item) => [item.title, item.summary, trajectoryEnabled ? item.watch : ""]),
   ]);
 }
 
@@ -307,15 +306,12 @@ export function renderDetail(item, type = "news", date = "", options = {}) {
     const contextText = recapData ? recapData.context : item.context;
     const contextLabel = item.trusted_continuation === true ? "来龙" : "起因";
     const context = contextText ? `<section data-trajectory="context"><h2 class="detail-sec-t">${contextLabel}</h2><div class="kv detail-body">${detailParagraphs(contextText)}</div></section>` : "";
-    const whyPart = item.why ? `<section data-trajectory="why"><h2 class="detail-sec-t">为什么重要</h2><div class="kv why">${escapeHtml(item.why)}</div></section>` : "";
     const bodyPart = item.detail ? `<section data-trajectory="body"><h2 class="detail-sec-t">现状</h2><div class="detail-body">${detailParagraphs(item.detail)}</div></section>` : "";
-    // 事实先行：现状在判断之前。摘要已由 lede 承担，这里不再重复。
-    const current = `${bodyPart}${whyPart}`;
     const recap = recapData ? `<div class="trajectory-recap recap-${recapData.status}"><span>走向回对 · ${recapData.status}</span>${escapeHtml(recapData.text)}</div>` : "";
     const watchText = typeof item.watch_detail === "string" && item.watch_detail.trim()
       ? item.watch_detail : item.watch;
     const watch = watchText ? `<section data-trajectory="watch"><h2 class="detail-sec-t">走向</h2><div class="kv watch detail-body">${detailParagraphs(watchText)}</div></section>` : "";
-    body = `<div class="detail-trajectory">${context}${current}${recap}${watch}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
+    body = `<div class="detail-trajectory">${context}${bodyPart}${recap}${watch}</div>${evidenceHtml(item)}${claimsHtml(item)}`;
   }
   if (type === "deep") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>核心观点：</b>${escapeHtml(item.takeaway)}</div>` : ""}${(item.key_points || []).length ? `<section><h2 class="detail-sec-t">关键点</h2><ul>${item.key_points.map((point) => `<li>${escapeHtml(point)}</li>`).join("")}</ul></section>` : ""}${item.audience ? `<div class="kv"><b>适合读者：</b>${escapeHtml(item.audience)}</div>` : ""}`;
   if (type === "paper") body = `${item.why ? `<div class="kv why"><b>为什么值得读：</b>${escapeHtml(item.why)}</div>` : ""}${item.takeaway ? `<div class="detail-takeaway"><b>研究结论：</b>${escapeHtml(item.takeaway)}</div>` : ""}${[["贡献", item.contribution], ["证据", item.evidence], ["局限", item.limitations]].filter(([, value]) => value).map(([label, value]) => `<div class="kv"><b>${label}：</b>${escapeHtml(value)}</div>`).join("")}`;

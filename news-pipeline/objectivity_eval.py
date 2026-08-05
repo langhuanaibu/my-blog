@@ -6,9 +6,13 @@ audit/repair/fallback functions. A separate judge sees only that evidence and
 the final candidate, never fixture expectations or acceptance thresholds.
 """
 import argparse
+import copy
 import hashlib
+import importlib.util
 import json
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
+import sys
 
 import yaml
 
@@ -410,6 +414,189 @@ def evaluate_three_runs(fixtures, runner):
     return acceptance_result(runs)
 
 
+def _valid_cost_report(report):
+    if not isinstance(report, dict):
+        return False, "report is not an object"
+    runs = report.get("runs")
+    if (not isinstance(runs, list) or len(runs) != 3
+            or any(not isinstance(run, dict)
+                   or run.get("structure_validity") != 1.0 for run in runs)):
+        return False, "three complete runs with valid structure are required"
+    usage = report.get("content_usage")
+    if not isinstance(usage, dict):
+        return False, "content usage is missing"
+    if usage.get("llm_cost_known") is not True:
+        return False, "content cost is unknown"
+    for field in ("llm_calls", "llm_input_tokens", "llm_cached_input_tokens",
+                  "llm_output_tokens", "truncated_responses", "terminal_errors",
+                  "billing_errors"):
+        if type(usage.get(field)) is not int or usage[field] < 0:
+            return False, f"content usage field {field} is invalid"
+    if usage["llm_calls"] <= 0:
+        return False, "content run recorded no model calls"
+    if any(usage[field] for field in (
+            "truncated_responses", "terminal_errors", "billing_errors")):
+        return False, "content run was truncated, failed, or billing-incomplete"
+    signature = usage.get("billing_signature")
+    if not isinstance(signature, list) or not signature:
+        return False, "billing signature is missing"
+    seen_identities = set()
+    for entry in signature:
+        if not isinstance(entry, dict):
+            return False, "billing signature is invalid"
+        identity = (str(entry.get("provider") or "").strip(),
+                    str(entry.get("model") or "").strip())
+        if not all(identity) or identity in seen_identities:
+            return False, "billing signature is invalid"
+        seen_identities.add(identity)
+        price = entry.get("price_usd_per_mtok")
+        if not isinstance(price, dict):
+            return False, "billing signature price is invalid"
+        for price_field in ("input_miss", "input_hit", "output"):
+            try:
+                value = Decimal(str(price[price_field]))
+            except (InvalidOperation, KeyError, TypeError, ValueError):
+                return False, "billing signature price is invalid"
+            if not value.is_finite() or value < 0:
+                return False, "billing signature price is invalid"
+    for field in ("llm_cost_usd", "llm_weighted_token_cost_usd"):
+        try:
+            cost = Decimal(str(usage.get(field)))
+        except (InvalidOperation, TypeError, ValueError):
+            return False, f"content cost field {field} is invalid"
+        if not cost.is_finite() or cost < 0:
+            return False, f"content cost field {field} is invalid"
+    return True, ""
+
+
+def evaluate_paired_cost_gate(baseline, candidate):
+    """Fail closed unless three candidate rounds cost no more than baseline."""
+    reasons = []
+    for label, report in (("baseline", baseline), ("candidate", candidate)):
+        valid, reason = _valid_cost_report(report)
+        if not valid:
+            reasons.append(f"{label}: {reason}")
+    if reasons:
+        return {"accepted": False, "reasons": reasons}
+    before = baseline["content_usage"]
+    after = candidate["content_usage"]
+    if before["billing_signature"] != after["billing_signature"]:
+        reasons.append("baseline and candidate billing signatures differ")
+    if after["llm_calls"] > before["llm_calls"]:
+        reasons.append("candidate content call count exceeds baseline")
+    if (Decimal(str(after["llm_weighted_token_cost_usd"]))
+            > Decimal(str(before["llm_weighted_token_cost_usd"]))):
+        reasons.append("candidate weighted token cost exceeds baseline")
+    return {
+        "accepted": not reasons,
+        "reasons": reasons,
+        "baseline": {
+            "llm_calls": before["llm_calls"],
+            "llm_cost_usd": before["llm_cost_usd"],
+            "llm_weighted_token_cost_usd": before[
+                "llm_weighted_token_cost_usd"],
+        },
+        "candidate": {
+            "llm_calls": after["llm_calls"],
+            "llm_cost_usd": after["llm_cost_usd"],
+            "llm_weighted_token_cost_usd": after[
+                "llm_weighted_token_cost_usd"],
+        },
+    }
+
+
+def _instrument_acceptance_client(llm, telemetry):
+    """Collect fail-closed gate diagnostics without changing request behavior."""
+    original_complete = getattr(llm, "_complete", None)
+    if callable(original_complete):
+        def measured_complete(*args, **kwargs):
+            try:
+                return original_complete(*args, **kwargs)
+            except Exception as exc:
+                message = str(exc).casefold()
+                if "truncat" in message or "max_tokens" in message:
+                    telemetry["truncated_responses"] += 1
+                if any(token in message for token in (
+                        "insufficient", "balance", "quota", "payment", "http 402")):
+                    telemetry["billing_errors"] += 1
+                raise
+        llm._complete = measured_complete
+    original_json_call = llm.json_call
+
+    def measured_json_call(*args, **kwargs):
+        try:
+            return original_json_call(*args, **kwargs)
+        except Exception:
+            telemetry["terminal_errors"] += 1
+            raise
+    llm.json_call = measured_json_call
+    return llm
+
+
+def _content_usage_report(pipeline, llms, telemetry):
+    merged = pipeline.merge_usage(llms)
+    totals = pipeline.usage_totals(merged)
+    costs = [pipeline.usage_cost_usd(row) for row in merged.values()]
+    weighted_costs = []
+    for row in merged.values():
+        price = row.get("price_usd_per_mtok")
+        try:
+            input_price = Decimal(str(price["input_miss"]))
+            output_price = Decimal(str(price["output"]))
+            if (not input_price.is_finite() or input_price < 0
+                    or not output_price.is_finite() or output_price < 0):
+                raise InvalidOperation
+            weighted_costs.append((
+                Decimal(max(0, int(row.get("input", 0)))) * input_price
+                + Decimal(max(0, int(row.get("output", 0)))) * output_price
+            ) / Decimal(1_000_000))
+        except (InvalidOperation, KeyError, TypeError, ValueError):
+            weighted_costs.append(None)
+    cost_known = (
+        bool(merged)
+        and all(cost is not None for cost in costs)
+        and all(cost is not None for cost in weighted_costs)
+    )
+    signatures = {}
+    for (provider, model, _stage), row in merged.items():
+        key = (str(provider), str(model))
+        price = row.get("price_usd_per_mtok")
+        if key in signatures and signatures[key] != price:
+            price = None
+        signatures[key] = price
+    return {
+        **totals,
+        "llm_cost_usd": round(sum(costs), 12) if cost_known else None,
+        # Treat every input token as a cache miss so baseline/candidate order
+        # cannot make the later run look cheaper merely because caches warmed.
+        "llm_weighted_token_cost_usd": (
+            round(float(sum(weighted_costs)), 12) if cost_known else None),
+        "llm_cost_known": cost_known,
+        **telemetry,
+        "billing_signature": [
+            {"provider": provider, "model": model,
+             "price_usd_per_mtok": signatures[(provider, model)]}
+            for provider, model in sorted(signatures)
+        ],
+    }
+
+
+def _load_pipeline(path=None):
+    if path is None:
+        import daily_news as pipeline
+        return pipeline
+    target = Path(path).resolve()
+    spec = importlib.util.spec_from_file_location(
+        f"daily_news_acceptance_{hashlib.sha256(str(target).encode()).hexdigest()[:12]}",
+        target)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"cannot load pipeline: {target}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 class ProductionHarnessRunner:
     """Drive production enrichment/audit, then ask a separate model to judge."""
 
@@ -419,7 +606,9 @@ class ProductionHarnessRunner:
         self.candidate_llm = candidate_llm
         self.audit_llm = audit_llm
         self.judge_llm = judge_llm
-        self.config = config or {"topic_tags": [], "detail": {"enabled": True}}
+        self.config = copy.deepcopy(
+            config or {"topic_tags": [], "detail": {"enabled": True}})
+        self.config["_objectivity_runtime_mode"] = "shadow"
         self.batch_size = int(batch_size)
         self.max_judge_calls = int(max_judge_calls)
 
@@ -534,6 +723,9 @@ LiveRunner = ProductionHarnessRunner
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=str(ROOT / "config.yaml"))
+    parser.add_argument("--pipeline-path", default=None)
+    parser.add_argument("--cost-baseline", default=None)
+    parser.add_argument("--output", default=None)
     args = parser.parse_args(argv)
     try:
         fixtures = load_checked_in_corpus()
@@ -545,25 +737,42 @@ def main(argv=None):
         print(json.dumps({"accepted": False, "schema_errors": errors}, ensure_ascii=False))
         return 2
 
-    from daily_news import LLM, resolve_llm_config
-    import daily_news as pipeline
-
+    pipeline = _load_pipeline(args.pipeline_path)
     config = yaml.safe_load(Path(args.config).read_text(encoding="utf-8"))
-    candidate_config = resolve_llm_config(config, "llm")
-    audit_config = resolve_llm_config(config, "audit_llm")
+    candidate_config = pipeline.resolve_llm_config(config, "llm")
+    audit_config = pipeline.resolve_llm_config(config, "audit_llm")
     if (not str(candidate_config.get("api_key") or "").strip()
             or not str(audit_config.get("api_key") or "").strip()):
         print(json.dumps({"accepted": False, "error": "live LLM credentials are required"}))
         return 2
+    telemetry = {
+        "truncated_responses": 0,
+        "terminal_errors": 0,
+        "billing_errors": 0,
+    }
+    candidate_llm = _instrument_acceptance_client(
+        pipeline.LLM(candidate_config), telemetry)
+    audit_llm = _instrument_acceptance_client(
+        pipeline.LLM(audit_config), telemetry)
+    judge_llm = pipeline.LLM(audit_config)
     runner = ProductionHarnessRunner(
         pipeline,
-        LLM(candidate_config),
-        LLM(audit_config),
-        LLM(audit_config),
+        candidate_llm,
+        audit_llm,
+        judge_llm,
         config=config,
     )
     report = evaluate_three_runs(fixtures, runner)
-    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+    report["content_usage"] = _content_usage_report(
+        pipeline, [candidate_llm, audit_llm], telemetry)
+    if args.cost_baseline:
+        baseline = json.loads(Path(args.cost_baseline).read_text(encoding="utf-8"))
+        report["cost_gate"] = evaluate_paired_cost_gate(baseline, report)
+        report["accepted"] = report["accepted"] and report["cost_gate"]["accepted"]
+    encoded = json.dumps(report, ensure_ascii=False, sort_keys=True)
+    if args.output:
+        Path(args.output).write_text(encoded + "\n", encoding="utf-8")
+    print(encoded)
     return 0 if report["accepted"] else 1
 
 

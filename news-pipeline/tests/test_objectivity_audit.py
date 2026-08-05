@@ -942,9 +942,9 @@ def test_ordinary_failed_reaudit_remains_picked_and_failure_is_isolated():
     good["summary"] = "Meta 发布一款工具。"
     good["claims"] = [{"text": "Meta 发布工具", "kind": "fact", "sources": ["Meta"]}]
     first_bad = all_pass(bad)
-    first_bad["fields"]["why"] = False
+    first_bad["fields"]["detail"] = False
     second_bad = all_pass(bad)
-    second_bad["fields"]["why"] = False
+    second_bad["fields"]["detail"] = False
     audit = QueueLLM([
         first_bad, RuntimeError("repair unavailable"), second_bad,
         all_pass(good),
@@ -1938,8 +1938,8 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
     assert "FULLTEXT_ONLY_MARKER" not in interim_llm.calls[0][1]
     assert "watch_detail" not in interim_event
     assert {field: len(interim_event[field]) for field in
-            ("title", "summary", "why", "context", "watch", "detail")} == {
-        "title": len(long_values["title"]), "summary": 100, "why": 80,
+            ("title", "summary", "context", "watch", "detail")} == {
+        "title": len(long_values["title"]), "summary": 100,
         "context": 80, "watch": 80, "detail": 800,
     }
     interim_output_item = dict(item)
@@ -1949,7 +1949,7 @@ def test_modes_share_reader_field_caps_while_full_mode_uses_fulltext_evidence():
         interim_event, [interim_output_item], "pick")
     assert serialized_interim["title"] == long_values["title"]
     assert len(serialized_interim["summary"]) == 100
-    assert len(serialized_interim["why"]) == 80
+    assert "why" not in serialized_interim
     assert len(serialized_interim["watch"]) == 80
 
     active_event = {

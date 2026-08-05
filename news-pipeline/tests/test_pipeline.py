@@ -1128,6 +1128,7 @@ try:
     dn.write_feed(tmp, "2026-07-05", {"feed_days": 7, "site_url": "https://aoiblog.top"})
     feed = (tmp / "feed.xml").read_text(encoding="utf-8")
     check("feed含精选item", "2026-07-05:pick-1" in feed)
+    check("feed隐藏新闻why", "为什么重要" not in feed)
     check("feed排除more", "more-9" not in feed)
     check("feed含深读item", "【深读】深读题" in feed and "2026-07-05:deep-abc" in feed)
     check("feed标题转义", "A&amp;B &lt;公司&gt; 收购" in feed)
@@ -2037,10 +2038,11 @@ dn.enrich(_prompt_llm, _prompt_event, _qa_items, {
     "objectivity": {"mode": "interim"},
 })
 check("enrich 输入显式携带事件类目", "类目：ai" in _prompt_llm.user)
-check("enrich prompt 划清七字段职责",
+check("enrich prompt 划清新闻字段职责并移除 why",
       all(token in _prompt_llm.system for token in (
-          "事实增量", "公共影响", "为何此时发生", "个人学习或行动参考",
-          "关键变量", "可观察路标", "不复述其他字段", "分析或不确定判断")))
+          "事实增量", "为何此时发生", "关键变量", "可观察路标",
+          "不写公共影响", "分析或不确定判断"))
+      and "- why:" not in _prompt_llm.system)
 check("enrich prompt 要求起因只抽取不推断",
       all(token in _prompt_llm.system for token in (
           "只写原始报道中明确陈述或明确归因", "来源没有说明原因就留空",
@@ -2052,7 +2054,8 @@ check("enrich prompt 列出起因的四种禁止写法",
 check("enrich prompt 允许 claims 为空",
       "允许空数组" in _prompt_llm.system and _prompt_event[0]["claims"] == [])
 check("enrich 深度受摘要证据约束",
-      "来源材料能够支持时" in _prompt_llm.system and "一至两项" in _prompt_llm.system)
+      "摘要材料；安全短写，不设最低字数" in _prompt_llm.user
+      and "不得凭摘要补全机制、数字、引语或未决事实" in _prompt_llm.system)
 check("enrich 按类目区分解释层次",
       "非 AI 类" in _prompt_llm.system and "AI 类" in _prompt_llm.system)
 

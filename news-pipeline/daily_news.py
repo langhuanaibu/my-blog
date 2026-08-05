@@ -14,7 +14,7 @@
     5. 代码合成最终分：维度加权 + 来源可信度 + 信源层级乘数(T1/T1.5/T2) + 兴趣权重
        阈值制精选：过线才进精选（含上下限与五类保底），不硬凑固定条数
        硬约束：纯舆论源事件封顶在阈值之下，只能进"更多资讯"
-    6. LLM 阶段B：对精选生成 一句话摘要 / 为什么重要 / 走向 / 状态标记
+    6. LLM 阶段B：对精选生成 一句话摘要 / 来龙或起因 / 现状 / 走向 / 状态标记
     7. 写入 data/daily/YYYY-MM-DD.js 和 data/manifest.js（前端直接读）
     8. 更新 data/source_health.json：滚动记录 14 天各源抓取状态，
        连续 3 天抓取失败的源发 GitHub Actions ::warning:: 注解
@@ -73,12 +73,15 @@ STATUS_SET = {"已确认", "发展中", "有争议", "仅传言"}
 TIER_ORDER = {"T1": 0, "T1.5": 1, "T2": 2}
 DIMS = ["impact", "novelty", "substance", "evidence", "durability"]
 QUALITY_NEUTRAL_EVIDENCE = 5.0
-QUALITY_EXTENSION_FIELDS = ("why", "context", "watch", "watch_detail", "detail", "claims")
+QUALITY_EXTENSION_FIELDS = ("context", "watch", "watch_detail", "detail", "claims")
+QUALITY_EXTENSION_FIELDS_V2 = (
+    "why", "context", "watch", "watch_detail", "detail", "claims",
+)
 QUALITY_EXTENSION_FIELDS_V1 = (
     "why", "context", "significance", "watch", "detail", "claims",
 )
-OBJECTIVITY_FIELDS = ("title", "summary", "why", "context", "watch", "watch_detail", "detail")
-REMOVED_FIELD_COUNTS_VERSION = 2
+OBJECTIVITY_FIELDS = ("title", "summary", "context", "watch", "watch_detail", "detail")
+REMOVED_FIELD_COUNTS_VERSION = 3
 # 读者可见字段被删掉的四种原因。分项计数只为回答「详情页的空块是闸门删的还是
 # 生成端没写」，不改任何判定。
 REMOVAL_REASONS = (
@@ -168,6 +171,9 @@ ROLLOUT_QUALITY_FIELDS = {
     "high_risk_single_publisher", "corroboration_candidates", "corroboration_matches",
     "objectivity_audited", "objectivity_repaired", "objectivity_degraded",
     "high_risk_demoted", "cause_evidence_rejected", "cause_speculation_rejected",
+    "detail_evidence_rich", "detail_evidence_limited", "detail_evidence_snippet",
+    "detail_rich_target_met", "detail_rich_target_rate",
+    "detail_final_median_chars",
 }
 
 
@@ -213,6 +219,12 @@ def new_quality_stats():
         "high_risk_demoted": 0,
         "cause_evidence_rejected": 0,
         "cause_speculation_rejected": 0,
+        "detail_evidence_rich": 0,
+        "detail_evidence_limited": 0,
+        "detail_evidence_snippet": 0,
+        "detail_rich_target_met": 0,
+        "detail_rich_target_rate": 0.0,
+        "detail_final_median_chars": 0,
         "enrich_out_of_batch_idx": 0,
         # removed_fields 的两维分项：按字段名、按删除原因。总数仍以 removed_fields
         # 为准，两个分项之和必须与它相等——诊断用，不参与任何判定或验收门。
@@ -458,6 +470,16 @@ def build_shadow_summary(
         "objectivity": {
             "repaired": int(quality.get("objectivity_repaired", 0)),
             "degraded": int(quality.get("objectivity_degraded", 0)),
+        },
+        "detail_quality": {
+            "evidence_rich": int(quality.get("detail_evidence_rich", 0)),
+            "evidence_limited": int(quality.get("detail_evidence_limited", 0)),
+            "evidence_snippet": int(quality.get("detail_evidence_snippet", 0)),
+            "final_median_chars": int(
+                quality.get("detail_final_median_chars", 0)),
+            "rich_target_met": int(quality.get("detail_rich_target_met", 0)),
+            "rich_target_rate": float(
+                quality.get("detail_rich_target_rate", 0.0)),
         },
         "independent_chain_distribution": dict(sorted(chain_counts.items(), key=lambda row: int(row[0]))),
         "source_reference_concentration": concentration,
@@ -4034,7 +4056,6 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 对每个事件输出：
 - title: 精炼中文标题（建议≤30字，信息完整，不标题党；不得为满足长度截断语义）
 - summary: 一句话事实增量（≤70字，只说发生了什么和新在哪里；不写影响、背景或行动建议）
-- why: 公共影响及利害关系（≤80字，说明影响谁、为何重要；不复述事件经过，不写个人学习建议）
 - context: 事件为何此时发生（≤{context_limit}字）。{context_depth}只写原始报道中明确陈述或明确归因的直接诱因、触发点或既有机制；
   来源没有说明原因就留空，禁止用常识、行业背景或你已知的信息补写，禁止写名词解释。
   留空是正常输出，宁可留空也不要凑。以下四种一律不写，写了就是错：
@@ -4058,7 +4079,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - tags: 从下面的词表里选 1-2 个最贴切的主题标签，只能用词表里的词，不得自创：
     {tag_list}
 
-客观性规范（适用于 title/summary/why/context/detail 全部文字字段）：
+客观性规范（适用于 title/summary/context/detail 全部文字字段）：
 - 总纲：只陈述可追溯的事实，主张归属于提出者，争议和不确定性显式保留，不粉饰也不放大。
 - 归因：来源媒体的定性判断、推断、立场性表述不得直接写成事实，必须显式归因（"X 报道称/X 评论认为"），地缘政治和涉及国家形象的定性尤其如此。检方提交起诉书/公诉文件是可报道的程序性事实；文件内指控仍须归因给检方或文件，起诉不等于定罪，不得写成已定罪事实。
 - 跨源印证：事件有多个来源时，优先写各来源共同证实的事实；仅单一来源支撑的立场性内容必须归因到该来源。
@@ -4067,7 +4088,7 @@ ENRICH_SYSTEM = """你是资深新闻主编，为个人读者的"每日信息驾
 - 立场性判断优先归入 claims（kind 用 analysis）并标 source_indexes，不要写进正文的叙述语气里。
 
 只输出 JSON 对象：{{"items":[条目...]}}，每个条目：
-{{"idx": 事件编号, "title": "...", "summary": "...", "why": "...", "context": "...", "context_evidence": [{{"source_index":0,"quote":"..."}}], "watch": "..."{watch_detail_json}, "claims": [{{"text":"...","kind":"analysis","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
+{{"idx": 事件编号, "title": "...", "summary": "...", "context": "...", "context_evidence": [{{"source_index":0,"quote":"..."}}], "watch": "..."{watch_detail_json}, "claims": [{{"text":"...","kind":"analysis","source_indexes":[0]}}]{detail_json}, "status": "...", "tags": ["..."]}}
 只有一个条目时也必须放在 items 数组里。不要输出任何其他文字。"""
 
 
@@ -4263,6 +4284,9 @@ def _is_direct_evidence_copy(field, value, evidence_texts):
 def sanitize_objectivity_event(event, items=None, quality=None):
     """Cap reader fields and fail closed on direct long full-text copies."""
     quality = quality if quality is not None else new_quality_stats()
+    # ``why`` is a legacy news field.  Drop it before every audit/repair pass so
+    # old fixtures and stale model responses cannot re-enter the public contract.
+    event.pop("why", None)
     source_title = ""
     if items:
         source_ids = _serialized_source_ids(event, items, limit=1)
@@ -4345,6 +4369,90 @@ def sanitize_objectivity_event(event, items=None, quality=None):
     return event
 
 
+def _substantially_duplicate_evidence(left, right, *, shingle_size=16):
+    """Detect near-duplicate long evidence in linear time.
+
+    Character shingles tolerate small insertions and reordered boilerplate while
+    avoiding the quadratic worst case of sequence alignment on fetched pages.
+    """
+    if not left or not right:
+        return False
+    if len(left) < shingle_size or len(right) < shingle_size:
+        return left == right
+    left_shingles = {
+        left[index:index + shingle_size]
+        for index in range(len(left) - shingle_size + 1)
+    }
+    right_shingles = {
+        right[index:index + shingle_size]
+        for index in range(len(right) - shingle_size + 1)
+    }
+    denominator = min(len(left_shingles), len(right_shingles))
+    if not denominator:
+        return left == right
+    return len(left_shingles & right_shingles) / denominator >= 0.85
+
+
+def detail_evidence_tier(event, items):
+    """Classify the evidence available to the existing enrich call.
+
+    The classifier only inspects sources already selected by the unchanged
+    four-source contract.  Two long reports count as rich evidence only when
+    they come from different sources and are not substantially duplicative.
+    """
+    fulltexts = []
+    for index in _serialized_source_ids(event, items, limit=4):
+        item = items[index]
+        if item.get("evidence_basis") != "fulltext":
+            continue
+        text = _normalized_copy_text(item.get("evidence_text"))
+        if not text:
+            continue
+        identity = str(item.get("source_id") or item.get("source") or index).strip()
+        fulltexts.append((identity, text))
+    if any(len(text) >= 2000 for _, text in fulltexts):
+        return "rich"
+    long_reports = [(identity, text) for identity, text in fulltexts if len(text) >= 800]
+    for left_index, (left_identity, left_text) in enumerate(long_reports):
+        for right_identity, right_text in long_reports[left_index + 1:]:
+            if left_identity == right_identity:
+                continue
+            if not _substantially_duplicate_evidence(left_text, right_text):
+                return "rich"
+    return "limited" if fulltexts else "snippet"
+
+
+def _detail_tier_prompt(tier):
+    return {
+        "rich": "丰富材料；目标 350-600 字、2-4 段",
+        "limited": "有限全文；目标 180-350 字、1-3 段",
+        "snippet": "摘要材料；安全短写，不设最低字数",
+    }[tier]
+
+
+def finalize_detail_quality_metrics(picked, items, quality):
+    """Record aggregate detail health from the final post-audit text only."""
+    for tier in ("rich", "limited", "snippet"):
+        quality[f"detail_evidence_{tier}"] = 0
+    quality["detail_rich_target_met"] = 0
+    lengths = []
+    for event in picked or []:
+        tier = detail_evidence_tier(event, items)
+        quality[f"detail_evidence_{tier}"] += 1
+        detail = str(event.get("detail") or "").strip()
+        if detail:
+            lengths.append(len(detail))
+        paragraphs = [part.strip() for part in re.split(r"\n\s*\n+", detail)
+                      if part.strip()]
+        if tier == "rich" and len(detail) >= 300 and len(paragraphs) >= 2:
+            quality["detail_rich_target_met"] += 1
+    rich = quality["detail_evidence_rich"]
+    quality["detail_rich_target_rate"] = round(
+        quality["detail_rich_target_met"] / rich, 4) if rich else 0.0
+    quality["detail_final_median_chars"] = int(median(lengths)) if lengths else 0
+    return quality
+
+
 def _enrich_batch_ranges(picked, items, full_objectivity):
     if not full_objectivity:
         return [(start, min(start + 6, len(picked)))
@@ -4399,17 +4507,19 @@ def enrich(llm, picked, items, cfg, quality=None):
                     if full_objectivity else min(configured_detail_chars, 600))
     if detail_on and full_objectivity:
         detail_field = (
-            f"- detail: 现状长叙述（普通条目约 250-600 字，材料丰富时可到 {detail_chars} 字；"
-            "2-5 段自然行文，段间空行，不用小标题；"
-            "串联来源已提供的事件过程和关键细节，不复述 summary/why/context/watch/watch_detail；"
+            f"- detail: 现状叙述（软上限仍为 {detail_chars} 字，程序硬上限仍为 1200 字；严格服从每个事件标注的材料等级与目标；"
+            "丰富材料目标 350-600 字、2-4 段，有限全文目标 180-350 字、1-3 段，摘要材料安全短写且不设最低字数；"
+            "段间空行，不用小标题；串联来源已提供的事实过程和关键细节，不复述 summary/context/watch/watch_detail；"
             "来源材料能够支持时，从机制或传导链、带比较锚点的数字、利益相关方变化和未决事实中择最有价值的内容写入，不要求每条全部具备；"
+            "不写公共影响或为何重要的判断；"
             "严格基于所给原始报道，不得编造原文没有的事实/数字/引语；"
             "来源媒体的立场性定性须显式归因（如\"BBC 称\"），不得写成客观事实；素材不足就写多少算多少，宁短毋凑）\n"
         )
     elif detail_on:
         detail_field = (
-            f"- detail: 现状短叙述（约 {detail_chars} 字以内，2-4 段自然行文，段间空行，不用小标题；"
-            "串联摘要材料已有的事件过程和关键细节，不复述 summary/why/context/watch；"
+            f"- detail: 现状短叙述（约 {detail_chars} 字以内，需要分段时使用自然段和空行，不用小标题；"
+            "摘要材料安全短写且不设最低字数；串联摘要材料已有的事件过程和关键细节，不复述 summary/context/watch；"
+            "不写公共影响或为何重要的判断；"
             "只写输入明确提供的内容，不得凭摘要补全机制、数字、引语或未决事实；素材不足就短写）\n"
         )
     else:
@@ -4433,6 +4543,7 @@ def enrich(llm, picked, items, cfg, quality=None):
         batch = picked[bi:batch_end]
         blocks = []
         for j, ev in enumerate(batch):
+            ev.pop("why", None)
             srcs = []
             source_ids = _serialized_source_ids(ev, items, limit=4)
             for source_index, i in enumerate(source_ids):
@@ -4447,9 +4558,12 @@ def enrich(llm, picked, items, cfg, quality=None):
                                        if items[i].get("tag_hint") in tag_set))
             hint_line = ("\n  （来源分类提示，若贴切请优先选为标签："
                          + "、".join(hints) + "）") if hints else ""
+            detail_hint = (
+                f"\n  （现状材料等级：{_detail_tier_prompt(detail_evidence_tier(ev, items))}）"
+                if detail_on else "")
             blocks.append(
                 f"事件[{bi + j}]（类目：{ev.get('category', 'world')}） {ev['title']}\n"
-                + "\n".join(srcs) + hint_line)
+                + "\n".join(srcs) + hint_line + detail_hint)
         log(f"  阶段B 批次 {batch_number}: {len(batch)} 个事件")
         result = _model_rows(
             llm.json_call(system, "【今日事件】\n" + "\n\n".join(blocks)), "items")
@@ -4482,7 +4596,7 @@ def enrich(llm, picked, items, cfg, quality=None):
             source_title = items[source_ids[0]].get("title", "") if source_ids else ""
             ev["title"] = select_reader_title(r.get("title"), source_title)
             ev["summary"] = _clip_objectivity_field("summary", r.get("summary", ""))
-            ev["why"] = _clip_objectivity_field("why", r.get("why", ""))
+            ev.pop("why", None)
             _assign_generated_field(
                 ev, "context", r.get("context", ""), full_objectivity, quality)
             ev["context_evidence"] = r.get("context_evidence", [])
@@ -4526,7 +4640,7 @@ def enrich(llm, picked, items, cfg, quality=None):
 
 
 OBJECTIVITY_AUDIT_SYSTEM = """你是新闻证据与客观性审计员。输入报道是唯一可用证据，不得用常识补证据。
-逐项检查 title、summary、why、context、watch、watch_detail、detail 以及每条 claim：
+逐项检查 title、summary、context、watch、watch_detail、detail 以及每条 claim：
 1. 是否有来源支撑；2. fact/analysis/uncertain 类型是否正确；3. 主张、评价和指控是否正确归因；
 4. 是否加入来源没有的动机或因果推断；5. 是否使用缺少基准的幅度/程度语言；
 6. 是否为追求平衡而虚构反方观点或反诉。
@@ -4535,7 +4649,7 @@ OBJECTIVITY_AUDIT_SYSTEM = """你是新闻证据与客观性审计员。输入�
 任一项不合规，对应字段必须为 false。
 检方提交起诉书/公诉文件本身是可报道的程序性事实；其中指控仍须归因，起诉不等于定罪。
 只输出 JSON 对象：
-{"fields":{"title":true,"summary":true,"why":true,"context":true,
+{"fields":{"title":true,"summary":true,"context":true,
 "watch":true,"watch_detail":true,"detail":true},"claims":[true]}
 fields 只列输入中存在的字段；claims 布尔数组必须与输入 claims 等长。任一检查不通过即为 false。"""
 
@@ -4552,9 +4666,9 @@ SUPPORT_AUDIT_SYSTEM = """你是新闻事实支撑质检员。原始报道是唯
 对 watch 和 watch_detail 还必须检查：是否说明 1-2 个有来源支撑的关键变量并给出至少一个可观察路标；
 是否含具体概率、无条件断言或来源外类比。watch_detail 还必须完整保留 watch 的变量和路标语义。
 任一项不合规，对应字段必须为 false。
-对 why/context/watch/watch_detail/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
+对 context/watch/watch_detail/detail 分别给出布尔值。逐条检查 claims，返回有支撑的 claim 编号。
 只输出 JSON 对象：
-{"fields":{"why":true,"context":true,"watch":true,"watch_detail":true,"detail":true},
+{"fields":{"context":true,"watch":true,"watch_detail":true,"detail":true},
  "supported_claim_indexes":[0]}
 受到别的事件污染、超出来源或无法确认的字段/claim 必须判为不支持。"""
 
@@ -5002,8 +5116,7 @@ def write_brief(llm, picked, secondary=None, audit_llm=None):
     for tier, e in entries:
         _id = f"{tier}-{e['ids'][0]}"
         id_of[_id] = e
-        extra = f" — {e.get('why', '')}" if e.get("why") else ""
-        lines.append(f"[{_id}] ({CAT_NAMES.get(e['category'], e['category'])}) {e['title']}{extra}")
+        lines.append(f"[{_id}] ({CAT_NAMES.get(e['category'], e['category'])}) {e['title']}")
     valid = set(id_of)
     try:
         result = llm.json_call(BRIEF_SYSTEM, "\n".join(lines))
@@ -5027,7 +5140,7 @@ def write_brief(llm, picked, secondary=None, audit_llm=None):
             member_items = [{
                 "id": item_id,
                 **{field: event.get(field) for field in
-                   ("title", "summary", "why", "context", "claims") if event.get(field)},
+                   ("title", "summary", "context", "claims") if event.get(field)},
             } for item_id, event in id_of.items()]
             synthesis, themes = _audit_brief(
                 audit_llm, synthesis, themes, member_items)
@@ -5385,7 +5498,7 @@ def run_trajectory_stage(llm, picked, trusted_pairs, verified_history_by_today,
         batch.append({
             "idx": len(batch),
             "event": {field: event.get(field) for field in
-                      ("title", "summary", "why", "context", "watch",
+                      ("title", "summary", "context", "watch",
                        "watch_detail", "claims")
                       if event.get(field)},
             "include_watch_detail": include_watch_detail,
@@ -6905,7 +7018,6 @@ def event_to_item(ev, items, tier, *, full_objectivity=False, source_limit=5,
         **({"summary": ev["summary"]} if ev.get("summary") else {}),
         "status": ev.get("status", ""),
         "tags": ev.get("tags", []),
-        **({"why": ev["why"]} if ev.get("why") else {}),
         **({"watch": ev["watch"]} if trajectory_enabled and ev.get("watch") else {}),
         **({"watch_detail": ev["watch_detail"]}
            if trajectory_enabled and ev.get("watch")
@@ -7316,18 +7428,18 @@ def validate_daily_payload(payload):
         # 发现一周的分项是错的便宜。缺失仍然合法：本次之前的日报没有这两个键。
         version = quality.get("removed_field_counts_version")
         if (version is not None
-                and (type(version) is not int
-                     or version != REMOVED_FIELD_COUNTS_VERSION)):
+                and (type(version) is not int or version not in {2, 3})):
             errors.append(
-                "quality.removed_field_counts_version must be 2 when present")
-        count_fields = (
-            QUALITY_EXTENSION_FIELDS if version == REMOVED_FIELD_COUNTS_VERSION
-            else QUALITY_EXTENSION_FIELDS_V1
-        )
-        reason_fields = (
-            REMOVAL_REASONS if version == REMOVED_FIELD_COUNTS_VERSION
-            else REMOVAL_REASONS_V1
-        )
+                "quality.removed_field_counts_version must be 2 or 3 when present")
+        if version == REMOVED_FIELD_COUNTS_VERSION:
+            count_fields = QUALITY_EXTENSION_FIELDS
+            reason_fields = REMOVAL_REASONS
+        elif version == 2:
+            count_fields = QUALITY_EXTENSION_FIELDS_V2
+            reason_fields = REMOVAL_REASONS
+        else:
+            count_fields = QUALITY_EXTENSION_FIELDS_V1
+            reason_fields = REMOVAL_REASONS_V1
         for field, allowed in (("removed_field_counts", count_fields),
                                ("removed_field_reasons", reason_fields)):
             counts = quality.get(field)
@@ -7584,6 +7696,7 @@ def validate_daily_output_file(path, date_str):
 def prepare_events_for_output(picked, secondary, items, cfg):
     """Apply final public sanitization before registry and payload snapshots."""
     for event in [*(picked or []), *(secondary or [])]:
+        event.pop("why", None)
         source_ids = _serialized_source_ids(event, items, limit=1)
         source_title = items[source_ids[0]].get("title", "") if source_ids else ""
         event["title"] = select_reader_title(event.get("title"), source_title)
@@ -8149,7 +8262,7 @@ def write_weekly(llm, date_str, cfg, data_dir, profile_text="", audit_llm=None,
             "title": _clip(item.get("title"), 16),
             "one_liner": _clip(item.get("summary"), 60),
             "direction": "新增",
-            "detail": _clip(item.get("why") or item.get("summary"), 100),
+            "detail": _clip(item.get("detail") or item.get("summary"), 100),
             "member_refs": [ref],
             "representative_refs": [ref],
         })
@@ -8273,8 +8386,6 @@ def write_feed(data_dir, date_str, cfg):
                 ]
                 link = (srcs[0].get("url") if srcs else "") or f"{site}/news/"
                 desc = f"<p>{html.escape(it.get('summary', ''))}</p>"
-                if it.get("why"):
-                    desc += f"<p><b>为什么重要：</b>{html.escape(it['why'])}</p>"
                 if it.get("watch"):
                     desc += f"<p><b>走向：</b>{html.escape(it['watch'])}</p>"
                 if srcs:
@@ -8724,6 +8835,8 @@ def _run_pipeline(started_at, args, cfg, policy):
     # Final public sanitization must precede the registry snapshot so persisted
     # history matches the fields readers receive in active/shadow modes.
     prepare_events_for_output(picked, secondary, items, cfg)
+    if policy["full_objectivity"]:
+        finalize_detail_quality_metrics(picked, items, quality)
     log("事件登记表：跨天延续性匹配 ...")
     trajectory_health = new_trajectory_health()
     trajectory_review_cases = []

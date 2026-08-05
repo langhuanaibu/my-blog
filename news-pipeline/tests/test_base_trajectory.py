@@ -1,4 +1,5 @@
 import json
+import inspect
 import sys
 from pathlib import Path
 
@@ -107,6 +108,8 @@ def test_fulltext_enrich_uses_deep_reader_limits_without_significance(
     assert len(event["context"]) == 40
     assert "significance" not in event
     assert "significance" not in llm.system
+    assert "why" not in event
+    assert "- why:" not in llm.system
     assert "读者兴趣画像" not in llm.system
     assert "watch" not in event
     assert "watch_detail" not in event
@@ -138,6 +141,7 @@ def test_interim_enrich_keeps_short_contract_and_omits_watch_detail():
     })
 
     assert event["watch"] == "Watch the next yield report."
+    assert "why" not in event
     assert "watch_detail" not in event
     assert "watch_detail" not in llm.system
 
@@ -248,14 +252,74 @@ def test_public_item_never_emits_watch_detail_without_short_watch():
     assert "watch_detail" not in item
 
 
-def test_quality_stats_use_v2_extension_field_contract():
+def test_quality_stats_use_v3_extension_field_contract():
     quality = dn.new_quality_stats()
 
-    assert quality["removed_field_counts_version"] == 2
+    assert quality["removed_field_counts_version"] == 3
     assert set(quality["removed_field_counts"]) == {
-        "why", "context", "watch", "watch_detail", "detail", "claims",
+        "context", "watch", "watch_detail", "detail", "claims",
     }
-    assert "significance" not in quality["removed_field_counts"]
+    assert not {"why", "significance"}.intersection(quality["removed_field_counts"])
+
+
+def test_news_item_never_serializes_legacy_why():
+    item = dn.event_to_item(
+        {**_event(), "summary": "Pilot begins.", "why": "Legacy impact."},
+        [_source_item()],
+        "pick",
+    )
+
+    assert "why" not in item
+
+
+def test_detail_evidence_tiers_are_deterministic():
+    rich_single = {**_source_item(), "evidence_text": "甲" * 2000}
+    rich_a = {**_source_item(), "source_id": "a", "evidence_text": "甲" * 800}
+    rich_b = {**_source_item(), "source_id": "b", "source": "Second Wire",
+              "url": "https://example.com/b",
+              "evidence_text": "乙" * 800}
+    limited = {**_source_item(), "evidence_text": "甲" * 1999}
+    snippet = {**_source_item(), "evidence_basis": "snippet", "evidence_text": "甲" * 4000}
+
+    assert dn.detail_evidence_tier({"ids": [0]}, [rich_single]) == "rich"
+    assert dn.detail_evidence_tier({"ids": [0, 1]}, [rich_a, rich_b]) == "rich"
+    assert dn.detail_evidence_tier({"ids": [0]}, [limited]) == "limited"
+    assert dn.detail_evidence_tier({"ids": [0]}, [snippet]) == "snippet"
+
+
+def test_detail_evidence_tier_does_not_count_repeated_reports_twice():
+    repeated = "同一段事实" * 200
+    rows = [
+        {**_source_item(), "source_id": "a", "evidence_text": repeated},
+        {**_source_item(), "source_id": "b", "source": "Second Wire",
+         "url": "https://example.com/b", "evidence_text": repeated},
+    ]
+
+    assert dn.detail_evidence_tier({"ids": [0, 1]}, rows) == "limited"
+    assert "SequenceMatcher" not in inspect.getsource(dn.detail_evidence_tier)
+
+
+def test_detail_quality_metrics_use_final_audited_text():
+    quality = dn.new_quality_stats()
+    items = [
+        {**_source_item(), "evidence_text": "甲" * 2000},
+        {**_source_item(), "evidence_basis": "fulltext", "evidence_text": "乙" * 1000},
+        {**_source_item(), "evidence_basis": "snippet", "evidence_text": "丙" * 4000},
+    ]
+    picked = [
+        {**_event(), "ids": [0], "detail": "甲" * 150 + "\n\n" + "乙" * 150},
+        {**_event(), "ids": [1], "detail": "短现状。"},
+        {**_event(), "ids": [2]},
+    ]
+
+    dn.finalize_detail_quality_metrics(picked, items, quality)
+
+    assert quality["detail_evidence_rich"] == 1
+    assert quality["detail_evidence_limited"] == 1
+    assert quality["detail_evidence_snippet"] == 1
+    assert quality["detail_rich_target_met"] == 1
+    assert quality["detail_rich_target_rate"] == 1.0
+    assert quality["detail_final_median_chars"] == 153
 
 
 def test_unrepairable_overlong_objectivity_field_is_deleted_and_counted():
@@ -276,7 +340,7 @@ def test_unrepairable_overlong_objectivity_field_is_deleted_and_counted():
     assert quality["removed_field_reasons"]["generation_invalid"] == 1
 
 
-def test_quality_validation_accepts_legacy_v1_and_current_v2_breakdowns():
+def test_quality_validation_accepts_legacy_v1_v2_and_current_v3_breakdowns():
     current = dn.new_quality_stats()
     assert dn.validate_daily_payload({"quality": current, "items": []}) == []
 
@@ -290,8 +354,15 @@ def test_quality_validation_accepts_legacy_v1_and_current_v2_breakdowns():
     }
     assert dn.validate_daily_payload({"quality": legacy, "items": []}) == []
 
+    v2 = dict(current)
+    v2["removed_field_counts_version"] = 2
+    v2["removed_field_counts"] = {
+        field: 0 for field in dn.QUALITY_EXTENSION_FIELDS_V2
+    }
+    assert dn.validate_daily_payload({"quality": v2, "items": []}) == []
+
     invalid = dict(current)
-    invalid["removed_field_counts_version"] = 2.0
+    invalid["removed_field_counts_version"] = 3.0
     assert any(
         "removed_field_counts_version" in error
         for error in dn.validate_daily_payload({"quality": invalid, "items": []})
@@ -319,6 +390,39 @@ def test_fulltext_enrich_batches_at_three_events_while_interim_keeps_six():
     assert list(dn._enrich_batch_ranges(picked, items, True)) == [
         (0, 3), (3, 6), (6, 7),
     ]
+
+
+def test_zero_increment_cost_contract_stays_within_previous_reader_budget():
+    picked = [{**_event(), "ids": [0]} for _ in range(45)]
+    items = [_source_item()]
+    fulltext_batches = list(dn._enrich_batch_ranges(picked, items, True))
+
+    assert len(fulltext_batches) == 15
+    assert all(end - start <= 3 for start, end in fulltext_batches)
+    assert dn.ARTICLE_MAX_CHARS == 4000
+    assert dn.FULLTEXT_OBJECTIVITY_FIELD_LIMITS["detail"] == 1200
+    config = dn.yaml.safe_load(
+        (Path(__file__).resolve().parents[1] / "config.yaml").read_text(
+            encoding="utf-8"))
+    assert config["detail"]["max_chars"] == 1000
+    active_provider = config["llm"]["active_provider"]
+    assert config["llm"]["providers"][active_provider]["max_retries"] == 3
+    current_reader_budget = sum(
+        dn.FULLTEXT_OBJECTIVITY_FIELD_LIMITS[field]
+        for field in dn.OBJECTIVITY_FIELDS
+    )
+    previous_reader_budget = 2090
+    assert current_reader_budget == 2010
+    assert current_reader_budget <= previous_reader_budget
+    assert 3 * 4 * dn.ARTICLE_MAX_CHARS == 48_000
+
+    pipeline_source = inspect.getsource(dn._run_pipeline)
+    assert pipeline_source.count("enrich(llm, picked, items, cfg") == 1
+    assert pipeline_source.count("run_audit_enrichment_support_stage(") == 1
+    enrich_source = inspect.getsource(dn.enrich)
+    audit_source = inspect.getsource(dn.audit_enrichment_support)
+    assert "_serialized_source_ids(ev, items, limit=4)" in enrich_source
+    assert "_serialized_source_ids(event, items, limit=4)" in audit_source
 
 
 def test_fulltext_trajectory_generates_and_audits_short_and_detail_watch():

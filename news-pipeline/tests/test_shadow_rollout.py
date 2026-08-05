@@ -51,7 +51,9 @@ def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_repor
     assert steps[0]["with"]["ref"] == "main"
     run_scripts = "\n".join(step.get("run", "") for step in steps)
     assert "python news-pipeline/objectivity_eval.py" in run_scripts
-    assert "tee" in run_scripts
+    assert "git show HEAD^:news-pipeline/daily_news.py" in run_scripts
+    assert "--pipeline-path" in run_scripts
+    assert "--cost-baseline" in run_scripts
     assert "git commit" not in run_scripts
     assert "git push" not in run_scripts
 
@@ -397,7 +399,7 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
         "demoted_from_selected", "high_risk_selected_before_audit",
         "single_source_selected_before_audit", "high_risk_single_source_count",
         "high_risk_single_source_rate", "evidence_basis", "fetch",
-        "objectivity", "independent_chain_distribution",
+        "objectivity", "detail_quality", "independent_chain_distribution",
         "source_reference_concentration", "llm_usage",
     }
     assert summary["runtime_seconds"] == 12.346
@@ -411,6 +413,11 @@ def test_shadow_summary_has_stable_shape_and_excludes_content_and_secrets():
     assert summary["fetch"] == {"attempts": 3, "successes": 2, "retries": 1}
     assert summary["objectivity"] == {
         "repaired": 1, "degraded": 1,
+    }
+    assert summary["detail_quality"] == {
+        "evidence_rich": 0, "evidence_limited": 0,
+        "evidence_snippet": 0, "final_median_chars": 0,
+        "rich_target_met": 0, "rich_target_rate": 0.0,
     }
     assert summary["independent_chain_distribution"] == {"0": 1, "1": 1}
     assert summary["llm_usage"] == usage
@@ -947,6 +954,7 @@ def test_production_harness_uses_real_pipeline_without_metadata_leaks_or_self_ju
         config={"topic_tags": [], "detail": {"enabled": True, "max_chars": 600}},
         batch_size=10,
     )
+    assert runner.config["_objectivity_runtime_mode"] == "shadow"
     rows = runner([fixture], run_number=1)
 
     assert len(calls["candidate"]) == 1
@@ -972,6 +980,64 @@ def test_production_harness_uses_real_pipeline_without_metadata_leaks_or_self_ju
         "redlines": [fixture["expected"]["redlines"][0]],
     }]
     assert evaluator.score_run([fixture], rows)["redline_count"] == 1
+
+
+def test_paired_cost_gate_fails_closed_on_increase_or_invalid_evidence():
+    evaluator = _load_eval_module()
+
+    def report(*, calls=30, cost=0.01234567, weighted_cost=None,
+               known=True, runs=3,
+               truncations=0, terminal_errors=0, billing_errors=0,
+               signature=None):
+        return {
+            "runs": [{"structure_validity": 1.0} for _ in range(runs)],
+            "content_usage": {
+                "llm_calls": calls,
+                "llm_input_tokens": 1000,
+                "llm_cached_input_tokens": 100,
+                "llm_output_tokens": 200,
+                "llm_cost_usd": cost if known else None,
+                "llm_weighted_token_cost_usd": (
+                    cost if weighted_cost is None else weighted_cost),
+                "llm_cost_known": known,
+                "truncated_responses": truncations,
+                "terminal_errors": terminal_errors,
+                "billing_errors": billing_errors,
+                "billing_signature": signature or [{
+                    "provider": "deepseek", "model": "deepseek-v4-flash",
+                    "price_usd_per_mtok": {
+                        "input_miss": 0.14, "input_hit": 0.0028,
+                        "output": 0.28,
+                    },
+                }],
+            },
+        }
+
+    baseline = report()
+    assert evaluator.evaluate_paired_cost_gate(baseline, report())["accepted"] is True
+    assert evaluator.evaluate_paired_cost_gate(
+        baseline, report(calls=31))["accepted"] is False
+    assert evaluator.evaluate_paired_cost_gate(
+        baseline, report(cost=0.01234568))["accepted"] is False
+    assert evaluator.evaluate_paired_cost_gate(
+        baseline, report(cost=0.01, weighted_cost=0.01234568))["accepted"] is False
+    for invalid in (
+            report(known=False), report(runs=2), report(truncations=1),
+            report(terminal_errors=1), report(billing_errors=1),
+            report(signature=[{
+                "provider": "deepseek", "model": "deepseek-v4-flash",
+                "price_usd_per_mtok": {},
+            }]),
+            report(signature=[{"provider": "other", "model": "other",
+                               "price_usd_per_mtok": {}}])):
+        assert evaluator.evaluate_paired_cost_gate(
+            baseline, invalid)["accepted"] is False
+    invalid_pricing = report(signature=[{
+        "provider": "deepseek", "model": "deepseek-v4-flash",
+        "price_usd_per_mtok": {},
+    }])
+    assert evaluator.evaluate_paired_cost_gate(
+        invalid_pricing, invalid_pricing)["accepted"] is False
 
 
 def test_production_harness_keeps_fail_closed_fallback_candidate_for_judging():

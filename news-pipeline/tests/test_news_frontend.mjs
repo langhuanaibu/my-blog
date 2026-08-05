@@ -146,7 +146,7 @@ test("数据加载器拒绝把 URL 标识解释为任意脚本路径", async () 
   await assert.rejects(() => loadWeekly("..%2Fmanifest"), /无效周报编号/);
 });
 
-test("日报固定五类全部展开，精选卡直出摘要、为什么重要和已有走向", () => {
+test("日报固定五类全部展开，精选卡直出摘要和已有走向但隐藏新闻 why", () => {
   const dom = new JSDOM(`<main id="app"></main>`);
   dom.window.document.querySelector("#app").innerHTML = renderDailyReport(daily);
   const sections = [...dom.window.document.querySelectorAll("[data-category]")];
@@ -156,7 +156,7 @@ test("日报固定五类全部展开，精选卡直出摘要、为什么重要�
   assert.equal(dom.window.document.querySelector(".report-section .grid"), null);
   const card = dom.window.document.querySelector('[data-item-id="pick-ai"]');
   assert.match(card.textContent, /摘要/);
-  assert.match(card.textContent, /为什么重要/);
+  assert.doesNotMatch(card.textContent, /为什么重要/);
   assert.match(card.textContent, /走向：后续关注/);
   assert.doesNotMatch(card.textContent, /背景机制|对我的意义|长叙述|事实/);
 });
@@ -174,7 +174,7 @@ test("刊头按实际可见核心日报估时且忽略顶层 read_minutes", () =
     deep: [], papers: [], opinion: [], tracking: [],
   };
   const doc = new JSDOM(`<main>${renderDailyReport(report, { hidden: { "2026-07-15:pick-world": true } })}</main>`).window.document;
-  assert.match(doc.querySelector(".mast-meta")?.textContent || "", /核心日报约 2 分钟/);
+  assert.match(doc.querySelector(".mast-meta")?.textContent || "", /核心日报约 1 分钟/);
   assert.doesNotMatch(doc.querySelector(".mast-meta")?.textContent || "", /99 分钟/);
 });
 
@@ -353,23 +353,21 @@ test("重大更新在卡片和详情中明确标注首次收录日期", () => {
   assert.match(detail, /首次收录：2026-07-14/);
 });
 
-test("详情保留完整扩展字段", () => {
+test("详情保留新闻扩展字段但隐藏历史 why", () => {
   const html = renderDetail({ ...daily.items[0], trusted_continuation: true, why: "单独的判断价值" }, "news", daily.date);
   assert.match(html, /detail-wrap reading-view/);
-  assert.match(html, /为什么重要/);
-  assert.match(html, /单独的判断价值/);
+  assert.doesNotMatch(html, /为什么重要|单独的判断价值/);
   for (const text of ["背景机制", "详细走向第一段", "现状第一段", "事实"]) assert.match(html, new RegExp(text));
   assert.doesNotMatch(html, /历史对我的意义/);
   assert.doesNotMatch(html, /后续关注/);
 });
 
-test("新闻详情事实先行：来龙现状为什么重要和详情走向", () => {
+test("新闻详情按来龙现状和详情走向排列", () => {
   const doc = new JSDOM(`<main>${renderDetail({ ...daily.items[0], trusted_continuation: true }, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "现状", "为什么重要", "走向"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "watch"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["来龙", "现状", "走向"]);
   assert.match(sections[1].textContent, /现状第一段/);
-  assert.match(sections[2].textContent, /为什么重要/);
 });
 
 test("详情把长字段按空行安全渲染为自然段", () => {
@@ -451,7 +449,7 @@ test("一次性条目的前情标为起因而不是来龙", () => {
 test("起因占据来龙同一槽位并保持阅读顺序", () => {
   const doc = new JSDOM(`<main>${renderDetail(daily.items[0], "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "why", "watch"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["context", "body", "watch"]);
   assert.equal(sections[0].querySelector("h2")?.textContent, "起因");
 });
 
@@ -466,8 +464,8 @@ test("新闻详情缺失轨迹字段时省略对应段落并保持其余顺序",
   const item = { ...daily.items[0], context: "", watch: "", watch_detail: "", significance: "" };
   const doc = new JSDOM(`<main>${renderDetail(item, "news", daily.date)}</main>`).window.document;
   const sections = [...doc.querySelectorAll(".detail-trajectory > section")];
-  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["body", "why"]);
-  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["现状", "为什么重要"]);
+  assert.deepEqual(sections.map((node) => node.dataset.trajectory), ["body"]);
+  assert.deepEqual(sections.map((node) => node.querySelector("h2")?.textContent), ["现状"]);
 });
 
 test("新闻详情把来源列成相关链接并把事实源排在判断源之前", () => {
