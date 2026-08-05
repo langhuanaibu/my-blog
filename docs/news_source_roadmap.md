@@ -36,11 +36,9 @@
 
 2026-07-18 公开路径落地的是 **interim wording hotfix**，不是已验收的完整证据系统。
 
-DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28 通过（Run #30349424143），
-但详情合同和共享运行时指纹已经变化，该结果只保留为历史证据，当前运行时必须重新执行三轮。
-2026-08-05 已从 `main@1957a0b` 触发 Run #31007436430，但活动 provider 在第 2 个固定语料批次返回 HTTP 402 `Insufficient Balance`；该次运行没有完成三轮，也没有形成可用于四门判定的指标。余额恢复后由人工重新触发，不自动切换 provider、不调整接受集或阈值、不把前两批当成部分通过。
-`--objectivity-shadow` 的 7-day 指标门也从新基线重计，人工评审尚未进行，因此
-**active mode is not enabled**，**live acceptance has not occurred**。夹具门通过只授予 active 的人工评审资格。
+详情合同变更后的 DeepSeek 45-case / three-run 夹具与配对成本门已于 2026-08-06 从 `main@a135d84` 完整通过（Run #31027819706）：三轮最差结果为红线 0、标签一致率 93.33%、归因 100%、结构 100%。内容调用由父提交基线的 406 次降至候选的 292 次；全部输入按 cache miss 计价的三轮标准化费用由 `$0.05603542` 降至 `$0.04242406`，实际缓存折扣费用也由 `$0.0350317464` 降至 `$0.02486246`，且截断、终止错误和计费错误均为 0。此前 Run #31007436430 的 HTTP 402 失败只保留为历史失败证据，不混入本次结果。
+
+该结果只通过固定夹具和零增量成本门。`--objectivity-shadow` 的 7-day 指标门、enrich 五日文字质量门与人工最终确认仍需从新运行时累积，因此 **active mode is not enabled**，**live acceptance has not occurred**。夹具门通过只授予继续观察和人工评审资格。
 详细行为见 `readme.md` 日报章节；标签接受集与安全边界的决策见 `docs/adr/0005-objectivity-label-accepted-sets.md`。
 
 - 每天保存 GitHub step summary 中的运行时间、全文/混合/摘要分布、抓取重试、
