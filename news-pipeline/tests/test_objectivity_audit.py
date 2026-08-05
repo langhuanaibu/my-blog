@@ -525,6 +525,8 @@ def test_native_article_extractor_abort_is_contained_and_reaped(tmp_path):
     abort_worker = tmp_path / "abort_worker.py"
     abort_worker.write_text(
         "import os\nimport sys\nsys.stdin.buffer.read()\n"
+        "if sys.platform != 'win32':\n"
+        " import resource\n resource.setrlimit(resource.RLIMIT_CORE, (0, 0))\n"
         "os._exit(134) if sys.platform == 'win32' else os.abort()\n",
         encoding="utf-8",
     )
