@@ -662,6 +662,11 @@ jobs:
       - name: Install dependencies
         run: pip install --require-hashes -r news-pipeline/requirements.txt
 
+      - name: Verify native parser crash containment
+        run: >-
+          python -m pytest news-pipeline/tests/test_objectivity_audit.py -q
+          -k "native_article_extractor"
+
       - name: Replay article evidence extraction
         env:
           MALLOC_CHECK_: "3"
