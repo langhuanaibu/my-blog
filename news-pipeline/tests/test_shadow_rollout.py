@@ -63,6 +63,42 @@ def test_objectivity_acceptance_workflow_is_manual_read_only_and_publishes_repor
     assert upload["with"]["path"] == "${{ runner.temp }}/objectivity-acceptance.json"
 
 
+def test_rollout_workflows_pin_runner_python_and_runtime_epoch():
+    workflow_names = (
+        "daily-news.yml",
+        "objectivity-acceptance.yml",
+        "rollout-heartbeat.yml",
+        "rollout-manual-review.yml",
+    )
+    for name in workflow_names:
+        workflow = yaml.load(
+            (ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        assert all(
+            job["runs-on"] == "ubuntu-24.04"
+            for job in workflow["jobs"].values()
+        ), name
+        setup_steps = [
+            step
+            for job in workflow["jobs"].values()
+            for step in job.get("steps", [])
+            if step.get("uses", "").startswith("actions/setup-python@")
+        ]
+        assert setup_steps, name
+        assert all(
+            step["with"]["python-version"] == "3.12.13"
+            for step in setup_steps
+        ), name
+
+    daily = yaml.load(
+        (ROOT / ".github" / "workflows" / "daily-news.yml").read_text(
+            encoding="utf-8"),
+        Loader=yaml.BaseLoader,
+    )
+    assert daily["env"]["RUNTIME_ENVIRONMENT_EPOCH"] == "1"
+
+
 def test_objectivity_judge_prompt_separates_evidence_category_from_candidate_failures():
     evaluator = _load_eval_module()
 

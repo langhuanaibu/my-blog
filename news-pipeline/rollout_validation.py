@@ -11,7 +11,9 @@ import copy
 import hashlib
 import json
 import os
+import platform
 import re
+import sys
 import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -301,11 +303,36 @@ def _trajectory_config_projection(config):
     }
 
 
-def build_stage_fingerprints(*, config, runtime_paths, trajectory_ui_paths):
+def _runtime_environment_projection(environ=None):
+    """Return an explicit, secret-free identity for the executing runtime."""
+    if environ is not None:
+        return {
+            key: str(environ.get(key) or "")
+            for key in (
+                "python_version", "python_implementation", "runner_os",
+                "runner_arch", "platform_system", "platform_machine", "epoch",
+            )
+        }
+    return {
+        "python_version": sys.version,
+        "python_implementation": sys.implementation.name,
+        "runner_os": os.environ.get("RUNNER_OS", ""),
+        "runner_arch": os.environ.get("RUNNER_ARCH", ""),
+        "platform_system": platform.system(),
+        "platform_machine": platform.machine(),
+        "epoch": os.environ.get("RUNTIME_ENVIRONMENT_EPOCH", ""),
+    }
+
+
+def build_stage_fingerprints(*, config, runtime_paths, trajectory_ui_paths,
+                             runtime_environment=None):
     """Hash only allow-listed config and files that affect each rollout stage."""
     return {
         "runtime": _fingerprint(
-            runtime_paths, _runtime_config_projection(config)),
+            runtime_paths, {
+                "config": _runtime_config_projection(config),
+                "environment": _runtime_environment_projection(runtime_environment),
+            }),
         "trajectory_ui": _fingerprint(
             trajectory_ui_paths, _trajectory_config_projection(config)),
     }
@@ -313,7 +340,8 @@ def build_stage_fingerprints(*, config, runtime_paths, trajectory_ui_paths):
 
 def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
                            trajectory, review_cases, runtime_paths,
-                           trajectory_ui_paths, config, enrich_sample=None):
+                           trajectory_ui_paths, config, enrich_sample=None,
+                           runtime_environment=None):
     """Build a JSON-safe evidence envelope from already allow-listed inputs."""
     return {
         "version": EVIDENCE_VERSION,
@@ -327,7 +355,8 @@ def build_rollout_evidence(*, date_str, mode, runtime_seconds, selection,
         "trajectory": copy.deepcopy(trajectory),
         "fingerprints": build_stage_fingerprints(
             config=config, runtime_paths=runtime_paths,
-            trajectory_ui_paths=trajectory_ui_paths),
+            trajectory_ui_paths=trajectory_ui_paths,
+            runtime_environment=runtime_environment),
         "review_cases": copy.deepcopy(review_cases),
         "enrich_sample": copy.deepcopy(enrich_sample or {}),
     }
