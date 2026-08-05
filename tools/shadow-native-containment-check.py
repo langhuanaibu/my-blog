@@ -31,6 +31,8 @@ def main() -> int:
         abort_worker = temp_dir / "abort_worker.py"
         abort_worker.write_text(
             "import os\nimport sys\nsys.stdin.buffer.read()\n"
+            "if sys.platform != 'win32':\n"
+            " import resource\n resource.setrlimit(resource.RLIMIT_CORE, (0, 0))\n"
             "os._exit(134) if sys.platform == 'win32' else os.abort()\n",
             encoding="utf-8",
         )
