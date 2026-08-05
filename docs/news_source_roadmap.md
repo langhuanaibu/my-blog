@@ -2,18 +2,18 @@
 
 > 日报信源扩展的活跃待办清单。信源终局定案写在 `news-pipeline/sources.yaml` 尾部注释，现行机制写在 `readme.md` 日报章节；本文件只记**还没做完的事**，全部完成后删除。
 >
-> 最后更新：2026-08-05
+> 最后更新：2026-08-06
 
 ## 当前生产基线（以 Issue #15 为准）
 
 生产 provider 仍为 DeepSeek；StepFun 实验 Run #30346999214 在正常新闻阶段 A 触发 HTTP 451，只保留人工实验能力，不作为自动回退。`objectivity.mode` 继续保持 `interim`。
 
-跨日实质新增门随提交 `cf5768c` 上线并改变共享运行时指纹，2026-08-04 是该指纹的首个有效产出日。2026-08-05 的日报发布成功，但 objectivity shadow 失败，导致 selection 失败、source metrics 冻结；当日台账为选材 0/7、轨迹 2/5、enrich 0/5、客观性 shadow 0/7、信源指标 1/14。**这只是 2026-08-05 快照，后续状态与计数只以 GitHub Issue #15 的幂等台账为准**，不得从本文推算收口日期。
+2026-08-05 的定时日报发布成功，但 objectivity shadow 在长驻进程内调用 `trafilatura` / `lxml` 时触发原生堆崩溃；提交 `a8941b0` / `1957a0b` 已把静态 HTML 解析隔离到可超时终止的一次性子进程，并将依赖锁、Python 完整版本与实现、runner OS/架构和 `RUNTIME_ENVIRONMENT_EPOCH` 纳入共享运行时指纹。生产树的 `validate + shadow_mode:force` Run #31005512218 已成功，验证指纹为 `92ef27552658`；旧指纹的线上样本不得混入新窗口。新窗口从该指纹的首个有效 publish 起算，逐门状态与计数只以 GitHub Issue #15 的幂等台账为准，本文不复制易变快照。
 
 删除字段分项诊断已按 v2 正常产出：字段包含 `watch_detail`、不再包含 `significance`，原因集合包含 `generation_invalid`，历史不回写。enrich 安全指标由台账自动判，文字抽样仍需人工回填；不得只凭分项计数调整闸门或 enrich 提示词。
 
 - `pass` 仅让对应门 +1，`neutral` / `needs_review` 冻结对应时钟。`fail` 只清零**连续型**门（选材、轨迹、客观性 shadow）；**累计型**门（enrich、信源指标）只统计有效日，缺数据的一天冻结而不清零。
-- **共享运行时指纹变化重置全部五门**——样本构成变了，变更前后的证据不得混用；仅轨迹 UI 指纹变化只重置轨迹门。观察期内冻结这些范围，必要变更按所属阶段重计。
+- **共享运行时指纹变化重置全部五门**——样本构成变了，变更前后的证据不得混用；指纹覆盖生产 Python、`requirements.txt`、Python 完整版本与实现、runner OS/架构及显式 epoch，且不读取 Secret。仅轨迹 UI 指纹变化只重置轨迹门。观察期内冻结这些范围，必要变更按所属阶段重计。
 - 同一北京日期重跑只更新当日台账，不增加日数；任一次发布失败都使当日各门按失败处理，后续成功重跑不覆盖。前一日完全没有台账记录时，`Rollout Heartbeat` 补一条 `neutral` 缺口行——冻结全部门，不计入也不清零。初验、Judge 或台账异常只告警，不阻断发布、不自动回滚。
 - 选材 7 日和轨迹 5 日都达标后只标记「待人工最终确认」，不自动关闭 #15 或 #10，也不替代下列 enrich、客观性和信源观察门。
 - 云端 `rollout-review` 现已一次性记录**五门**：选材、轨迹、enrich 安全指标、客观性 shadow、信源指标。仍需人工执行的只剩 enrich 的三项**文字质量**判断（管线会把每日确定性抽样 id 传入台账，人工用 `Rollout Manual Review` 回填 `samples_passed` / `samples_total`）；修复前台账中缺失的抽样清单不能反推或补算人工通过率。45 条客观性夹具使用独立的、仅限 `main` 的手动 `Objectivity Acceptance` workflow，不属于每日自动台账。
@@ -37,6 +37,7 @@
 
 DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28 通过（Run #30349424143），
 但详情合同和共享运行时指纹已经变化，该结果只保留为历史证据，当前运行时必须重新执行三轮。
+2026-08-05 已从 `main@1957a0b` 触发 Run #31007436430，但活动 provider 在第 2 个固定语料批次返回 HTTP 402 `Insufficient Balance`；该次运行没有完成三轮，也没有形成可用于四门判定的指标。余额恢复后由人工重新触发，不自动切换 provider、不调整接受集或阈值、不把前两批当成部分通过。
 `--objectivity-shadow` 的 7-day 指标门也从新基线重计，人工评审尚未进行，因此
 **active mode is not enabled**，**live acceptance has not occurred**。夹具门通过只授予 active 的人工评审资格。
 详细行为见 `readme.md` 日报章节；标签接受集与安全边界的决策见 `docs/adr/0005-objectivity-label-accepted-sets.md`。
@@ -46,7 +47,7 @@ DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28
   `selected_after_audit`、`audited_candidate_count`、`demoted_from_selected` 和
   `source_reference_concentration`（按入审前精选的来源引用次数计算）。
 - 达标后只是获得 active 人工评审资格，不自动切换配置。
-- 选材改革或共享运行时指纹变化会改变 `selected_before_audit` 样本构成，因此 7-day 线上指标门从成本护栏的首个有效 DeepSeek shadow 产出重新计数；它不被选材 7 日或轨迹 5 日代替，45-case / three-run 固定夹具门也必须按当前运行时单独重跑。
+- 选材改革或共享运行时指纹变化会改变 `selected_before_audit` 样本构成，因此 7-day 线上指标门从当前共享运行时指纹的首个有效 DeepSeek shadow 产出重新计数；它不被选材 7 日或轨迹 5 日代替，45-case / three-run 固定夹具门也必须按当前运行时单独重跑。
 - `shadow_mode:auto` 在定时或显式 publish 中持续运行，直到客观性 7 日门和主管线信源 14 日门都完成，最长 14 个有效日；随后以 `accepted` 合法跳过，选材依赖视为满足，客观性与信源计数冻结。手动 validate 的 `auto` 默认跳过，只有 `force` 才运行，`skip` 始终跳过；台账查询失败时 publish 保守运行受成本上限保护的 shadow，手动 validate 仍跳过。
 
 ## 中文视角对冲源评估（待客观性验收后判）
@@ -60,7 +61,7 @@ DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28
 硬门：在增加任何主管线信源前，先收集至少 **14-day source metrics before adding sources**，
 包括抓取成功/零更新、候选量、入选量、单源高风险率、独立证据链和集中度。
 这 14 天只观测现有源，不回填历史、不同时加源；数据与人工审查都支持后才能重议。
-观测字段已在选材改革中补齐：`source_health.json` 逐源记录抓取条目、参与评分事件和参与最终精选事件；shadow summary 记录高风险单源率、独立链和来源集中度。14 天窗口从成本护栏的首个有效 DeepSeek 产出日起计，不使用旧数据反推，也不被两个上线门替代。
+观测字段已在选材改革中补齐：`source_health.json` 逐源记录抓取条目、参与评分事件和参与最终精选事件；shadow summary 记录高风险单源率、独立链和来源集中度。14 天窗口从当前共享运行时指纹的首个有效 DeepSeek shadow 产出日起计，不使用旧数据反推，也不被两个上线门替代。
 
 ## 选材改革后续复核（待完成）
 
@@ -98,8 +99,8 @@ DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28
 
 ## 阶段三：英文财经深读（`society_finance` 栏串行）
 
-1. **Noahpinion（#31，2026-07-26 启用）**：URL 用自有域名 `https://www.noahpinion.blog/feed`（非 `noahpinion.substack.com`，见上条出口封锁）。本地实测生产 78 小时窗口 1 篇、30 天 5 篇。原定 07-27 起算 7 个有效日；截至 2026-08-05，配置仍为 `enabled: true` 且 Issue 仍待人工判定，不能把计划结束日当成已验收。
-2. **Marginal Revolution（#32，尚未启用）**：`https://marginalrevolution.com/feed`，自有域名不受封锁，本地实测 78 小时取 5 篇。原排期 08-03 接续 Noahpinion，但截至 2026-08-05 配置仍为 `enabled: false`；必须在 #31 判定后显式启用，届时才开始 7 个有效日观察，重点复核短文密度和 AI 主题偏移。
+1. **Noahpinion（#31，2026-07-26 启用）**：URL 用自有域名 `https://www.noahpinion.blog/feed`（非 `noahpinion.substack.com`，见上条出口封锁）。本地实测生产 78 小时窗口 1 篇、30 天 5 篇。原定 07-27 起算 7 个有效日；截至 2026-08-06，配置仍为 `enabled: true` 且 Issue 仍待人工判定，不能把计划结束日当成已验收。
+2. **Marginal Revolution（#32，尚未启用）**：`https://marginalrevolution.com/feed`，自有域名不受封锁，本地实测 78 小时取 5 篇。原排期 08-03 接续 Noahpinion，但截至 2026-08-06 配置仍为 `enabled: false`；必须在 #31 判定后显式启用，届时才开始 7 个有效日观察，重点复核短文密度和 AI 主题偏移。
 3. ~~Apricitas Economics~~（#33 判死）：feed 可达可解析，但最新一篇停在 2026-05-03、近三个月未更，78 小时窗口恒为 0 篇。
 4. ~~Kyla's Newsletter~~（#34 判死）：`*.substack.com` 被封且 `kylascanlon.com/feed` 返回 404 无自有域名可换；源本身最新一篇停在 2026-05-28。
 
