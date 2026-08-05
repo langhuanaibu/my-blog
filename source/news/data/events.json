@@ -543,7 +543,7 @@
    "event_id": "evt-20260708-cc3bc8",
    "title": "特朗普称美伊谅解备忘录“已终结”",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-08",
    "last_seen": "2026-07-28",
@@ -6297,7 +6297,7 @@
    "event_id": "evt-20260724-2151b1",
    "title": "王虹、邓煜获2026年菲尔兹奖，中国籍首次",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-24",
    "last_seen": "2026-07-28",
@@ -6552,7 +6552,7 @@
    "event_id": "evt-20260724-50aa5e",
    "title": "香港47人案前议员胡志伟在伦敦机场险被遣返",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-24",
    "last_seen": "2026-07-28",
@@ -7103,7 +7103,7 @@
    "event_id": "evt-20260724-9a1d94",
    "title": "长鑫科技确定7月27日科创板挂牌",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-24",
    "last_seen": "2026-07-28",
@@ -7460,7 +7460,7 @@
    "event_id": "evt-20260725-63f3aa",
    "title": "西班牙和法国野火肆虐，超14万人撤离",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-28",
@@ -9219,7 +9219,7 @@
    "event_id": "evt-20260728-550397",
    "title": "OpenAI研究：ChatGPT正模糊岗位边界，员工跨职能工作增多",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9248,7 +9248,7 @@
    "event_id": "evt-20260728-d8c132",
    "title": "GitHub Copilot app推出多Agent工作区与Canvas预览",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9274,7 +9274,7 @@
    "event_id": "evt-20260728-d5e4fb",
    "title": "Microsoft发布AI网络安全模型MAI-Cyber-1-Flash及代理安全系统",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9307,7 +9307,7 @@
    "event_id": "evt-20260728-2462fa",
    "title": "谷歌AI概览搜索结果出现率升至43%",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9334,7 +9334,7 @@
    "event_id": "evt-20260728-5b7ef1",
    "title": "德里高等法院驳回印度新闻机构对OpenAI的版权禁令申请",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9362,7 +9362,7 @@
    "event_id": "evt-20260728-b15ea1",
    "title": "中国6岁女童接受实验性基因编辑治疗后死亡",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9387,7 +9387,7 @@
    "event_id": "evt-20260728-fcd31c",
    "title": "GitHub Copilot app新增企业级托管设置",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9412,7 +9412,7 @@
    "event_id": "evt-20260728-78180d",
    "title": "Claude共享聊天记录因缺少noindex标签被谷歌索引",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9438,7 +9438,7 @@
    "event_id": "evt-20260728-6bf589",
    "title": "Cloudflare开源隐私代理CLI工具pvcli",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9464,7 +9464,7 @@
    "event_id": "evt-20260728-0bf964",
    "title": "亚马逊申请部署5105颗卫星，2028年推手机直连服务",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9495,7 +9495,7 @@
    "event_id": "evt-20260728-5a8a39",
    "title": "美国歌手D4vd因谋杀14岁少女受审",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9568,7 +9568,7 @@
    "event_id": "evt-20260728-eb1e19",
    "title": "齐达内正式出任法国国家队主教练",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9597,7 +9597,7 @@
    "event_id": "evt-20260728-3e3619",
    "title": "Anthropic CEO澄清不反对开源权重模型但担忧中国AI",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9626,7 +9626,7 @@
    "event_id": "evt-20260728-210a6e",
    "title": "印度“蟑螂”运动迫使教育部长辞职后，威胁重启抗议",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9654,7 +9654,7 @@
    "event_id": "evt-20260728-edfeac",
    "title": "BBC深入报道厄瓜多尔毒品战争与帮派渗透",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9679,7 +9679,7 @@
    "event_id": "evt-20260728-320add",
    "title": "全球芯片股抛售加剧，机构警告AI交易拥挤尚未出清",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9712,7 +9712,7 @@
    "event_id": "evt-20260728-27ead9",
    "title": "美国在联合国安理会因法国发言退席，此前与俄朝共同投票",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9737,7 +9737,7 @@
    "event_id": "evt-20260728-962724",
    "title": "文件显示特朗普政府强制ICE拘留中绝食抗议者接受治疗",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9762,7 +9762,7 @@
    "event_id": "evt-20260728-9a4d54",
    "title": "作者对Anthropic版权案15亿美元赔偿意见不一",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9787,7 +9787,7 @@
    "event_id": "evt-20260728-96ddb0",
    "title": "强生提出55亿美元和解婴儿爽身粉致癌诉讼",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9812,7 +9812,7 @@
    "event_id": "evt-20260728-38ad09",
    "title": "伊朗最大监狱囚犯缝嘴绝食抗议处决激增",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9837,7 +9837,7 @@
    "event_id": "evt-20260728-f033a1",
    "title": "法院裁定谷歌和Reddit无权用DMCA阻止网页抓取",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9862,7 +9862,7 @@
    "event_id": "evt-20260728-757593",
    "title": "所罗门群岛中资金矿坍塌，致多人死亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9887,7 +9887,7 @@
    "event_id": "evt-20260728-d4fce3",
    "title": "多伦多美国领事馆今年第二次遭枪击",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9912,7 +9912,7 @@
    "event_id": "evt-20260728-8ae0a1",
    "title": "美国民众感受伊朗战争持续影响：经济压力加剧",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -9937,7 +9937,7 @@
    "event_id": "evt-20260728-c93d05",
    "title": "保利华润联合体 161 亿元竞得上海杨浦地块",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-28",
@@ -12716,6 +12716,41 @@
      "event_identity": "set-e3fa7ab344fcb9d3739f6cde"
     },
     {
+     "date": "2026-08-01",
+     "title": "西班牙批评欧盟部分国家自私回应休达移民危机",
+     "summary": "西班牙首相桑切斯批评部分欧盟国家对休达移民危机的反应“自私”，并呼吁召开紧急欧盟会议。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian"
+     ],
+     "item_ref": "2026-08-01:pick-83",
+     "source_keys": [
+      "src-974dea971dae43e2f77e68cf",
+      "src-c494777c7b781ef4b5e7b419"
+     ],
+     "event_identity": "set-078668de09e610235bfc3b62"
+    },
+    {
+     "date": "2026-08-02",
+     "title": "欧盟召开紧急会议应对休达移民危机",
+     "summary": "欧盟宣布将于8月4日召开内政部长紧急视频会议，讨论西班牙飞地休达的移民危机。",
+     "news_status": "发展中",
+     "watch": "后续发展取决于会议中欧盟成员国能否就移民分担达成一致，以及西班牙与欧盟其他成员国的紧张关系是否缓解。可观察路标是会议后是否发布联合声明或具体分配方案。",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-02:pick-59",
+     "source_keys": [
+      "src-4d6b4c006c9057868a64c3ca",
+      "src-974dea971dae43e2f77e68cf",
+      "src-a2b573cc5becfe4719baeb37"
+     ],
+     "event_identity": "set-f95de9bc783acc092bbe27fe"
+    },
+    {
      "date": "2026-08-03",
      "title": "西班牙休达移民潮引发政治风暴，死亡人数升至72",
      "summary": "摩洛哥移民涌入西班牙休达，死亡人数升至72人，事件引发欧盟政治风暴和社交媒体假信息传播。",
@@ -12751,7 +12786,8 @@
      ],
      "event_identity": "set-0f496e6d04fc9ead3cc8f542"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260731-505b54",
@@ -13316,52 +13352,6 @@
       "src-2d6afbabd15ea55d257e4969"
      ],
      "event_identity": "set-fee459fe6fad15c777a3bf01"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260801-f8f568",
-   "title": "西班牙批评欧盟部分国家自私回应休达移民危机",
-   "category": "world",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-08-01",
-   "last_seen": "2026-08-02",
-   "history": [
-    {
-     "date": "2026-08-01",
-     "title": "西班牙批评欧盟部分国家自私回应休达移民危机",
-     "summary": "西班牙首相桑切斯批评部分欧盟国家对休达移民危机的反应“自私”，并呼吁召开紧急欧盟会议。",
-     "news_status": "发展中",
-     "sources": [
-      "bbc-world",
-      "guardian"
-     ],
-     "item_ref": "2026-08-01:pick-83",
-     "source_keys": [
-      "src-974dea971dae43e2f77e68cf",
-      "src-c494777c7b781ef4b5e7b419"
-     ],
-     "event_identity": "set-078668de09e610235bfc3b62"
-    },
-    {
-     "date": "2026-08-02",
-     "title": "欧盟召开紧急会议应对休达移民危机",
-     "summary": "欧盟宣布将于8月4日召开内政部长紧急视频会议，讨论西班牙飞地休达的移民危机。",
-     "news_status": "发展中",
-     "watch": "后续发展取决于会议中欧盟成员国能否就移民分担达成一致，以及西班牙与欧盟其他成员国的紧张关系是否缓解。可观察路标是会议后是否发布联合声明或具体分配方案。",
-     "sources": [
-      "bbc-world",
-      "guardian",
-      "thepaper"
-     ],
-     "item_ref": "2026-08-02:pick-59",
-     "source_keys": [
-      "src-4d6b4c006c9057868a64c3ca",
-      "src-974dea971dae43e2f77e68cf",
-      "src-a2b573cc5becfe4719baeb37"
-     ],
-     "event_identity": "set-f95de9bc783acc092bbe27fe"
     }
    ]
   },
@@ -14633,7 +14623,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-03",
-   "last_seen": "2026-08-04",
+   "last_seen": "2026-08-05",
    "history": [
     {
      "date": "2026-08-03",
@@ -14667,6 +14657,21 @@
       "src-89c6f75d7cfec58916e586e6"
      ],
      "event_identity": "set-16f4f602fc0e764aaf15a30c"
+    },
+    {
+     "date": "2026-08-05",
+     "title": "美日十余年来首次联合干预汇市稳定日元",
+     "summary": "美日两国十余年来首次联合干预汇市，以稳定跌至约40年低点的日元汇率。",
+     "news_status": "已确认",
+     "watch": "后续发展取决于日元汇率是否稳定在关键水平，以及美日官方是否再次干预。可观察路标包括日元汇率走势和两国关于干预的进一步声明。",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-08-05:pick-233",
+     "source_keys": [
+      "src-39f681886c0bd7c69b3438bb"
+     ],
+     "event_identity": "set-3a9388afb21ee29908445e0c"
     }
    ]
   },
@@ -15209,7 +15214,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-04",
-   "last_seen": "2026-08-04",
+   "last_seen": "2026-08-05",
    "history": [
     {
      "date": "2026-08-04",
@@ -15224,6 +15229,21 @@
       "src-fbef77aaa3cb421336b73798"
      ],
      "event_identity": "set-a5d327906a42007370e3db37"
+    },
+    {
+     "date": "2026-08-05",
+     "title": "白宫召开AI安全紧急峰会敲定自愿协议细节",
+     "summary": "白宫周二召开AI企业领袖紧急峰会，敲定一项自愿协议的最终细节。",
+     "news_status": "发展中",
+     "watch": "后续发展取决于峰会上企业是否同意自愿协议的具体条款，以及协议是否包含有效的执行机制。可观察路标包括白宫或参会企业发布的官方声明，以及是否有企业公开承诺遵守协议。",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-08-05:pick-178",
+     "source_keys": [
+      "src-be5eaac9fb554785d1426a49"
+     ],
+     "event_identity": "set-f48f597b4cf8efb5e6e2b142"
     }
    ]
   },
@@ -15336,7 +15356,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-04",
-   "last_seen": "2026-08-04",
+   "last_seen": "2026-08-05",
    "history": [
     {
      "date": "2026-08-04",
@@ -15351,6 +15371,21 @@
       "src-fa3c76e2b08c3a4e46edf4a9"
      ],
      "event_identity": "set-5a555a72e2ba84cd1751b9c5"
+    },
+    {
+     "date": "2026-08-05",
+     "title": "红海油轮受威胁程度达伊朗战争以来最高",
+     "summary": "多艘船只在红海遭袭，油轮受威胁程度达伊朗战争以来最高水平，部分油轮在伊朗封锁霍尔木兹海峡后改用红海水道。",
+     "news_status": "发展中",
+     "watch": "后续发展取决于红海袭击事件的频率和严重程度，以及油轮是否继续使用该水道。可观察路标包括是否有新的袭击报告，以及航运公司是否宣布调整航线。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-125",
+     "source_keys": [
+      "src-571d090b967e89f9cf662fc5"
+     ],
+     "event_identity": "set-3b4fce79a1e942628809fe00"
     }
    ]
   },
@@ -15558,6 +15593,898 @@
       "src-320c185cc06a3fe3d1304bdb"
      ],
      "event_identity": "set-118ca7b61b185228250d34af"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-23c332",
+   "title": "SpaceX上市后首份财报：营收增92%超预期，资本支出飙升致股价下跌",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "SpaceX上市后首份财报：营收增92%超预期，资本支出飙升致股价下跌",
+     "summary": "SpaceX发布上市后首份财报，营收78.1亿美元同比增92%超预期，但资本支出飙升引发股价下跌。",
+     "news_status": "已确认",
+     "watch": "后续股价走势取决于资本支出能否转化为收入增长，以及星链和火箭业务的商业化进展。可观察SpaceX是否上调全年指引或宣布新客户合同。",
+     "sources": [
+      "guardian",
+      "npr",
+      "aljazeera",
+      "techcrunch",
+      "wscn"
+     ],
+     "item_ref": "2026-08-05:pick-29",
+     "source_keys": [
+      "src-2c39f9c1f3b5ce4e9211290d",
+      "src-3840acd65b8966d37448423a",
+      "src-75160f3f9633a18a6b44d727",
+      "src-9d57cef01a2ef04aa08121e6",
+      "src-9dfc58b2e1bcdcd4a6f40112",
+      "src-aec043aac711ccbe91268cdf",
+      "src-efb255c7dae0eac9705c828f",
+      "src-f74fc62d89864a16768080be"
+     ],
+     "event_identity": "set-2d09fdca0e6f2bdfd171c4a8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-86525b",
+   "title": "美伊就重开霍尔木兹海峡谈判取得进展，油价应声下跌",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "美伊就重开霍尔木兹海峡谈判取得进展，油价应声下跌",
+     "summary": "美国国务卿鲁比奥和财长贝森特宣布美伊谈判取得进展，霍尔木兹海峡可能重新开放，油价随之下跌。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "aljazeera",
+      "cnbc",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-05:pick-92",
+     "source_keys": [
+      "src-5cc71cd2f35fcc8db8545453",
+      "src-7163c49610c8864a2b1fa1da",
+      "src-b39089d546da3ef70a39d6de",
+      "src-d0ccfca3cbb00ae37a2a3cf9",
+      "src-fb2250b71284409123876191"
+     ],
+     "event_identity": "set-2c48f1741e690aab72eee8a5"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-588e9b",
+   "title": "AI转型冲击菲律宾外包行业，工人面临失业困境",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "AI转型冲击菲律宾外包行业，工人面临失业困境",
+     "summary": "AI正在重塑菲律宾外包行业，工人担忧未来就业前景，部分人感到“自掘坟墓”。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-05:pick-135",
+     "source_keys": [
+      "src-2f770576e5a9319678a91b2a"
+     ],
+     "event_identity": "set-8a339545e2d15bafa0f17916"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-799dab",
+   "title": "三星在FMS大会发布zHBM和400层以上V10 NAND，布局AI存储",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "三星在FMS大会发布zHBM和400层以上V10 NAND，布局AI存储",
+     "summary": "三星在FMS大会公布zHBM、zNAND-O概念产品及400层以上V10 BV-NAND，性能预计为HBM5的8倍。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn",
+      "36kr",
+      "ithome"
+     ],
+     "item_ref": "2026-08-05:pick-201",
+     "source_keys": [
+      "src-2191ea8d7264de53c0625f38",
+      "src-7119384236bf7f689344f7f5",
+      "src-9bc7d5f11e0d453cf0f23b76"
+     ],
+     "event_identity": "set-41dfb7618253989ee52b1c31"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-6e9447",
+   "title": "OpenAI公布第三方网络安全评估事件及新防护措施",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "OpenAI公布第三方网络安全评估事件及新防护措施",
+     "summary": "OpenAI披露涉及模型的第三方网络安全评估事件，并概述新防护措施以加强AI模型测试和评估。",
+     "news_status": "已确认",
+     "sources": [
+      "openai",
+      "hn"
+     ],
+     "item_ref": "2026-08-05:pick-20",
+     "source_keys": [
+      "src-5d39451c12ff4ef430f1f9bf",
+      "src-c27c17b0a5abdc527781056c"
+     ],
+     "event_identity": "set-3c5feaee9ec9016d3b951f65"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-ec1331",
+   "title": "Anthropic与成立仅数月的Volta签署100亿美元算力协议",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Anthropic与成立仅数月的Volta签署100亿美元算力协议",
+     "summary": "Anthropic与云初创公司Volta签署100亿美元算力协议，锁定未来六年计算资源，算力来自挪威数据中心。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "36kr",
+      "ithome",
+      "aihot:X：RohanPaul(@rohanpaul_ai)",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-05:pick-35",
+     "source_keys": [
+      "src-00a2232b3f998ae469ceeb6a",
+      "src-53d2f01bf6720797d5d252bb",
+      "src-78a324d11f595611184b20f1",
+      "src-9c152a0d9235d810c830bf79",
+      "src-d97f8c8a1c469b8f9b677618",
+      "src-d9d9721e157fb8f0aac64650"
+     ],
+     "event_identity": "set-7ce086d705ce04470e9e2dde"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-9e9079",
+   "title": "AMD数据中心营收翻倍但Q3指引不及预期股价下跌",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "AMD数据中心营收翻倍但Q3指引不及预期股价下跌",
+     "summary": "AMD Q2营收同比增50%至115.36亿美元，数据中心业务营收同比增107%达67亿美元，但Q3指引未达激进投资者预期，盘后股价下跌。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc",
+      "verge",
+      "wscn"
+     ],
+     "item_ref": "2026-08-05:pick-50",
+     "source_keys": [
+      "src-5f0fc4fd1ddbd0148eb21b2f",
+      "src-ba6de01097ba24d7bccef000",
+      "src-d9504dedd8b2f64e998c6c6d"
+     ],
+     "event_identity": "set-5bd0d52692235e6e139262b8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-9f310f",
+   "title": "工信部发布首部L3/L4自动驾驶系统安全强制性国标",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "工信部发布首部L3/L4自动驾驶系统安全强制性国标",
+     "summary": "工信部发布《智能网联汽车 自动驾驶系统安全要求》强制性国标，2027年7月1日实施，为L3/L4自动驾驶产品确立统一安全准入基线。",
+     "news_status": "已确认",
+     "watch": "取决于标准实施前车企对安全要求的适配进度及后续配套测试细则。可观察路标是各车企针对新国标发布的技术调整方案或产品规划变更。",
+     "sources": [
+      "aihot:IT之家（RSS）",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-05:pick-116",
+     "source_keys": [
+      "src-34a6bd0857a7c7600ca98758",
+      "src-ebe3332237bfdb312ba1f91c"
+     ],
+     "event_identity": "set-37a33f39a8fa35fd5598e024"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-0f87be",
+   "title": "中国新出入境管理规定引发讨论",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "中国新出入境管理规定引发讨论",
+     "summary": "中国公布新出入境管理规定，包括边境人员可劝阻公民前往高风险国家、危害国安者回国后禁出境、科研技术人员纳入出境限制。",
+     "news_status": "发展中",
+     "watch": "取决于规定实施细则的出台及执行尺度。可观察路标是官方对规定适用范围的进一步解释或具体案例。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-124",
+     "source_keys": [
+      "src-e94e800874c10fcc8a7235e9"
+     ],
+     "event_identity": "set-b1b82bc58c7604a9987262e3"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-abbd12",
+   "title": "单颗AMD MI300X运行DeepSeek V4 Flash实现高吞吐",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "单颗AMD MI300X运行DeepSeek V4 Flash实现高吞吐",
+     "summary": "开源仓库提供在单颗AMD MI300X上生产运行DeepSeek-V4-Flash-0731的配置与补丁，304B参数模型实现168.6 tok/s单流解码和542 tok/s聚合吞吐。",
+     "news_status": "已确认",
+     "watch": "取决于该方案在社区中的复现效果及对AMD MI300X推理生态的带动作用。可观察路标是仓库的后续更新、issue反馈或第三方基准测试结果。",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）"
+     ],
+     "item_ref": "2026-08-05:pick-115",
+     "source_keys": [
+      "src-fdeede8f9a17290128259ce3"
+     ],
+     "event_identity": "set-7f7ce13eb16e63dfcb7ec38b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-d81f55",
+   "title": "OpenAI回应苹果商业秘密诉讼并公布聊天记录反驳指控",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "OpenAI回应苹果商业秘密诉讼并公布聊天记录反驳指控",
+     "summary": "OpenAI就苹果提起的商业秘密诉讼作出回应，公布前苹果工程师刘昌的iMessage聊天记录，显示苹果员工主动联系刘昌，反驳苹果指控。",
+     "news_status": "发展中",
+     "sources": [
+      "openai",
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-05:pick-47",
+     "source_keys": [
+      "src-09b9e959ffc36a963e804093",
+      "src-3e6a567432416b9d84873dfc",
+      "src-de94f9016e05a48f768774b9"
+     ],
+     "event_identity": "set-49867aa53e5fed76dac9a506"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-4893cd",
+   "title": "Cloudflare推出代理开发生命周期及可编程钱包",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Cloudflare推出代理开发生命周期及可编程钱包",
+     "summary": "Cloudflare发布代理开发生命周期及配套基础组件，旨在帮助团队管理AI代理的构建、部署和维护流程。",
+     "news_status": "已确认",
+     "sources": [
+      "cloudflare"
+     ],
+     "item_ref": "2026-08-05:pick-58",
+     "source_keys": [
+      "src-e97df9b2d26de30fb37ff73e"
+     ],
+     "event_identity": "set-70b66c714eade99b83803029"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-d30cd6",
+   "title": "德州因电力需求暂停新数据中心接入电网并呼吁审计",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "德州因电力需求暂停新数据中心接入电网并呼吁审计",
+     "summary": "德克萨斯州因电力需求激增，暂停新数据中心接入电网，州长呼吁对电力供应进行审计。",
+     "news_status": "发展中",
+     "sources": [
+      "techcrunch",
+      "ars"
+     ],
+     "item_ref": "2026-08-05:pick-42",
+     "source_keys": [
+      "src-235e71669b8f59ef56e8f2a6",
+      "src-e6c3c3dcd27dfd8a458b01f9"
+     ],
+     "event_identity": "set-5581cafc445f46cf7039101b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-f61edb",
+   "title": "特习会后美中再现摩擦，建设性稳定面临考验",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "特习会后美中再现摩擦，建设性稳定面临考验",
+     "summary": "特习会后，美中在关税、台湾、安全议题上再起摩擦，双边关系的“建设性稳定”能否持续至九月存疑。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-130",
+     "source_keys": [
+      "src-d002ee2001d86cfbe4159ae0"
+     ],
+     "event_identity": "set-4a31182403c932f25a87d440"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-9354bf",
+   "title": "加沙为2023年以色列袭击中遇难的112名巴勒斯坦人举行集体葬礼",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "加沙为2023年以色列袭击中遇难的112名巴勒斯坦人举行集体葬礼",
+     "summary": "加沙为2023年以色列袭击中遇难的112名巴勒斯坦人举行集体葬礼，遗体近期才从废墟中找回。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-05:pick-147",
+     "source_keys": [
+      "src-2b357a7afe687ef60a61eba0",
+      "src-bf969d604a02343a188bca9e"
+     ],
+     "event_identity": "set-1e28732b24dcedb27ee4cdd8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-bbe3e5",
+   "title": "俄亥俄州共和党议员Max Miller因家暴指控面临辞职呼声及道德调查",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "俄亥俄州共和党议员Max Miller因家暴指控面临辞职呼声及道德调查",
+     "summary": "俄亥俄州共和党众议员Max Miller因家暴指控面临辞职呼声，众议院道德委员会已启动调查，其否认指控。",
+     "news_status": "发展中",
+     "watch": "取决于道德调查结果和共和党内部压力是否升级，可观察是否有更多议员公开要求其辞职。",
+     "sources": [
+      "guardian",
+      "npr",
+      "atlantic"
+     ],
+     "item_ref": "2026-08-05:pick-170",
+     "source_keys": [
+      "src-9d47a73877b2d4d7d87ffd24",
+      "src-a267de85ecd09668332bf200",
+      "src-f453daa8f3975f62abcf774a"
+     ],
+     "event_identity": "set-8f6414ddf332d4a9df3c6c38"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-24d467",
+   "title": "NVIDIA Alpamayo 2 Super 开放商用，面向自动驾驶",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "NVIDIA Alpamayo 2 Super 开放商用，面向自动驾驶",
+     "summary": "NVIDIA发布Alpamayo 2 Super模型，基于Cosmos 3 Super Reasoner构建，支持轨迹预测等任务，现已开放商用。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:NVIDIABlog（RSS）"
+     ],
+     "item_ref": "2026-08-05:pick-107",
+     "source_keys": [
+      "src-e5838315c1a9b4be022e1986"
+     ],
+     "event_identity": "set-2173c53f819b7bcee199525b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-b9b8de",
+   "title": "陆委会主委称北京每年已读不回3000封信",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "陆委会主委称北京每年已读不回3000封信",
+     "summary": "台湾陆委会主委邱垂正称北京每年对台湾发送的3000封信件已读不回，两岸沟通未完全中断。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-126",
+     "source_keys": [
+      "src-ad30d22954ff1f74d3e22af7"
+     ],
+     "event_identity": "set-4c5306b422e14e7c42d57f91"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-006e53",
+   "title": "英吉利海峡移民船发动机起火致倾覆，170余人获救",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "英吉利海峡移民船发动机起火致倾覆，170余人获救",
+     "summary": "一艘载有173人的移民船在英吉利海峡因发动机起火倾覆，170余人获救，将被送回法国。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian"
+     ],
+     "item_ref": "2026-08-05:pick-139",
+     "source_keys": [
+      "src-10610ef5198c2d49ec223796",
+      "src-549a0355c9f67f9c14ab19a4"
+     ],
+     "event_identity": "set-559aaba61c96c14c4b3e2b37"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-12df7f",
+   "title": "Meta等机构开发非侵入式脑机接口实现脑活动转文字",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Meta等机构开发非侵入式脑机接口实现脑活动转文字",
+     "summary": "Meta等机构开发出结合AI的非侵入式脑机接口，能通过脑电图或脑磁图信号解码键盘输入时的脑活动并转为文字。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-05:pick-288",
+     "source_keys": [
+      "src-fbfd2b9531e0ba014ec135dd"
+     ],
+     "event_identity": "set-7658152a7f60412985aa0426"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-973918",
+   "title": "NVIDIA 开源 cuFile API 推动 GPU 直连存储",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "NVIDIA 开源 cuFile API 推动 GPU 直连存储",
+     "summary": "NVIDIA在FMS大会宣布开源cuFile API及存储软件栈，实现GPU直连存储，延迟降至微秒级，并推出Storage-Next计划。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:NVIDIABlog（RSS）"
+     ],
+     "item_ref": "2026-08-05:pick-108",
+     "source_keys": [
+      "src-a43d002744561c0fde68ba14"
+     ],
+     "event_identity": "set-98a2a1b6521dfd4921be8fa3"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-473f66",
+   "title": "Swiftlet 运行时在 Mac 和 iPhone 上运行大型 Qwen 模型",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Swiftlet 运行时在 Mac 和 iPhone 上运行大型 Qwen 模型",
+     "summary": "Swiftlet 是一个 Swift + Metal 运行时，可在 Mac 上运行 80B 版 Qwen（内存 4.3 GB），在 iPhone 上运行 35B 版，通过流式加载专家权重。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）"
+     ],
+     "item_ref": "2026-08-05:pick-119",
+     "source_keys": [
+      "src-b76a79587656b14ddf2891c5"
+     ],
+     "event_identity": "set-ba393a1a9a2de7ab4fa98c77"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-079fff",
+   "title": "危地马拉富埃戈火山喷发引发疏散和橙色警报",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "危地马拉富埃戈火山喷发引发疏散和橙色警报",
+     "summary": "危地马拉富埃戈火山于周一喷发，触发橙色警报，并在 2018 年致命喷发地点附近进行疏散。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-05:pick-146",
+     "source_keys": [
+      "src-5ca4f76aacaea2af4a82dbcc",
+      "src-e1474974412838af964cf7a9"
+     ],
+     "event_identity": "set-1b55e1a0a1e0e6332764eac7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-d72bed",
+   "title": "欧洲热浪引发干旱、野火及能源供应担忧",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "欧洲热浪引发干旱、野火及能源供应担忧",
+     "summary": "欧洲热浪导致多瑙河纳粹时期沉船重现、核反应堆冷却风险，希腊野火肆虐，引发能源供应担忧。",
+     "news_status": "已确认",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-08-05:pick-209",
+     "source_keys": [
+      "src-c41f4044322b1e753409fb2a"
+     ],
+     "event_identity": "set-9bb25d7e2279018df08fe1ee"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-1af5bb",
+   "title": "持枪男子在特朗普高尔夫球场附近被捕",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "持枪男子在特朗普高尔夫球场附近被捕",
+     "summary": "一名携带大量武器的男子在特朗普即将出席募款活动的加州高尔夫球场附近被捕，事件发生在活动前。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-05:pick-131",
+     "source_keys": [
+      "src-4e4270012a13be79a920ba8f",
+      "src-5679b0279e10f8ebfc64c397"
+     ],
+     "event_identity": "set-e3709fab79116638c6521f11"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-ef5b9f",
+   "title": "华盛顿州最大野火纵火嫌疑人被捕",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "华盛顿州最大野火纵火嫌疑人被捕",
+     "summary": "华盛顿州斯波坎地区三起野火中最大的一起，纵火嫌疑人已被捕，火灾已迫使 6 万人撤离。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-05:pick-141",
+     "source_keys": [
+      "src-453d5930967fc8cd8759e6d1"
+     ],
+     "event_identity": "set-8987a5ac9c9d1477eee1137f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-32f692",
+   "title": "Vercel支持Next.js 16.3",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Vercel支持Next.js 16.3",
+     "summary": "Vercel宣布支持Next.js 16.3，该版本包含更精简的预取、不可变静态资源和即时导航功能。",
+     "news_status": "已确认",
+     "sources": [
+      "vercel"
+     ],
+     "item_ref": "2026-08-05:pick-247",
+     "source_keys": [
+      "src-d0eb75cc8b224f62ae59ee1f"
+     ],
+     "event_identity": "set-42d1606096b401c54696024a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-aa0b91",
+   "title": "开创性子宫手术修复婴儿肠脏外露",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "开创性子宫手术修复婴儿肠脏外露",
+     "summary": "西奥成为全球第三名在子宫内接受手术矫正复杂型腹裂症的婴儿，作为一项开创性临床试验的一部分。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-129",
+     "source_keys": [
+      "src-8890b21d792ad9c360a1d652"
+     ],
+     "event_identity": "set-8db6f260521ac99f9cc6bbc1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-9b75a2",
+   "title": "Cloudflare用软件工厂自动化修复Astro的GitHub issue",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "Cloudflare用软件工厂自动化修复Astro的GitHub issue",
+     "summary": "Cloudflare在Astro仓库运行自动化triage流水线，用AI子代理复现、诊断并修复bug，将开放issue从200多个降至约30个，预计下月归零。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:CloudflareBlog"
+     ],
+     "item_ref": "2026-08-05:pick-110",
+     "source_keys": [
+      "src-f87967c012f5d80258ff6172"
+     ],
+     "event_identity": "set-b7350b4d79b0eeeb00a08e7c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-b34579",
+   "title": "美股大涨，道指和标普500创历史新高",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "美股大涨，道指和标普500创历史新高",
+     "summary": "美东时间周二，受AI企业强劲业绩和中东局势缓和预期提振，道指涨1.71%，标普500涨1.79%，双双创收盘历史新高。",
+     "news_status": "已确认",
+     "sources": [
+      "cnbc",
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-05:pick-88",
+     "source_keys": [
+      "src-51a7ed294b7c85ecee9ed6bb",
+      "src-5c505121954a327fa6566a5c",
+      "src-90f1275ba543d6bb90bcc1c6"
+     ],
+     "event_identity": "set-ddddd65d3f721368a914a017"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-f3f86f",
+   "title": "沙特阿美Q2净利暴增33%，CEO警告海峡封锁引发历史最大石油供应冲击",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "沙特阿美Q2净利暴增33%，CEO警告海峡封锁引发历史最大石油供应冲击",
+     "summary": "沙特阿美Q2调整后净利润同比增长33%至334亿美元，超预期，但CEO警告霍尔木兹海峡封锁可能引发历史最大石油供应冲击。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-08-05:pick-268",
+     "source_keys": [
+      "src-5c86feb9ea78d1c10e9a6aa6"
+     ],
+     "event_identity": "set-695b33ccb43bec7d80eff492"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-9a6915",
+   "title": "ICE拘留者视频显示饮用水疑似含虫",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "ICE拘留者视频显示饮用水疑似含虫",
+     "summary": "加州一名ICE拘留者律师公布视频，显示饮用水疑似含有蠕虫状生物，引发对拘留中心条件的担忧。",
+     "news_status": "发展中",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-08-05:pick-173",
+     "source_keys": [
+      "src-20beb0a8339d66701eca16af"
+     ],
+     "event_identity": "set-2bccb55d00b5243949355cee"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260805-29db80",
+   "title": "台湾出版香港销售模式受阻，书商寻出路",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-05",
+   "last_seen": "2026-08-05",
+   "history": [
+    {
+     "date": "2026-08-05",
+     "title": "台湾出版香港销售模式受阻，书商寻出路",
+     "summary": "香港接连出现煽动图书案件后，台湾出版商重新评估\"台湾出版、香港销售\"模式风险，电子书或成新出路。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-05:pick-128",
+     "source_keys": [
+      "src-30de25b9a98ca12f495c9416"
+     ],
+     "event_identity": "set-fe926f3c777c55cd3d25c96d"
     }
    ]
   }
