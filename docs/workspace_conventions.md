@@ -72,7 +72,7 @@
 👉 **动作**：修改 `news-pipeline/sources.yaml`；不要直接编辑 `source/news/data/` 下的生成数据。
 
 **场景 5：我要调整每日日报评分、阈值、分类偏好或成本护栏**
-👉 **动作**：修改 `news-pipeline/config.yaml`，先运行 `py -3.12 news-pipeline/tests/test_pipeline.py` 做快速逻辑回归，再运行 `py -3.12 -m pytest news-pipeline/tests -q` 做完整回归。会改变候选样本的归并调用上限和候选阈值属于共享运行时指纹，首次有效 publish 会重置五门；只调整生成或 shadow 成本告警线不会重置。
+👉 **动作**：修改 `news-pipeline/config.yaml`，运行 `py -3.12 -m pytest news-pipeline/tests -q` 做完整回归；历史独立脚本 `news-pipeline/tests/test_pipeline.py` 不作为交付验收入口。会改变候选样本的归并调用上限和候选阈值属于共享运行时指纹，首次有效 publish 会重置五门；只调整生成或 shadow 成本告警线不会重置。
 
 **场景 6：我要人工修正每日日报兴趣画像**
 👉 **动作**：修改 `source/news/data/interest_profile.md`，只编辑以 `- ` 开头的偏好要点；不要手工改 `daily/*.js`、`events.json`、`source_health.json`、`score_history.json`、`feed.xml` 或 `search_index.js`，这些由管线产出或重建。`score_history.json` 是动态精选线的内部账本，损坏时应让管线按静态线回退并重建，不要人工补历史分数。`vocab/*.js` 是已停用单词本的历史数据，也不要手工维护。

@@ -225,7 +225,7 @@ GITHUB_BRANCH=main
 
 ### 数据管线
 
-- 主管线是 `news-pipeline/daily_news.py`：抓取（RSS / AI HOT / 逐源直连适配器）→ 跨日 URL 去重与重大更新判定 → 预筛 → LLM 初步聚类、分类、五维打分 → 全量同日事件证据归并 → 多条事件凝聚度审计 → 代码合成最终分（含热榜 co-occurrence 公众热度加权）→ 精选与次级选位 → 同日读者可见归并、凝聚度重审、跨日实质新增门与重新选位的稳定循环 → 精选深加工与事实支撑审计 → 生成今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、舆论观察、RSS 和搜索索引。最终分夹紧在 5-99：乘数叠加常把原始分推过 99，因此 99 是"顶格档"而非精确分，顶部多条并列 99 属预期、不是评分 bug（2026-07-23 定案，不改公式）。
+- 主管线是 `news-pipeline/daily_news.py`：抓取（RSS / AI HOT / 逐源直连适配器）→ 跨日 URL 去重与同 URL 实质新增判定 → 预筛 → LLM 初步聚类、分类、五维打分 → 全量同日事件证据归并 → 多条事件凝聚度审计 → 代码合成最终分（含热榜 co-occurrence 公众热度加权）→ 精选与次级选位 → 同日读者可见归并、凝聚度重审、跨日实质新增门与重新选位的稳定循环 → 精选深加工与事实支撑审计 → 生成今日主线、事件追踪、深读推荐、今日论文（HF Daily Papers）、舆论观察、RSS 和搜索索引。最终分夹紧在 5-99：乘数叠加常把原始分推过 99，因此 99 是"顶格档"而非精确分，顶部多条并列 99 属预期、不是评分 bug（2026-07-23 定案，不改公式）。
 - 精选展示标题以 30 字为生成软目标，语义完整优先，不按字符盲目截断。模型返回空标题或超过 120 字的异常标题时回退到完整主来源标题；公开 payload 的标题仍以现有来源输入上限 300 字做发布校验，超限报错而不是静默裁剪。该规则在 interim、shadow 和 active 三种客观性模式下保持一致。
 - 改新闻源优先改 `news-pipeline/sources.yaml`；调评分、阈值、标签词表、事件追踪、深读、精选长叙述（`detail`）、RSS 和搜索保留窗口优先改 `news-pipeline/config.yaml`。
 - **信源接入采用"逐源直连适配器"路线**（参考 AIHOT 的做法：RSS 优先、没 RSS 就直连公开接口/网页内嵌数据，不建万能适配层）。三类接法并存：①标准 RSS（`fetch_rss`）；②自建 RSSHub 实例（Vercel）转 RSS——当前用于科学网、澎湃热门、果壳、Anthropic news/engineering 和财联社·深度等已验证路由，`url` 写占位符 `{rsshub}/路由`，运行时由环境变量 `RSSHUB_BASE` + `RSSHUB_KEY` 拼真 URL（地址密钥不落公开仓库，`resolve_rsshub_sources`，主管线与 `deep_sources` 均支持；未配置则自动跳过）；③专用适配器——`fetch_aihot`（JSON API）、`fetch_thepaper_list`（澎湃频道页 `__NEXT_DATA__` 内嵌数据，各 `list_*` 频道同构可复用）、`fetch_weibo_hot`（genvisitor 访客握手，无需登录/浏览器）、`fetch_bilibili_hot`（公开接口）。**不再扩 RSSHub 路由、不上 Docker**。已关闭的信源线（原因见 `sources.yaml` 尾部终局结论注释）：微信公众号（需常驻中继+人肉续期）、知乎（无登录态全线 4xx）、中青报/界面（JS 壳站）、X 直连（AI 类经 AIHOT 二手接入），以及 2026-07-16 验收停用的 FT 中文网和第一财经。
@@ -273,8 +273,8 @@ GITHUB_BRANCH=main
 #### 选材与可信轨迹并行上线门
 
 - 每次登记表阶段输出一行「轨迹健康」，稳定记录候选匹配、连续性通过/拒绝、被排除的历史行、整条生成回退、审计字段/claim 回退，以及最终公开走向数/精选数和覆盖率。连续性响应缺失或非法时按拒绝计数，其历史全部计入过滤；生成回退按条目计，审计回退按未采用的字段或 claim 计。
-- 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `py -3.12 news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。常规 `py -3.12 news-pipeline/tests/test_pipeline.py` 会同时执行这组回归。
-- 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但线上验收尚未通过。本次 36 条/4 席与深读扩充会改变公开样本；活动 provider 切回 DeepSeek 后，2026-07-28 的首次有效 publish（Run #30353163162）产生过一版共享运行时指纹。详情深化与配套运行时变更已在提交 `fce074a` 合并到 `main`，但尚未进入有效 publish；**首个包含该提交的有效 publish 会按新共享运行时指纹重新起算全部五门**。2026-07-30 台账的 1/7、1/5、0/5、1/7、1/14 仅是上一指纹的历史快照，不得继续累计。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。当前逐门状态以 GitHub Issue #15 的幂等台账为准。
+- 离线冒烟夹具是 `news-pipeline/fixtures/trajectory_rollout.json`，固定包含一条可信延续、一条污染历史和一条缺少精确 `item_ref` 的旧行；运行 `py -3.12 news-pipeline/tests/test_trajectory_rollout.py` 不联网、不依赖额外测试包，也不写 `source/news/data/`。完整 `pytest` 回归会同时执行这组夹具。
+- 选材改革与可信轨迹已随 PR #16 于 2026-07-22 合并公开，但五门线上验收尚未通过。共享运行时指纹变化会使全部五门重新起算；跨日实质新增门随提交 `cf5768c` 上线后，2026-08-04 成为该指纹的首个有效产出日。逐门计数是易变运行状态，本文件不复制快照，**只以 GitHub Issue #15 的幂等台账为准**。轨迹每天的全量初验复用 `audit_llm` 连接/模型配置并强制 `temperature: 0`；模型、schema 或评审基础设施异常一律记 `needs_review`，留给人工最终确认，不猜测通过。
 - GitHub Issue #15 是**五个门的唯一自动每日台账**（台账 state 版本 `issue-ledger-v2`）。同一北京日期的重跑只幂等更新当日记录，不多算一天；当日任一次发布失败，即使后续重跑成功，当日所有门仍都按失败处理。非发布失败时，`pass` 让对应门 +1，`neutral` / `needs_review` 冻结该门当前计数；`fail` 只清零**连续型**门（选材、轨迹、客观性 shadow），**累计型**门（enrich、信源指标）不清零已攒的有效日，因为缺一天数据不等于观察结果变坏。
 - 云端 `rollout-review` 现在一次性给出五门判定，数据来源分别是：选材/轨迹取临时 rollout artifact；客观性 shadow 取 `shadow` job 新落盘的 `shadow-summary` artifact；enrich 安全指标取已提交的 `source/news/data/quality-health.json`；信源指标取已提交的 `source/news/data/source_health.json`。缺任一输入时只记 `needs_review` / `neutral`，绝不推断通过；证据还必须是类型正确、数值有限且内部计数一致的结构，畸形 JSON 值同样按保守状态处理，不能误判为通过。
 - enrich 门被拆成两半：机械的 `removed_fields / enrichment_audited_events` 安全指标由台账自动判（超过基线 1.2 倍即 `fail`），其中分母是实际进入事实支撑/客观性审计的读者可见事件数，不能用多来源事件的凝聚度审计数 `audited_events` 代替。历史 interim 记录会从同日 `daily/<date>.js` 的 `stats.pick_count` 补全分母；窗口前不足三个有效新口径记录时只报 `needs_review`。三项文字质量检查仍然只能人工判，因此机械指标未越线也不会自动通过。管线每天按日期确定性地从每个非空类目抽 1 条写入台账（只记条目 id，不复制正文），同日重跑抽到的是同一批；人工复核时用 `Rollout Manual Review` 回填 `samples_passed` / `samples_total`，窗口内累计通过率需 ≥80%。
@@ -344,7 +344,7 @@ GITHUB_BRANCH=main
 
 ### 验证与移除
 
-- 管线快速回归：`py -3.12 news-pipeline/tests/test_pipeline.py`。完整 Python 回归：`py -3.12 -m pytest news-pipeline/tests -q`，其中包含跨批同日归并、发布事务和全部历史日报引用完整性检查。测试不调 LLM、不联网；改评分、聚类、可信度审计、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑完整回归。
+- 完整 Python 回归：`py -3.12 -m pytest news-pipeline/tests -q`，其中包含跨批同日归并、发布事务、轨迹夹具和全部历史日报引用完整性检查。测试不调 LLM、不联网；改评分、聚类、可信度审计、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑完整回归。`news-pipeline/tests/test_pipeline.py` 是历史独立脚本，不再作为交付验收入口。
 - 客观性回归：`py -3.12 news-pipeline/tests/test_objectivity_audit.py`（证据合同、审计/修复/降级、夹具完整性、删除字段分项守恒、次级回退摘要判定与序列化/审计投影一致性）与 `py -3.12 news-pipeline/tests/test_shadow_rollout.py`（shadow 快照隔离与环境还原）。两者同样不调 LLM、不联网，静默通过、失败非零退出；改客观性审计、证据结构或 shadow 流程后必跑。
 - 新闻页回归：`npm run test:news`。测试使用 Node 内置测试器与 jsdom，覆盖新旧路由、DOM 渲染、个人操作 API 合同、无障碍状态和空数据降级；修改 `source/news/index.html`、`source/news/news.css` 或 `source/news/js/` 后必跑。
 - 完整交付前运行 `npm run build`，确认 Hexo 能把新闻页 ES Modules、样式、字体和静态数据原样输出到 `_config.yml` 指定的 `dist/news/`，并确认 `dist/admin/` 仍存在。

@@ -2,17 +2,15 @@
 
 > 日报信源扩展的活跃待办清单。信源终局定案写在 `news-pipeline/sources.yaml` 尾部注释，现行机制写在 `readme.md` 日报章节；本文件只记**还没做完的事**，全部完成后删除。
 >
-> 最后更新：2026-07-30
+> 最后更新：2026-08-05
 
-## 当前生产基线（等待新指纹首次有效 publish）
+## 当前生产基线（以 Issue #15 为准）
 
-本次温和扩充已于 2026-07-24 合并并推送到 `main`：精选上限调为 36、五类保留席调为 4、深读上限调为 4，并加入内容类型、分离时长和漏读复盘。它会改变公开样本构成，因此合并后的首个有效产出日是新的统一基线起点；此前未完成的 selection、trajectory、enrich、objectivity shadow 和主管线 source metrics 均按各自有效日条件重新计时，不沿用旧连续天数。
+生产 provider 仍为 DeepSeek；StepFun 实验 Run #30346999214 在正常新闻阶段 A 触发 HTTP 451，只保留人工实验能力，不作为自动回退。`objectivity.mode` 继续保持 `interim`。
 
-活动 provider 已从 StepFun 切回 DeepSeek：StepFun 实验 Run #30346999214 在正常新闻阶段 A 触发 HTTP 451，不能作为生产回退；DeepSeek 的 45 条夹具三轮门（Run #30349424143）和 validate（Run #30350219791）已经通过。2026-07-30 的有效 publish（Run #30501045287）在上一共享运行时指纹下记录为选材 1/7、轨迹 1/5、enrich 0/5、客观性 shadow 1/7、信源指标 1/14；enrich 因文字抽样待人工复核而冻结。
+跨日实质新增门随提交 `cf5768c` 上线并改变共享运行时指纹，2026-08-04 是该指纹的首个有效产出日。2026-08-05 的日报发布成功，但 objectivity shadow 失败，导致 selection 失败、source metrics 冻结；当日台账为选材 0/7、轨迹 2/5、enrich 0/5、客观性 shadow 0/7、信源指标 1/14。**这只是 2026-08-05 快照，后续状态与计数只以 GitHub Issue #15 的幂等台账为准**，不得从本文推算收口日期。
 
-提交 `fce074a` 已把 LLM 用量计量、发布 URL 校验与详情深化变更合并到 `main`，但尚未进入有效 publish。详情深化停用新闻 `significance`，新增 `watch_detail`，扩大全文 `context`／`detail` 合同并改变 `daily_news.py` 共享运行时指纹。因此**首个包含该提交的成功 publish 才是新代码的五门起点**；07-30 的计数只保留为历史快照，不得继续累计，也不得据旧指纹推算收口日期。选材 7 个有效日、轨迹 5 个有效日、enrich 5 个有效日、客观性 shadow 7 个有效日、信源指标 14 个有效日全部重新累计，新 publish 后的状态与计数只以 GitHub Issue #15 为准。
-
-删除字段分项诊断（`removed_field_counts` / `removed_field_reasons`）已从 2026-07-30 开始产出；旧记录按 v1 读取并允许 `significance`，新记录写 v2（字段增加 `watch_detail`、移除 `significance`，原因增加 `generation_invalid`），历史不回写。需积累 3-5 个同指纹有效日后，才能用于判断「空块是闸门删的还是生成端没写」，在此之前不得据此调整闸门或 enrich 提示词。
+删除字段分项诊断已按 v2 正常产出：字段包含 `watch_detail`、不再包含 `significance`，原因集合包含 `generation_invalid`，历史不回写。enrich 安全指标由台账自动判，文字抽样仍需人工回填；不得只凭分项计数调整闸门或 enrich 提示词。
 
 - `pass` 仅让对应门 +1，`neutral` / `needs_review` 冻结对应时钟。`fail` 只清零**连续型**门（选材、轨迹、客观性 shadow）；**累计型**门（enrich、信源指标）只统计有效日，缺数据的一天冻结而不清零。
 - **共享运行时指纹变化重置全部五门**——样本构成变了，变更前后的证据不得混用；仅轨迹 UI 指纹变化只重置轨迹门。观察期内冻结这些范围，必要变更按所属阶段重计。
@@ -100,8 +98,8 @@ DeepSeek 上一共享运行时的 45-case / three-run 夹具门曾于 2026-07-28
 
 ## 阶段三：英文财经深读（`society_finance` 栏串行）
 
-1. **Noahpinion（#31，2026-07-26 启用）**：URL 用自有域名 `https://www.noahpinion.blog/feed`（非 `noahpinion.substack.com`，见上条出口封锁）。本地实测生产 78 小时窗口 1 篇、30 天 5 篇。07-27 起算 7 个有效日。
-2. **Marginal Revolution（#32）**：`https://marginalrevolution.com/feed`，自有域名不受封锁，本地实测 78 小时取 5 篇。接 Noahpinion，08-03 起算 7 个有效日，重点复核短文密度和 AI 主题偏移。
+1. **Noahpinion（#31，2026-07-26 启用）**：URL 用自有域名 `https://www.noahpinion.blog/feed`（非 `noahpinion.substack.com`，见上条出口封锁）。本地实测生产 78 小时窗口 1 篇、30 天 5 篇。原定 07-27 起算 7 个有效日；截至 2026-08-05，配置仍为 `enabled: true` 且 Issue 仍待人工判定，不能把计划结束日当成已验收。
+2. **Marginal Revolution（#32，尚未启用）**：`https://marginalrevolution.com/feed`，自有域名不受封锁，本地实测 78 小时取 5 篇。原排期 08-03 接续 Noahpinion，但截至 2026-08-05 配置仍为 `enabled: false`；必须在 #31 判定后显式启用，届时才开始 7 个有效日观察，重点复核短文密度和 AI 主题偏移。
 3. ~~Apricitas Economics~~（#33 判死）：feed 可达可解析，但最新一篇停在 2026-05-03、近三个月未更，78 小时窗口恒为 0 篇。
 4. ~~Kyla's Newsletter~~（#34 判死）：`*.substack.com` 被封且 `kylascanlon.com/feed` 返回 404 无自有域名可换；源本身最新一篇停在 2026-05-28。
 
@@ -111,11 +109,11 @@ Money Stuff 与 FT Alphaville 均不再探测：前者无官方 RSS，不接受�
 
 ---
 
-## 完整队列复盘（#35，定日 2026-08-10）
+## 完整队列复盘（#35，等待 #31／#32 收口）
 
-范围已收缩为三源：阮一峰（人工门待确认）、Noahpinion（07-27~08-02）、Marginal Revolution（08-03~08-09）。Apricitas 与 Kyla 已判死销账，晚点独立受阻于对方 TLS 信任链。
+范围已收缩为三源：阮一峰（人工门待确认）、Noahpinion（已启用、待判定）、Marginal Revolution（尚未启用）。Apricitas 与 Kyla 已判死销账，晚点独立受阻于对方 TLS 信任链。
 
-08-10 拿当时已有样本统一判断保留/停用、样本稀疏和 30 分钟软预算下的阅读密度；晚点若标准 CA 包仍不能完成验证，不等它，记为「受阻未验」。复盘完成前不启动新的镜像候选。
+原定 2026-08-10 复盘建立在 Marginal Revolution 已于 08-03 启用的前提上；该前提没有发生，因此日期作废。改为 #32 实际启用并完成 7 个有效日后的次日统一判断保留/停用、样本稀疏和 30 分钟软预算下的阅读密度；晚点若标准 CA 包仍不能完成验证，不等它，记为「受阻未验」。复盘完成前不启动新的镜像候选。
 
 ## 镜像候选调研（等待完整队列复盘）
 
