@@ -459,6 +459,52 @@ def test_stage_fingerprints_only_change_for_their_allow_listed_scope(tmp_path):
     assert css_change["trajectory_ui"] != baseline["trajectory_ui"]
 
 
+def test_runtime_fingerprint_tracks_dependencies_interpreter_runner_and_epoch(tmp_path):
+    rv = rollout()
+    runtime_file = tmp_path / "daily_news.py"
+    requirements_file = tmp_path / "requirements.txt"
+    ui_file = tmp_path / "reports.js"
+    runtime_file.write_text("runtime-v1", encoding="utf-8")
+    requirements_file.write_text("lxml==6.1.1", encoding="utf-8")
+    ui_file.write_text("ui-v1", encoding="utf-8")
+    environment = {
+        "python_version": "3.12.13",
+        "python_implementation": "CPython",
+        "runner_os": "Linux",
+        "runner_arch": "X64",
+        "platform_system": "Linux",
+        "platform_machine": "x86_64",
+        "epoch": "1",
+    }
+
+    def fingerprints(candidate_environment):
+        return rv.build_stage_fingerprints(
+            config={},
+            runtime_paths=[runtime_file, requirements_file],
+            trajectory_ui_paths=[ui_file],
+            runtime_environment=candidate_environment,
+        )
+
+    baseline = fingerprints(environment)
+    for key, value in (
+        ("python_version", "3.12.14"),
+        ("python_implementation", "PyPy"),
+        ("runner_os", "Windows"),
+        ("runner_arch", "ARM64"),
+        ("epoch", "2"),
+    ):
+        changed = dict(environment)
+        changed[key] = value
+        result = fingerprints(changed)
+        assert result["runtime"] != baseline["runtime"]
+        assert result["trajectory_ui"] == baseline["trajectory_ui"]
+
+    requirements_file.write_text("lxml==6.1.2", encoding="utf-8")
+    dependency_change = fingerprints(environment)
+    assert dependency_change["runtime"] != baseline["runtime"]
+    assert dependency_change["trajectory_ui"] == baseline["trajectory_ui"]
+
+
 def test_runtime_fingerprint_tracks_active_provider_protocol_and_limits_not_secrets(
         tmp_path):
     rv = rollout()

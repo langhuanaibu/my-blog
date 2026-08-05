@@ -35,6 +35,7 @@ import os
 import re
 import shutil
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -610,7 +611,12 @@ def emit_rollout_evidence(date_str, policy, runtime_seconds, selection_stats,
         selection=selection_stats,
         trajectory=trajectory_health,
         review_cases=review_cases,
-        runtime_paths=[Path(__file__), Path(rollout_validation.__file__)],
+        runtime_paths=[
+            Path(__file__),
+            Path(rollout_validation.__file__),
+            ROOT / "article_extractor.py",
+            ROOT / "requirements.txt",
+        ],
         trajectory_ui_paths=[
             ROOT.parent / "source" / "news" / "js" / "reports.js",
             ROOT.parent / "source" / "news" / "news.css",
@@ -805,11 +811,30 @@ def _pinned_article_get(url, pinned_ip, attempt_control=None, **kwargs):
     return response
 
 
-def _extract_static_article(page_html):
-    """Extract main text from static HTML using the declared generic extractor."""
-    import trafilatura
-    return trafilatura.extract(page_html, include_comments=False, include_tables=False,
-                               favor_precision=True) or ""
+def _extract_static_article(page_html, timeout=ARTICLE_ATTEMPT_TIMEOUT, command=None):
+    """Extract static HTML beyond a process boundary that contains native crashes."""
+    worker_command = command or [
+        sys.executable,
+        "-I",
+        str(ROOT / "article_extractor.py"),
+    ]
+    try:
+        completed = subprocess.run(
+            worker_command,
+            input=str(page_html or "").encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=max(0.001, float(timeout)),
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ArticleEvidenceError("article extractor subprocess timed out") from exc
+    except (OSError, ValueError) as exc:
+        raise ArticleEvidenceError("article extractor subprocess could not start") from exc
+    if completed.returncode != 0:
+        raise ArticleEvidenceError(
+            f"article extractor subprocess exited with code {completed.returncode}")
+    return completed.stdout.decode("utf-8", errors="replace")
 
 
 def _rss_evidence(item):
@@ -905,7 +930,12 @@ def fetch_article_evidence(item, request_get=None, extractor=None, resolver=None
                             raise ArticleEvidenceError("article response exceeds 2 MiB")
                     page_html = bytes(body).decode("utf-8", errors="replace")
                     require_time_remaining()
-                    text = re.sub(r"\s+", " ", str(extractor(page_html) or "")).strip()
+                    if extractor is _extract_static_article:
+                        extracted = extractor(
+                            page_html, timeout=require_time_remaining())
+                    else:
+                        extracted = extractor(page_html)
+                    text = re.sub(r"\s+", " ", str(extracted or "")).strip()
                     require_time_remaining()
                     if len(text) < ARTICLE_MIN_CHARS:
                         raise ArticleEvidenceError("article extraction was too short")

@@ -521,6 +521,46 @@ def test_article_blocking_read_obeys_wall_clock_deadline_and_closes_response():
     assert response.closed is True
 
 
+def test_native_article_extractor_abort_is_contained_and_reaped(tmp_path):
+    abort_worker = tmp_path / "abort_worker.py"
+    abort_worker.write_text(
+        "import os\nimport sys\nsys.stdin.buffer.read()\n"
+        "os._exit(134) if sys.platform == 'win32' else os.abort()\n",
+        encoding="utf-8",
+    )
+    html = (Path(__file__).with_name("fixtures") / "article-extractor-minimal.html").read_text(
+        encoding="utf-8")
+
+    for _ in range(5):
+        with pytest.raises(dn.ArticleEvidenceError, match="subprocess exited"):
+            dn._extract_static_article(
+                html,
+                timeout=1.0,
+                command=[sys.executable, str(abort_worker)],
+            )
+
+    # A crashed native parser must not poison the parent heap or prevent a later task.
+    assert "Synthetic evidence report" in dn._extract_static_article(
+        html, timeout=5.0)
+
+
+def test_native_article_extractor_timeout_terminates_child(tmp_path):
+    blocking_worker = tmp_path / "blocking_worker.py"
+    blocking_worker.write_text(
+        "import sys\nimport time\nsys.stdin.buffer.read()\ntime.sleep(30)\n",
+        encoding="utf-8",
+    )
+
+    started = time.perf_counter()
+    with pytest.raises(dn.ArticleEvidenceError, match="timed out"):
+        dn._extract_static_article(
+            "<article>fixture</article>",
+            timeout=0.05,
+            command=[sys.executable, str(blocking_worker)],
+        )
+    assert time.perf_counter() - started < 1.0
+
+
 def test_article_timeout_never_waits_for_blocking_response_close():
     class BlockingCloseResponse:
         status_code = 200
