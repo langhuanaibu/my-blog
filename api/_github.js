@@ -367,9 +367,16 @@ async function deleteFile(filePath, message, sha) {
   });
 }
 
+// 白名单式校验：文章一律是 source/_posts/ 下的单层 .md 文件（仓库里 21 篇
+// 都是这个形状，listPosts 也只列顶层）。原先靠「前缀 + 后缀 + 不含 ..」的黑名单
+// 放行了子目录、NUL 字节和 %2e%2e 这类字面量目录名——都逃不出 _posts，但黑名单
+// 要靠穷举漏洞形状才成立，正则白名单直接把形状钉死。
+const POST_FILE_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*\.md$/;
+
 function validatePostPath(filePath) {
   const value = String(filePath || '');
-  if (!value.startsWith(`${POSTS_DIR}/`) || !value.endsWith('.md') || value.includes('..')) {
+  const name = value.startsWith(`${POSTS_DIR}/`) ? value.slice(POSTS_DIR.length + 1) : '';
+  if (!POST_FILE_PATTERN.test(name) || name.includes('..')) {
     throw createHttpError(400, 'Invalid post path');
   }
   return value;
@@ -537,6 +544,24 @@ function stripFrontMatter(content) {
   return String(content || '').replace(/^---\n[\s\S]*?\n---\n?/, '').trim();
 }
 
+// 封面只有两种合法形态：站内绝对路径（/images/covers/...）或外部 http(s) 图片。
+// 主题用 <%= url_for(index_img) %> 输出到 <img src>，EJS 转义挡住了属性逃逸，
+// 所以这里不是可利用的 XSS；但 index_img 是唯一没做协议校验的用户可控 URL，
+// 而 adminSettings 与前端 safeUrl() 都校验了——补齐这处纵深防御的缺口。
+function validateCoverUrl(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  if (/[\r\n<>"']/.test(text)) {
+    throw createHttpError(400, 'Cover URL must not contain line breaks or markup characters');
+  }
+  if (text.startsWith('//')) {
+    throw createHttpError(400, 'Cover URL must be a site path or an http(s) URL');
+  }
+  if (text.startsWith('/')) return text;
+  if (/^https?:\/\/\S+$/i.test(text)) return text;
+  throw createHttpError(400, 'Cover URL must be a site path or an http(s) URL');
+}
+
 function coverForCategory(coverMap, category, explicitCover) {
   return explicitCover || coverMap[category] || coverMap.default || FALLBACK_COVER;
 }
@@ -605,7 +630,7 @@ function composePost(article, coverMap, existing, filePath = article.filePath) {
       ? requestedDate
       : `${requestedDay} 00:00:00`;
   const updated = today();
-  const indexImg = coverForCategory(coverMap, category, String(article.index_img || '').trim());
+  const indexImg = coverForCategory(coverMap, category, validateCoverUrl(article.index_img));
   const oldId = existing?.old_id || '';
   const twikooPath = existing?.twikooPath || '';
   const fileSlug = postSlugFromPath(filePath);
@@ -701,6 +726,7 @@ module.exports = {
   putTextFilesAtomic,
   deleteFile,
   validatePostPath,
+  validateCoverUrl,
   parsePost,
   composePost,
   readCoverMap,

@@ -734,6 +734,64 @@ test("the stylus build chain can still brace-expand after security overrides", (
   assert.equal(matched.length, 2, "brace expansion must resolve both branches");
 });
 
+test("post paths are restricted to a single flat .md file under source/_posts", () => {
+  const accepted = [
+    "source/_posts/2026-03-20-ce-shi.md",
+    "source/_posts/2026-08-06-a-b-c.md",
+  ];
+  for (const filePath of accepted) {
+    assert.equal(github.validatePostPath(filePath), filePath);
+  }
+
+  // A prefix+suffix blacklist let these through. None escaped source/_posts,
+  // but the shape should be pinned by an allowlist rather than by enumerating
+  // the traversal spellings an attacker might try.
+  const rejected = [
+    "source/_posts/../../../.github/workflows/evil.md",
+    "source/_posts/sub/dir/deep.md",
+    "source/_posts/%2e%2e/evil.md",
+    "source/_posts/.md",
+    "source/_posts/..md",
+    "source/_posts/a .md",
+    "source/_postsevil.md",
+    "",
+  ];
+  for (const filePath of rejected) {
+    assert.throws(() => github.validatePostPath(filePath), /Invalid post path/, filePath);
+  }
+});
+
+test("cover URLs accept site paths and http(s) only", () => {
+  assert.equal(github.validateCoverUrl(""), "");
+  assert.equal(github.validateCoverUrl("/images/covers/custom/x.webp"), "/images/covers/custom/x.webp");
+  assert.equal(github.validateCoverUrl("https://cdn.example.com/a.png"), "https://cdn.example.com/a.png");
+
+  // The theme renders index_img through <%= url_for(...) %>, so EJS escaping
+  // already blocks attribute escapes. This keeps the one user-controlled URL
+  // that had no protocol check aligned with adminSettings and safeUrl().
+  for (const value of [
+    "javascript:alert(1)",
+    "JaVaScRiPt:alert(1)",
+    "data:text/html,<script>alert(1)</script>",
+    "vbscript:msgbox(1)",
+    "//evil.com/a.png",
+    '" onerror="alert(1)',
+    "/images/a.png\nX-Injected: 1",
+  ]) {
+    assert.throws(() => github.validateCoverUrl(value), /Cover URL must/, value);
+  }
+});
+
+test("composing a post rejects a hostile cover URL", () => {
+  assert.throws(() => github.composePost({
+    title: "Hostile cover",
+    date: "2026-08-06",
+    category: "随笔",
+    content: "Body",
+    index_img: "javascript:alert(1)",
+  }, { default: "/fallback.webp" }, null, "source/_posts/2026-08-06-hostile-cover.md"), /Cover URL must/);
+});
+
 test("news frontend no longer reads or sends the bearer token", async () => {
   const app = await readFile(new URL("../../source/news/js/app.js", import.meta.url), "utf8");
   const client = await readFile(new URL("../../source/news/js/api-client.js", import.meta.url), "utf8");
