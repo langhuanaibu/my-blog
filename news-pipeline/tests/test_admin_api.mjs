@@ -705,9 +705,16 @@ test("production dependency lock excludes known vulnerable build-chain versions"
     return 0;
   };
 
+  // GHSA-rgw5-rvv9-x895 patches each major line separately, so a single
+  // ">= 5.0.9" floor would reject 1.1.18 even though it carries the fix.
+  // minimatch@3 needs the CommonJS 1.x line; 5.x is ESM-only.
+  const braceExpansionFloor = { 1: "1.1.18", 2: "2.1.4", 3: "3.0.6", 4: "5.0.9", 5: "5.0.9" };
   assert.ok(
-    versions("brace-expansion").every((version) => compare(version, "5.0.7") > 0),
-    "brace-expansion <= 5.0.7 is vulnerable to unbounded expansion",
+    versions("brace-expansion").every((version) => {
+      const floor = braceExpansionFloor[parts(version)[0]];
+      return floor ? compare(version, floor) >= 0 : false;
+    }),
+    "brace-expansion must be patched for unbounded expansion on its own major line",
   );
   assert.ok(
     versions("jake").every((version) => (
@@ -715,6 +722,16 @@ test("production dependency lock excludes known vulnerable build-chain versions"
     )),
     "jake 10.6.1 through 10.9.4 pulls a vulnerable filelist chain",
   );
+});
+
+test("the stylus build chain can still brace-expand after security overrides", () => {
+  // brace-expansion 5.x is ESM-only, so overriding it into minimatch@3 (CommonJS)
+  // silently breaks brace patterns with "expand is not a function". Version
+  // assertions alone cannot catch that, so exercise the real call path.
+  const stylusRequire = createRequire(new URL("../../node_modules/stylus/lib/utils.js", import.meta.url));
+  const glob = stylusRequire("glob");
+  const matched = glob.sync("node_modules/hexo-theme-fluid/source/css/{main,highlight}.styl");
+  assert.equal(matched.length, 2, "brace expansion must resolve both branches");
 });
 
 test("news frontend no longer reads or sends the bearer token", async () => {
