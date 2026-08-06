@@ -27,7 +27,7 @@
 
 ## 迁移方式
 
-迁移工具为 `tools/export-articles-to-hexo.mjs`：
+迁移工具为 `tools/export-articles-to-hexo.mjs`（该脚本已于 2026-07-28 删除，原因见 `readme.md`；下面记录的是当时的迁移方式，需要脚本本身请翻 git 历史）：
 
 1. 调用 `https://aoiblog.top/api/getArticles?view=list` 获取公开文章列表。
 2. 逐篇调用 detail 接口获取正文。
