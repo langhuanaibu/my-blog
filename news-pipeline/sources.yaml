@@ -713,6 +713,10 @@ deep_sources:
     channel: society_finance
     topic_filter: finance
     enabled: true
+  # 2026-07-26 预检通过、尚未启用：自有域名不受 *.substack.com 的 Actions 出口
+  # 封锁影响，deep_fetcher 本地实测 78 小时窗口取 5 篇，供给密度高于同栏其他候选。
+  # 按 Issue #32，需在 #31（Noahpinion）判定后显式启用，再起算 7 个有效日观察，
+  # 复核重点是短文密度与 AI 主题偏移（topic_filter: finance 是否拦得住）。
   - id: marginal-revolution
     name: Marginal Revolution
     type: rss
