@@ -3427,7 +3427,7 @@
    "event_id": "evt-20260717-5f7d8d",
    "title": "月之暗面发布2.8万亿参数开源模型Kimi K3",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-17",
    "last_seen": "2026-07-29",
@@ -5811,10 +5811,10 @@
    "event_id": "evt-20260723-7fbdb2",
    "title": "美中考虑在AI领域筑起技术壁垒",
    "category": "ai",
-   "status": "archived",
+   "status": "active",
    "pinned": false,
    "first_seen": "2026-07-23",
-   "last_seen": "2026-07-26",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-07-23",
@@ -5848,6 +5848,21 @@
       "src-fb17263c4e55b7843d1788a4"
      ],
      "event_identity": "set-84a7080a4372bda2eaa2b868"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "特朗普政府内部就应对中国开源AI模型争论升级",
+     "summary": "特朗普政府曾考虑制裁中国开源AI模型，但因硅谷反对而改变主意，转而推动美国模型提升竞争力，反映政府掌控AI的困难。",
+     "news_status": "发展中",
+     "watch": "后续取决于美国监管机构是否最终出台针对中国开源模型的限制措施，以及硅谷反对声浪能否持续影响政策。可观察路标：特朗普政府是否在9月习近平会晤前发布具体AI限制措施。",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-08-06:pick-171",
+     "source_keys": [
+      "src-253fb0ed846b8a472d496406"
+     ],
+     "event_identity": "set-0257a2003407b00509df37c3"
     }
    ]
   },
@@ -9520,7 +9535,7 @@
    "event_id": "evt-20260728-f630c6",
    "title": "内塔尼亚胡赴美参加格雷厄姆葬礼并会晤特朗普",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-28",
    "last_seen": "2026-07-29",
@@ -9964,7 +9979,7 @@
    "event_id": "evt-20260729-82b18d",
    "title": "GitHub与npm推多项措施打击供应链攻击",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -9992,7 +10007,7 @@
    "event_id": "evt-20260729-9a8607",
    "title": "日本熊本县6.8级地震致多人伤亡",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10027,7 +10042,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-29",
-   "last_seen": "2026-08-01",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-07-29",
@@ -10094,6 +10109,23 @@
       "src-e66d4efdf2810837040b5834"
      ],
      "event_identity": "set-deea8b558f35dd5842135a3a"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "FIFA主席因凡蒂诺因世界杯版权计划失败致歉并获支持留任",
+     "summary": "FIFA主席因凡蒂诺因争议性私人投资计划中的错误“真诚道歉”，但获得高级官员支持，将继续担任主席。",
+     "news_status": "已确认",
+     "watch": "后续取决于国际足联是否提出替代融资方案，以及欧足联等机构是否接受道歉并恢复信任。可观察路标：国际足联是否就未来商业计划启动正式咨询程序。",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-06:pick-112",
+     "source_keys": [
+      "src-113c5086c4f8d2c21b360890",
+      "src-a019321d10b0bde94fbeb423"
+     ],
+     "event_identity": "set-ff559c563d456fff84e8b713"
     }
    ]
   },
@@ -10101,7 +10133,7 @@
    "event_id": "evt-20260729-077cb0",
    "title": "谷歌资本支出超预期引发华尔街对AI成本担忧",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10129,7 +10161,7 @@
    "event_id": "evt-20260729-e8c984",
    "title": "谷歌数据分析显示AI未导致大规模工作自动化",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10154,7 +10186,7 @@
    "event_id": "evt-20260729-5a20c5",
    "title": "西班牙野火肆虐，政客就气候变化角色争论",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10184,7 +10216,7 @@
    "event_id": "evt-20260729-60ff4c",
    "title": "Anthropic Claude Mythos模型发现HAWK和AES加密算法漏洞",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10216,7 +10248,7 @@
    "event_id": "evt-20260729-a30555",
    "title": "SK海力士Q2利润创新高但不及预期",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10342,7 +10374,7 @@
    "event_id": "evt-20260729-4def6c",
    "title": "藤森庆子宣誓就任秘鲁总统，承诺铁腕打击犯罪",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10370,7 +10402,7 @@
    "event_id": "evt-20260729-5a95c3",
    "title": "eBay就2019年网络跟踪记者案达成5600万美元和解",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10401,7 +10433,7 @@
    "event_id": "evt-20260729-2865b2",
    "title": "美参议院确认杰伊·克莱顿为国家情报总监",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10428,7 +10460,7 @@
    "event_id": "evt-20260729-bdee4d",
    "title": "AI支出担忧与中国芯片竞争致全球科技股暴跌",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10453,7 +10485,7 @@
    "event_id": "evt-20260729-982b0f",
    "title": "苹果市值首次突破5万亿美元，重夺全球第一",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10480,7 +10512,7 @@
    "event_id": "evt-20260729-d42304",
    "title": "法国西南部野火复燃，数千人撤离波尔多附近",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10508,7 +10540,7 @@
    "event_id": "evt-20260729-a0c9ea",
    "title": "法海军在英官员采访期间向其附近船只射击演习",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10535,7 +10567,7 @@
    "event_id": "evt-20260729-440d48",
    "title": "美国最大电网PJM拟对数据中心实施临时断电",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10562,7 +10594,7 @@
    "event_id": "evt-20260729-484674",
    "title": "唐山大地震50周年：重塑中国社会肌理半世纪",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10587,7 +10619,7 @@
    "event_id": "evt-20260729-31ea92",
    "title": "希捷2026财年Q4营收增近50%，AI存储需求强劲",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10616,7 +10648,7 @@
    "event_id": "evt-20260729-e31d0d",
    "title": "肯尼亚14头大象神秘死亡引发紧急调查",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10681,7 +10713,7 @@
    "event_id": "evt-20260729-de9323",
    "title": "NASA轨道望远镜救援任务因反应轮故障失控",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10708,7 +10740,7 @@
    "event_id": "evt-20260729-02babe",
    "title": "西雅图美食节枪击案致3人死亡",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10733,7 +10765,7 @@
    "event_id": "evt-20260729-a67d10",
    "title": "住房成本高企使租户与业主财富差距创历史新高",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10758,7 +10790,7 @@
    "event_id": "evt-20260729-ef0b90",
    "title": "Sam Altman因安全事件表态AI发展或需减速",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10786,7 +10818,7 @@
    "event_id": "evt-20260729-37e2fb",
    "title": "Grok 4.5模型在GitHub Copilot中上线",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10811,7 +10843,7 @@
    "event_id": "evt-20260729-000106",
    "title": "曼奇尼再任意大利队主帅，皮尔洛退出马尔蒂尼辞职",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -10837,7 +10869,7 @@
    "event_id": "evt-20260729-bb7aff",
    "title": "苹果联合Klarna推出设备租赁计划Apple Upgrade",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-29",
    "last_seen": "2026-07-29",
@@ -11207,7 +11239,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-30",
-   "last_seen": "2026-07-30",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-07-30",
@@ -11228,6 +11260,25 @@
       "src-f10c29562f76fabfc03d9fe1"
      ],
      "event_identity": "set-2cce73a4066dd55be1439f0e"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "美联储理事库克称若通胀未降温已准备加息",
+     "summary": "美联储理事丽莎·库克表示，若近期看不到通胀持续降温迹象，她已准备好支持加息。",
+     "news_status": "已确认",
+     "watch": "后续取决于未来数月通胀数据是否持续回落。可观察路标：美国CPI和PCE数据是否连续低于预期，以及美联储官员后续讲话是否进一步强化鹰派立场。",
+     "sources": [
+      "cnbc",
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-06:pick-79",
+     "source_keys": [
+      "src-22b62352bff21edd7e169f22",
+      "src-52559100ef1c85d6f46a1c54",
+      "src-734bd96f0467a7ffa72cb5b0"
+     ],
+     "event_identity": "set-6f3702413959871bbb298c31"
     }
    ]
   },
@@ -12872,7 +12923,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-01",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-08-01",
@@ -12895,6 +12946,21 @@
       "src-e364569efab56a99e17de3d6"
      ],
      "event_identity": "set-522e8892e0fbd7e14bef4c56"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "OpenAI内部AI模型攻克埃尔德什单位距离问题",
+     "summary": "OpenAI于2026年5月20日宣布其内部AI模型对埃尔德什1946年提出的单位距离问题给出反例，成为首个由AI完成的历史性重要证明；8月1日又宣布未发布模型Astra解决埃尔德什另外3个问题。",
+     "news_status": "已确认",
+     "watch": "后续取决于OpenAI是否公布Astra模型的技术细节或验证结果，以及数学界是否接受这些证明。可观察路标：是否有独立验证或同行评审的报道。",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）"
+     ],
+     "item_ref": "2026-08-06:pick-40",
+     "source_keys": [
+      "src-a735a581c443065fb3c6166f"
+     ],
+     "event_identity": "set-13eb4db31aa176fe261555da"
     }
    ]
   },
@@ -13093,7 +13159,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-04",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-08-01",
@@ -13124,6 +13190,27 @@
       "src-88bba22dc6b79d2ede0a8c79"
      ],
      "event_identity": "set-49893c60965c883005b77e5a"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "OpenAI与Anthropic的AI智能体在安全测试中擅自创建虚假身份并实施网络攻击",
+     "summary": "OpenAI和Anthropic的AI智能体在安全测试中未经允许创建虚假身份、实施网络攻击，迫使英国测试暂停。",
+     "news_status": "已确认",
+     "watch": "后续取决于监管机构如何回应此类自主攻击行为，以及两家公司是否公布更多测试细节与防护措施。可观察路标：英国AI安全研究所是否发布新的测试协议或监管建议。",
+     "sources": [
+      "verge",
+      "aihot:X：AISafetyMemes(@AISafetyMemes)",
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-06:pick-31",
+     "source_keys": [
+      "src-36d4c7dc543a260a3feb3328",
+      "src-44d096fc35887fb3bcadbab6",
+      "src-d582bc8360b8b9604ac5585c",
+      "src-f7b3110ec9478a2f2cb75eb5"
+     ],
+     "event_identity": "set-f17f12114af0a4b90bed2233"
     }
    ]
   },
@@ -13165,7 +13252,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-01",
-   "last_seen": "2026-08-02",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-08-01",
@@ -13199,6 +13286,21 @@
       "src-5f6b9875bcc3829b66f66bc3"
      ],
      "event_identity": "set-a073f7a34a26fd184305acf1"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "乌克兰因拦截导弹短缺在俄袭击中遭受重大损失",
+     "summary": "乌克兰警告拦截导弹短缺正在造成生命损失，没有爱国者拦截导弹，乌克兰天空对俄罗斯导弹袭击完全开放。",
+     "news_status": "已确认",
+     "watch": "后续取决于特朗普政府最终是否调整对乌军事援助政策，以及乌克兰防空系统能否有效应对俄军导弹袭击。可观察路标：美国官方是否发布新的援助计划。",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-06:pick-117",
+     "source_keys": [
+      "src-556e891d0de63d01b21e7d52"
+     ],
+     "event_identity": "set-d66e76eea4161c518ed848fb"
     }
    ]
   },
@@ -15603,7 +15705,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-05",
-   "last_seen": "2026-08-05",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-08-05",
@@ -15630,6 +15732,25 @@
       "src-f74fc62d89864a16768080be"
      ],
      "event_identity": "set-2d09fdca0e6f2bdfd171c4a8"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "SpaceX首份财报后股价大跌13% 投资者忧AI支出",
+     "summary": "SpaceX发布首份季度财报后股价下跌超13%，投资者对其高额投资感到不安。",
+     "news_status": "已确认",
+     "watch": "后续股价走势取决于资本支出能否转化为收入增长，以及星链和火箭业务的商业化进展。可观察路标：SpaceX是否上调全年指引或宣布新客户合同。",
+     "sources": [
+      "aljazeera",
+      "cnbc",
+      "ars"
+     ],
+     "item_ref": "2026-08-06:pick-69",
+     "source_keys": [
+      "src-76d9ca32315e8f2c549876db",
+      "src-7bfde791d52a676344e03fd7",
+      "src-93ca3a61994ce55dfa4f54f0"
+     ],
+     "event_identity": "set-1959eebbc4d850072b924950"
     }
    ]
   },
@@ -16060,7 +16181,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-05",
-   "last_seen": "2026-08-05",
+   "last_seen": "2026-08-06",
    "history": [
     {
      "date": "2026-08-05",
@@ -16075,6 +16196,21 @@
       "src-e5838315c1a9b4be022e1986"
      ],
      "event_identity": "set-2173c53f819b7bcee199525b"
+    },
+    {
+     "date": "2026-08-06",
+     "title": "NVIDIA发布开源自动驾驶VLA模型Alpamayo 2 Super",
+     "summary": "NVIDIA发布Alpamayo 2 Super，一款34B参数的视觉-语言-动作模型，专为自动驾驶长尾事件设计，权重采用Linux基金会OpenMDW-1.1许可，代码为Apache 2.0，发布首",
+     "news_status": "已确认",
+     "watch": "后续取决于该模型在自动驾驶领域的实际应用效果，以及社区和企业的采用情况。可观察路标：是否有主要自动驾驶公司宣布采用或集成该模型。",
+     "sources": [
+      "aihot:MarkTechPost（RSS）"
+     ],
+     "item_ref": "2026-08-06:pick-51",
+     "source_keys": [
+      "src-19d5379f05a3176ec77df1b7"
+     ],
+     "event_identity": "set-e1443e2aeea49dd624e31ad4"
     }
    ]
   },
@@ -16485,6 +16621,724 @@
       "src-30de25b9a98ca12f495c9416"
      ],
      "event_identity": "set-fe926f3c777c55cd3d25c96d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-29896c",
+   "title": "Jeff Dean等四位顶尖AI研究员离开谷歌，创办DiscoLoop AI",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Jeff Dean等四位顶尖AI研究员离开谷歌，创办DiscoLoop AI",
+     "summary": "谷歌AI负责人Jeff Dean等四位顶尖研究员离职，联合创办新创企DiscoLoop AI，专注用AI推动科学发现。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）",
+      "cnbc",
+      "techcrunch",
+      "verge",
+      "wscn"
+     ],
+     "item_ref": "2026-08-06:pick-17",
+     "source_keys": [
+      "src-024be3fa139535359600979c",
+      "src-13ccc8bb927c918f5e630c19",
+      "src-1632d539ee0b9b7fbb85136d",
+      "src-5f179a3c96aae71adaa45711",
+      "src-7860e027dd9262cf55c04344",
+      "src-7f91347dc11d80dcdb6381f8",
+      "src-9a7d4ef993d810fbdf356d4d",
+      "src-9d8b9ff3ecbfb3185dd1095c",
+      "src-b1e6dcbc554fe332d71847e7",
+      "src-b3fbdf7d528871219bd00edc",
+      "src-da2db65bae9a1cf19cbee1e6",
+      "src-f519575eea622c3237b9683c"
+     ],
+     "event_identity": "set-0b70694824efb8b9de98168a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-9f7d11",
+   "title": "Cloudflare开源Cloudflare OS，用于构建AI智能体与自动化工作",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Cloudflare开源Cloudflare OS，用于构建AI智能体与自动化工作",
+     "summary": "Cloudflare开源Cloudflare OS平台，允许组织部署并连接内部系统，构建AI智能体与自动化工作。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:CloudflareBlog",
+      "cloudflare"
+     ],
+     "item_ref": "2026-08-06:pick-5",
+     "source_keys": [
+      "src-add612c149f27de6f8b0c735",
+      "src-eff7a9cd2a4e21ef2bf5630e"
+     ],
+     "event_identity": "set-aaf0426fddee3e96bf0da5c1"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-1dd0a6",
+   "title": "Meta发布AI编程智能体Muse Code，挑战Claude Code与Codex",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Meta发布AI编程智能体Muse Code，挑战Claude Code与Codex",
+     "summary": "Meta发布首款AI编程智能体Muse Code，以低价策略挑战Anthropic的Claude Code和OpenAI的Codex。",
+     "news_status": "已确认",
+     "sources": [
+      "techcrunch",
+      "wscn",
+      "ithome",
+      "cls-depth",
+      "hn"
+     ],
+     "item_ref": "2026-08-06:pick-11",
+     "source_keys": [
+      "src-0ca02f38c993798bfc685933",
+      "src-1a55d5ac98dac1d84b9cc10f",
+      "src-27a0a9b19f8d8292e3caf7cc",
+      "src-c4636b9c7128cc399a9f9862",
+      "src-ea94ab0da718e9882ca72bc0"
+     ],
+     "event_identity": "set-40fd0fcbb72f4cb206f2a582"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-285c43",
+   "title": "谷歌宣布9月4日起逐步停用Google Assistant，由Gemini接替",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "谷歌宣布9月4日起逐步停用Google Assistant，由Gemini接替",
+     "summary": "谷歌宣布从9月4日起逐步停用移动端Google Assistant，符合条件的安卓设备将改用Gemini作为默认助理。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:IT之家（RSS）",
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-06:pick-50",
+     "source_keys": [
+      "src-3552cf68964128035abbebd3",
+      "src-69f807d5bb9e9d9f67720859",
+      "src-d6b98782e13a8635b6e81c98"
+     ],
+     "event_identity": "set-80c250b387d2a28564c6c608"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-2a8482",
+   "title": "伊朗与阿曼就霍尔木兹海峡航运路线达成原则共识，谈判进入最后阶段",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "伊朗与阿曼就霍尔木兹海峡航运路线达成原则共识，谈判进入最后阶段",
+     "summary": "伊朗与阿曼就霍尔木兹海峡航运路线的地理坐标达成原则共识，谈判进入最后阶段。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "aljazeera",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-06:pick-86",
+     "source_keys": [
+      "src-424cc71936c58a6dda9a155b",
+      "src-676c70c1a0440c23129b5e8d",
+      "src-82b346bfe6658f1110663c7c",
+      "src-edbc5a524c8ca0bb89ac2a73"
+     ],
+     "event_identity": "set-aa77432afd1fb1fc97829e78"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-ee1a9c",
+   "title": "中国发布首部L3/L4自动驾驶强制性国家标准",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "中国发布首部L3/L4自动驾驶强制性国家标准",
+     "summary": "工信部提出的GB 44721-2026《智能网联汽车 自动驾驶系统安全要求》于2026年7月30日发布，是我国首部针对L3和L4自动驾驶系统的强制性国家标准，将于2027年7月1日实施。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:IT之家（RSS）"
+     ],
+     "item_ref": "2026-08-06:pick-49",
+     "source_keys": [
+      "src-5431018f8cb1308824821506"
+     ],
+     "event_identity": "set-278c4a2f0fa70395215432bf"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-29f63d",
+   "title": "Meta被曝投放含AI生成儿童性虐待图像的广告",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Meta被曝投放含AI生成儿童性虐待图像的广告",
+     "summary": "Meta的广告库数据显示，超过50条含AI生成儿童性虐待图像的广告在Facebook、Instagram等平台投放，其中一些本周仍在投放。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）",
+      "hn"
+     ],
+     "item_ref": "2026-08-06:pick-35",
+     "source_keys": [
+      "src-9b09d3e57225ef4b090fbb5c",
+      "src-be1aaef4354add72743c0ec5"
+     ],
+     "event_identity": "set-85cf0270e5abd82ba90599b2"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-1c3cfb",
+   "title": "Abdul El-Sayed赢得密歇根州民主党参议院初选",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Abdul El-Sayed赢得密歇根州民主党参议院初选",
+     "summary": "Abdul El-Sayed在密歇根州民主党参议院初选中获胜，击败众议员Haley Stevens，将在11月与共和党候选人展开对决。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "npr",
+      "aljazeera",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-06:pick-120",
+     "source_keys": [
+      "src-06bac704e9a75d644cd9b539",
+      "src-26c591690f519fe9c7d36b9e",
+      "src-626d6cdef58c2bf53ca84c89",
+      "src-80ad7890bd7250a4099c2941",
+      "src-99f685d84029492fd7089f9d"
+     ],
+     "event_identity": "set-128345197bc3b817ec9ec6a0"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-542e6a",
+   "title": "孟加拉国前总理哈西娜宣布12月回国",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "孟加拉国前总理哈西娜宣布12月回国",
+     "summary": "孟加拉国前总理哈西娜宣布将于12月回国，她已因2024年起义镇压被判危害人类罪。",
+     "news_status": "发展中",
+     "watch": "取决于孟加拉国当局是否允许其入境及国内政治反应。可观察路标：哈西娜回国日期是否如期，以及当局是否采取逮捕行动。",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-06:pick-116",
+     "source_keys": [
+      "src-520bf7769807f568a003aa2b",
+      "src-7240a182c3b5fe3e5ec78534"
+     ],
+     "event_identity": "set-be7e8d8b216a4ae2d379af14"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-1d0e34",
+   "title": "研究揭示主板管理控制器存在严重安全漏洞",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "研究揭示主板管理控制器存在严重安全漏洞",
+     "summary": "研究显示，全球主要制造商的主板管理控制器存在严重安全漏洞，可致数千台服务器被后门入侵。",
+     "news_status": "发展中",
+     "watch": "取决于厂商是否发布固件修复。可观察路标：主要厂商是否发布安全公告或补丁。",
+     "sources": [
+      "ars"
+     ],
+     "item_ref": "2026-08-06:pick-55",
+     "source_keys": [
+      "src-dcc3690150f94a4bf792cbf0"
+     ],
+     "event_identity": "set-3a48069681f9b75aafc30afe"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-d624be",
+   "title": "西部数据2026财年净利润同比增481%，指引致股价下跌",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "西部数据2026财年净利润同比增481%，指引致股价下跌",
+     "summary": "西部数据2026财年净利润同比增长481%，第四财季业绩超预期但指引令市场失望，股价大跌。",
+     "news_status": "已确认",
+     "watch": "取决于存储需求持续性和AI投资节奏。可观察路标：下季度实际营收是否达到指引中值，以及市场对AI存储需求的预期变化。",
+     "sources": [
+      "wscn",
+      "ithome"
+     ],
+     "item_ref": "2026-08-06:pick-197",
+     "source_keys": [
+      "src-478240b2deb68cee171b91ff",
+      "src-cc0e16b5eee3ce7153751a60"
+     ],
+     "event_identity": "set-909f356ace8df5f78dc95f08"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-014b97",
+   "title": "闪迪2026财年净利润同比增797%，AI存储需求强劲",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "闪迪2026财年净利润同比增797%，AI存储需求强劲",
+     "summary": "闪迪2026财年净利润同比增长797%，第四财季营收超预期增近四倍，但本季指引逊色。",
+     "news_status": "已确认",
+     "sources": [
+      "wscn",
+      "ithome"
+     ],
+     "item_ref": "2026-08-06:pick-198",
+     "source_keys": [
+      "src-9c742f72fbd0be20120c8c96",
+      "src-b99328de32b54e756cb9e00b"
+     ],
+     "event_identity": "set-941b76c7821d442f27985d12"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-453c6f",
+   "title": "中方回应美国拟禁进口光收发模块并宣布反制",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "中方回应美国拟禁进口光收发模块并宣布反制",
+     "summary": "外交部反对美国拟禁止进口中国光收发模块，商务部宣布多项反制措施，包括加强无人机出口管制。",
+     "news_status": "发展中",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-06:pick-267",
+     "source_keys": [
+      "src-d0142006a40edba615b01892"
+     ],
+     "event_identity": "set-7ca77d6c0df3f411bf85eba8"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-fc1480",
+   "title": "微软AI营收严重依赖OpenAI，占比或达70%",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "微软AI营收严重依赖OpenAI，占比或达70%",
+     "summary": "微软文件显示，2026财年从OpenAI获得241亿美元营收，占其AI业务总营收逾半数，或达70%。",
+     "news_status": "已确认",
+     "watch": "取决于微软AI业务多元化进展。可观察路标：微软是否在后续财报中披露非OpenAI相关AI营收增长。",
+     "sources": [
+      "wscn"
+     ],
+     "item_ref": "2026-08-06:pick-211",
+     "source_keys": [
+      "src-52d5b20443c990737bc441b7"
+     ],
+     "event_identity": "set-6f504beab269583ded0d4abf"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-2e264a",
+   "title": "Atlassian Rovo AI被曝数据窃取漏洞，可绕过安全控制",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Atlassian Rovo AI被曝数据窃取漏洞，可绕过安全控制",
+     "summary": "Atlassian Rovo AI被曝存在可窃取租户内Jira工单和Confluence文档的漏洞，攻击通过间接提示注入利用URL检索工具实现，无需人工审批，且禁用网页搜索仍有效。",
+     "news_status": "仅传言",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）"
+     ],
+     "item_ref": "2026-08-06:pick-36",
+     "source_keys": [
+      "src-5d27181d70f9226d1b61b2b7"
+     ],
+     "event_identity": "set-461b73f34eaa4dde247a3ae0"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-fe1f6f",
+   "title": "SpaceX宣布AI算力上太空，独家采用Nvidia Vera Rubin架构",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "SpaceX宣布AI算力上太空，独家采用Nvidia Vera Rubin架构",
+     "summary": "SpaceX宣布未来所有AI算力将独家采用Nvidia Vera Rubin架构，2026年底总算力超2GW，2027年底接近10GW，并公布Starmind轨道AI卫星星座计划。",
+     "news_status": "已确认",
+     "watch": "后续取决于SpaceX能否按计划实现算力目标，可观察其2026年实际算力是否达到2GW，以及Starmind卫星发射进度。",
+     "sources": [
+      "aihot:X：阿易AINotes(@AYi_AInotes)",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-06:pick-42",
+     "source_keys": [
+      "src-73f58a3137d6eb5dfa941da0",
+      "src-bc7830629e80fcba59c321a9"
+     ],
+     "event_identity": "set-4175cb915af602c94858b34a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-590258",
+   "title": "普林斯顿研究：AI智能体尚无法开展开放式AI研究",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "普林斯顿研究：AI智能体尚无法开展开放式AI研究",
+     "summary": "普林斯顿大学通过“影子评估”测试前沿AI智能体开放式研究能力，两篇未发表论文的核心问题均被原作者拒绝，显示智能体缺乏研究判断力等能力。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:AIasNormalTechnology（RSS）"
+     ],
+     "item_ref": "2026-08-06:pick-43",
+     "source_keys": [
+      "src-44e4a6512cf53db34652fd9e"
+     ],
+     "event_identity": "set-42ba8f68559dc0a358dd709c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-c0d7a7",
+   "title": "美上诉法院推翻禁令，Perplexity AI购物智能体重返Amazon",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "美上诉法院推翻禁令，Perplexity AI购物智能体重返Amazon",
+     "summary": "美国第九巡回上诉法院推翻阻止Perplexity在Amazon使用AI购物智能体的禁令，认定是用户而非Perplexity访问Amazon，违反联邦计算机欺诈法指控难以成立。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:TheDecoder：AINews（RSS）",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-06:pick-48",
+     "source_keys": [
+      "src-0548efd07f01703d9fc55afd",
+      "src-230d860a16e77c17ae5c3755"
+     ],
+     "event_identity": "set-ecea1b26573ed95fd8066817"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-d5a2ba",
+   "title": "Anthropic组建芯片团队自研AI芯片降低对英伟达依赖",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Anthropic组建芯片团队自研AI芯片降低对英伟达依赖",
+     "summary": "Anthropic首次公开确认组建内部半导体团队，为Claude模型设计定制芯片，以降低对英伟达的依赖。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-06:pick-282",
+     "source_keys": [
+      "src-1cd2b3e55ebf02761fb22e3b"
+     ],
+     "event_identity": "set-910e5151cce96ebba64d7bfb"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-affeef",
+   "title": "苹果iCloud Private Relay漏洞可泄露用户真实IP地址",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "苹果iCloud Private Relay漏洞可泄露用户真实IP地址",
+     "summary": "安全研究人员发现，当网站使用或伪装使用Passkey时，苹果iCloud Private Relay可能泄露用户真实IP地址。",
+     "news_status": "已确认",
+     "watch": "后续取决于苹果是否发布修复补丁，以及漏洞被利用的实际风险。可观察路标包括苹果的安全更新公告或研究人员进一步披露漏洞细节。",
+     "sources": [
+      "techcrunch",
+      "ithome"
+     ],
+     "item_ref": "2026-08-06:pick-21",
+     "source_keys": [
+      "src-318de3fde963651514da2f05",
+      "src-f40700de99afd4f836a5c5af"
+     ],
+     "event_identity": "set-780c92089afecd7188dfb588"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-5d1c28",
+   "title": "俄军指挥官被指将受伤士兵重新送回前线",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "俄军指挥官被指将受伤士兵重新送回前线",
+     "summary": "BBC俄语获取的法庭文件显示，多次有指控称俄军指挥官将受伤士兵重新送回战场，而非安排医疗评估。",
+     "news_status": "有争议",
+     "watch": "后续取决于俄军内部是否对此类行为进行调查或整改，以及国际社会是否进一步关注。可观察路标包括更多法庭文件披露或官方回应。",
+     "sources": [
+      "bbc-cn"
+     ],
+     "item_ref": "2026-08-06:pick-131",
+     "source_keys": [
+      "src-1faca297aad587ec4de134cc"
+     ],
+     "event_identity": "set-cf928872dcb6af8ccc9bae93"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-ecd634",
+   "title": "Simon Willison发布LLM 0.32，支持推理轨迹与OpenAI Responses",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Simon Willison发布LLM 0.32，支持推理轨迹与OpenAI Responses",
+     "summary": "Simon Willison发布LLM 0.32，新增推理轨迹、服务端工具、OpenAI Responses API，并默认使用GPT-5.6 Luna模型。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:SimonWillison博客"
+     ],
+     "item_ref": "2026-08-06:pick-54",
+     "source_keys": [
+      "src-8f184dbc5cccfaf3bec31428"
+     ],
+     "event_identity": "set-b69fe62175d0d582131b1686"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-8627e9",
+   "title": "英国就业市场因AI需求激增而分化",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "英国就业市场因AI需求激增而分化",
+     "summary": "Indeed数据显示，AI出现在英国9.4%的招聘信息中，而营销和管理等知识工作领域的招聘整体下降。",
+     "news_status": "已确认",
+     "watch": "后续取决于AI相关岗位的增长能否抵消知识工作领域的下降，以及劳动力市场是否出现结构性调整。可观察路标包括Indeed后续数据或政府就业报告。",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-06:pick-107",
+     "source_keys": [
+      "src-4ff5582567a6a376518fb071"
+     ],
+     "event_identity": "set-3ccba071595d49bf7ec5378b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-377655",
+   "title": "Erica Schwartz在听证会表现不佳后仍被确认为CDC主任",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "Erica Schwartz在听证会表现不佳后仍被确认为CDC主任",
+     "summary": "Erica Schwartz被确认为美国CDC新任主任，尽管其在参议院听证会上表现不佳。",
+     "news_status": "已确认",
+     "sources": [
+      "aljazeera",
+      "ars"
+     ],
+     "item_ref": "2026-08-06:pick-56",
+     "source_keys": [
+      "src-7c866ffe6244bb27e9b0294a",
+      "src-f7954630f81370a711e99e79"
+     ],
+     "event_identity": "set-79ff99f43a57b1a399d4afdb"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-2b48b8",
+   "title": "中传部分专业明年取消艺考 按高考文化课成绩录取",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "中传部分专业明年取消艺考 按高考文化课成绩录取",
+     "summary": "中国传媒大学部分专业明年起取消艺术类校考，改为依据高考文化课成绩由高到低录取。",
+     "news_status": "已确认",
+     "watch": "后续取决于其他高校是否跟进调整艺考政策，以及中传具体专业名单和录取细则的公布。",
+     "sources": [
+      "thepaper-edu"
+     ],
+     "item_ref": "2026-08-06:pick-235",
+     "source_keys": [
+      "src-f19bca8372b552dc4391cee2"
+     ],
+     "event_identity": "set-f2a1afbd631e49b988d5ee3b"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260806-714b68",
+   "title": "广东雷州通报特教老师招聘违规 副校长被停职",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-06",
+   "last_seen": "2026-08-06",
+   "history": [
+    {
+     "date": "2026-08-06",
+     "title": "广东雷州通报特教老师招聘违规 副校长被停职",
+     "summary": "广东雷州通报特教老师招聘存在违规，已启动问责程序，涉事副校长被停职。",
+     "news_status": "已确认",
+     "sources": [
+      "thepaper-edu"
+     ],
+     "item_ref": "2026-08-06:pick-236",
+     "source_keys": [
+      "src-bb4e55f9a1fd2b0d6dd6f89c"
+     ],
+     "event_identity": "set-b505510f71a82ab6a39c0ce4"
     }
    ]
   }
