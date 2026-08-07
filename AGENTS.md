@@ -25,11 +25,13 @@
 - `source/_posts/` 存放文章 Markdown 文件，格式 `YYYY-MM-DD-slug.md`。
 - `source/images/` 存放图片资源，含 `covers/` 子目录。
 - `source/js/` 和 `source/css/` 存放自定义前端脚本和样式。
+- `scripts/` 存放 Hexo 构建期扩展（如覆盖主题注入点、改写渲染产物），由 Hexo 自动加载，不是前端资源。
 - `source/admin/` 存放在线后台页面。
 - `source/news/` 存放每日日报静态页面和生成数据，`source/news/data/` 是线上数据目录。
 - `source/about/`、`source/friends/`、`source/guestbook/` 存放独立页面的 Markdown 源文件。
 - `api/` 存放业务 API 接口。每个文件只负责一件事，使用 camelCase 命名，例如 `adminArticles.js`、`newsState.js`；`vocab.js` 是停用单词本的保留接口。
 - `tools/` 存放迁移和维护工具脚本。
+- `docs/` 存放维护规范与项目文档；`docs/archive/` 只存仍有兼容、迁移或排障价值的历史记录。
 - `news-pipeline/` 存放每日日报生成管线。改信源优先改 `sources.yaml`，改评分和阈值优先改 `config.yaml`。
 
 ## 产品与体验规则

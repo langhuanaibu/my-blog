@@ -15,7 +15,7 @@
 - **`source/_posts/`**：文章 Markdown 文件，文件名格式 `YYYY-MM-DD-slug.md`。
 - **`source/images/`**：图片资源，含 `covers/` 子目录。
 - **`source/js/` & `source/css/`**：自定义前端脚本和样式。
-- **`scripts/`**：Hexo 构建期扩展（如覆盖主题注入点），由 Hexo 自动加载，不是前端资源。
+- **`scripts/`**：Hexo 构建期扩展（如覆盖主题注入点、改写渲染产物），由 Hexo 自动加载，不是前端资源。
 - **`source/admin/`**：在线后台页面 `index.html`。
 - **`source/news/`**：每日日报静态页面和生成数据，`source/news/data/` 为线上数据目录。
 - **`source/about/`, `source/friends/`, `source/guestbook/`**：独立页面的 Markdown 源文件。
