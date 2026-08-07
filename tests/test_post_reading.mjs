@@ -16,6 +16,10 @@ const homeCssSource = await readFile(
   new URL("../source/css/aoiblog-home.css", import.meta.url),
   "utf8",
 );
+const highlightToggleSource = await readFile(
+  new URL("../scripts/highlight-dark-toggle.js", import.meta.url),
+  "utf8",
+);
 const vercelConfig = JSON.parse(await readFile(
   new URL("../vercel.json", import.meta.url),
   "utf8",
@@ -433,3 +437,197 @@ test("the deleted essay URL permanently redirects to the current essay URL", () 
     permanent: true,
   });
 });
+
+function createHighlightDom(themeCss) {
+  return new JSDOM(`
+    <!doctype html>
+    <html>
+      <head>
+        <style>${themeCss}</style>
+        <!-- 主题的两条关键规则，缺了它们这个夹具复现不出真实的错位 -->
+        <style>
+          .markdown-body pre { font-size: 85% !important; }
+          .markdown-body .highlight pre, .markdown-body pre { padding: 1.45rem 1rem; }
+          figure.highlight td.gutter pre { padding: 0 .75rem; }
+        </style>
+        <style>${postCssSource}</style>
+      </head>
+      <body>
+        <article class="post-content">
+          <div class="markdown-body">
+            <p><code id="inline-code">inline</code></p>
+            <figure class="highlight py"><table><tbody><tr>
+              <td class="gutter"><pre><span class="line">1</span></pre></td>
+              <td class="code"><pre><code id="block-code" class="hljs py">x</code></pre></td>
+            </tr></tbody></table></figure>
+          </div>
+        </article>
+      </body>
+    </html>
+  `);
+}
+
+// 行号列与代码列是两个各自独立的 <pre>，字号、行高、垂直内边距任一只改一侧就会错位。
+test("line number column stays aligned with the code column", () => {
+  const dom = createHighlightDom("");
+  const { window, window: { document } } = dom;
+  const gutterPre = window.getComputedStyle(document.querySelector("td.gutter pre"));
+  const codePre = window.getComputedStyle(document.querySelector("td.code pre"));
+  const codeInner = window.getComputedStyle(document.querySelector("td.code pre code"));
+
+  // 代码侧多一层 <code>：它不能自带独立的相对字号，否则会在主题的 85% 之上再乘一次
+  // （浏览器实测 13.6px vs 12.24px，36 行累积错开近一整行）。两侧字号必须一致。
+  assert.equal(codeInner.fontSize, gutterPre.fontSize);
+  assert.doesNotMatch(codeInner.fontSize, /^0?\.\d+em$/);
+  // 行高两侧同值，且必须带单位——unitless 会各自乘以本侧字号
+  assert.equal(gutterPre.lineHeight, codeInner.lineHeight);
+  assert.match(gutterPre.lineHeight, /(rem|px)$/);
+  // 主题把行号侧的垂直内边距重置成 0，必须补回与代码侧相同的值
+  assert.equal(gutterPre.paddingTop, codePre.paddingTop);
+  assert.equal(gutterPre.paddingBottom, codePre.paddingBottom);
+  // 左右内边距保持主题原值，不动行号与代码之间的分隔线间距
+  assert.equal(gutterPre.paddingLeft, "0.75rem");
+
+  dom.window.close();
+});
+
+
+// 行内代码的强调色不能渗进代码块：它不随代码块背景走，暗色下会糊成一片。
+test("code blocks take their foreground from the highlight theme, not the inline code accent", () => {
+  const themeCss = ".hljs { color: #ddd; background: #303030 }";
+  const dom = createHighlightDom(themeCss);
+  const { window } = dom;
+  const block = window.getComputedStyle(window.document.getElementById("block-code"));
+  const inline = window.getComputedStyle(window.document.getElementById("inline-code"));
+
+  assert.equal(block.color, "rgb(221, 221, 221)");
+  assert.notEqual(block.color, inline.color);
+  // 行内代码保留自己的胶囊样式
+  assert.equal(inline.color, "var(--aoi-accent-strong)");
+  assert.equal(inline.padding, "0.1em 0.4em");
+  // 代码块不继承胶囊的内边距和背景
+  assert.equal(block.padding, "0px");
+  assert.equal(block.backgroundColor, "rgba(0, 0, 0, 0)");
+
+  dom.window.close();
+});
+
+// 把行内代码的作用域收窄到 `:not(pre) > code` 时容易漏掉两类情况，都实际回归过。
+test("narrowing the inline code selector keeps every code shape styled correctly", () => {
+  const dom = new JSDOM(`
+    <!doctype html>
+    <html>
+      <head>
+        <style>.markdown-body pre { font-size: 85% !important; }</style>
+        <style>${postCssSource}</style>
+      </head>
+      <body>
+        <article class="post-content">
+          <div class="markdown-body">
+            <p><code id="in-para">p</code></p>
+            <code id="bare">直接挂在 markdown-body 下的行内代码</code>
+            <pre><code id="plain-block" class="hljs">不带行号的代码块</code></pre>
+            <figure class="highlight"><table><tbody><tr>
+              <td class="gutter"><pre><span class="line">1</span></pre></td>
+              <td class="code"><pre><code id="fig-block" class="hljs">带行号的代码块</code></pre></td>
+            </tr></tbody></table></figure>
+          </div>
+        </article>
+      </body>
+    </html>
+  `);
+  const { window, window: { document } } = dom;
+  const styleOf = (id) => window.getComputedStyle(document.getElementById(id));
+
+  // 行内代码都要有胶囊，包括没有包裹元素、直接挂在 markdown-body 下的那种
+  for (const id of ["in-para", "bare"]) {
+    assert.equal(styleOf(id).padding, "0.1em 0.4em", `${id} 应保留行内胶囊`);
+    assert.equal(styleOf(id).color, "var(--aoi-accent-strong)");
+  }
+  // 代码块都不要胶囊
+  for (const id of ["plain-block", "fig-block"]) {
+    assert.equal(styleOf(id).padding, "0px", `${id} 不应有胶囊内边距`);
+    assert.equal(styleOf(id).backgroundColor, "rgba(0, 0, 0, 0)");
+  }
+
+  dom.window.close();
+});
+
+// 字号这条只能查 CSS 文本：jsdom 不做 em 的逐层相乘，正是当初 0.9em 叠在主题
+// 85% 之上（13.6px vs 12.24px）能躲过 DOM 断言、只在浏览器里暴露的原因。
+test("no code block rule stacks a relative font size on top of the theme's 85%", () => {
+  // 先去注释再切规则：否则注释里的花括号和文字会混进 selector，失败信息没法看
+  const stripped = postCssSource.replace(/\/\*[\s\S]*?\*\//g, "");
+  const blocks = [...stripped.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .map(([, selector, body]) => ({
+      selector: selector.replace(/\s+/g, " ").trim(),
+      body,
+    }))
+    // 只看落在代码块 <pre>/<code> 上的规则，行内代码的 0.92em 与本约束无关
+    .filter(({ selector }) => /\bpre\b/.test(selector) && !/:not\(pre\)/.test(selector));
+
+  assert.ok(blocks.length > 0, "应能解析出针对代码块的规则");
+
+  for (const { selector, body } of blocks) {
+    const fontSize = /font-size:\s*([^;]+)/.exec(body);
+    if (!fontSize) continue;
+    const value = fontSize[1].trim();
+    assert.doesNotMatch(
+      value,
+      /^\d*\.?\d+(em|%)$/,
+      `「${selector}」用了相对字号 ${value}：主题的 .markdown-body pre 已有 `
+      + "font-size: 85% !important，再叠一层会让行号列和代码列错位",
+    );
+  }
+});
+
+
+
+
+// Fluid 的模板不给暗色高亮表输出 disabled，而 color-schema.js 的切换逻辑假定它有；
+// 两张表同时生效时后加载的暗色表会压住亮色表。
+test("the dark highlight stylesheet ships disabled so the runtime toggle stays correct", () => {
+  const applyFilter = (html) => {
+    let output;
+    const hexoStub = {
+      extend: { filter: { register: (_event, fn) => { output = fn; } } },
+    };
+    const run = new Function("hexo", `${highlightToggleSource}\nreturn true;`);
+    run(hexoStub);
+    return output(html);
+  };
+
+  const html = [
+    '<link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />',
+    '<link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />',
+  ].join("\n");
+  const once = applyFilter(html);
+
+  assert.match(once, /id="highlight-css-dark"[^>]*\sdisabled/);
+  // 亮色表不能被误伤
+  assert.doesNotMatch(once, /id="highlight-css"[^>]*\sdisabled/);
+  // 幂等：主题将来自己补上也不会重复插入
+  assert.equal(applyFilter(once), once);
+  assert.equal((once.match(/disabled/g) || []).length, 1);
+  // 只加 " disabled" 这 9 个字符，不动页面其它任何内容
+  assert.equal(once.length - html.length, " disabled".length);
+
+  // 属性值里含 `>` 时宁可不改，也不能把 disabled 插进属性值中间写坏 HTML
+  const tricky = '<link id="highlight-css-dark" data-x="a>b" href="/d.css" />';
+  assert.doesNotMatch(applyFilter(tricky), /="[^"]*\sdisabled[^"]*"/);
+  // id 只是前缀的 link 不能命中
+  assert.equal(
+    applyFilter('<link id="highlight-css-dark-extra" href="/x.css" />'),
+    '<link id="highlight-css-dark-extra" href="/x.css" />',
+  );
+  // 已带 disabled 的各种写法都不再重复插入
+  for (const tag of [
+    '<link id="highlight-css-dark" href="/d.css" disabled />',
+    '<link id="highlight-css-dark" disabled="" href="/d.css" />',
+    '<link disabled id="highlight-css-dark" href="/d.css" />',
+  ]) {
+    assert.equal(applyFilter(tag), tag);
+  }
+});
+
+

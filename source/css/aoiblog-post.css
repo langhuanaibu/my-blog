@@ -49,7 +49,14 @@
   font-weight: 600;
 }
 
-.post-content .markdown-body code {
+/* 行内代码的胶囊样式。作用域必须排除代码块里的 <code class="hljs">：
+   若写成 `.markdown-body code`，它的权重（0,2,1）会压过高亮主题的 `.hljs`（0,1,0），
+   主题没单独着色的 token 就被刷成这里的强调色，而强调色不随代码块背景走，
+   在暗色背景上对比度极低。
+   这里用子选择器 `> code` 而不是后代 `:not(pre) code`：后者在 figure.highlight 里
+   仍会命中——那儿 <code> 的祖先链上有 td/table 等非 pre 元素，等于没排除。 */
+.post-content .markdown-body :not(pre) > code,
+.post-content .markdown-body > code {
   background: var(--aoi-bg-soft);
   color: var(--aoi-accent-strong);
   border: 1px solid var(--aoi-line);
@@ -136,13 +143,51 @@
   overflow: hidden;
 }
 
-/* 代码块内的 code 沿用高亮主题配色，不套用行内 code 的胶囊样式 */
+/* 代码块内的 code 不套用行内代码的胶囊样式，前景色一律交给高亮主题的 `.hljs`。
+   这里刻意不声明 color：写死色值只能适配亮暗之一，而 `.hljs` 在两套主题里
+   各自带了配套的前景色。
+   字号写 inherit 而不是某个比例：主题的 `.markdown-body pre` 已经给了
+   `font-size: 85% !important`，内层 <code> 再写相对值就会在 85% 之上再乘一次
+   （见下面对齐规则里的实测数据）。inherit 让所有代码块——带行号的、不带行号的、
+   缩进型的——都只吃主题那一档。 */
 .post-content .markdown-body pre code {
   background: none;
   border: none;
   padding: 0;
-  color: inherit;
-  font-size: 0.9em;
+  font-size: inherit;
+}
+
+/* 行号列与代码列是 <td class="gutter"> 和 <td class="code"> 里两个各自独立的 <pre>，
+   浏览器分别对它们排版，只有字号和行高都相同才不会逐行累积错位。
+
+   两侧的字号都交给主题的 `.markdown-body pre { font-size: 85% !important }`——那条
+   带 !important，任何选择器权重都压不过它，跟它抢只会让两侧各错一点。
+   关键是代码侧多套了一层 <code>：一旦在它上面写相对字号，就会在 85% 之上再乘一次
+   （实测 13.6px vs 12.24px，36 行累积错开近一整行），所以这里显式让内层 <code>
+   跟住父级 <pre>，不再叠比例。
+   行高则必须带单位：unitless 会各自乘以本侧字号，字号相同才等价，不如直接钉死。 */
+.post-content .markdown-body figure.highlight td.gutter pre,
+.post-content .markdown-body figure.highlight td.code pre,
+.post-content .markdown-body figure.highlight td.code pre code {
+  font-size: inherit;
+  line-height: 1.5rem;
+}
+
+/* 主题给代码侧的 <pre> 留了 `padding: 1.45rem 1rem`，却把行号侧重置成 `padding: 0 .75rem`，
+   于是行号整体比代码文字高出 1.45rem（实测 23.2px）——这是一个不随行数变化的固定错位，
+   和上面那条累积错位是两回事，两者都修掉才真正对齐。
+   只补垂直内边距，左右保持主题的 .75rem，以免动到行号与代码之间的分隔线间距。 */
+.post-content .markdown-body figure.highlight td.gutter pre {
+  padding-top: 1.45rem;
+  padding-bottom: 1.45rem;
+}
+
+/* atom-one-dark 给注释的 #5c6370 在自家背景上只有 2.32:1，正文注释（中文尤其明显）
+   几乎糊进背景。这里只提亮注释一档到约 4.6:1，跨过可读阈值又不让注释抢过代码本身。
+   只在暗色下改：亮色主题的注释对比度本来就够。 */
+[data-user-color-scheme="dark"] .post-content .markdown-body figure.highlight .hljs-comment,
+[data-user-color-scheme="dark"] .post-content .markdown-body figure.highlight .hljs-quote {
+  color: #8b949e;
 }
 
 .post-content .aoi-code-block {

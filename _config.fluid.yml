@@ -59,6 +59,14 @@ post:
     views:
       enable: false
 
+code:
+  highlight:
+    highlightjs:
+      # 主题默认的 "dark" 只给 4 组 token 上色，`.hljs-subst` 等干脆是空规则，
+      # 未命中的 token 只能继承前景色，在深色背景上糊成一片。
+      # atom one dark 覆盖全部 token 类型，且偏灰蓝的底色压得住本站的暖色纸感。
+      style_dark: "atom one dark"
+
 archive:
   banner_img: /images/img_1774022028502.png
   banner_img_height: 55
