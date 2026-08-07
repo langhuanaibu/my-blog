@@ -582,12 +582,65 @@
       "llm_output_tokens": 43767,
       "llm_cost_usd": 0.0619,
       "llm_cost_known": true
+    },
+    {
+      "date": "2026-08-07",
+      "audited_events": 36,
+      "split_events": 4,
+      "removed_fields": 48,
+      "triage_invalid_rows": 0,
+      "triage_fallback_batches": 0,
+      "model_unusable_responses": 0,
+      "enrichment_audited_events": 36,
+      "duplicate_audited_events": 292,
+      "same_day_duplicates_merged": 47,
+      "duplicate_audit_failures": 0,
+      "same_day_candidate_pairs": 557,
+      "same_day_bridge_batches": 16,
+      "same_day_reconcile_calls": 20,
+      "same_day_deferred_batches": 5,
+      "same_day_budget_exhausted": true,
+      "event_lines_audited": 15,
+      "event_lines_merged": 0,
+      "event_line_audit_failures": 2,
+      "cross_day_duplicates": 2,
+      "material_updates": 1,
+      "update_judge_failures": 0,
+      "enrich_out_of_batch_idx": 0,
+      "removed_field_counts_version": 3,
+      "removed_field_counts": {
+        "context": 18,
+        "watch": 25,
+        "watch_detail": 0,
+        "detail": 2,
+        "claims": 3
+      },
+      "removed_field_reasons": {
+        "evidence_copy": 0,
+        "audit_unsupported": 45,
+        "claim_unsupported": 3,
+        "generation_invalid": 0
+      },
+      "degraded": true,
+      "cross_source_novelty_candidates": 44,
+      "cross_source_material_additions": 11,
+      "cross_source_restatements": 0,
+      "cross_source_novelty_failures": 0,
+      "cross_source_novelty_calls": 4,
+      "cross_source_novelty_deferred": 0,
+      "cross_source_novelty_budget_exhausted": false,
+      "llm_calls": 128,
+      "llm_input_tokens": 385464,
+      "llm_cached_input_tokens": 17408,
+      "llm_output_tokens": 43045,
+      "llm_cost_usd": 0.0636,
+      "llm_cost_known": true
     }
   ],
   "summary": {
-    "days": 22,
-    "audited_events": 732,
-    "split_events": 318,
-    "split_rate": 0.4344
+    "days": 23,
+    "audited_events": 768,
+    "split_events": 322,
+    "split_rate": 0.4193
   }
 }
