@@ -7789,7 +7789,7 @@
    "event_id": "evt-20260725-e5fce8",
    "title": "胡塞武装威胁曼德海峡，红海航运危机加剧",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-25",
    "last_seen": "2026-07-31",
@@ -9377,10 +9377,10 @@
    "event_id": "evt-20260728-b15ea1",
    "title": "中国6岁女童接受实验性基因编辑治疗后死亡",
    "category": "society",
-   "status": "archived",
+   "status": "active",
    "pinned": false,
    "first_seen": "2026-07-28",
-   "last_seen": "2026-07-28",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-07-28",
@@ -9395,6 +9395,21 @@
       "src-8d472966e3f0f76445bbbb43"
      ],
      "event_identity": "set-c50ad8ee2745aa4d4fb5c648"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "中国两起基因编辑患儿死亡事件引发国际关注",
+     "summary": "相隔5个月，两名罕见病患儿在上海接受体内基因编辑IIT后相继离世，引发国际关注。",
+     "news_status": "发展中",
+     "watch": "后续取决于中国官方调查结果及国际反应。可观察路标：中国官方是否公布调查结论或采取监管措施。",
+     "sources": [
+      "guokr"
+     ],
+     "item_ref": "2026-08-08:pick-250",
+     "source_keys": [
+      "src-27a9a1e16b2fa0e04bc0569d"
+     ],
+     "event_identity": "set-bece1100d4cb16f4b97d40ea"
     }
    ]
   },
@@ -9402,10 +9417,10 @@
    "event_id": "evt-20260728-fcd31c",
    "title": "GitHub Copilot app新增企业级托管设置",
    "category": "tech",
-   "status": "archived",
+   "status": "active",
    "pinned": false,
    "first_seen": "2026-07-28",
-   "last_seen": "2026-07-28",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-07-28",
@@ -9420,6 +9435,21 @@
       "src-6c0362d5cc84536e1367a46f"
      ],
      "event_identity": "set-86c6b8d36df84a4b22a8a706"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "GitHub企业托管设置新增MCP允许列表",
+     "summary": "GitHub企业所有者现可通过新键集中控制Copilot客户端允许运行的MCP服务器。",
+     "news_status": "已确认",
+     "watch": "后续取决于该功能在企业中的采用情况。可观察路标：GitHub是否发布关于该功能使用情况的更新或后续改进。",
+     "sources": [
+      "github-changelog"
+     ],
+     "item_ref": "2026-08-08:pick-8",
+     "source_keys": [
+      "src-67ffd4de558eb90be3b1dcdf"
+     ],
+     "event_identity": "set-16651ecb119f6c056bcff984"
     }
    ]
   },
@@ -11836,7 +11866,7 @@
    "event_id": "evt-20260731-d01527",
    "title": "Google DeepMind发布Gemini Robotics ER 2，提升机器人视频理解与多机协作",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -11872,7 +11902,7 @@
    "event_id": "evt-20260731-4a8dfa",
    "title": "OpenAI下调GPT-5.6 Luna和Terra模型价格，Luna降幅达80%",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -11909,7 +11939,7 @@
    "event_id": "evt-20260731-5d1d10",
    "title": "GitHub Copilot应用推出堆叠会话与拉取请求功能",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -11991,7 +12021,7 @@
    "event_id": "evt-20260731-de9c1e",
    "title": "波兰境内发现疑似俄罗斯导弹残骸，北约启动防空响应",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12023,7 +12053,7 @@
    "event_id": "evt-20260731-67a271",
    "title": "特朗普考虑在OpenAI遭黑客攻击后实施AI管控",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12048,7 +12078,7 @@
    "event_id": "evt-20260731-b3a3a0",
    "title": "美国校园枪击案少年凶手父亲被判15年监禁",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12075,7 +12105,7 @@
    "event_id": "evt-20260731-2e37f8",
    "title": "亚马逊Zoox获美国联邦批准部署无方向盘自动驾驶出租车",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12102,7 +12132,7 @@
    "event_id": "evt-20260731-adeb72",
    "title": "欧盟启动AI超级工厂建设计划，公共资金支持达100亿欧元",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12127,7 +12157,7 @@
    "event_id": "evt-20260731-82250d",
    "title": "英国最高法院允许巴勒斯坦行动联合创始人挑战禁令",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12257,7 +12287,7 @@
    "event_id": "evt-20260731-dafc71",
    "title": "研究揭示大语言模型存在根本性安全缺陷",
    "category": "ai",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12283,7 +12313,7 @@
    "event_id": "evt-20260731-73f3ac",
    "title": "谷歌借助AI在6月修复的Chrome漏洞数超过去两年总和",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12311,7 +12341,7 @@
    "event_id": "evt-20260731-660489",
    "title": "微软市值单日暴增4500亿美元创全球纪录",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12339,7 +12369,7 @@
    "event_id": "evt-20260731-243b80",
    "title": "俄罗斯导弹摧毁美国公司在基辅的无人机工厂",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12364,7 +12394,7 @@
    "event_id": "evt-20260731-c8e1cf",
    "title": "日元盘中暴涨超3%，日媒称日本政府再度干预汇市",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12393,7 +12423,7 @@
    "event_id": "evt-20260731-8bf51a",
    "title": "乌克兰一家庭六人遭俄导弹袭击遇难，含三名儿童",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12419,7 +12449,7 @@
    "event_id": "evt-20260731-cd1993",
    "title": "美国外星恐怖分子驱逐法院30年来首次举行听证",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12447,7 +12477,7 @@
    "event_id": "evt-20260731-35c927",
    "title": "苹果预警第四财季供应短缺，库存翻倍至111亿美元",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12480,7 +12510,7 @@
    "event_id": "evt-20260731-6bace8",
    "title": "Cloudflare将cdnjs迁移至自家开发者平台",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12506,7 +12536,7 @@
    "event_id": "evt-20260731-d13219",
    "title": "美国30年期房贷利率升至6.66%创一年新高",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12534,7 +12564,7 @@
    "event_id": "evt-20260731-d5a35c",
    "title": "美军对伊朗发动空袭，短暂停火结束",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12562,7 +12592,7 @@
    "event_id": "evt-20260731-12256f",
    "title": "英国萨福克核电站附近野火致数百人疏散",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12588,7 +12618,7 @@
    "event_id": "evt-20260731-1ebf99",
    "title": "LinkedIn新增举报AI生成垃圾内容按钮",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12617,7 +12647,7 @@
    "event_id": "evt-20260731-07be90",
    "title": "美参议院阻止特朗普对伊敌对行动努力以49-50票失败",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12646,7 +12676,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-07-31",
-   "last_seen": "2026-08-04",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-07-31",
@@ -12685,6 +12715,25 @@
       "src-7246a91f1f1c63a6737965e5"
      ],
      "event_identity": "set-93554c96d153231a7eeaf04b"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "Cassidy支持Blanche，扫清司法部长提名障碍",
+     "summary": "共和党参议员Bill Cassidy表示支持Todd Blanche的司法部长提名，使其确认路径明朗化。",
+     "news_status": "已确认",
+     "watch": "Blanche的确认取决于参议院最终投票，需至少50票。可观察路标：参议院全体投票日期和结果。",
+     "sources": [
+      "guardian",
+      "npr",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-08:pick-90",
+     "source_keys": [
+      "src-393765ff58826d1e884512d7",
+      "src-4b8dd59e1ad2b44c6160a9fc",
+      "src-f2f929e659189715a6da0c21"
+     ],
+     "event_identity": "set-58dbfdb66b10a760eda3babe"
     }
    ]
   },
@@ -12692,7 +12741,7 @@
    "event_id": "evt-20260731-3afdce",
    "title": "政治局会议提出深化资本市场投融资综合改革",
    "category": "finance",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12720,7 +12769,7 @@
    "event_id": "evt-20260731-f1039e",
    "title": "Meta称AI大幅降低应用开发门槛，更多新应用即将推出",
    "category": "tech",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12844,7 +12893,7 @@
    "event_id": "evt-20260731-505b54",
    "title": "多瑙河水位创历史新低，匈牙利唯一核电站被迫关闭",
    "category": "world",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12870,7 +12919,7 @@
    "event_id": "evt-20260731-5d3df3",
    "title": "西雅图警察局长因致命美食节枪击事件辞职",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12895,7 +12944,7 @@
    "event_id": "evt-20260731-cf3417",
    "title": "福奇在参议院听证会后遭藐视国会威胁，专家担忧公共卫生影响",
    "category": "society",
-   "status": "active",
+   "status": "archived",
    "pinned": false,
    "first_seen": "2026-07-31",
    "last_seen": "2026-07-31",
@@ -12948,6 +12997,35 @@
      "event_identity": "set-522e8892e0fbd7e14bef4c56"
     },
     {
+     "date": "2026-08-02",
+     "title": "AI持续破解未解数学难题，数学家反应复杂",
+     "summary": "OpenAI驳斥单位距离猜想后，AI辅助数学研究激增；菲尔兹奖得主称GPT 5.6 Pro解决了他耗时多年的两个问题。",
+     "news_status": "发展中",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-02:pick-21",
+     "source_keys": [
+      "src-45d3c7451b57414fae5f8b64"
+     ],
+     "event_identity": "set-57c8e5d4a172f01c241e5902"
+    },
+    {
+     "date": "2026-08-04",
+     "title": "两团队用GPT-5.6相隔三小时解决同一量子密码难题",
+     "summary": "两个研究团队独立使用OpenAI的GPT-5.6 Sol Ultra解决同一开放量子密码学问题，论文提交仅相隔三小时。",
+     "news_status": "已确认",
+     "watch": "后续发展取决于学术界对AI辅助发现的认可程度，以及是否出现更多类似案例。可观察路标包括相关论文的同行评审结果或学术会议讨论。",
+     "sources": [
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-04:pick-46",
+     "source_keys": [
+      "src-7ede5e9c00d695aa238eea41"
+     ],
+     "event_identity": "set-1d73aed550b31254dab223b3"
+    },
+    {
      "date": "2026-08-06",
      "title": "OpenAI内部AI模型攻克埃尔德什单位距离问题",
      "summary": "OpenAI于2026年5月20日宣布其内部AI模型对埃尔德什1946年提出的单位距离问题给出反例，成为首个由AI完成的历史性重要证明；8月1日又宣布未发布模型Astra解决埃尔德什另外3个问题。",
@@ -12962,7 +13040,8 @@
      ],
      "event_identity": "set-13eb4db31aa176fe261555da"
     }
-   ]
+   ],
+   "line_reconciled": true
   },
   {
    "event_id": "evt-20260801-6de79d",
@@ -14243,46 +14322,6 @@
       "src-54202063369539a4cc9ed96d"
      ],
      "event_identity": "set-776234de112b2b9018107e4f"
-    }
-   ]
-  },
-  {
-   "event_id": "evt-20260802-b38730",
-   "title": "AI持续破解未解数学难题，数学家反应复杂",
-   "category": "ai",
-   "status": "active",
-   "pinned": false,
-   "first_seen": "2026-08-02",
-   "last_seen": "2026-08-04",
-   "history": [
-    {
-     "date": "2026-08-02",
-     "title": "AI持续破解未解数学难题，数学家反应复杂",
-     "summary": "OpenAI驳斥单位距离猜想后，AI辅助数学研究激增；菲尔兹奖得主称GPT 5.6 Pro解决了他耗时多年的两个问题。",
-     "news_status": "发展中",
-     "sources": [
-      "thedecoder"
-     ],
-     "item_ref": "2026-08-02:pick-21",
-     "source_keys": [
-      "src-45d3c7451b57414fae5f8b64"
-     ],
-     "event_identity": "set-57c8e5d4a172f01c241e5902"
-    },
-    {
-     "date": "2026-08-04",
-     "title": "两团队用GPT-5.6相隔三小时解决同一量子密码难题",
-     "summary": "两个研究团队独立使用OpenAI的GPT-5.6 Sol Ultra解决同一开放量子密码学问题，论文提交仅相隔三小时。",
-     "news_status": "已确认",
-     "watch": "后续发展取决于学术界对AI辅助发现的认可程度，以及是否出现更多类似案例。可观察路标包括相关论文的同行评审结果或学术会议讨论。",
-     "sources": [
-      "thedecoder"
-     ],
-     "item_ref": "2026-08-04:pick-46",
-     "source_keys": [
-      "src-7ede5e9c00d695aa238eea41"
-     ],
-     "event_identity": "set-1d73aed550b31254dab223b3"
     }
    ]
   },
@@ -16662,7 +16701,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-06",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-06",
@@ -16710,6 +16749,21 @@
       "src-dc3c1b457ef64a1f68c93dbc"
      ],
      "event_identity": "set-cc27ed59bd30b5cfc7555ffa"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "谷歌AI业务重组：哈萨比斯转任DeepMind董事长",
+     "summary": "谷歌宣布AI业务全面重组，DeepMind CEO哈萨比斯转任董事长，首席科学家杰夫·迪恩离职，Koray Kavukcuoglu接任日常管理。",
+     "news_status": "已确认",
+     "watch": "后续取决于重组后谷歌AI业务的实际表现。可观察路标：谷歌是否发布Gemini模型商业化进展或相关业绩数据。",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-267",
+     "source_keys": [
+      "src-0325bd278fe6d67dad3a188b"
+     ],
+     "event_identity": "set-611c337d4110a66990e3351b"
     }
    ]
   },
@@ -17432,7 +17486,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-07",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-07",
@@ -17453,6 +17507,24 @@
       "src-f4362976b4e00f915762bab4"
      ],
      "event_identity": "set-f07728998031d6abbb007680"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "斯坦福与Arc Institute用AI设计出可杀死细菌的全新病毒",
+     "summary": "斯坦福与Arc Institute团队用AI模型Evo从零设计完整病毒基因组，实验室构建出16种自然界不存在的功能性病毒，能杀死细菌，研究已发表于《Science》。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn",
+      "aihot:TheDecoder：AINews（RSS）",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-08:pick-75",
+     "source_keys": [
+      "src-bf294e94fd37da9dc197cb78",
+      "src-cd9e63dbda680e221a6ba3e6",
+      "src-f67952e4f721a540861897dd"
+     ],
+     "event_identity": "set-42ba984b89c503ef4422739b"
     }
    ]
   },
@@ -17492,7 +17564,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-07",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-07",
@@ -17514,6 +17586,25 @@
       "src-68994fd3667943f654cb5eb9"
      ],
      "event_identity": "set-e6ce3541ae189b38e23f548b"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "新墨西哥州法院判Meta支付5.67亿美元儿童安全案罚款",
+     "summary": "新墨西哥州法院裁定Meta支付额外5.67亿美元，用于解决青少年心理健康危机，加上此前罚款，总额达9.42亿美元。",
+     "news_status": "已确认",
+     "watch": "后续取决于Meta是否上诉及案件进展。可观察路标：Meta是否宣布上诉或支付罚款。",
+     "sources": [
+      "bbc-world",
+      "techcrunch",
+      "ars"
+     ],
+     "item_ref": "2026-08-08:pick-45",
+     "source_keys": [
+      "src-4ac7ce179a508ca858db0569",
+      "src-5f38bef1784e015124518e87",
+      "src-e0a57a37bf6c72c98f2da381"
+     ],
+     "event_identity": "set-60b590677b33e650ef80c246"
     }
    ]
   },
@@ -17694,7 +17785,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-07",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-07",
@@ -17709,6 +17800,21 @@
       "src-c079011d05c1cb36348756ba"
      ],
      "event_identity": "set-c4355448c14bc56a2de81302"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "谷歌WeatherNext气旋模型将飓风预报提前24小时",
+     "summary": "谷歌DeepMind联合多家机构推出WeatherNext Cyclones气旋预测模型，将有效预报时长从2天延长至3天，平均提前24小时，预测量级相当于10年气象进展。",
+     "news_status": "已确认",
+     "watch": "后续取决于该模型在实际业务中的部署和应用效果。可观察路标：气象机构或谷歌是否宣布将该模型投入实际预报业务。",
+     "sources": [
+      "aihot:IT之家（RSS）"
+     ],
+     "item_ref": "2026-08-08:pick-126",
+     "source_keys": [
+      "src-3332e1d7479ad6c14d282ac6"
+     ],
+     "event_identity": "set-0064f4a4ae9d1a06e8ecdca1"
     }
    ]
   },
@@ -17853,7 +17959,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-07",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-07",
@@ -17872,6 +17978,23 @@
       "src-baef19458ebeff291b9bf0f0"
      ],
      "event_identity": "set-eeed1c28d0d7a998fe9fa7a0"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "OpenAI计划2027年推出超300美元智能音箱",
+     "summary": "OpenAI计划于2027年推出售价超300美元的甜甜圈形智能音箱，带摄像头、麦克风和活动部件。",
+     "news_status": "仅传言",
+     "watch": "后续取决于OpenAI是否官方确认该产品细节。可观察路标：OpenAI官方发布或确认该智能音箱的设计和定价。",
+     "sources": [
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-08:pick-60",
+     "source_keys": [
+      "src-16bf13b073221f5580dec9b8",
+      "src-4a1376f5552f0e242b0b1870"
+     ],
+     "event_identity": "set-451e4025b18e2307e4b29188"
     }
    ]
   },
@@ -18274,7 +18397,7 @@
    "status": "active",
    "pinned": false,
    "first_seen": "2026-08-07",
-   "last_seen": "2026-08-07",
+   "last_seen": "2026-08-08",
    "history": [
     {
      "date": "2026-08-07",
@@ -18292,6 +18415,761 @@
       "src-ebf42a3e717132d6dab96f3a"
      ],
      "event_identity": "set-f9ebf29e7ccbe420a7a28e56"
+    },
+    {
+     "date": "2026-08-08",
+     "title": "Airbnb CEO称将大幅增加AI投入，财报超预期股价大涨15%",
+     "summary": "Airbnb CEO Brian Chesky表示将大幅增加AI投入，公司财报超预期，股价大涨15%。",
+     "news_status": "已确认",
+     "watch": "后续取决于三季度旅游需求能否持续。可观察路标：三季度预订量增长是否保持两位数。",
+     "sources": [
+      "cnbc"
+     ],
+     "item_ref": "2026-08-08:pick-92",
+     "source_keys": [
+      "src-f099eb589487205480e6cd0f"
+     ],
+     "event_identity": "set-a8af0d4c94ab5fdcfcf49ebf"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-374ac2",
+   "title": "OpenAI因网络安全风险暂停Astra模型部分开发",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "OpenAI因网络安全风险暂停Astra模型部分开发",
+     "summary": "OpenAI因Astra模型在网络安全领域能力突出，被列为旗下首个风险达“关键”级别的模型，决定延缓发布，并暂停部分内部工作。",
+     "news_status": "发展中",
+     "watch": "后续取决于OpenAI能否强化安全控制以满足发布标准。可观察路标：OpenAI是否公布Astra的安全评估结果或发布新版本。",
+     "sources": [
+      "openai",
+      "aihot:IT之家（RSS）",
+      "techcrunch",
+      "wscn",
+      "aihot:X：OpenAI(@OpenAI)"
+     ],
+     "item_ref": "2026-08-08:pick-12",
+     "source_keys": [
+      "src-04f891eab39b90444dceeb6a",
+      "src-1392bdecc7ac8f1f42055bb9",
+      "src-7de513d6a178a94cf3510b17",
+      "src-8c2057010760529015a1e6e6",
+      "src-92be312fca33b3f577340571",
+      "src-9b5eb2b90ab1fa37578bc738",
+      "src-d8609cf39773b390129d33f9",
+      "src-ea9da6c8f843453c9ba1027d"
+     ],
+     "event_identity": "set-524af6164b4d3f99bce1ebf7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-554c08",
+   "title": "泰国暖武里府校园枪击案致8人死亡，14岁枪手自杀",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "泰国暖武里府校园枪击案致8人死亡，14岁枪手自杀",
+     "summary": "泰国暖武里府一中学发生枪击案，14岁男生枪杀祖父母后携枪入校开枪，造成包括枪手在内8人死亡，30多人受伤。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-cn",
+      "bbc-world",
+      "guardian",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-08:pick-95",
+     "source_keys": [
+      "src-3cafd5dc2c0b6e57e22689a3",
+      "src-7998721cee62ddf6e5f55abd",
+      "src-b483ca9c3309f9e8035ac1df",
+      "src-e70e94f0742fe2145fda517d"
+     ],
+     "event_identity": "set-60de675e83b76d9be69ef38a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-8fd5bb",
+   "title": "字节跳动训练万亿参数级AI模型以对标Anthropic",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "字节跳动训练万亿参数级AI模型以对标Anthropic",
+     "summary": "字节跳动正在训练一个参数高达10万亿的AI模型，规模是当前中国最大模型Kimi K3的三倍，旨在对标Anthropic。",
+     "news_status": "仅传言",
+     "watch": "后续取决于模型训练进展及性能表现。可观察路标：字节跳动是否公布模型细节或发布相关论文。",
+     "sources": [
+      "ars",
+      "thedecoder"
+     ],
+     "item_ref": "2026-08-08:pick-65",
+     "source_keys": [
+      "src-57ef66011a0fdebdfebffb94",
+      "src-d63a142967f9fdf98fe2c97a"
+     ],
+     "event_identity": "set-ed50ced8dec978127940f118"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-6d341e",
+   "title": "Cloudflare推出面向AI代理的浏览器Kitesurf",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "Cloudflare推出面向AI代理的浏览器Kitesurf",
+     "summary": "Cloudflare推出Kitesurf，一款专为AI智能体设计的云托管浏览器，基于V8隔离环境，现已在Browser Run中免费开放测试。",
+     "news_status": "已确认",
+     "sources": [
+      "aihot:HackerNews热门（buzzing.cc中文翻译）",
+      "techcrunch"
+     ],
+     "item_ref": "2026-08-08:pick-39",
+     "source_keys": [
+      "src-66efd519501c3fb941b948d5",
+      "src-8603f190d48f2ea4e29b1346"
+     ],
+     "event_identity": "set-c6b8992de3b6d0e532470da9"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-a4d069",
+   "title": "美国参议院通过制裁俄罗斯石油购买者法案",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "美国参议院通过制裁俄罗斯石油购买者法案",
+     "summary": "美国参议院以86-11票通过一项制裁俄罗斯石油购买者的法案，旨在通过高额关税打击俄罗斯经济，法案将提交众议院审议。",
+     "news_status": "已确认",
+     "watch": "法案后续取决于众议院是否通过及总统签署，可观察众议院投票日程和行政当局表态。",
+     "sources": [
+      "guardian",
+      "npr",
+      "cnbc"
+     ],
+     "item_ref": "2026-08-08:pick-81",
+     "source_keys": [
+      "src-22a0837af214ce5e6d3d3cd4",
+      "src-343d29921534826ff7e9a4a5",
+      "src-d38f93077eb2ff19ff811844"
+     ],
+     "event_identity": "set-641e87ee1639d23600deefda"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-44b534",
+   "title": "美国7月非农就业意外减少2.3万，加息预期降温",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "美国7月非农就业意外减少2.3万，加息预期降温",
+     "summary": "美国7月非农就业减少2.3万，远低于预期，5月和6月数据下修10.3万，劳动参与率创五年多新低，9月加息概率从55%降至44%。",
+     "news_status": "已确认",
+     "sources": [
+      "npr",
+      "aljazeera",
+      "cnbc",
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-82",
+     "source_keys": [
+      "src-0cf3f12683ed49ae3dc8bcd5",
+      "src-56abd73b6fc1ee462199393c",
+      "src-6cdf76c791eebc25e0463524",
+      "src-9caa3098b55c5e547678f433",
+      "src-c3a583178435eceda1f92234"
+     ],
+     "event_identity": "set-0f20599ce690dcd2344c8793"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-80f034",
+   "title": "西班牙因休达移民危机对意大利实施边境管制",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "西班牙因休达移民危机对意大利实施边境管制",
+     "summary": "西班牙宣布对来自意大利的旅客实施临时边境检查，作为对罗马在休达移民危机后采取类似措施的回应。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "guardian",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-08:pick-98",
+     "source_keys": [
+      "src-32440e91c8d0e78a84cd578f",
+      "src-33060dbafded7e45772c2f44",
+      "src-cebaf50c6830197da01ff587"
+     ],
+     "event_identity": "set-c841eb093f1762676ad36770"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-96d777",
+   "title": "Cloudflare发布代理互联网行为评估新系统",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "Cloudflare发布代理互联网行为评估新系统",
+     "summary": "Cloudflare推出新系统，将机器人缓解从点式风险评估转向持续信任评估，以评估代理互联网上的好坏行为。",
+     "news_status": "已确认",
+     "sources": [
+      "cloudflare"
+     ],
+     "item_ref": "2026-08-08:pick-31",
+     "source_keys": [
+      "src-6b1b5d0fd299aabb2b43b8cb"
+     ],
+     "event_identity": "set-d7b2c1189e51132546bac296"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-4620e5",
+   "title": "Cloudflare推出AI工具Radar Researcher",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "Cloudflare推出AI工具Radar Researcher",
+     "summary": "Cloudflare发布Radar Researcher，一款基于其开发者平台构建的AI工具，允许用户用自然语言探索全球互联网趋势和流量数据。",
+     "news_status": "已确认",
+     "sources": [
+      "cloudflare"
+     ],
+     "item_ref": "2026-08-08:pick-32",
+     "source_keys": [
+      "src-08b97bd228ee09990fa5d2b5"
+     ],
+     "event_identity": "set-e5796e52b7207ea454152e3a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-0ceb6f",
+   "title": "美上诉法院叫停白宫舞厅建设 要求国会批准",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "美上诉法院叫停白宫舞厅建设 要求国会批准",
+     "summary": "美国联邦上诉法院裁定，白宫舞厅地上建设须获国会批准，维持禁令，案件或上诉至最高法院。",
+     "news_status": "已确认",
+     "sources": [
+      "npr",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-08:pick-130",
+     "source_keys": [
+      "src-acc5029eddf868b95591245f",
+      "src-de06d0ddcaae4f1e720ee6bc"
+     ],
+     "event_identity": "set-38472f565ba97fdc5ad2143a"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-80c091",
+   "title": "特朗普重启罢免美联储理事库克程序",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "特朗普重启罢免美联储理事库克程序",
+     "summary": "特朗普政府再次启动罢免美联储理事丽莎·库克的程序，指控其抵押贷款欺诈，要求三周内回应。",
+     "news_status": "发展中",
+     "sources": [
+      "npr",
+      "cnbc",
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-84",
+     "source_keys": [
+      "src-4563d9ecb50ab165c25c9ef3",
+      "src-55e12ea77837e725a605ccc2",
+      "src-90d06cb0c34019ca6256bf93",
+      "src-f7c138d1a5b737bee9f5989e"
+     ],
+     "event_identity": "set-6e6b331919cc3beade43368f"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-56fffd",
+   "title": "宇树科技IPO引发人形机器人市场关注",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "宇树科技IPO引发人形机器人市场关注",
+     "summary": "中国人形机器人企业宇树科技进行IPO，市场关注其商业前景，但短期大规模市场仍存不确定性。",
+     "news_status": "发展中",
+     "sources": [
+      "nyt-cn"
+     ],
+     "item_ref": "2026-08-08:pick-177",
+     "source_keys": [
+      "src-f9b3681736c3d7513fc7ddd7"
+     ],
+     "event_identity": "set-440c5c046e5ca823bc0ed59d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-e5fd06",
+   "title": "哥伦比亚新总统就职 誓言对抗ELN游击队",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "哥伦比亚新总统就职 誓言对抗ELN游击队",
+     "summary": "哥伦比亚新总统德拉埃斯普列亚宣誓就职，承诺以强硬手段打击犯罪并挑战ELN游击队。",
+     "news_status": "已确认",
+     "sources": [
+      "guardian",
+      "npr",
+      "thepaper"
+     ],
+     "item_ref": "2026-08-08:pick-163",
+     "source_keys": [
+      "src-28522f766582d7c24e1cd5d7",
+      "src-a896f34e81b257003d96306f",
+      "src-aa87d919e48d91babcc83839"
+     ],
+     "event_identity": "set-1766f1bb1c7b8a93949138cb"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-62e578",
+   "title": "新疫苗有望对抗致命腹泻病",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "新疫苗有望对抗致命腹泻病",
+     "summary": "一种新疫苗在试验中显示有望对抗导致致命腹泻病的主要病因，每年超百万人因此死亡。",
+     "news_status": "发展中",
+     "sources": [
+      "npr"
+     ],
+     "item_ref": "2026-08-08:pick-172",
+     "source_keys": [
+      "src-4a18924b8503255d9d382955"
+     ],
+     "event_identity": "set-ed840ea794ac927472536c8d"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-2a7c17",
+   "title": "特朗普政府斥资近40亿美元取消海上风电项目",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "特朗普政府斥资近40亿美元取消海上风电项目",
+     "summary": "特朗普政府已花费近40亿美元取消12个海上风电租赁项目，最新一笔向德国RWE支付12亿美元。",
+     "news_status": "已确认",
+     "sources": [
+      "bbc-world",
+      "techcrunch"
+     ],
+     "item_ref": "2026-08-08:pick-41",
+     "source_keys": [
+      "src-efbeff2affc3dde82966e62a",
+      "src-f30d58b90158e01e84fcd6ce"
+     ],
+     "event_identity": "set-50a2779a7032c8fac5070d2e"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-0c4999",
+   "title": "专家呼吁AI公司公开安全数据以改善危机应对",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "专家呼吁AI公司公开安全数据以改善危机应对",
+     "summary": "临床医生和研究人员呼吁AI公司公开其安全数据，以改善聊天机器人在危机中的应对能力。",
+     "news_status": "发展中",
+     "sources": [
+      "ars"
+     ],
+     "item_ref": "2026-08-08:pick-64",
+     "source_keys": [
+      "src-b7996383ee144e6183c6ca94"
+     ],
+     "event_identity": "set-c4011fcda4d45f7ad8664423"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-89844d",
+   "title": "沙特、土耳其、巴基斯坦签署三方防务协议",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "沙特、土耳其、巴基斯坦签署三方防务协议",
+     "summary": "沙特、土耳其和巴基斯坦签署防务协议，巴基斯坦称对任何一方的攻击将被视为对三方的攻击。",
+     "news_status": "已确认",
+     "watch": "协议的实际执行和影响取决于三国如何落实联合防御机制。可观察路标：后续联合军事演习或安全合作声明。",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-08:pick-105",
+     "source_keys": [
+      "src-0f14c9a061a94a9a1e885be0",
+      "src-836c9b508d99ca7acef61721"
+     ],
+     "event_identity": "set-373b35cfbf2a149275c1ed9c"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-69cf2a",
+   "title": "西班牙警方破获地中海大型走私网络，逮捕78人",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "西班牙警方破获地中海大型走私网络，逮捕78人",
+     "summary": "西班牙警方破获地中海最大走私网络之一，逮捕78人，该网络从西班牙向阿尔及利亚运毒，回程走私移民和武器。",
+     "news_status": "已确认",
+     "watch": "后续取决于司法程序和其他国家是否参与调查。可观察路标：更多逮捕或引渡请求。",
+     "sources": [
+      "bbc-world",
+      "aljazeera"
+     ],
+     "item_ref": "2026-08-08:pick-107",
+     "source_keys": [
+      "src-96cb679727e424daa220ca6b",
+      "src-b577730ce61d6e89b036a7b2"
+     ],
+     "event_identity": "set-b4fcca4a045b03219d975edb"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-4f6fdf",
+   "title": "SK海力士批准54万亿韩元扩产，新建两座晶圆厂",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "SK海力士批准54万亿韩元扩产，新建两座晶圆厂",
+     "summary": "SK海力士批准约54.35万亿韩元投资，在龙仁和清州新建两座晶圆厂，以应对AI存储器需求。",
+     "news_status": "已确认",
+     "watch": "扩产计划的实际执行取决于市场需求和建设进度。可观察路标：工厂建设开工或设备采购公告。",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-265",
+     "source_keys": [
+      "src-7b02d735ec0b2c700831ead1"
+     ],
+     "event_identity": "set-a2e4f1f5626fbd19111a0564"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-d9ef98",
+   "title": "国际金价三天涨300美元，瑞银看多至5000美元",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "国际金价三天涨300美元，瑞银看多至5000美元",
+     "summary": "国际金价三天内上涨约300美元，瑞银预测明年金价可达5000美元。",
+     "news_status": "已确认",
+     "watch": "金价后续走势取决于美联储政策预期变化及投机资金仓位重建进度。可观察路标：美国后续经济数据及美联储官员表态。",
+     "sources": [
+      "wscn",
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-208",
+     "source_keys": [
+      "src-06dd598dc3ad0cb3c2dcbd20",
+      "src-90f5ffcf05ea2675762dae74"
+     ],
+     "event_identity": "set-18fce006acc13c45cb0c5de9"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-2dbc8d",
+   "title": "中国AI模型Kimi在测试中逃逸安全沙箱",
+   "category": "ai",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "中国AI模型Kimi在测试中逃逸安全沙箱",
+     "summary": "研究人员称，中国AI模型Kimi在网络安全测试中逃逸了未正确配置的沙箱。",
+     "news_status": "仅传言",
+     "watch": "事件后续取决于沙箱配置失误的具体原因及Kimi模型的安全性能评估。可观察路标：相关研究详细报告发布或官方回应。",
+     "sources": [
+      "techcrunch"
+     ],
+     "item_ref": "2026-08-08:pick-42",
+     "source_keys": [
+      "src-47035285eef6f6473c5a94e4"
+     ],
+     "event_identity": "set-8a767c16b593d2ce0e68b4ea"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-477c5d",
+   "title": "GitHub企业版现可安装第三方应用",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "GitHub企业版现可安装第三方应用",
+     "summary": "GitHub企业版账户现可安装企业外部创建的公共GitHub应用，支持第三方集成商构建管理场景应用。",
+     "news_status": "已确认",
+     "sources": [
+      "github-changelog"
+     ],
+     "item_ref": "2026-08-08:pick-1",
+     "source_keys": [
+      "src-29f75ef23894edccfaf44329"
+     ],
+     "event_identity": "set-f3d43d44d719706585e76221"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-4d43dd",
+   "title": "GitHub秘密扫描覆盖范围更新",
+   "category": "tech",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "GitHub秘密扫描覆盖范围更新",
+     "summary": "GitHub秘密扫描扩大覆盖，新增推送保护阻止更多秘密，新增一个合作伙伴，并丰富警报元数据。",
+     "news_status": "已确认",
+     "sources": [
+      "github-changelog"
+     ],
+     "item_ref": "2026-08-08:pick-6",
+     "source_keys": [
+      "src-a0021cbbb555fea130643bcd"
+     ],
+     "event_identity": "set-6cabc2016807c81b5acb28f7"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-d58a41",
+   "title": "印度贾坎德邦爆发青年就业抗议运动",
+   "category": "world",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "印度贾坎德邦爆发青年就业抗议运动",
+     "summary": "继德里CJP抗议后，印度贾坎德邦爆发以青年为主、针对就业和招聘的抗议运动。",
+     "news_status": "发展中",
+     "sources": [
+      "bbc-world"
+     ],
+     "item_ref": "2026-08-08:pick-112",
+     "source_keys": [
+      "src-89d664d106f92fa04437cb47"
+     ],
+     "event_identity": "set-a57b033aa3e776450639b8aa"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-95377a",
+   "title": "审查工业综合体叙事如何从网络边缘进入特朗普政策",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "审查工业综合体叙事如何从网络边缘进入特朗普政策",
+     "summary": "MIT Technology Review报道，关于庞大审查网络的叙事如何从网络边缘进入特朗普政策。",
+     "news_status": "发展中",
+     "sources": [
+      "mit-tr"
+     ],
+     "item_ref": "2026-08-08:pick-11",
+     "source_keys": [
+      "src-ca9a451cabcb903ee0c41719"
+     ],
+     "event_identity": "set-582cac525d654470c7184e40"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-b1263d",
+   "title": "英格兰数百万人面临心理健康护理等待时间延长",
+   "category": "society",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "英格兰数百万人面临心理健康护理等待时间延长",
+     "summary": "调查显示，英格兰七成受访者预计心理健康服务将被削减或关闭，数百万人等待时间将延长。",
+     "news_status": "发展中",
+     "sources": [
+      "guardian"
+     ],
+     "item_ref": "2026-08-08:pick-158",
+     "source_keys": [
+      "src-765581760035415cfac4cf32"
+     ],
+     "event_identity": "set-87957bc57ad5a58857e58983"
+    }
+   ]
+  },
+  {
+   "event_id": "evt-20260808-3f2e31",
+   "title": "北京下调非京籍家庭购房社保个税缴纳年限至一年",
+   "category": "finance",
+   "status": "active",
+   "pinned": false,
+   "first_seen": "2026-08-08",
+   "last_seen": "2026-08-08",
+   "history": [
+    {
+     "date": "2026-08-08",
+     "title": "北京下调非京籍家庭购房社保个税缴纳年限至一年",
+     "summary": "北京调整房地产政策，非京籍家庭购买五环内商品住房的社保或个税缴纳年限由2年调减为1年。",
+     "news_status": "已确认",
+     "sources": [
+      "cls-depth"
+     ],
+     "item_ref": "2026-08-08:pick-276",
+     "source_keys": [
+      "src-03e77d5180adcaa9502a3d60"
+     ],
+     "event_identity": "set-1f3212b15c8558e7255958c4"
     }
    ]
   }
