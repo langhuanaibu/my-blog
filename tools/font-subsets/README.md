@@ -12,4 +12,8 @@ node tools/font-subsets/build-news-serif-chars.cjs
 
 Output is sorted by code point, so the same repository state always produces the same bytes.
 
+**Regenerating this list without regenerating the font is a trap.** The list and the WOFF2 chunks are two halves of one artifact: rewrite the list against a newer corpus and it will name characters that the shipped chunks distribute differently, so first-paint bytes shift even though no font file changed. Measured on 2026-08-07, regenerating against the then-current corpus (2605 → 2687 characters) moved the first-paint set from 38 chunks to 72. If you regenerate the list, regenerate the font in the same commit — or don't regenerate at all, which is the normal case, since coverage never depends on this list.
+
+For the same reason the cold-transfer guardrail in `news-pipeline/tests/test_news_frontend.mjs` deliberately does **not** read this file; it partitions chunks using a hardcoded copy of the page's own constant text. Don't "simplify" it to read `news-serif-sc.txt` — that reintroduces a test that fails when this list drifts while the font is byte-identical. See `docs/adr/0013-serif-font-full-coverage-chunking.md`.
+
 The webfont itself is generated with `cn-font-split@7.4.3` through `tools/generate-news-font.cjs`. Keep only the resulting WOFF2 chunks and `result.css` beside `OFL.txt`; the source OTF, `index.proto`, previews, and temporary dependencies are build inputs and must not be committed. The source font version, SHA-256, full command, Windows caveat, and measured cold-load budget are documented in the root `readme.md`.

@@ -355,7 +355,7 @@ GITHUB_BRANCH=main
 
 - 完整 Python 回归：`py -3.12 -m pytest news-pipeline/tests -q`，其中包含跨批同日归并、发布事务、轨迹夹具和全部历史日报引用完整性检查。测试不调 LLM、不联网；改评分、聚类、可信度审计、健康度、事件登记、偏好学习、深读、周综述、RSS 或搜索索引逻辑后必跑完整回归。`news-pipeline/tests/test_pipeline.py` 是历史独立脚本，不再作为交付验收入口。
 - 客观性回归：`py -3.12 news-pipeline/tests/test_objectivity_audit.py`（证据合同、审计/修复/降级、夹具完整性、删除字段分项守恒、次级回退摘要判定与序列化/审计投影一致性）与 `py -3.12 news-pipeline/tests/test_shadow_rollout.py`（shadow 快照隔离与环境还原）。两者同样不调 LLM、不联网，静默通过、失败非零退出；改客观性审计、证据结构或 shadow 流程后必跑。
-- 新闻页回归：`npm run test:news`。测试使用 Node 内置测试器与 jsdom，覆盖新旧路由、DOM 渲染、个人操作 API 合同、无障碍状态和空数据降级；修改 `source/news/index.html`、`source/news/news.css` 或 `source/news/js/` 后必跑。
+- 新闻页回归：`npm run test:news`。测试使用 Node 内置测试器与 jsdom，覆盖新旧路由、DOM 渲染、个人操作 API 合同、无障碍状态和空数据降级；修改 `source/news/index.html`、`source/news/news.css`、`source/news/js/` 或 `source/news/fonts/`（含 `tools/font-subsets/` 的字符清单）后必跑。该套件还含衬线字体的覆盖断言与三条冷传输界，字体资产和清单的改动只有这里能拦住。
 - 完整交付前运行 `npm run build`，确认 Hexo 能把新闻页 ES Modules、样式、字体和静态数据原样输出到 `_config.yml` 指定的 `dist/news/`，并确认 `dist/admin/` 仍存在。
 - 移除方式：删除 `source/news/`、`news-pipeline/`、`.github/workflows/daily-news.yml`、`_config.yml` 中的 `- news/**`、`_config.fluid.yml` 菜单中的 `news` 项即可完全剥离。
 - 历史沿革：管线原为独立项目 `D:\每日新闻网站`，已在 2026-07-04 迁入本仓库并退役。
