@@ -154,7 +154,9 @@
     .workspace {
       display: grid;
       grid-template-columns: 320px minmax(0, 1fr);
-      overflow: hidden;
+      /* 必须是 clip 而不是 hidden：两者都能裁掉文章列表的方角，但 hidden 会创建滚动容器，
+         让 .form-actions 的 sticky 以这个自身不滚动的祖先为参照系——底栏会静默失效，不报错。 */
+      overflow: clip;
     }
 
     .article-list {
@@ -301,13 +303,39 @@
     }
 
     .form-actions {
+      /* 常驻底栏：长文章里不必翻到文末才能发布。依赖 .workspace 的 overflow: clip，见那里的注释。 */
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
+      /* 负的左右边距抵消 .editor / .settings-panel 的 1.2rem padding，让底栏横向铺满；
+         再用自身 padding 把按钮推回原来的对齐位置。背景必须不透明，否则正文会透出来。 */
+      margin: 1rem -1.2rem 0;
+      padding: 1rem 1.2rem;
       border-top: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: 0 -6px 16px rgba(37, 45, 56, 0.06);
+    }
+
+    .form-actions .status {
+      /* 状态文本不参与按钮那一行的空间竞争：flex-grow 会让长报错（GitHub 超时那种上百字符的）
+         把底栏撑到视口四分之一高、按钮换行三排。占满整行、限高两行、超出用省略号，
+         按钮行高度就与消息长度无关。完整信息仍在顶部 #status 里。 */
+      flex: 1 0 100%;
+      order: -1;
+      min-width: 0;
+      max-height: 2.6em;
+      overflow: hidden;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+
+    .form-actions .status:empty {
+      display: none;
     }
 
     .settings-panel {
@@ -432,9 +460,13 @@
           <div class="form-actions">
             <div class="inline-actions">
               <button id="saveBtn" type="submit">发布</button>
-              <button id="deleteBtn" class="danger hidden" type="button">删除</button>
             </div>
-            <button id="cancelBtn" class="secondary" type="button">取消</button>
+            <span id="editorStatus" class="status"></span>
+            <!-- 删除与取消同侧：底栏常驻后破坏性操作全程可点，靠与「发布」的距离防误点。 -->
+            <div class="inline-actions">
+              <button id="deleteBtn" class="danger hidden" type="button">删除</button>
+              <button id="cancelBtn" class="secondary" type="button">取消</button>
+            </div>
           </div>
         </form>
       </section>
@@ -509,8 +541,13 @@
         </div>
 
         <div class="form-actions">
-          <button id="saveSettingsBtn" type="submit">保存站点设置</button>
-          <button id="reloadSettingsBtn" class="secondary" type="button">重新读取</button>
+          <div class="inline-actions">
+            <button id="saveSettingsBtn" type="submit">保存站点设置</button>
+          </div>
+          <span id="settingsStatus" class="status"></span>
+          <div class="inline-actions">
+            <button id="reloadSettingsBtn" class="secondary" type="button">重新读取</button>
+          </div>
         </div>
       </form>
     </section>
@@ -544,8 +581,18 @@
 
     const $ = (id) => document.getElementById(id);
 
-    function setStatus(message, target = $('status')) {
-      if (target) target.textContent = message || '';
+    function setStatus(message, target = null) {
+      const text = message || '';
+      if (target) {
+        target.textContent = text;
+        return;
+      }
+      // 顶部 #status 在工具栏，长文章里滚到编辑区底部时它已在视口外；
+      // 两个 sticky 底栏各自镜像一份，保证「正在提交/已提交/报错」在手边可见。
+      for (const id of ['status', 'editorStatus', 'settingsStatus']) {
+        const node = $(id);
+        if (node) node.textContent = text;
+      }
     }
 
     function today() {

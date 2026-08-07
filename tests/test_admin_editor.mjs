@@ -386,3 +386,66 @@ test("browser editor reports a missing Markdown parser instead of changing conte
     /parser is unavailable/,
   );
 });
+
+// `overflow: hidden` 上的 sticky 是静默失效：不报错、不告警，底栏只是不再跟随视口。
+// 这组断言锁住 clip 与 sticky 的配对，以免将来有人为别的目的把 .workspace 改回 hidden。
+test("admin keeps the action bar sticky and its scroll ancestor clipped, not hidden", async () => {
+  const html = await readFile(new URL("../source/admin/index.html", import.meta.url), "utf8");
+  // 先剥掉注释再断言：这两条规则的注释本身就在解释 hidden 为何不行，
+  // 连注释一起扫会让「改注释措辞」误触发失败。
+  const rule = (selector) => {
+    const match = html.match(new RegExp(`\\${selector}\\s*\\{[^}]*\\}`));
+    assert.ok(match, `${selector} rule should exist`);
+    return match[0].replace(/\/\*[\s\S]*?\*\//g, "");
+  };
+
+  const workspaceRule = rule(".workspace");
+  assert.match(workspaceRule, /overflow:\s*clip/);
+  assert.doesNotMatch(workspaceRule, /overflow:\s*hidden/);
+
+  const actionsRule = rule(".form-actions");
+  assert.match(actionsRule, /position:\s*sticky/);
+  assert.match(actionsRule, /bottom:\s*0/);
+  // 半透明底栏会让正文从按钮下透出来，背景必须是实心的 surface token。
+  assert.match(actionsRule, /background:\s*var\(--surface\)/);
+});
+
+// 长报错（GitHub 超时那种上百字符的）曾把底栏撑到视口 24% 高、按钮换行三排。
+// 状态位必须独占整行且限高，按钮行高度才与消息长度无关。
+test("admin keeps status text from competing with the action buttons for row space", async () => {
+  const html = await readFile(new URL("../source/admin/index.html", import.meta.url), "utf8");
+  const statusRule = html.match(/\.form-actions \.status\s*\{[^}]*\}/);
+  assert.ok(statusRule, ".form-actions .status rule should exist");
+  const body = statusRule[0].replace(/\/\*[\s\S]*?\*\//g, "");
+  // flex-basis 100% => 独占整行，不与按钮抢空间；flex-grow 必须是 0。
+  assert.match(body, /flex:\s*1\s+0\s+100%/);
+  assert.match(body, /max-height:/);
+  assert.match(body, /overflow:\s*hidden/);
+  // 空消息时不该占掉垂直空间。
+  assert.match(html, /\.form-actions \.status:empty\s*\{\s*display:\s*none/);
+});
+
+test("admin mirrors status text into the sticky bars so feedback stays on screen", async () => {
+  const html = await readFile(new URL("../source/admin/index.html", import.meta.url), "utf8");
+  assert.match(html, /id="editorStatus"/);
+  assert.match(html, /id="settingsStatus"/);
+  // 默认调用必须同时写顶部与两个镜像；显式传 target 的登录提示保持原行为。
+  assert.match(html, /for \(const id of \['status', 'editorStatus', 'settingsStatus'\]\)/);
+  assert.match(html, /setStatus\([^)]*\$\('loginStatus'\)\)/);
+});
+
+test("admin separates the destructive action from the primary one in the action bar", async () => {
+  const html = await readFile(new URL("../source/admin/index.html", import.meta.url), "utf8");
+  const actions = html.match(/<div class="form-actions">[\s\S]*?<\/div>\s*<\/form>/);
+  assert.ok(actions, "editor form actions should exist");
+  const saveIndex = actions[0].indexOf('id="saveBtn"');
+  const statusIndex = actions[0].indexOf('id="editorStatus"');
+  const deleteIndex = actions[0].indexOf('id="deleteBtn"');
+  assert.ok(saveIndex >= 0 && statusIndex > saveIndex && deleteIndex > statusIndex);
+  assert.match(actions[0], /id="deleteBtn" class="danger hidden"/);
+  // 两组按钮 + space-between 才有把「发布」和「删除」推到两端的物理距离；
+  // 少了任一半，两个按钮会挨在一起，防误点就没了。
+  assert.equal((actions[0].match(/class="inline-actions"/g) || []).length, 2);
+  const actionsRule = html.match(/\.form-actions\s*\{[^}]*\}/)[0];
+  assert.match(actionsRule, /justify-content:\s*space-between/);
+});
