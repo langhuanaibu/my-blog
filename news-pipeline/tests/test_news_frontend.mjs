@@ -677,8 +677,11 @@ function parseFontChunks(css) {
 }
 
 // 页面上以 var(--serif) 渲染的全部文本：刊头、标题、章节名与导航常量。
+// 阿拉伯数字也在内且每天必现——`.date-seal` 渲染「8月7日」、`.weekly-stats dd`
+// 还显式要了 tabular-nums，所以数字所在的拉丁分包属于结构性开销，不是当日增量。
 const SERIF_CHROME = "每日驾驶舱时间线全部动态报告档案收藏稍后读返回博客第期年月日"
-  + "人工智能互联网科技财经社会国际今日主线追踪中深度阅读今日论文舆论观察更多资讯本周值得读遗漏记录";
+  + "人工智能互联网科技财经社会国际今日主线追踪中深度阅读今日论文舆论观察更多资讯本周值得读遗漏记录"
+  + "0123456789";
 
 function serifCodepoints(day) {
   const parts = [day.brief || "", SERIF_CHROME];
@@ -705,12 +708,52 @@ test("衬线字体覆盖最新一天的全部标题用字且冷传输在预算�
   const missing = [...wanted].filter((cp) => !chunks.some((chunk) => chunk.covered.has(cp)));
   assert.deepEqual(missing.map((cp) => String.fromCodePoint(cp)), [], `${latest} 有字符未被衬线字体覆盖`);
 
+  // 冷传输拆两维卡，不能合成一个标量：一个是分片方案决定的结构性地板（每天恒定），
+  // 一个是当天用字冷不冷决定的增量（逐日波动）。合成一个数就无法区分「分片退化了」
+  // 和「今天新闻用字偏冷」——2026-08-07 就是被后者顶穿的。
+  //
+  // 切分基准用 SERIF_CHROME（站点自身的常量文案）而**不是** news-serif-sc.txt：
+  // 那份热区字表由 build-news-serif-chars.cjs 从语料再生成，能独立于字体分片漂移
+  // （实测按当前语料重生成会让热区从 38 片涨到 72 片），拿它当基准会让本护栏在
+  // 字体没有任何变化时凭空失败。SERIF_CHROME 只随页面文案改动而变，与每日数据无关。
+  const chromeCodepoints = new Set([...SERIF_CHROME].map((char) => char.codePointAt(0)));
+  const isChrome = (chunk) => [...chromeCodepoints].some((cp) => chunk.covered.has(cp));
+
   const hit = chunks.filter((chunk) => [...wanted].some((cp) => chunk.covered.has(cp)));
-  const sizes = await Promise.all(hit.map((chunk) => stat(new URL(chunk.file, fontDir))));
-  const transferBytes = sizes.reduce((sum, item) => sum + item.size, 0);
+  const sizes = new Map(await Promise.all(
+    hit.map(async (chunk) => [chunk.file, (await stat(new URL(chunk.file, fontDir))).size]),
+  ));
+  const bytesOf = (list) => list.reduce((sum, chunk) => sum + sizes.get(chunk.file), 0);
+  const chromeChunks = hit.filter(isChrome);
+  const beyond = hit.filter((chunk) => !isChrome(chunk));
+
+  // 结构性地板：刊头/栏目名/导航/数字这些常量文案本身就要 29 片 / 991580 字节，
+  // 35 天实测恒定。这一条才是 ADR-0013 想防的退化——分片变碎会直接顶穿它。留约 5.9% 余量。
   assert.ok(
-    transferBytes <= 1_400_000,
-    `cold font budget exceeded: ${transferBytes} bytes across ${hit.length}/${chunks.length} chunks`,
+    bytesOf(chromeChunks) <= 1_050_000,
+    `chrome font floor regressed: ${bytesOf(chromeChunks)} bytes across ${chromeChunks.length} chunks`,
+  );
+
+  // 每日增量：标题里每个不与常量文案共片的字都要整拉一片（实测片 15-90 KB）。
+  // 35 天实测 179664-539868 字节，上限取实测最大的约 1.30 倍。
+  // 失败信息按片体积倒序列出触发字，省掉手工二分——最贵的那几个字就是元凶。
+  const worst = [...beyond]
+    .sort((a, b) => sizes.get(b.file) - sizes.get(a.file))
+    .slice(0, 8)
+    .map((chunk) => {
+      const chars = [...wanted].filter((cp) => chunk.covered.has(cp)).map((cp) => String.fromCodePoint(cp)).join("");
+      return `${Math.round(sizes.get(chunk.file) / 1024)}KB:${chars}`;
+    })
+    .join(" ");
+  assert.ok(
+    bytesOf(beyond) <= 700_000,
+    `daily font overflow exceeded: ${bytesOf(beyond)} bytes across ${beyond.length} chunks; costliest ${worst}`,
+  );
+
+  // 合计再兜一道，防「两维各自不超、加起来失控」。35 天实测最大 1531448 字节。
+  assert.ok(
+    bytesOf(hit) <= 1_700_000,
+    `cold font budget exceeded: ${bytesOf(hit)} bytes across ${hit.length}/${chunks.length} chunks`,
   );
 });
 

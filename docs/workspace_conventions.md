@@ -84,4 +84,4 @@
 👉 **动作**：不要新建文档，直接修改根目录的 `readme.md`；如果是规则边界，再同步 `AGENTS.md` / `CLAUDE.md`。
 
 **场景 9：我要更新日报衬线字体**
-👉 **动作**：字符清单只是首屏热区、不是覆盖契约，语料增长时无需重跑；确实要重新调优首屏字节数时才按 `tools/font-subsets/README.md` 重新生成并提交。改字体本身则用固定版本工具运行 `tools/generate-news-font.cjs`，生成前清空目录里的旧 WOFF2。`source/news/fonts/` 只保留 WOFF2、`result.css` 与 `OFL.txt`；不得提交 OTF、`index.proto`、预览页或临时依赖目录。新增使用 `--serif` 的样式必须显式写 `font-weight:700`（只托管这一个字面）。
+👉 **动作**：字符清单只是首屏热区、不是覆盖契约，语料增长时无需重跑。**要重新调优首屏字节数时，字符清单和字体必须在同一个 commit 里一起重新生成**——只重跑清单会让首屏命中的分包数变化（2026-08-07 实测 38 片 → 72 片）而字体一个字节没变，冷传输护栏会因此失败。改字体本身则用固定版本工具运行 `tools/generate-news-font.cjs`，生成前清空目录里的旧 WOFF2。`source/news/fonts/` 只保留 WOFF2、`result.css` 与 `OFL.txt`；不得提交 OTF、`index.proto`、预览页或临时依赖目录。新增使用 `--serif` 的样式必须显式写 `font-weight:700`（只托管这一个字面）。改字体资产或冷传输护栏后跑 `npm run test:news`。
