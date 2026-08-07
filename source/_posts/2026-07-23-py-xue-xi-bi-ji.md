@@ -1,7 +1,7 @@
 ---
 title: "py学习笔记（更新中）"
 date: "2026-07-23"
-updated: "2026-08-04"
+updated: "2026-08-07"
 categories:
   - "技术学习"
 index_img: "/images/covers/custom/20260723014916-qq-jie-tu-20260723014829.webp"
@@ -1316,6 +1316,71 @@ super() 返回一个代理对象，通过它可以调用父类的方法。`super
 
 以双下划线开头和结尾的特殊方法，由py在特定场景下自动调用
 
+#### `__enter__()`
+
+作用：当对象进入with语句后，py会自动调用该魔术方法。
+
+它通常负责：
+
+- 打开或获取资源
+- 执行初始化操作
+- 返回as后面要使用的对象
+
+##### 基本语法
+
+```py
+def __enter__(self):
+    # 进入 with 前执行的操作
+    return 返回值
+```
+
+参数：`self`
+
+返回值：该方法的返回值会赋给`as`后面的变量。
+
+```py
+with 对象 as 变量：
+
+#近似等价于：
+
+变量 = 对象.__enter__()
+```
+
+#### `__exit__()`
+
+作用：离开with代码块时，py会自动调用该方法。
+
+通常负责：
+
+- 关闭文件
+- 断开数据库连接
+- 释放锁
+- 清理资源
+- 处理异常
+
+即使with内部发生异常，`__exit__()`通常也会执行。
+
+##### 基本语法
+
+```py
+def __exit__(self, exc_type, exc_value, traceback):
+    # 退出 with 时执行的操作
+    return True或False
+```
+参数：
+
+- self：当前上下文管理器对象
+- exc_type：异常类型
+- exc_value：具体的异常对象，也就是错误信息。
+- traceback：异常的调用栈信息，用于定位错误发生的位置
+
+返回值：
+
+- 若返回True：表示异常已经处理，不再继续抛出
+- 若返回False或None：表示异常没有处理，继续向外抛出
+- 注：不要随便返回True，否则错误会被静默吞掉，不容易发现问题，一般只在确定自己能够处理某种异常时才返回True
+
+
 ### 5.装饰器与with语句
 
 #### 函数也是对象
@@ -1667,3 +1732,1292 @@ print(hello.__doc__)
 #输出：hello
 #输出：这是hello函数的文档
 ```
+写装饰器时在wrapper上方加上这行，就能把原函数的__name__、__doc__等属性复制过来。
+
+##### d.函数装饰器还可以使用类实现
+
+```py
+class Timer:
+    def __init__(self, func)
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        print("开始执行")
+        result = self.func(*args, **kwargs)
+        print("执行结束")
+        return result
+```
+
+使用：
+
+```py
+@Timer
+def slow_add(a, b):
+    return a + b
+```
+
+这里没有使用函数闭包，而是把原函数保存在`self.func`里面。
+
+##### e.实用装饰器
+
+1. `@functools.lru+_cache`：记忆化
+    这个装饰器会缓存函数的返回值，相同的参数只计算一次，可以用来做记忆化搜索。
+2. `@staticmethod 和 @classmethod`：
+   这两个用在类里面，调整方法和类的关系。
+
+##### f.带参数的装饰器
+
+如果你想让装饰器本身也能传参数，那么需要再套一层函数：
+
+```py
+def 装饰器工厂(装饰器参数):
+    def 装饰器(原函数):
+        def 包装函数(*args, **kwargs):
+            ...
+            return 原函数(*args, **kwargs)
+
+        return 包装函数
+
+    return 装饰器
+```
+例如：
+
+```py
+from functools import wraps
+
+def repeat(n):
+    """让被装饰的函数重复执行n次"""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs)
+            for i in range(n):
+                result = func(*args, **kwargs)
+            return result
+        return wrapper
+    return decorator
+
+@repeat(3)
+def say_hello(name):
+    print(f"你好，{name}!")
+
+#say_hello会被执行3次
+say_hello("Alice")
+```
+
+整个过程实际上分为两步：
+
+1. `decorator = repeat(3)`
+2. `say_hello = decorator(say_hello)`
+
+即：
+
+```py
+repeat(times)
+│
+├── 接收装饰器自己的参数 times
+│
+└── decorator(func)
+    │
+    ├── 接收被装饰函数
+    │
+    └── wrapper(*args, **kwargs)
+        └── 每次函数调用时真正执行
+```
+
+最外层接收装饰器的参数，中间层接收被装饰的函数，最内层是实际执行的包装函数。
+
+
+再看一个例子：
+
+```py
+import asyncio
+from functools import wraps
+from time import perf_counter
+
+
+def async_timer(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        start = perf_counter()
+
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            elapsed = perf_counter() - start
+            print(f"{func.__name__} 耗时：{elapsed:.3f} 秒")
+
+    return wrapper
+
+
+@async_timer
+async def async_work():
+    await asyncio.sleep(2)
+
+
+asyncio.run(async_work())
+```
+这段代码实现的是一个异步计时装饰器，给异步函数加上计时功能，并且不改变原异步函数的调用方式。
+
+`@wraps(func)`是带参数的装饰器，代码：
+
+```py
+@wraps(func)
+async def wrapper(*args, **kwargs):
+    ...
+```
+
+等价于：
+
+```py
+async def wrapper(*args, **kwargs):
+    ...
+
+wrapper = wraps(func)(wrapper)
+```
+
+这里看起来有两次调用，可以拆成：
+
+```py
+decorator = wraps(func)
+wrapper = decorator(wrapper)
+```
+
+也就是：
+
+1. `wraps(func)`根据原函数func创建一个装饰器
+2. 再用这个装饰器处理wrapper
+3. 把处理后的函数重新赋值给wrapper
+
+为什么是`@wraps(func)`，不是`@wraps`？因为wraps需要先知道要保留哪一个原函数的信息，就可以把func的名称，文档等信息复制给下面的wrapper。
+
+
+##### g.多个装饰器的执行顺序
+
+```py
+@decorator_a
+@decorator_b
+def func():
+    pass
+```
+
+等价于：
+
+```py
+func = decorator_a(decorator_b(func))
+```
+调用时表现为从外向内：
+
+```py
+进入 decorator_a 的 wrapper
+    ↓
+进入 decorator_b 的 wrapper
+    ↓
+执行原函数
+    ↓
+退出 decorator_b
+    ↓
+退出 decorator_a
+```
+
+```py
+from functools import wraps
+
+
+def outer(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print("outer 开始")
+        result = func(*args, **kwargs)
+        print("outer 结束")
+        return result
+
+    return wrapper
+
+
+def inner(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        print("inner 开始")
+        result = func(*args, **kwargs)
+        print("inner 结束")
+        return result
+
+    return wrapper
+
+
+@outer
+@inner
+def work():
+    print("执行 work")
+```
+最后输出：
+
+```py
+outer 开始
+inner 开始
+执行 work
+inner 结束
+outer 结束
+```
+
+##### 小结
+
+>函数装饰器通常利用闭包保存被装饰的原函数。装饰时只创建并返回包装函数，不立即调用原函数；等以后调用包装后的函数时，包装函数才通过闭包中保存的 func 调用原函数。这属于延迟执行。
+
+#### with语句
+
+通常打开一个文件之后需要关闭：
+
+```py
+file = open("data.txt", "r", encoding ="utf-8")
+content = file.read()
+file.close()
+```
+
+但如果读取过程中发生了异常，比如说:
+
+```py
+file = open("data.txt", "r", encoding="utf-8")
+
+content = file.read()
+result = 1 / 0
+
+file.close()
+```
+
+则`file.close()`不会执行。
+
+更安全的写法是使用try-except语句：
+
+```py
+file = open("data.txt", "r", encoding="utf-8")
+
+try:
+    content = file.read()
+finally:
+    file.close()
+```
+
+而with语句把这种模式简化为：
+
+```py
+with open("data.txt", "r", encoding="utf-8") as file:
+    content = file.read()
+```
+
+`with open(···) as f:`做了两件事：进入代码块时打开文件并赋值给f，离开代码块时自动关闭文件，不管代码块里是正常执行完毕还是抛出异常，文件都会被关闭。
+
+with语句帮你省掉了异常语句和手动关闭文件，代码更简洁，也更不容易忘记释放资源。
+
+##### 基本语法
+
+```py
+with 上下文管理器 [as 变量]:
+    代码块
+```
+此处as变量可以省略，不加as的意思是：只执行上下文管理器的进入和退出逻辑，不需要接收yield返回的值。
+
+
+##### a.with的原理
+
+with语句并不是只能用于文件操作，任何实现了`__enter__`和`__exit__`魔术方法的对象都可以用with语句。
+
+当你写`with obj as x`时，py会先调用`obj.__enter__()`，把返回值赋给x，然后执行with代码块，代码块结束后，不管是否会出错，都会调用`obj.__exit__()`做清理。
+
+比如说下面这个例子，临时修改某个状态，用完自动恢复：
+
+```py
+class TempWorkDir:
+    """临时切换工作目录，离开with块后自动恢复"""
+    def __init__(self, path):
+        self.path = path
+
+    def __enter___(self):
+        import os
+        self.old_dir = os.getcwd()#获取当前工作目录
+        os.chdir(self.path)#切换到指定目录
+        print(f"切换到：{os.getcwd()}")
+        return self
+
+    def __exit__(self, exc_type, exc_val, traceback):
+        import os
+        os.chdir(self.old_dir)
+        print(f"恢复到：{os.getcwd()}")
+        return false
+
+#使用
+import os
+print(f"当前目录：{os.getcwd()}")
+
+with TempWorkDir("/tmp"):
+    print(f"with块内：{os.getcwd()}")
+
+print(f"with块外：{os.getcwd()}")
+```
+
+##### b.contextlib.contextmanager
+如果每次都要创建一个类来实现enter和exit两个魔术方法的话似乎有些麻烦，于是py的contextlib模块提供了一个装饰器，能够用更简洁的方式来写上下文管理器。
+
+`yield`的作用是：
+
+>返回一个值，并暂停函数；下次继续执行时，从暂停的位置往后运行
+
+只要函数中出现了yield，这个函数就不再是普通函数，而是一个生成器函数。
+
+yield的作用和return类似，只不过return的作用是返回结果并结束函数，而yield的作用是返回结果并暂停函数，调用yield的结果是得到一个生成器对象，并且函数可以继续执行。
+
+```py
+from contextlib import contextmanager
+import time
+
+@contextmanager
+def timer(label="代码块")：
+    start = time.time()
+    print(f"[{label}] 开始计时···")
+
+    #yield之前的代码相当于__enter__
+    #yield的值会赋给as后面的变量
+    try:
+        yield
+    finally:
+        #yield之后的代码相当于__exit__
+        elapsed = time.time() - start
+    print(f"[{label}] 耗时：{elapsed:.4f} 秒")
+
+#使用起来和类版本一样
+with timer("求和"):
+    total = sum(range(1000000))
+    print(f"结果：{total}")
+# 输出类似：
+# [求和] 开始计时...
+# 结果：499999500000
+# [求和] 耗时：0.0xxx 秒
+```
+
+yield把函数分成两半：yield之前的代码在进入with块时执行，相当于`__enter__`，yield之后的代码在离开with块时执行，相当于`__exit__`，这样就不用每次都写一个带enter和exit的类了。
+
+```py
+@contextmanager
+def manager():
+    # __enter__ 部分
+    resource = acquire_resource()
+
+    try:
+        yield resource
+        # yield 出去的值绑定给 as 后面的变量
+    finally:
+        # __exit__ 部分
+        release_resource(resource)
+```
+流程：
+
+```text
+执行 yield 之前的代码
+        ↓
+yield resource
+        ↓
+resource 绑定给 as 后面的变量
+        ↓
+执行 with 代码块
+        ↓
+恢复生成器
+        ↓
+执行 yield 之后的代码
+```
+
+再看一个例子，临时修改列表并自动恢复：
+
+```py
+from contextlib import contextmanager
+
+@contextmanager
+def temp_append(lst, item)
+    """临时往列表末尾加一个元素，离开后自动移除"""
+    lst.append(item)
+    print(f"添加了{item}， 当前列表:{lst}")
+    try:
+        yield lst
+    finally:
+        lst.pop()
+        print(f"移除了{item}，当前列表：{lst}")
+
+data = [1,2,3]
+print(f"原始列表:{data}")
+
+with temp_append(data, 99) as d:
+    print(f"with块内：{d}")
+
+print(f"with块外：{data}")
+
+```
+整个过程大概是这样的：
+
+1. 首先创建一个列表对象，而data指向这个列表，接着print。
+2. 执行`with temp_append(data, 99) as d`，先计算`temp_append(data, 99)`，因此lst也指向data指向的列表对象，item赋值为99。
+3. 因为函数被`@contextmanager`这个装饰器修饰，所以`temp_append(data, 99)`被包装成一个可以配合with使用的上下文管理器，进入with时，py开始执行`temp_append()`，一直运行到yield为止。
+4. 接着开始执行yield之前的代码，给data指向的那个列表对象最后加上99。
+5. 然后执行yield lst，第一步，函数暂停在这里，暂时不执行后面的finally，第二步，把lst交给as d，即让d指向lst，因此现在d, lst, data指向的都是同一个列表。
+6. 接着开始执行with代码块内的代码，即`print(f"with块内：{d}")`，然后离开with代码块，从`yield lst`后面的代码开始执行，也就是finally部分的代码。
+7. finally部分执行完之后，此时上下文管理器已经结束，最后执行with代码块后面的代码，即`print(f"with块外：{data}")`。
+
+
+contextmanager 装饰的生成器必须正常地只 yield 一次；通常要用 try/finally 保证清理代码一定执行。若 with 中发生异常，异常会在生成器暂停的 yield 位置重新抛入。
+
+****
+
+**注：** py传参时，传递的是对象的引用，不会自动复制对象，这适用于所有对象。
+
+
+## 十、并发与异步编程基础
+
+### 2.多线程threading
+
+py的threading模块提供了多线程编程的能力，最基本的用法是创建Thread对象，传入一个目标函数，然后调用start()启动线程。
+
+其中：
+
+```py
+threading.Thread(target, args, kwargs, name, daemon)
+```
+参数含义：
+
+- target：线程要执行的函数；
+- args：传给目标函数的位置参数；
+- kwargs：传给目标函数的关键字参数；
+- name：线程名称；
+- daemon：是否为守护线程。
+
+```py
+thread.start()
+```
+
+表示真正启动一个新线程，在新线程中调用目标函数。
+
+每个Thread对象只能调用一次start()
+
+```py
+thread.join()
+```
+
+join()的作用是让主线程“等待”子线程执行完毕，如果不调用join()，主线程会直接往下跑，可能在子线程还没完成时就结束了。
+
+```py
+
+import threading
+import time
+
+def worker(name, seconds):
+    print(f"线程 {name} 开始工作")
+    # 用 sleep 模拟耗时操作
+    time.sleep(seconds)
+    print(f"线程 {name} 完成，耗时 {seconds} 秒")
+
+# 创建两个线程对象
+t1 = threading.Thread(target=worker, args=("A", 2))
+t2 = threading.Thread(target=worker, args=("B", 1))
+
+start = time.time()
+
+# 启动线程
+t1.start()
+t2.start()
+
+# 等待两个线程都执行完毕
+t1.join()
+t2.join()
+
+end = time.time()
+print(f"全部完成，总耗时 {end - start:.1f} 秒")
+
+# 输出：
+# 线程 A 开始工作
+# 线程 B 开始工作
+# 线程 B 完成，耗时 1 秒
+# 线程 A 完成，耗时 2 秒
+# 全部完成，总耗时 2.0 秒
+```
+
+再例如，用多线程模拟并发的网络请求：
+
+```py
+import threading
+import time
+
+def fetch_data(url, delay):
+    print(f"开始请求{url}...")
+    #用sleep模拟网络请求耗时
+    time.sleep(delay)
+    print(f"请求{url}完成，耗时{delay}秒")
+
+urls = [
+    ("api/users", 2),
+    ("api/orders", 3),
+    ("api/products", 1),
+]
+
+#同步方式：逐个请求
+start = time.time()
+for url, delay in urls:
+    fetch_data(url, delay)
+sync_time = time.time() - start
+print(f"同步总耗时：{sync_time:.1f}秒\n")
+
+#多线程方式：并发请求
+start = time.time()
+threads = []
+for url, delay in urls:
+    t = threading.Thread(target = fetch_data, args = (url, delay))
+    threads.append(t)
+    t.start()
+
+# 等待所有线程完成
+for t in threads:
+    t.join()
+thread_time = time.time() - start
+print(f"多线程总耗时：{thread_time:.1f} 秒")
+```
+
+输出：
+
+```py
+开始请求api/users...
+请求api/users完成，耗时2秒
+开始请求api/orders...
+请求api/orders完成，耗时3秒
+开始请求api/products...
+请求api/products完成，耗时1秒
+同步总耗时：6.0秒
+
+开始请求api/users...
+开始请求api/orders...
+开始请求api/products...
+请求api/products完成，耗时1秒
+请求api/users完成，耗时2秒
+请求api/orders完成，耗时3秒
+多线程总耗时：3.0 秒
+```
+### 3.线程安全与锁
+
+多线程确实很方便，但当多个线程同时修改同一份数据时，可能会出错，这也叫做**竞态条件：**
+
+>程序结果取决于多个执行单元不可预测的执行顺序。
+
+不能因为某次运行恰好得到正确结果，就认为代码是安全的。
+
+例如，两个线程各自给一个全局变量加1一万次，最终结果理论上应该是两万，但实际按下面这样操作的话，结果不一定会是两万。
+
+```py
+import threading
+
+counter = 0
+
+def increment(n):
+    # global 声明：在函数内部修改函数外部定义的变量时需要加这行
+    # 不加的话，Python 会把 counter 当作函数内的局部变量
+    global counter
+    for _ in range(n):
+        counter += 1
+
+# 两个线程各加 10000 次
+t1 = threading.Thread(target=increment, args=(10000,))
+t2 = threading.Thread(target=increment, args=(10000,))
+#注：当元组中只有一个参数时，仍然要加逗号
+
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+
+# 期望 20000，但代码逻辑上存在竞态条件
+print(f"期望值：20000")
+print(f"实际值：{counter}")
+print(f"结果正确？{counter == 20000}")
+```
+你可能发现运行结果是正确的 20000，这是因为 CPython 的 GIL（全局解释器锁，后面会详细讲）在一定程度上保护了这个简单操作。但这只是运气好，**代码逻辑上仍然是不安全的**——换一个 Python 实现（比如 Jython、PyPy）或者操作稍微复杂一点，竞态就会暴露出来.
+
+因为`counter += 1`看起来是一步，实际上分为三步：
+
+```py
+读取 counter
+计算 counter + 1
+把新值写回 counter
+```
+
+当两个线程共同执行的时候，可能会发生这样的情况：
+
+```py
+线程 A 读取 counter = 10
+线程 B 读取 counter = 10
+
+线程 A 计算出 11
+线程 B 计算出 11
+
+线程 A 写入 11
+线程 B 写入 11
+```
+
+所以只要涉及多线程共享数据，就必须加**锁**。锁保证同一时刻只有一个线程能执行被保护的代码。
+
+```py
+import threading
+
+counter = 0
+lock = threading.lock()
+
+def increment(n):
+    global counter
+    for _ in range(n):
+        #获取锁，同一时刻只有一个线程能进入
+        lock.acquire()
+        counter += 1
+        #释放锁，让其他线程可以进入
+        lock.release()
+
+t1 = threading.Thread(target=increment, args=(10000,))
+t2 = threading.Thread(target=increment, args=(10000,))
+
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+
+print(f"期望值：20000")
+print(f"实际值：{counter}")
+print(f"结果正确？{counter == 20000}")
+```
+
+其实还可以用with语句自动管理锁的获取和释放：
+
+```py
+with lock:
+    counter += 1
+```
+
+`with lock:`会在进入代码块时自动获取锁，离开时自动释放。
+
+这等价于：
+
+```py
+lock.acquire()
+counter += 1
+lock.release()
+```
+
+#### 临界区与锁的粒度
+
+被锁保护的代码称为临界区。
+
+锁的范围不应该无脑扩大，这样其他线程会长时间等待，基本失去并发意义。
+
+不过，加锁虽然保证了安全，但也降低了性能，线程需要排队等锁，就不能真正并发执行被锁保护的那段代码了，所以锁只应该保护**必须互斥访问的最小代码段。**
+
+通常应该只保护共享数据操作：
+
+```py
+result = calculate_something()
+
+with lock:
+    shared_results.append(result)
+```
+
+#### 死锁
+
+假设线程A：
+
+```py
+with lock_a:
+    with lock_b:
+        ...
+```
+
+线程B：
+
+```py
+with lock_b:
+    with lock_a:
+        ...
+```
+
+这样可能就会出现：
+
+```py
+线程 A 拿到了 lock_a，等待 lock_b
+线程 B 拿到了 lock_b，等待 lock_a
+```
+
+双方互相等待，永远无法继续，这就是死锁。
+
+#### 线程之间传递数据：优先考虑`Queue`
+
+比起多个线程共同修改一个列表，更安全的方式常常是使用：
+
+```py
+from queue import Queue
+
+#生产者
+def producer(queue):
+    for number in range(5):
+        queue.put(number)
+    
+    queue.put(None)
+#消费者
+def consumer(queue):
+    while True:
+        item =  queue.get()
+        try:
+            if item is None:
+                break
+            print("处理："， item)
+        finally:
+            queue.task_done()
+```
+
+queue.Queue内部已经实现了必要的同步机制，专门用于在线程之间安全传递任务或数据。
+
+有一句并发编程中的老话很实用：
+
+>能传递消息，就尽量不要共享可变状态。
+
+
+
+### 4.全局解释器锁GIL的影响
+
+在默认的CPython构建中，GIL即全局解释器锁，它通常限制同一进程内同时只有一个线程执行py字节码。
+
+对于CPU密集型任务（大量计算），多线程不仅不会更快，甚至可能更慢。
+
+因为即使你开了多个线程，同一时刻也只有一个线程在执行py代码，其他线程在等着。
+
+```py
+import threading
+import time
+
+def cpu_work(n):
+    """CPU密集任务：计算累加"""
+    total = 0
+    for i in range(n):
+        total += i
+    return total
+
+N = 5_000_000
+
+#单线程：串行执行两次
+start = time.time()
+cpu_work(N)
+cpu_work(N)
+single_time = time.time() - start
+print(f"单线程耗时：{single_time:.2f} 秒")
+
+# 多线程：两个线程各执行一次
+start = time.time()
+t1 = threading.Thread(target=cpu_work, args=(N,))
+t2 = threading.Thread(target=cpu_work, args=(N,))
+t1.start()
+t2.start()
+t1.join()
+t2.join()
+multi_time = time.time() - start
+print(f"多线程耗时：{multi_time:.2f} 秒")
+
+print(f"多线程 vs 单线程：{multi_time / single_time:.2f}x")
+```
+
+输出：
+
+```py
+单线程耗时：0.26 秒
+多线程耗时：0.25 秒
+多线程 vs 单线程：0.96x
+```
+
+但是对于I/O密集型任务，如网络请求、文件读写、数据库查询等，多线程依然有效，以为GIL在线程执行I/O操作时会释放，让其他线程有机会执行。
+
+如果你确实需要并行计算CPU密集型任务，可以用multiprocessing模块，它会启动真正的子进程，每个进程有自己的独立的py解释器和GIL，可以充分利用多核CPU。
+
+```py
+from multiprocessing import Process
+
+# 用法和 threading.Thread 几乎一样
+p1 = Process(target=cpu_work, args=(N,))
+p2 = Process(target=cpu_work, args=(N,))
+p1.start()
+p2.start()
+p1.join()
+p2.join()
+```
+
+### 5.异步编程asyncio
+
+除了多线程，py还有另一种并发方式：异步编程，仅用一个线程就能实现并发，靠的是“协程”这个概念。
+
+协程不是线程，而是“可暂停的任务”。一个任务等待时，暂时把执行权交给其他任务、
+
+也叫**协作式并发。**
+
+
+>协程是一段可以执行到一半暂停，之后再从原位置继续执行的代码。
+
+py用`async def`定义**协程函数**，用`await`表示这里要等一下，等待期间可以去做别的事，`await`是协程的暂停点。
+
+**协程对象**：调用协程函数得到的对象。
+
+此时一般还没有正式开始运行。
+
+**任务Task**：将协程提交给事件循环调度后，可以包装成任务：
+
+```py
+task = asyncio.create_task(download())
+```
+
+`Task`可以理解为：已经登记到事件循环中，准备并发执行的协程。
+
+```py
+import asyncio
+import time
+
+#用async def定义协程函数
+async def say_hello(name, delay):
+    print(f"{name} 开始")
+    #下面这行模拟异步等待
+    #等待期间，事件循环可以去执行其他协程
+    await asyncio.sleep(delay)
+    print(f"{name} 完成，等了 {delay} 秒")
+
+async def main():
+    start = time.time()
+
+    #按顺序执行：先等A完成，再等B完成，总耗时仍为3秒
+    await say_hello("A", 2)
+    await say_hello("B", 1)
+
+    end = time.time()
+    print(f"顺序执行总耗时：{end - start:.1f} 秒")
+
+asyncio.run(main())
+```
+
+`asyncio.run()`是启动异步程序的入口，它会创建一个事件循环并运行传入的协程，等待协程执行完成之后，关闭事件循环。
+
+上面的例子中，await say_hello("A", 2) 会等 A 完成再执行 B，所以总耗时还是 3 秒，跟同步没什么区别。
+
+#### `create_task`是什么
+
+```py
+async def main():
+    task_a = asyncio.create_task(work("A", 2))
+    task_b = asyncio.create_task(work("B", 1))
+
+    print("任务已经创建")
+
+    await task_a
+    await task_b
+```
+
+区别是：
+
+```py
+coro = work("A", 2)
+```
+
+只是创建协程对象，不会自动调度。
+
+而：
+
+```py
+task = asyncio.create_task(coro)
+```
+
+会把协程包装成`Task`并安排它尽快运行。
+
+官方文档把`Task`定义为被调度并发运行的协程，并建议保存`create_task()`返回的引用。
+
+
+
+#### 事件循环是什么
+
+事件循环的过程大致如下：
+
+```text
+检查哪些协程现在可以执行
+        ↓
+选择一个协程运行
+        ↓
+协程遇到 await，暂停
+        ↓
+切换到另一个可执行协程
+        ↓
+某个协程等待的结果完成
+        ↓
+把对应协程重新放回可执行队列
+```
+在一个典型的单线程事件循环中，同一瞬间只有一个任务在执行py代码，任务执行到能够挂起的await时，事件循环才有机会调度其他任务。
+
+#### 使用gather并发运行
+
+要想真正并发执行多个协程，需要用`asyncio.gather()`：
+
+```py
+import asyncio
+import time
+
+async def fetch_data(url, delay):
+    print(f"开始请求 {url} ...")
+    await asyncio.sleep(delay)
+    print(f"请求 {url} 完成，耗时 {delay} 秒")   
+    return f"{url} 的数据"
+
+async def main():
+    start = time.time()
+
+    #用gather并发执行多个协程
+    results = await asyncio.gather(
+        fetch_data("api/users", 2),
+        fetch_data("api/orders", 3),
+        fetch_data("api/products", 1),
+    )
+
+    end = time.time()
+    print(f"\n并发总耗时：{end - start:.1f} 秒")
+    print(f"返回结果：{results}")
+
+asyncio.run(main())
+```
+
+`asyncio.gather()`接收多个协程，同时启动它们。返回结果时，会按照传入参数的顺序排列。
+
+当一个协程遇到await进入等待时，事件循环会自动切换到其它协程继续执行，总耗时只取决于最慢的那个，和多线程效果一样。
+
+asyncio 和多线程有什么区别？最本质的区别是：asyncio 是单线程的，协程在 await 的地方主动让出执行权。
+
+但你的代码必须是"异步风格"的，普通函数不能直接变成协程，阻塞操作（比如 time.sleep()）也不能直接用在协程里（要用 asyncio.sleep()）。
+
+#### 现代写法：TaskGroup
+
+从py 3.11开始，还可以使用结构化并发：
+
+```py
+import asyncio
+
+async def main():
+    async with asyncio.TaskGroup() as group:
+        task_a = group.create_task(work("A", 2))
+        task_b = group.create_task(work("B", 1))
+    
+    print("所有任务都已经结束")
+```
+
+而退出`async with asyncio.TaskGroup()`时，会自动等待组内任务。如果其中一个任务异常失败，`TaskGroup`会取消其他相关任务，并在退出时统一处理异常。相比散落的`create_task()`，它更容易保证任务不会被遗忘。
+
+### 6.什么时候用什么
+
+- **I/O 密集型任务**（网络请求、文件读写、数据库查询）：asyncio 和 threading 都行。asyncio 在高并发场景下性能更好（单线程没有线程切换开销），但需要用异步风格编写代码。threading 更直观，现有的同步代码改造成本低。
+
+- **CPU 密集型任务**（大量数值计算、图像处理、加密解密）：只有 multiprocessing 能真正并行。threading 受 GIL 限制，对 CPU 密集任务没有加速效果。
+
+- **简单场景**：用 threading 最省心，API 简单直观，几行代码就能用起来。
+
+- **高并发 I/O 场景**：用 asyncio。比如同时发起上百个网络请求，asyncio 的性能比开上百个线程好得多。
+
+### 7.注意事项
+
+#### 异步代码中不能随便调用阻塞函数
+
+错误示例：
+
+```py
+import time
+
+
+async def work():
+    time.sleep(5)
+    #上面这一行会直接阻塞事件循环线程，在这5秒内，其他协程也无法运行，整个事件循环停住
+```
+
+应该使用：
+
+```py
+async def work():
+    await asyncio.sleep(5)
+    #当前协程挂起，事件循环运行其他任务
+```
+
+同理，在异步函数里直接调用阻塞式网络库、数据库驱动或耗时 CPU 函数，也可能把整个事件循环卡住。官方文档明确警告不要直接在事件循环线程中运行阻塞或 CPU 密集代码。
+
+假如一定要调用同步阻塞函数，那么可以使用：
+
+```py
+await asyncio.to_thread(sync_function, arg1, arg2)
+```
+
+例如：
+
+```py
+import asyncio
+import time
+
+
+def blocking_work():
+    time.sleep(2)
+    return "完成"
+
+
+async def main():
+    result = await asyncio.to_thread(blocking_work)
+    print(result)
+
+
+asyncio.run(main())
+```
+
+这会把同步阻塞函数放到另一个线程中执行，避免堵住事件循环。
+
+适合：
+
+- 暂时无法替换的同步库
+- 阻塞式文件操作
+- 阻塞式网络API
+- 已有同步项目异步迁移
+  
+对于纯Python CPU密集计算，在默认CPython下更适合使用进程池，而不是简单地`to_thread`。
+
+#### 异步同样可能出现竞态条件
+
+`asyncio`是单线程，但这并不意味着它没有竞态条件，单线程意味着两个协程不会在任意机器指令中间被操作系统强制同时运行，但只要代码在共享状态操作过程中出现`await`，其他协程就可以插进来。
+
+例如：
+
+```py
+import asyncio
+
+counter = 0
+
+async def increase():
+    global counter
+
+    old_value = counter
+    await asyncio.sleep(0)
+    counter = old_value + 1
+```
+
+运行两个任务：
+
+```py
+async def main():
+    await asyncio.gather(
+        increase(),
+        increase(),
+    )
+
+    print(counter)
+
+asyncio.run(main())
+```
+
+可能过程是：
+
+```text
+任务 A 读取 counter = 0
+任务 A 遇到 await
+
+任务 B 读取 counter = 0
+任务 B 遇到 await
+
+任务 A 写入 1
+任务 B 写入 1
+```
+
+因此异步代码也有`asyncio.Lock()`
+
+```py
+lock = asyncio.Lock()
+
+async def increase():
+    global counter
+
+    async with lock:
+        counter += 1
+```
+
+Python 标准库专门提供了 `asyncio.Lock、Event、Semaphore` 等同步原语，这本身就说明异步任务也存在共享状态协调需求；这些原语用于协程之间，不用于操作系统线程之间。
+
+#### async with
+
+普通上下文管理器实现：
+
+```py
+__enter__()
+__exit__()
+```
+
+异步上下文管理器实现：
+
+```py
+__aenter__()
+__aexit__()
+```
+
+使用：
+
+```py
+async with resource:
+    ...
+```
+适用于进入或退出上下文时本身需要等待的资源，例如：
+
+- 异步数据库连接
+- 异步HTTP会话
+- 异步锁
+- `TaskGroup`
+- 异步文件或网络资源
+
+也可以使用：
+
+```py
+from contextlib import asynccontextmanager
+```
+
+例如：
+
+```py
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def database_connection():
+    connection =  await open_connection()
+
+    try:
+        yield connection
+    finally:
+        await connection.close()
+```
+
+使用：
+
+```py
+async with database_connection() as connection:
+    await connection.query(···)
+```
+
+官方contextlib提供了asynccontextmanager，用于通过异步生成器实现async with。
+
+#### 普通装饰器不能直接照搬到异步函数
+
+假设：
+
+```py
+@timer
+async def async_work():
+    await asyncio.sleep(2)
+```
+
+如果timer的包装函数是普通函数：
+
+```py
+def wrapper(*args, **kwargs)：
+    return func(*args, **kwargs)
+```
+
+那么它得到的只是协程对象，并没有等待协程真正执行。因此计时结果可能接近0
+
+异步计时装饰器的实现如下：
+
+```py
+import asyncio
+from functools import wraps
+from time import perf_counter
+
+def async_timer(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        start = perf_counter()
+        
+        try:
+            return await func(*args, **kwargs)
+        finally:
+            elapsed = perf_counter() - start
+            print(f"{func.__name__}耗时：{elapsed:.3f}秒")
+    
+    return wrapper
+
+@async_timer
+async def async_work():
+    await asyncio.sleep(2)
+
+asyncio.run(async_work())
+```
+
+其中`perf_counter()`用来精确测量时间间隔：
+
+```py
+start = perf_counter()
+# 执行某段代码
+elapsed = perf_counter() - start
+```
+
+这里得到的`elapsed`就是这段代码经过的实际时间，它比time.time()更适合性能计时。
+
+上述过程大致为：
+
+- 程序加载阶段：
+    ```text
+    1. 导入 wraps 和 perf_counter
+
+    2. 定义 async_timer
+    只创建函数，不执行函数体
+
+    3. 定义原来的 async_work
+
+    4. 发现 @async_timer
+
+    5. 执行：
+    async_work = async_timer(原来的 async_work)
+
+    6. async_timer 返回 wrapper
+
+    7. 现在：
+    async_work → wrapper
+    wrapper 通过闭包记住原函数 func
+    ```
+- 程序运行阶段：
+    ```text
+    执行：asyncio.run(async_work())
+
+    过程是：
+    1. async_work()
+    实际调用 wrapper()
+    创建 wrapper 协程对象
+
+    2. asyncio.run() 创建事件循环
+
+    3. 事件循环开始运行 wrapper
+
+    4. wrapper 记录开始时间
+
+    5. 执行 await func()
+    调用原来的 async_work
+
+    6. 原函数执行 await asyncio.sleep(2)
+
+    7. 原函数暂停两秒
+
+    8. 两秒后恢复原函数
+
+    9. 原函数执行结束，返回 None
+
+    10. wrapper 准备返回 None
+
+    11. 先执行 finally
+
+    12. 计算并打印耗时
+
+    13. wrapper 返回 None
+
+    14. asyncio.run() 结束并关闭事件循环
+
+    最终输出类似为：
+    async_work 耗时：2.002 秒
+    ```
+
+为什么必须使用`await`：因为调用异步函数只会创建协程对象，不会等待它执行完成，因此，如果直接写成`return func(*args, **kwargs)`的话，会直接返回协程对象，计时器也无法覆盖原函数真正执行的过程。
+
+写成`return await func(*args, **kwargs)`，就是运行异步函数，并等待它执行完成，再取得它的返回值。
